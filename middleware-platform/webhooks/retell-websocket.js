@@ -19,7 +19,6 @@ const PatientOrchestratorService = require('../services/patient-orchestrator-ser
 const KellyAgentService = require('../services/kelly-agent-service');
 const KellyToolExecutor = require('../services/kelly-tool-executor');
 const KellyOrchestratorPhase = require('../services/kelly-orchestrator-phase');
-const somoDemoHandler = require('./somo-demo-handler');
 const VoiceAgentRuntime = require('../services/voice-agent-runtime');
 
 class RetellWebSocketHandler {
@@ -421,11 +420,6 @@ class RetellWebSocketHandler {
                 console.log(`✅ Voice caller name pre-filled from call metadata: ${pn}`);
             }
 
-            if (somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-                connection.awaitingName = false;
-                connection._demoCallType = 'somo_demo';
-            }
-
             // Skincare / routine intake: Retell dynamic_variables.kelly_flow (or routine_intake_active)
             try {
                 const kf = KellyOrchestratorPhase.extractKellyFlowFromRetellCall(callMeta);
@@ -465,22 +459,13 @@ class RetellWebSocketHandler {
             }
 
             // Provider voice runtime (greeting, hours, enabled) — after tenant context exists
-            if (!connection._runtimeApplied && !somoDemoHandler.isSomoDemoDemoConnection(connection)) {
+            if (!connection._runtimeApplied) {
                 this.applyProviderRuntime(callId, connection, callMeta, message.response_id);
             }
 
             // If the call starts and the caller is silent, proactively greet once.
-            if (!connection.sentInitialGreeting && !somoDemoHandler.isSomoDemoDemoConnection(connection) && !connection.agentBlocked) {
+            if (!connection.sentInitialGreeting && !connection.agentBlocked) {
                 this.sendInitialGreeting(callId, connection, callMeta, message.response_id);
-            }
-            if (!connection.sentInitialGreeting && somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-                somoDemoHandler.sendDemoInitialGreeting(
-                    callId,
-                    connection,
-                    callMeta,
-                    message.response_id,
-                    (ws, content, rid) => this.sendRetellResponse(ws, content, rid)
-                );
             }
         }
 
@@ -501,22 +486,6 @@ class RetellWebSocketHandler {
         }
 
         console.log(`\n📨 Message from ${callId}:`, interactionType);
-
-        if (somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-            if (interactionType === 'ping_pong') {
-                this.sendToRetell(connection.ws, { response_type: 'ping_pong', timestamp: message.timestamp });
-                return;
-            }
-            if (interactionType === 'ping') {
-                this.sendToRetell(connection.ws, { type: 'pong' });
-                return;
-            }
-            await somoDemoHandler.handleDemoMessage(callId, connection, message, {
-                sendRetellResponse: (ws, content, rid) => this.sendRetellResponse(ws, content, rid),
-                interactionType
-            });
-            return;
-        }
 
         switch (interactionType) {
             case 'call_details':
@@ -575,25 +544,6 @@ class RetellWebSocketHandler {
     // Handle user speech transcript
     async handleTranscript(callId, message) {
         const connection = this.activeConnections.get(callId);
-
-        if (somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-            const userSaid = message.transcript;
-            if (userSaid) {
-                connection.conversationHistory.push({
-                    role: 'user',
-                    content: userSaid,
-                    timestamp: Date.now()
-                });
-                await somoDemoHandler.handleDemoTranscript(
-                    callId,
-                    connection,
-                    userSaid,
-                    message,
-                    (ws, content, rid) => this.sendRetellResponse(ws, content, rid)
-                );
-            }
-            return;
-        }
 
         // VOICE_AGENT_ENABLED gate (u-4): when 0, reject voice; redirect to web chat
         if (connection?.agentBlocked) {
@@ -975,11 +925,6 @@ class RetellWebSocketHandler {
     async handleFunctionCall(callId, message) {
         const connection = this.activeConnections.get(callId);
         if (!connection) return;
-
-        if (somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-            await somoDemoHandler.handleDemoFunctionCall(callId, connection, message);
-            return;
-        }
 
         const functionCall = message.function_call || message;
         const functionName = functionCall.name;
@@ -2527,16 +2472,6 @@ class RetellWebSocketHandler {
     // Helper: build and send one-time initial greeting
     sendInitialGreeting(callId, connection, callMeta, responseId = null) {
         if (!connection || connection.sentInitialGreeting) return;
-        if (somoDemoHandler.isSomoDemoDemoConnection(connection)) {
-            somoDemoHandler.sendDemoInitialGreeting(
-                callId,
-                connection,
-                callMeta,
-                responseId,
-                (ws, content, rid) => this.sendRetellResponse(ws, content, rid)
-            );
-            return;
-        }
         const isOutboundSales = callMeta?.metadata?.call_type === 'sales_outbound';
         const patientName = callMeta?.dynamic_variables?.patient_name || connection.customerName || null;
         let opening = connection.providerGreeting || null;
@@ -2545,10 +2480,10 @@ class RetellWebSocketHandler {
         }
         if (!opening) {
             opening = isOutboundSales
-                ? "Hi, this is Alex from Somo. Is now still a good time to talk?"
+                ? "Hi, this is Alex from Skin & Care. Is now still a good time to talk?"
                 : (patientName
-                    ? `Hi ${patientName}, this is Kelly from Somo. How can I help you today?`
-                    : 'Hi, this is Kelly from Somo. How can I help you today?');
+                    ? `Hi ${patientName}, this is Kelly from Skin & Care. How can I help you today?`
+                    : 'Hi, this is Kelly from Skin & Care. How can I help you today?');
         }
 
         this.sendRetellResponse(connection.ws, opening, responseId);
@@ -3329,7 +3264,7 @@ class RetellWebSocketHandler {
                 demo_date: args.preferred_date,
                 demo_time: args.preferred_time,
                 contact_email: args.contact_email,
-                confirmation: `Great! I've scheduled your demo for ${args.preferred_date} at ${args.preferred_time}. You'll receive a confirmation email at ${args.contact_email} shortly. Looking forward to showing you how Somo can help ${args.clinic_name}!`
+                confirmation: `Great! I've scheduled your demo for ${args.preferred_date} at ${args.preferred_time}. You'll receive a confirmation email at ${args.contact_email} shortly. Looking forward to showing you how Skin & Care can help ${args.clinic_name}!`
             };
         } catch (error) {
             console.error('❌ Error scheduling demo:', error);
@@ -3463,7 +3398,7 @@ class RetellWebSocketHandler {
             const leadId = connection?.callMetadata?.lead_id || args.lead_id;
 
             const toEmail = args.to_email || args.email;
-            const subject = args.subject || 'Follow-up from Somo';
+            const subject = args.subject || 'Follow-up from Skin & Care';
             const body = args.body || args.message || '';
 
             if (!toEmail) {

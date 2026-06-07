@@ -13,6 +13,7 @@ describe('trial-lifecycle provision', () => {
   const customerId = `cust_provision_${Date.now()}`;
   const testPhone = '+12025558877';
   let provisionMock;
+  let availableMock;
 
   beforeAll(() => {
     process.env.TRIAL_SIM_FLOW_ENABLED = '1';
@@ -33,6 +34,9 @@ describe('trial-lifecycle provision', () => {
   });
 
   beforeEach(() => {
+    availableMock = jest
+      .spyOn(TwilioPhoneService.prototype, 'isAvailable')
+      .mockReturnValue(true);
     provisionMock = jest
       .spyOn(TwilioPhoneService.prototype, 'provisionPhoneNumberForCustomer')
       .mockResolvedValue({
@@ -51,6 +55,7 @@ describe('trial-lifecycle provision', () => {
 
   afterEach(() => {
     provisionMock.mockRestore();
+    availableMock.mockRestore();
   });
 
   test('startTrialTenant activates only after Twilio success', async () => {

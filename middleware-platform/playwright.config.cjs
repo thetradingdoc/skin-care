@@ -1,7 +1,7 @@
 const path = require('path');
 const { defineConfig } = require('@playwright/test');
 
-const landingBuild = path.join(__dirname, '..', 'unified-dashboard', 'somo-landing', 'build');
+const landingBuild = path.join(__dirname, '..', 'unified-dashboard', 'skin-care-landing', 'build');
 const serveScript = path.join(__dirname, 'scripts', 'serve-cra-build.cjs');
 
 const headed = process.env.HEADED === '1';
@@ -11,7 +11,7 @@ const landingPort = String(process.env.PW_LANDING_PORT || '5199').trim() || '519
 const landingOrigin = `http://127.0.0.1:${landingPort}`;
 
 /**
- * Somo landing E2E: serves `somo-landing/build` (default :5199).
+ * Skin & Care landing E2E: serves `skin-care-landing/build` (default :5199).
  * - Landing UI: `npm run test:e2e-landing` (builds first)
  * - Headed: `HEADED=1 npx playwright test --project landing`
  *
@@ -39,13 +39,13 @@ module.exports = defineConfig({
     {
       name: 'landing',
       testDir: './e2e',
-      testMatch: '**/somo-landing.spec.cjs',
+      testMatch: '**/skin-care-landing.spec.cjs',
       use: { browserName: 'chromium' },
     },
     {
       name: 'signup-wizard',
       testDir: './e2e',
-      testMatch: '**/somo-signup-wizard.spec.cjs',
+      testMatch: '**/skin-care-signup-wizard.spec.cjs',
       use: {
         browserName: 'chromium',
         baseURL: (process.env.PW_API_BASE_URL || 'http://127.0.0.1:4000').replace(/\/$/, ''),
@@ -140,9 +140,9 @@ module.exports = defineConfig({
       },
     },
     {
-      name: 'somo-login',
+      name: 'skin-care-login',
       testDir: './e2e',
-      testMatch: '**/somo-login.spec.cjs',
+      testMatch: '**/skin-care-login.spec.cjs',
       use: {
         browserName: 'chromium',
         baseURL: (process.env.PW_API_BASE_URL || 'http://127.0.0.1:4000').replace(/\/$/, ''),

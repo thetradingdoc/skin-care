@@ -47,8 +47,8 @@ module.exports = defineConfig({
     {
       name: 'staging-landing-mobile',
       testDir: './e2e',
-      testMatch: '**/somo-landing.spec.cjs',
-      grep: /mobile header|scroll cue hidden|pricing cards mobile|capability cards mobile/,
+      testMatch: '**/skin-care-landing.spec.cjs',
+      grep: /mobile layout/,
       use: {
         browserName: 'chromium',
         viewport: { width: 390, height: 844 },
