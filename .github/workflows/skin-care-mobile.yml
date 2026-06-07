@@ -82,6 +82,6 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Trigger EAS preview build (TestFlight internal)
+      - name: Trigger EAS preview build (internal device link)
         working-directory: ./patient-app
         run: eas build --platform ios --profile preview --non-interactive --no-wait

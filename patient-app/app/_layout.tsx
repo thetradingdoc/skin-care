@@ -1,5 +1,4 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +13,7 @@ import { SkinCareNavigationTheme } from '@/constants/navigationTheme';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
 import { patientGet } from '@/lib/patient-api';
+import { SIGN_IN_HREF } from '@/constants/routes';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,7 +44,7 @@ function useAppDeepLinks() {
             router.replace('/(tabs)/today');
           }
         } catch {
-          router.replace('/sign-in');
+          router.replace(SIGN_IN_HREF);
         }
         return;
       }
@@ -71,21 +71,10 @@ function useAppDeepLinks() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   useAppDeepLinks();
-  const [fontsLoaded] = useFonts({
-    TexGyreHerosCN: require('../assets/fonts/texgyreheroscn-regular.otf'),
-    TexGyreHeros: require('../assets/fonts/texgyreheros-regular.otf'),
-    FeatureDisplay: require('../assets/fonts/FeatureDisplay-Regular.ttf'),
-  });
 
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
-    return null;
-  }
+    void SplashScreen.hideAsync();
+  }, []);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : SkinCareNavigationTheme}>

@@ -14,7 +14,8 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Skin & Care uses the camera for daily progress photos so you can track changes in your skin over time.",
-        "NSPhotoLibraryUsageDescription": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo."
+        "NSPhotoLibraryUsageDescription": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

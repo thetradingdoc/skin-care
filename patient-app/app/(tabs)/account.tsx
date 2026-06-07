@@ -10,6 +10,7 @@ import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
 import { JournalTokens } from '@/constants/journalTokens';
 import { patientGet, patientPost } from '@/lib/patient-api';
 import { clearPatientSession, EMAIL_KEY } from '@/lib/patient-session';
+import { SIGN_IN_HREF } from '@/constants/routes';
 
 type PlanTier = 'free' | 'care_program' | 'plus';
 
@@ -88,7 +89,7 @@ export default function AccountScreen() {
     setSignedIn(false);
     setEmail(null);
     setProgramName(null);
-    router.replace('/sign-in');
+    router.replace(SIGN_IN_HREF);
   }, [router]);
 
   async function startCareProgramCheckout() {
@@ -128,7 +129,7 @@ export default function AccountScreen() {
             <Text style={styles.cardBody}>
               Sign in to sync your routine, progress photos, and program subscription.
             </Text>
-            <PrimaryButton label="Sign in" onPress={() => router.push('/sign-in')} />
+            <PrimaryButton label="Sign in" onPress={() => router.push(SIGN_IN_HREF)} />
           </View>
         ) : (
           <>

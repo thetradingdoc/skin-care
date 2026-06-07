@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { getPatientSessionId } from '@/lib/patient-session';
+import { SIGN_IN_HREF } from '@/constants/routes';
 
 /**
  * Redirects to /sign-in when no patient session is stored.
@@ -18,7 +19,7 @@ export function useRequirePatientSession() {
         const sid = await getPatientSessionId();
         if (cancelled) return;
         if (!sid) {
-          router.replace('/sign-in');
+          router.replace(SIGN_IN_HREF);
           return;
         }
         setReady(true);

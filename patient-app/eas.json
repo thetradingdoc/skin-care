@@ -20,7 +20,19 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com"
       }
     },
+    "testflight": {
+      "distribution": "store",
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com"
+      }
+    },
     "production": {
+      "distribution": "store",
+      "autoIncrement": true,
       "ios": {
         "simulator": false
       },
@@ -30,12 +42,11 @@
     }
   },
   "submit": {
+    "testflight": {
+      "ios": {}
+    },
     "production": {
-      "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID",
-        "ascAppId": "REPLACE_WITH_ASC_APP_ID",
-        "appleTeamId": "REPLACE_WITH_TEAM_ID"
-      }
+      "ios": {}
     }
   }
 }

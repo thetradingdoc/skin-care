@@ -16,6 +16,7 @@ import { JournalTokens } from '@/constants/journalTokens';
 import { PENDING_ROUTINE_CONCERN_KEY } from '@/constants/routineSession';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { patientPost, publicGet } from '@/lib/patient-api';
+import { SIGN_IN_HREF } from '@/constants/routes';
 
 type ConcernRow = {
   id: string;
@@ -82,7 +83,7 @@ export default function RoutinePickScreen() {
     try {
       if (!ready) {
         await SecureStore.setItemAsync(PENDING_ROUTINE_CONCERN_KEY, selected);
-        router.replace('/sign-in');
+        router.replace(SIGN_IN_HREF);
         return;
       }
       await patientPost('/api/patient/routine/template', { concern_id: selected });

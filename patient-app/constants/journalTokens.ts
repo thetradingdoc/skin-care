@@ -12,6 +12,7 @@ export const JournalTokens = {
     accent: '#57BFD4',
     terracotta: '#C16E52',
     success: '#4F8A5B',
+    danger: '#B42318',
   },
   font: {
     display: Fonts.serif,
