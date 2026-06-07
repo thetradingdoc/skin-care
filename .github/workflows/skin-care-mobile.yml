@@ -1,0 +1,87 @@
+name: Skin & Care Mobile (staging)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'patient-app/**'
+      - 'middleware-platform/services/care-program-billing-service.js'
+      - 'middleware-platform/routes/patient-billing-portal.js'
+      - 'middleware-platform/__tests__/care-program-billing-service.test.js'
+      - '.github/workflows/skin-care-mobile.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: skin-care-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BRAND_PROFILE: skin-and-care
+  CI_PROFILE: skin-care
+
+jobs:
+  typecheck:
+    name: patient-app typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: patient-app/package-lock.json
+
+      - name: Brand guard (consumer profile)
+        run: node scripts/check-brand-strings.cjs
+
+      - name: Install patient-app dependencies
+        working-directory: ./patient-app
+        run: npm ci
+
+      - name: Typecheck patient-app
+        working-directory: ./patient-app
+        run: npx tsc --noEmit
+
+  care-program-api:
+    name: care_program billing tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: middleware-platform/package-lock.json
+
+      - name: Install middleware dependencies
+        working-directory: ./middleware-platform
+        run: npm ci
+
+      - name: Run care-program billing tests
+        working-directory: ./middleware-platform
+        run: npm test -- --testPathPattern=care-program-billing-service --runInBand
+
+  eas-preview:
+    name: EAS iOS preview build
+    needs: [typecheck, care-program-api]
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: patient-app/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Trigger EAS preview build (TestFlight internal)
+        working-directory: ./patient-app
+        run: eas build --platform ios --profile preview --non-interactive --no-wait

@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#16a637">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Martian+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <title>Somo Provider - Video Call</title>
+  <link rel="stylesheet" href="/assets/css/somo-tokens.css">
+  <link rel="stylesheet" href="/assets/css/provider-portal.css">
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/auth-utils.js"></script>
+  <script src="/assets/js/provider-shell.js"></script>
+  <script src="/assets/js/provider-shell-chrome.js"></script>
+  <script src="/assets/js/provider-layout.js"></script>
+  <style>
+  :root { --primary: #16a637; --primary-dark: #1e3a8a; --primary-light: #16a637; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 260px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.05); position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-header { padding: 24px; border-bottom: 1px solid var(--gray-200, #e2e8f0); }
+    .sidebar-logo { font-size: 32px; line-height: 1; letter-spacing: -2px; color: #2d3748; margin-bottom: 4px; font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 300; }
+    .sidebar-subtitle { font-size: 12px; color: var(--gray-500, #64748b); margin-top: 4px; }
+    .sidebar-nav { padding: 16px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; color: var(--gray-700, #4a5568); font-weight: 500; cursor: pointer; transition: all 0.2s; margin-bottom: 4px; text-decoration: none; }
+    .nav-item:hover { background: var(--gray-50, #f7fafc); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-icon { font-size: 20px; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid var(--gray-200, #e2e8f0); position: absolute; bottom: 0; width: 260px; background: white; }
+    .user-info { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--gray-50, #f7fafc); cursor: pointer; transition: all 0.2s; }
+    .user-info:hover { background: var(--gray-100, #edf2f7); transform: translateY(-1px); }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .user-details { flex: 1; }
+    .user-name { font-weight: 600; font-size: 14px; color: var(--gray-900, #1a202c); }
+    .user-role { font-size: 12px; color: var(--gray-500, #718096); }
+    .logout-btn { background: none; border: none; color: var(--gray-500, #718096); cursor: pointer; padding: 8px; border-radius: 4px; transition: all 0.2s; }
+    .logout-btn:hover { background: var(--danger-light, #fed7d7); color: var(--danger, #f56565); }
+  .main-content { margin-left: 260px; padding: 24px; flex: 1; background: #f7fafc; min-height: 100vh; }
+    .video-container { background: #1a1a2e; border-radius: 16px; aspect-ratio: 16/10; max-height: 70vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .video-container video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+    .video-placeholder { color: #94a3b8; text-align: center; padding: 48px; }
+    .video-placeholder .icon { font-size: 64px; margin-bottom: 16px; }
+    .local-video { position: absolute; bottom: 16px; right: 16px; width: 180px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    .local-video video { width: 100%; display: block; }
+    .remote-videos { flex: 1; display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; align-items: center; justify-content: center; }
+    .remote-video { width: 320px; border-radius: 12px; overflow: hidden; background: #0f172a; position: relative; }
+    .remote-video video { width: 100%; display: block; }
+    .remote-video .label { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .controls { display: flex; gap: 12px; margin-top: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 16px; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .room-input { padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 16px; width: 200px; }
+    .room-input[readonly] { background: #f1f5f9; color: #475569; cursor: default; }
+    .status { margin-top: 12px; padding: 12px; background: #f0fdf4; border-radius: 8px; color: #166534; font-size: 14px; }
+    .status.error { background: #fef2f2; color: #991b1b; }
+  .status.connecting { background: #fefce8; color: #854d0e; }
+  .video-page-title {
+    margin-bottom: 8px;
+  }
+  .video-workspace {
+    position: relative;
+    width: 100%;
+  }
+  .workspace-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 0 12px;
+    flex-wrap: wrap;
+  }
+  .workspace-toolbar-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .workspace-chip {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .workspace-chip.active {
+    border-color: #128a2e;
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  /* AI assistant HUD overlay (inspired by smart glasses UI) */
+  .assistant-overlay {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 280px;
+    max-width: 40%;
+    background: rgba(5, 10, 25, 0.92);
+    border-radius: 12px;
+    border: 1px solid #4ade80;
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.5);
+    color: #bbf7d0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+    padding: 10px 12px;
+    font-size: 12px;
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .assistant-badge {
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid #4ade80;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .assistant-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #bef264;
+  }
+
+  .assistant-section {
+    border-top: 1px dashed rgba(74, 222, 128, 0.4);
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .assistant-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #a3e635;
+    margin-bottom: 4px;
+  }
+
+  .assistant-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .assistant-list li {
+    margin-bottom: 2px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .assistant-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .assistant-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(74, 222, 128, 0.6);
+    padding: 1px 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .assistant-chip-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+  .assistant-chip-wrap .confirm-btn, .assistant-chip-wrap .dismiss-btn {
+    padding: 0 4px;
+    font-size: 10px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    opacity: 0.8;
+  }
+  .assistant-chip-wrap .confirm-btn:hover { color: #4ade80; }
+  .assistant-chip-wrap .dismiss-btn:hover { color: #f87171; }
+
+  .assistant-footer {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: #86efac;
+    opacity: 0.9;
+  }
+  .status-pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .status-pill[data-status="listening"] { background: #166534; color: #dcfce7; }
+  .status-pill[data-status="processing"] { background: #854d0e; color: #fef3c7; animation: pulse 1s infinite; }
+  .status-pill[data-status="codes_updated"] { background: #16a637; color: #dbeafe; }
+  .status-pill[data-status="idle"] { background: #374151; color: #9ca3af; }
+  @keyframes pulse { 50% { opacity: 0.7; } }
+  .risk-pill { padding: 2px 8px; border-radius: 999px; font-size: 9px; font-weight: 600; }
+  .risk-low { background: #166534; color: #dcfce7; }
+  .risk-moderate { background: #854d0e; color: #fef3c7; }
+  .risk-high { background: #7f1d1d; color: #fecaca; }
+
+  /* Transcript panel - collapsible left slide-out */
+  .transcript-panel-wrap {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-width: 0;
+  }
+  .transcript-panel {
+    width: 280px;
+    min-width: 280px;
+    max-width: 90vw;
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: margin-left 0.2s, min-width 0.2s, opacity 0.2s;
+  }
+  .transcript-panel.collapsed {
+    margin-left: -284px;
+    min-width: 0;
+    width: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .transcript-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(74, 222, 128, 0.3);
+    flex-shrink: 0;
+  }
+  .transcript-panel-title { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+  .transcript-toggle-btn {
+    background: rgba(74, 222, 128, 0.2);
+    border: 1px solid rgba(74, 222, 128, 0.5);
+    color: #bbf7d0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .transcript-toggle-btn:hover { background: rgba(74, 222, 128, 0.3); }
+  .transcript-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    font-size: 13px;
+  }
+  .transcript-line {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .transcript-line:hover { background: rgba(255,255,255,0.05); }
+  .transcript-line[data-speaker="patient"] .transcript-speaker { color: #60a5fa; }
+  .transcript-line[data-speaker="provider"] .transcript-speaker { color: #34d399; }
+  .transcript-line[data-speaker="unknown"] .transcript-speaker { color: #94a3b8; }
+  .transcript-ts { font-size: 10px; color: #64748b; flex-shrink: 0; }
+  .transcript-speaker { font-weight: 600; flex-shrink: 0; }
+  .transcript-text { color: #e2e8f0; word-break: break-word; }
+  .transcript-footer {
+    padding: 8px 12px;
+    border-top: 1px solid rgba(74, 222, 128, 0.2);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .transcript-footer button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.1);
+    color: #bbf7d0;
+  }
+  .transcript-footer button:hover { background: rgba(74, 222, 128, 0.2); }
+
+  /* Phase 7.2: Case report side-panel */
+  .case-report-panel {
+    width: 260px;
+    min-width: 260px;
+    max-width: 90vw;
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .case-report-panel-header {
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+    font-size: 13px;
+    font-weight: 600;
+    color: #c7d2fe;
+  }
+  .case-report-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-size: 12px;
+    color: #e2e8f0;
+  }
+  .case-report-section { margin-bottom: 12px; }
+  .case-report-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a5b4fc; margin-bottom: 4px; }
+  .case-report-opqrst { white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+  .case-report-icd { display: flex; flex-wrap: wrap; gap: 4px; }
+  .case-report-icd span { padding: 2px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.2); font-size: 11px; }
+  .case-report-empty { color: #64748b; font-style: italic; }
+
+  /* vc-6: Telehealth right panel (Vitals, AI, Chart, Actions) */
+  .telehealth-right-panel {
+    width: 300px;
+    min-width: 300px;
+    max-width: 90vw;
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: fixed;
+    right: 16px;
+    top: 78px;
+    height: calc(100vh - 110px);
+    z-index: 1206;
+    transform: translateX(112%);
+    transition: transform 0.22s ease;
+  }
+  .telehealth-right-panel.open { transform: translateX(0); }
+  .telehealth-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.55);
+    z-index: 1205;
+    display: none;
+  }
+  .telehealth-panel-backdrop.open { display: block; }
+  .telehealth-right-panel-header {
+    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+    font-size: 13px;
+    font-weight: 600;
+    color: #c7d2fe;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .telehealth-right-panel-tab {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+  }
+  .telehealth-right-panel-tab:hover { background: rgba(99, 102, 241, 0.2); }
+  .telehealth-right-panel-tab.active { background: rgba(99, 102, 241, 0.4); color: #e0e7ff; }
+  .telehealth-right-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-size: 12px;
+    color: #e2e8f0;
+  }
+  .telehealth-vitals-form input, .telehealth-vitals-form textarea {
+    width: 100%;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(15, 23, 42, 0.8);
+    color: #e2e8f0;
+    font-size: 12px;
+    box-sizing: border-box;
+  }
+  .telehealth-vitals-form label { display: block; font-size: 10px; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
+  .telehealth-vitals-form button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background: var(--somo-green, #16a637);
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .telehealth-vitals-form button:hover { background: #4f46e5; }
+  .telehealth-chart-excerpt {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    font-size: 11px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .telehealth-actions-btn {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .telehealth-actions-btn.primary { background: #059669; color: white; }
+  .telehealth-actions-btn.primary:hover { background: #047857; }
+  .telehealth-actions-btn.danger { background: #dc2626; color: white; }
+  .telehealth-actions-btn.danger:hover { background: #b91c1c; }
+  .telehealth-actions-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Mobile layout: hide sidebar, make video UI full-width */
+  @media (max-width: 768px) {
+    .layout {
+      flex-direction: column;
+    }
+    .sidebar {
+      display: none;
+    }
+    .main-content {
+      margin-left: 0;
+      padding: 16px;
+      padding-top: 76px;
+    }
+    .video-page-title {
+      padding-left: 56px;
+      line-height: 1.1;
+    }
+    .video-container {
+      aspect-ratio: auto;
+      max-height: none;
+      height: 68vh;
+    }
+    .room-input {
+      width: 100%;
+      max-width: none;
+    }
+    .controls {
+      justify-content: space-between;
+    }
+    .workspace-toolbar {
+      margin-top: 6px;
+    }
+    .transcript-panel {
+      position: fixed;
+      left: 8px;
+      right: 8px;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      top: 80px;
+      bottom: 130px;
+      z-index: 1206;
+      margin-left: 0;
+      transform: translateY(120%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .transcript-panel.open-mobile {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .transcript-panel.collapsed {
+      margin-left: 0;
+      width: auto;
+      min-width: 0;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .telehealth-right-panel {
+      left: 8px;
+      right: 8px;
+      top: auto;
+      bottom: 88px;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      height: 62vh;
+      border-radius: 14px;
+      transform: translateY(120%);
+    }
+    .telehealth-right-panel.open { transform: translateY(0); }
+  }
+  </style>
+</head>
+<body class="provider-portal provider-portal--scroll">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-subtitle sidebar-subtitle-portal">Somo Provider</div>
+      </div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer">
+        <div class="user-info" onclick="(window.navigateToBusinessPage||function(p){window.location.href=(window.resolveBusinessPath||function(x){return'/business/'+x})(p);})('settings.html')" title="Open Settings">
+          <div class="user-avatar" id="userAvatar">HP</div>
+          <div class="user-details">
+            <div class="user-name" id="userName">Healthcare Provider</div>
+            <div class="user-role" id="userRole">Provider</div>
+          </div>
+          <button class="logout-btn" onclick="event.stopPropagation(); (window.logout||function(){sessionStorage.removeItem('authenticated');window.location.href='../login.html';})();" title="Logout">Logout</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <h1 class="video-page-title">Video Call</h1>
+      <p style="color: #64748b; margin-bottom: 8px;">Start or join a telehealth video room.</p>
+      <p id="roomTip" style="color: #0f766e; font-size: 14px; margin-bottom: 16px; padding: 10px 12px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #0d9488;">
+        <strong>To see the patient:</strong> open <strong>Calendar</strong> → click the appointment → <strong>Join</strong>. The room (e.g. appt-xxx) will be set automatically so you're in the same room as the patient.
+      </p>
+
+      <div id="joinSection">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+          <input type="text" id="roomInput" class="room-input" placeholder="Room (e.g. appt-xxx from Calendar)" value="">
+          <input type="text" id="nameInput" class="room-input" placeholder="Your name" value="">
+          <button id="joinBtn" class="btn btn-primary">Join Room</button>
+        </div>
+        <p id="roomError" style="display: none; color: #b91c1c; font-size: 14px; margin-top: 8px;"></p>
+      </div>
+
+      <div id="videoSection" style="display: none;">
+        <div class="video-workspace">
+          <div class="workspace-toolbar">
+            <div id="connectionStatus" class="connection-status" style="font-size:14px;color:#94a3b8;"></div>
+            <div class="workspace-toolbar-actions">
+              <button type="button" id="toggleTranscriptDockBtn" class="workspace-chip">Transcript</button>
+              <button type="button" id="toggleClinicalPanelBtn" class="workspace-chip">Clinical panel</button>
+              <div id="sseStatusBadge" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:6px 10px;border-radius:999px;background:#166534;color:#dcfce7;" title="Real-time updates">● Live</div>
+            </div>
+          </div>
+        <div class="transcript-panel-wrap" style="display:flex;gap:16px;">
+          <aside id="caseReportPanel" class="case-report-panel" aria-label="Case report" style="display:none;">
+            <div class="case-report-panel-header">Case Report</div>
+            <div class="case-report-panel-body" id="caseReportBody">
+              <div class="case-report-empty">Loading…</div>
+            </div>
+          </aside>
+          <aside id="transcriptPanel" class="transcript-panel collapsed" aria-label="Live transcript">
+            <div class="transcript-panel-header">
+              <span class="transcript-panel-title">Transcript</span>
+              <button type="button" id="transcriptToggleBtn" class="transcript-toggle-btn" title="Collapse (T)">⟨</button>
+            </div>
+            <ul id="transcriptList" class="transcript-list" role="log"></ul>
+            <div class="transcript-footer">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox" id="transcriptTranslateToggle" /> Translate</label>
+              <button type="button" id="transcriptJumpBtn" title="Jump to latest">↓ Latest</button>
+              <button type="button" id="transcriptPauseBtn" title="Pause autoscroll">Pause</button>
+              <button type="button" id="transcriptCopyBtn" title="Copy to clipboard">Copy</button>
+              <button type="button" id="transcriptExportBtn" title="Export as text">Export</button>
+            </div>
+          </aside>
+          <div style="flex:1;min-width:0;">
+        <div class="video-container" id="videoContainer">
+          <div class="video-placeholder" id="placeholder">
+            <div class="icon">📹</div>
+            <p>Your camera will appear here when you join</p>
+          </div>
+          <div class="remote-videos" id="remoteVideos"></div>
+          <div class="local-video" id="localVideo" style="display: none;">
+            <video id="localVideoEl" autoplay muted playsinline></video>
+          </div>
+          <!-- AI assistant HUD overlay -->
+          <div id="riskBanner" style="display:none;position:absolute;top:16px;left:16px;right:16px;z-index:21;padding:12px 16px;border-radius:8px;background:#7f1d1d;color:#fecaca;font-size:13px;font-weight:600;border:1px solid #b91c1c;align-items:center;justify-content:space-between;gap:12px;flex-direction:row;flex-wrap:nowrap;" title="Click to scroll to transcript">
+            <span id="riskBannerText" style="cursor:pointer;flex:1;">⚠️ High-risk symptom detected</span>
+            <button type="button" id="riskBannerDismiss" style="padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);color:#fecaca;font-size:11px;cursor:pointer;">Dismiss</button>
+          </div>
+          <div class="assistant-overlay" id="assistantOverlay" style="display:none;">
+            <div class="assistant-header">
+              <div class="assistant-title">Somo Listening</div>
+              <div class="assistant-badge" id="assistantStatusBadge">Idle</div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Summary</div>
+              <div id="assistantSummary" style="font-size:11px; line-height:1.3; max-height:60px; overflow:hidden;"></div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Key Problems</div>
+              <ul class="assistant-list" id="assistantProblems"></ul>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Next Questions</div>
+              <ul class="assistant-list" id="assistantFollowups"></ul>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Codes (RAG)</div>
+              <div class="assistant-chip-row" id="assistantCodes"></div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">YOLO Tracking</div>
+              <div id="assistantYolo" style="font-size:10px; line-height:1.4; max-height:50px; overflow-y:auto;">
+                <div style="color:#94a3b8;">No visual detections yet...</div>
+              </div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Vision Capture Handoff</div>
+              <div id="assistantVisionHandoff" style="font-size:10px; line-height:1.45; max-height:80px; overflow-y:auto; color:#cbd5e1;">
+                <div style="color:#94a3b8;">No capture checklist yet...</div>
+              </div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Vision Checklist (Provider)</div>
+              <div id="assistantVisionChecklist" style="font-size:10px; line-height:1.5; max-height:90px; overflow-y:auto; color:#e2e8f0;">
+                <div style="color:#94a3b8;">No region checklist rows yet...</div>
+              </div>
+            </div>
+            <div class="assistant-section">
+              <div class="assistant-section-title">Accepted Frames</div>
+              <div id="assistantVisionFrames" style="font-size:10px; line-height:1.5; max-height:90px; overflow-y:auto; color:#e2e8f0;">
+                <div style="color:#94a3b8;">No accepted frames yet...</div>
+              </div>
+            </div>
+            <div class="assistant-footer">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span id="assistantStatusPill" class="status-pill" data-status="idle">Idle</span>
+                <span id="assistantRiskPill" class="risk-pill risk-low" style="display:none;">Risk: Low</span>
+                <span id="assistantRoomLabel">Room: -</span>
+                <span id="assistantUpdatedAt">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="controls">
+          <button id="attachThreadBtn" class="btn btn-primary" type="button">Attach File</button>
+          <input id="threadFileInput" type="file" style="display:none;" accept="image/*,.pdf,.txt,.doc,.docx">
+          <button id="toggleVideoBtn" class="btn btn-primary">Stop Video</button>
+          <button id="toggleMicBtn" class="btn btn-primary">Mute</button>
+          <button id="leaveBtn" class="btn btn-danger">Leave Call</button>
+          <button id="endAndClaimBtn" class="btn" style="background:#059669;color:#fff;display:none;">End & Create Claim</button>
+        </div>
+          </div>
+          <!-- vc-6: Telehealth right panel (Vitals, AI, Chart, Actions) -->
+          <aside id="telehealthRightPanel" class="telehealth-right-panel" aria-label="Telehealth panel">
+            <div id="telehealthPanelAlert" class="telehealth-panel-alert" style="display:none;padding:8px 12px;margin:0;font-size:11px;font-weight:600;background:#7f1d1d;color:#fecaca;border-bottom:1px solid #b91c1c;cursor:pointer;" title="Click to scroll to transcript">
+              <span id="telehealthPanelAlertText">⚠️ High-risk symptom detected</span>
+              <button type="button" id="telehealthPanelAlertDismiss" style="margin-left:8px;padding:2px 6px;font-size:10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fecaca;cursor:pointer;">Dismiss</button>
+            </div>
+            <div class="telehealth-right-panel-header">
+              <button type="button" class="telehealth-right-panel-tab active" data-tab="vitals">Vitals</button>
+              <button type="button" class="telehealth-right-panel-tab" data-tab="ai">AI</button>
+              <button type="button" class="telehealth-right-panel-tab" data-tab="chart">Chart</button>
+              <button type="button" class="telehealth-right-panel-tab" data-tab="actions">Actions</button>
+            </div>
+            <div class="telehealth-right-panel-body">
+              <div id="telehealthTabVitals" class="telehealth-tab-content">
+                <form id="telehealthVitalsForm" class="telehealth-vitals-form">
+                  <label>BP Systolic</label>
+                  <input type="number" name="blood_pressure_systolic" placeholder="120" min="60" max="250" step="1">
+                  <label>BP Diastolic</label>
+                  <input type="number" name="blood_pressure_diastolic" placeholder="80" min="40" max="150" step="1">
+                  <label>Heart Rate (bpm)</label>
+                  <input type="number" name="heart_rate" placeholder="72" min="30" max="200" step="1">
+                  <label>Temp (°F)</label>
+                  <input type="number" name="temperature_f" placeholder="98.6" min="90" max="110" step="0.1">
+                  <label>Glucose (mg/dL)</label>
+                  <input type="number" name="blood_sugar_mgdl" placeholder="Optional">
+                  <label>Notes</label>
+                  <textarea name="notes" rows="2" placeholder="Optional notes"></textarea>
+                  <button type="submit">Save Vitals</button>
+                </form>
+                <div id="telehealthVitalsSaved" style="font-size:11px;color:#4ade80;margin-top:8px;display:none;">Saved</div>
+              </div>
+              <div id="telehealthTabAi" class="telehealth-tab-content" style="display:none;">
+                <button type="button" id="telehealthGetSummaryBtn" class="telehealth-actions-btn primary">Get Live Summary</button>
+                <div id="telehealthSummaryText" style="margin-top:8px;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;"></div>
+              </div>
+              <div id="telehealthTabChart" class="telehealth-tab-content" style="display:none;">
+                <div id="telehealthChartContent">Loading chart…</div>
+              </div>
+              <div id="telehealthTabActions" class="telehealth-tab-content" style="display:none;">
+                <button type="button" id="telehealthEndAndClaimBtn" class="telehealth-actions-btn primary">End & Create Claim</button>
+                <button type="button" id="telehealthLeaveBtn" class="telehealth-actions-btn danger">Leave Call</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+        <div id="telehealthPanelBackdrop" class="telehealth-panel-backdrop" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div id="status" class="status" style="display: none;"></div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createWebVoiceTurnController } from '../shared/webVoiceTurnController.js';
+    const API_BASE = window.API_BASE || 'http://localhost:4000';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      mountProviderPage({
+        activeId: 'calendar',
+        eyebrow: 'Telehealth',
+        title: 'Video call'
+      });
+      const userData = (window.requireAuth && window.requireAuth()) || null;
+      if (userData) {
+        const nameEl = document.getElementById('userName');
+        const avatarEl = document.getElementById('userAvatar');
+        const roleEl = document.getElementById('userRole');
+        if (nameEl && userData.name) nameEl.textContent = userData.name;
+        if (avatarEl && userData.name) avatarEl.textContent = userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        if (roleEl && userData.role) roleEl.textContent = userData.role;
+      }
+      const params = new URLSearchParams(window.location.search);
+      const roomFromUrl = params.get('room');
+      const nameFromUrl = params.get('name');
+      const autoJoin = params.get('auto') === '1';
+
+      if (roomFromUrl) {
+        const roomInput = document.getElementById('roomInput');
+        roomInput.value = roomFromUrl;
+        roomInput.readOnly = roomFromUrl.startsWith('appt-') || roomFromUrl.startsWith('case-');
+        if (roomInput.readOnly) roomInput.title = 'Room is linked to an appointment';
+        const tip = document.getElementById('roomTip');
+        if (tip) tip.style.display = 'none';
+      }
+
+      if (nameFromUrl) {
+        const nameInput = document.getElementById('nameInput');
+        nameInput.value = nameFromUrl;
+      }
+
+      if (roomFromUrl && autoJoin) {
+        // Small delay to ensure inputs and listeners are ready before joining
+        setTimeout(() => {
+          joinRoom();
+        }, 100);
+      }
+    });
+
+    // Dynamic import for livekit-client (ESM from CDN) - wrap in async to avoid top-level await compatibility issues
+    const livekitModule = await import('https://cdn.jsdelivr.net/npm/livekit-client@2.17.1/dist/livekit-client.esm.mjs');
+    const { Room, RoomEvent, Track } = livekitModule;
+
+    let room = null;
+    let localVideoEnabled = true;
+    let localMicEnabled = true;
+    let currentRoomName = '';
+    let browserTranscriptController = null;
+    let browserTranscriptEnabled = true;
+    let assistantInterval = null;
+    let sseAbortController = null;
+    let sseReconnectTimeout = null;
+    let transcriptLines = [];
+    let transcriptPauseAutoscroll = false;
+
+    function isMobileViewport() {
+      return window.innerWidth <= 768;
+    }
+
+    function setClinicalPanelOpen(open) {
+      const panel = document.getElementById('telehealthRightPanel');
+      const backdrop = document.getElementById('telehealthPanelBackdrop');
+      const btn = document.getElementById('toggleClinicalPanelBtn');
+      if (!panel) return;
+      panel.classList.toggle('open', !!open);
+      if (backdrop) backdrop.classList.toggle('open', !!open);
+      if (btn) btn.classList.toggle('active', !!open);
+      if (backdrop) backdrop.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+
+    function setTranscriptOpen(open) {
+      const panel = document.getElementById('transcriptPanel');
+      const toggleBtn = document.getElementById('transcriptToggleBtn');
+      const dockBtn = document.getElementById('toggleTranscriptDockBtn');
+      if (!panel) return;
+      if (isMobileViewport()) {
+        panel.classList.toggle('open-mobile', !!open);
+      } else {
+        panel.classList.toggle('collapsed', !open);
+      }
+      if (toggleBtn) {
+        toggleBtn.textContent = open ? '⟨' : '⟩';
+        toggleBtn.title = open ? 'Collapse (T)' : 'Expand (T)';
+      }
+      if (dockBtn) dockBtn.classList.toggle('active', !!open);
+    }
+
+    function formatTs(ts) {
+      if (!ts) return '--:--';
+      try {
+        const d = new Date(ts);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch (_) { return '--:--'; }
+    }
+
+    function appendTranscriptLine(item) {
+      transcriptLines.push(item);
+      renderTranscriptList();
+    }
+
+    function shouldUseTranslatedTranscript() {
+      const toggle = document.getElementById('transcriptTranslateToggle');
+      return !!(toggle && toggle.checked);
+    }
+
+    function lineToHtml(item) {
+      const speaker = item.speaker || 'unknown';
+      const showTranslated = shouldUseTranslatedTranscript() && item.text_translated;
+      const text = showTranslated ? item.text_translated : (item.text || '');
+      const langBadge = item.detected_language ? `<span style="font-size:10px;color:#64748b;margin-left:6px;">${String(item.detected_language).toUpperCase()}</span>` : '';
+      return '<span class="transcript-ts">' + formatTs(item.ts) + '</span><span class="transcript-speaker">' + speaker + langBadge + '</span><span class="transcript-text">' + text.replace(/</g, '&lt;') + '</span>';
+    }
+
+    function renderTranscriptList() {
+      const list = document.getElementById('transcriptList');
+      if (!list) return;
+      const prevScrollBottom = list.scrollHeight - list.scrollTop - list.clientHeight;
+      list.innerHTML = '';
+      transcriptLines.forEach((item, idx) => {
+        const li = document.createElement('li');
+        li.className = 'transcript-line';
+        li.setAttribute('data-ts', item.ts || '');
+        li.setAttribute('data-speaker', item.speaker || 'unknown');
+        li.id = 'transcript-' + (item.id || idx + 1);
+        li.innerHTML = lineToHtml(item);
+        list.appendChild(li);
+      });
+      if (!transcriptPauseAutoscroll && prevScrollBottom < 80 && list.lastChild) {
+        list.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function loadTranscriptFromSession(transcript) {
+      if (!Array.isArray(transcript)) return;
+      transcript.forEach((t, i) => appendTranscriptLine({
+        id: 't-' + i,
+        ts: t.timestamp || t.ts,
+        speaker: t.speaker || 'unknown',
+        text: typeof t === 'string' ? t : (t.text || t.content || ''),
+        text_translated: typeof t === 'string' ? null : (t.text_translated || null),
+        detected_language: typeof t === 'string' ? null : (t.detected_language || null)
+      }));
+    }
+
+    function clearTranscript() {
+      transcriptLines = [];
+      const list = document.getElementById('transcriptList');
+      if (list) list.innerHTML = '';
+    }
+
+    function transcriptJumpToLatest() {
+      const list = document.getElementById('transcriptList');
+      if (list && list.lastChild) list.lastChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function transcriptCopy() {
+      const text = transcriptLines.map(t => `[${formatTs(t.ts)}] ${t.speaker}: ${t.text}`).join('\n');
+      navigator.clipboard.writeText(text || 'No transcript yet.').then(() => { /* ok */ }).catch(() => {});
+    }
+
+    function transcriptExport() {
+      const text = transcriptLines.map(t => `[${formatTs(t.ts)}] ${t.speaker}: ${t.text}`).join('\n');
+      const blob = new Blob([text || 'No transcript yet.'], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'transcript-' + (currentRoomName || 'export') + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function initTranscriptPanel() {
+      const panel = document.getElementById('transcriptPanel');
+      const toggleBtn = document.getElementById('transcriptToggleBtn');
+      const jumpBtn = document.getElementById('transcriptJumpBtn');
+      const pauseBtn = document.getElementById('transcriptPauseBtn');
+      const copyBtn = document.getElementById('transcriptCopyBtn');
+      const exportBtn = document.getElementById('transcriptExportBtn');
+      if (toggleBtn) toggleBtn.addEventListener('click', () => {
+        const openNow = isMobileViewport()
+          ? panel.classList.contains('open-mobile')
+          : !panel.classList.contains('collapsed');
+        setTranscriptOpen(!openNow);
+      });
+      if (jumpBtn) jumpBtn.addEventListener('click', transcriptJumpToLatest);
+      if (pauseBtn) pauseBtn.addEventListener('click', () => {
+        transcriptPauseAutoscroll = !transcriptPauseAutoscroll;
+        pauseBtn.textContent = transcriptPauseAutoscroll ? 'Resume' : 'Pause';
+      });
+      if (copyBtn) copyBtn.addEventListener('click', transcriptCopy);
+      if (exportBtn) exportBtn.addEventListener('click', transcriptExport);
+      const translateToggle = document.getElementById('transcriptTranslateToggle');
+      if (translateToggle) {
+        translateToggle.checked = localStorage.getItem('videoSomoTranslate') === 'true';
+        translateToggle.addEventListener('change', async () => {
+          localStorage.setItem('videoSomoTranslate', translateToggle.checked);
+          renderTranscriptList();
+          if (!currentRoomName) return;
+          try {
+            await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/transcript-translation`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                enabled: !!translateToggle.checked,
+                target_language: 'en'
+              })
+            });
+          } catch (_) {}
+        });
+      }
+      document.addEventListener('keydown', (e) => {
+        if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && !e.altKey && panel) {
+          const openNow = isMobileViewport()
+            ? panel.classList.contains('open-mobile')
+            : !panel.classList.contains('collapsed');
+          setTranscriptOpen(!openNow);
+        }
+      });
+    }
+    initTranscriptPanel();
+
+    function initVideoWorkspaceControls() {
+      const transcriptBtn = document.getElementById('toggleTranscriptDockBtn');
+      const clinicalBtn = document.getElementById('toggleClinicalPanelBtn');
+      const backdrop = document.getElementById('telehealthPanelBackdrop');
+
+      if (transcriptBtn) {
+        transcriptBtn.addEventListener('click', () => {
+          const panel = document.getElementById('transcriptPanel');
+          if (!panel) return;
+          const openNow = isMobileViewport()
+            ? panel.classList.contains('open-mobile')
+            : !panel.classList.contains('collapsed');
+          setTranscriptOpen(!openNow);
+        });
+      }
+      if (clinicalBtn) {
+        clinicalBtn.addEventListener('click', () => {
+          const panel = document.getElementById('telehealthRightPanel');
+          if (!panel) return;
+          setClinicalPanelOpen(!panel.classList.contains('open'));
+        });
+      }
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          setClinicalPanelOpen(false);
+          setTranscriptOpen(false);
+        });
+      }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          setClinicalPanelOpen(false);
+          setTranscriptOpen(false);
+        }
+      });
+      window.addEventListener('resize', () => {
+        const panel = document.getElementById('transcriptPanel');
+        if (!panel) return;
+        if (isMobileViewport()) {
+          panel.classList.remove('collapsed');
+        } else {
+          panel.classList.remove('open-mobile');
+        }
+      });
+    }
+    initVideoWorkspaceControls();
+
+    function initTelehealthRightPanel() {
+      const panel = document.getElementById('telehealthRightPanel');
+      if (!panel) return;
+      const tabs = panel.querySelectorAll('.telehealth-right-panel-tab');
+      const contents = {
+        vitals: document.getElementById('telehealthTabVitals'),
+        ai: document.getElementById('telehealthTabAi'),
+        chart: document.getElementById('telehealthTabChart'),
+        actions: document.getElementById('telehealthTabActions')
+      };
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const name = tab.getAttribute('data-tab');
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          Object.keys(contents).forEach(k => {
+            const el = contents[k];
+            if (el) el.style.display = (k === name) ? 'block' : 'none';
+          });
+          if (name === 'chart' && currentRoomName) loadTelehealthChart(currentRoomName);
+        });
+      });
+      const vitalsForm = document.getElementById('telehealthVitalsForm');
+      if (vitalsForm) {
+        vitalsForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (!currentRoomName) return;
+          const fd = new FormData(vitalsForm);
+          const body = {};
+          ['blood_pressure_systolic','blood_pressure_diastolic','heart_rate','temperature_f','blood_sugar_mgdl','notes'].forEach(k => {
+            const v = fd.get(k);
+            if (v != null && v !== '') body[k] = isNaN(Number(v)) ? v : Number(v);
+          });
+          try {
+            const res = await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/vitals`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            const json = await res.json();
+            if (json.success) {
+              const saved = document.getElementById('telehealthVitalsSaved');
+              if (saved) { saved.style.display = 'block'; setTimeout(() => { saved.style.display = 'none'; }, 2000); }
+            }
+          } catch (err) { console.warn('[telehealth] vitals save error', err); }
+        });
+      }
+      document.getElementById('telehealthGetSummaryBtn')?.addEventListener('click', async () => {
+        if (!currentRoomName) return;
+        const btn = document.getElementById('telehealthGetSummaryBtn');
+        const out = document.getElementById('telehealthSummaryText');
+        if (btn) btn.disabled = true;
+        if (out) out.textContent = 'Loading…';
+        try {
+          const res = await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/summary`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          const json = await res.json();
+          if (out) out.textContent = json.summary || json.error || 'No summary available (no transcript yet)';
+        } catch (err) {
+          if (out) out.textContent = 'Failed to load summary';
+        }
+        if (btn) btn.disabled = false;
+      });
+      document.getElementById('telehealthEndAndClaimBtn')?.addEventListener('click', () => {
+        if (currentRoomName && currentRoomName.startsWith('appt-')) handleEndAndCreateClaim(currentRoomName);
+      });
+      document.getElementById('telehealthLeaveBtn')?.addEventListener('click', () => {
+        document.getElementById('leaveBtn')?.click();
+      });
+    }
+    initTelehealthRightPanel();
+
+    async function loadTelehealthChart(roomName) {
+      const el = document.getElementById('telehealthChartContent');
+      if (!el) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(roomName)}/patient-chart`, { credentials: 'include' });
+        const json = await res.json();
+        if (!json.success || !json.extracts || json.extracts.length === 0) {
+          el.innerHTML = '<div style="color:#94a3b8;font-size:11px;">No patient documents on file</div>';
+          return;
+        }
+        el.innerHTML = json.extracts.map((e, i) =>
+          '<div class="telehealth-chart-excerpt">' + (e.excerpt || '').replace(/</g, '&lt;').slice(0, 800) + (e.excerpt && e.excerpt.length > 800 ? '…' : '') + '</div>'
+        ).join('');
+      } catch (err) {
+        el.innerHTML = '<div style="color:#f87171;">Failed to load chart</div>';
+      }
+    }
+
+    function dismissRiskBanners() {
+      const rb = document.getElementById('riskBanner');
+      const pa = document.getElementById('telehealthPanelAlert');
+      if (rb) rb.style.display = 'none';
+      if (pa) pa.style.display = 'none';
+    }
+    document.getElementById('riskBannerDismiss')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissRiskBanners();
+    });
+    document.getElementById('telehealthPanelAlertDismiss')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissRiskBanners();
+    });
+
+    function showStatus(msg, type = '') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+      el.style.display = 'block';
+    }
+
+    async function sendClientTranscript(text) {
+      if (!currentRoomName || !text) return;
+      try {
+        await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/client-transcript`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            speaker: 'provider',
+            participant_identity: 'web-provider',
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (_) {}
+    }
+
+    async function sendThreadEvent(event) {
+      if (!currentRoomName || !event?.text) return;
+      try {
+        await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/thread-event`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(event)
+        });
+      } catch (_) {}
+    }
+
+    function stopBrowserAutoTranscription() {
+      if (!browserTranscriptController) return;
+      browserTranscriptController.stop();
+      browserTranscriptController = null;
+    }
+
+    function startBrowserAutoTranscription() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR || !browserTranscriptEnabled || !currentRoomName || !localMicEnabled) return;
+      if (!browserTranscriptController) {
+        browserTranscriptController = createWebVoiceTurnController({
+          lang: 'en-US',
+          onFinal: async (text) => {
+            appendTranscriptLine({
+              id: 'local-' + Date.now(),
+              ts: new Date().toISOString(),
+              speaker: 'provider',
+              text
+            });
+            await sendClientTranscript(text);
+          },
+          onFatalError: () => {}
+        });
+      }
+      browserTranscriptController?.start();
+    }
+
+    function hideStatus() {
+      document.getElementById('status').style.display = 'none';
+    }
+
+    async function fetchToken(roomName, identity, name) {
+      const body = { room: roomName, identity, name };
+      if (roomName.startsWith('appt-')) {
+        const appointmentId = roomName.replace(/^appt-/, '');
+        body.appointment_id = appointmentId;
+      }
+      const res = await fetch(`${API_BASE}/api/livekit/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to get token');
+      return data;
+    }
+
+    function showRiskBanner(risk) {
+      const banner = document.getElementById('riskBanner');
+      const riskPill = document.getElementById('assistantRiskPill');
+      const panelAlert = document.getElementById('telehealthPanelAlert');
+      const panelAlertText = document.getElementById('telehealthPanelAlertText');
+      if (riskPill) {
+        riskPill.style.display = 'inline';
+        riskPill.className = 'risk-pill risk-' + (risk?.level || 'low');
+        riskPill.textContent = 'Risk: ' + (risk?.level || 'low');
+      }
+      if (!risk || !risk.level || risk.level === 'low') {
+        if (banner) banner.style.display = 'none';
+        if (panelAlert) panelAlert.style.display = 'none';
+        return;
+      }
+      const msg = (risk.flags && risk.flags[0]) ? `⚠️ High-risk: ${(risk.flags[0].rule_id || '').replace(/_/g, ' ')} detected` : '⚠️ High-risk symptom detected';
+      const textEl = document.getElementById('riskBannerText');
+      if (textEl) textEl.textContent = msg;
+      if (textEl) textEl.onclick = () => transcriptJumpToLatest();
+      if (banner) {
+        banner.style.display = 'flex';
+        banner.style.background = risk.level === 'high' ? '#7f1d1d' : '#854d0e';
+        banner.style.color = risk.level === 'high' ? '#fecaca' : '#fef3c7';
+        banner.onclick = () => transcriptJumpToLatest();
+      }
+      if (panelAlert && panelAlertText) {
+        panelAlertText.textContent = msg;
+        panelAlert.style.display = 'block';
+        panelAlert.style.background = risk.level === 'high' ? '#7f1d1d' : '#854d0e';
+        panelAlert.style.color = risk.level === 'high' ? '#fecaca' : '#fef3c7';
+        panelAlert.onclick = () => transcriptJumpToLatest();
+      }
+    }
+
+    function setSseStatus(connected) {
+      const badge = document.getElementById('sseStatusBadge');
+      if (!badge) return;
+      if (connected) {
+        badge.style.background = '#166534';
+        badge.style.color = '#dcfce7';
+        badge.textContent = '● Live';
+        badge.title = 'Real-time updates connected';
+      } else {
+        badge.style.background = '#991b1b';
+        badge.style.color = '#fecaca';
+        badge.textContent = '● Disconnected';
+        badge.title = 'Real-time stream dropped – reconnecting...';
+      }
+    }
+
+    function applyAssistantUpdate(payload) {
+      const statusBadge = document.getElementById('assistantStatusBadge');
+      const statusPill = document.getElementById('assistantStatusPill');
+      const riskPill = document.getElementById('assistantRiskPill');
+      const s = payload.status || 'listening';
+      if (statusBadge) statusBadge.textContent = s === 'listening' ? 'Listening' : s === 'processing' ? 'Processing…' : s === 'codes_updated' ? 'Codes' : s;
+      if (statusPill) {
+        statusPill.setAttribute('data-status', s);
+        statusPill.textContent = s === 'listening' ? 'Listening' : s === 'processing' ? 'Processing' : s === 'codes_updated' ? 'Codes updated' : 'Idle';
+      }
+      if (riskPill && payload.risk) {
+        riskPill.style.display = 'inline';
+        riskPill.className = 'risk-pill risk-' + (payload.risk.level || 'low');
+        riskPill.textContent = 'Risk: ' + (payload.risk.level || 'low');
+      }
+      const codesEl = document.getElementById('assistantCodes');
+      if (payload.codes && codesEl) {
+        codesEl.innerHTML = '';
+        const codes = (payload.codes.icd10 || []).slice(0, 5);
+        codes.forEach((c) => {
+          const code = (c.code || c) + '';
+          const wrap = document.createElement('span');
+          wrap.className = 'assistant-chip-wrap';
+              wrap.innerHTML = '<span class="assistant-chip" title="Click to jump to transcript">' + code.replace(/</g, '&lt;') + '</span><button type="button" class="confirm-btn" title="Confirm">✓</button><button type="button" class="dismiss-btn" title="Dismiss">✕</button>';
+              wrap.querySelector('.assistant-chip').onclick = () => transcriptJumpToLatest();
+              wrap.querySelector('.confirm-btn').onclick = () => { wrap.style.opacity = '0.6'; wrap.querySelector('.confirm-btn').style.color = '#4ade80'; };
+              wrap.querySelector('.dismiss-btn').onclick = () => { wrap.style.display = 'none'; };
+              codesEl.appendChild(wrap);
+            });
+          }
+      const yoloEl = document.getElementById('assistantYolo');
+      if (payload.yolo_findings && yoloEl) {
+        if (payload.yolo_findings.length > 0) {
+          yoloEl.innerHTML = payload.yolo_findings.map(det => {
+            const confPercent = Math.round((det.confidence || 0) * 100);
+            return `<div style="margin-bottom:2px;"><span style="color:#22c55e;font-weight:600;">${det.finding || det.class || 'unknown'}</span> <span style="color:#94a3b8;font-size:9px;">(${confPercent}%)</span></div>`;
+          }).join('');
+        }
+      }
+      const updatedEl = document.getElementById('assistantUpdatedAt');
+      if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function startSseAndAssistant() {
+      const overlay = document.getElementById('assistantOverlay');
+      if (!overlay || !currentRoomName) return;
+      overlay.style.display = 'block';
+      const statusBadge = document.getElementById('assistantStatusBadge');
+      const roomLabel = document.getElementById('assistantRoomLabel');
+      if (roomLabel) roomLabel.textContent = 'Room: ' + currentRoomName;
+      if (statusBadge) statusBadge.textContent = 'Listening';
+
+      const sseUrl = `${API_BASE}/api/video-consult/sse/${encodeURIComponent(currentRoomName)}`;
+      const translateEnabled = localStorage.getItem('videoSomoTranslate') === 'true';
+      try {
+        await fetch(`${API_BASE}/api/video-consult/rooms/${encodeURIComponent(currentRoomName)}/transcript-translation`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: translateEnabled, target_language: 'en' })
+        });
+      } catch (_) {}
+
+      function connectSse() {
+        if (sseAbortController) sseAbortController.abort();
+        sseAbortController = new AbortController();
+        fetch(sseUrl, { credentials: 'include', signal: sseAbortController.signal })
+          .then(res => {
+            if (!res.ok) throw new Error(res.status);
+            setSseStatus(true);
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buf = '';
+            function read() {
+              reader.read().then(({ done, value }) => {
+                if (done) { setSseStatus(false); reconnectSse(); return; }
+                buf += decoder.decode(value, { stream: true });
+                const lines = buf.split('\n');
+                buf = lines.pop() || '';
+                let eventType = '';
+                let data = '';
+                for (const line of lines) {
+                  if (line.startsWith('event:')) eventType = line.slice(6).trim();
+                  else if (line.startsWith('data:')) data = line.slice(5).trim();
+                  else if (line === '' && data) {
+                    try {
+                      const obj = JSON.parse(data);
+                      const ev = obj.event || eventType;
+                      const pl = obj.payload || {};
+                      if (ev === 'assistant_update') {
+                        applyAssistantUpdate(pl);
+                        if (pl.transcript_delta) (pl.transcript_delta || []).forEach((item) => appendTranscriptLine(item));
+                        if (pl.risk) showRiskBanner(pl.risk);
+                      }
+                      else if (ev === 'transcript_delta' && pl.transcript_delta) {
+                        (pl.transcript_delta || []).forEach((item) => appendTranscriptLine(item));
+                      }
+                      else if (ev === 'codes_updated' && pl) applyAssistantUpdate({ codes: pl });
+                      else if (ev === 'risk_alert' && pl) showRiskBanner(pl);
+                      else if (ev === 'connected' || ev === 'heartbeat') setSseStatus(true);
+                    } catch (_) {}
+                    data = '';
+                  }
+                }
+                read();
+              }).catch(() => { setSseStatus(false); reconnectSse(); });
+            }
+            read();
+          })
+          .catch(() => { setSseStatus(false); reconnectSse(); });
+      }
+
+      function reconnectSse() {
+        if (!currentRoomName) return;
+        sseReconnectTimeout = setTimeout(connectSse, 3000);
+      }
+      connectSse();
+
+      async function fetchAssistant() {
+        try {
+          const res = await fetch(`${API_BASE}/api/video-consult/assistant/${encodeURIComponent(currentRoomName)}`, { credentials: 'include' });
+          const json = await res.json();
+          if (!json.success) return;
+          const view = json.view || {};
+          const summaryEl = document.getElementById('assistantSummary');
+          const problemsEl = document.getElementById('assistantProblems');
+          const followupsEl = document.getElementById('assistantFollowups');
+          const codesEl = document.getElementById('assistantCodes');
+          const yoloEl = document.getElementById('assistantYolo');
+          const visionHandoffEl = document.getElementById('assistantVisionHandoff');
+          const visionChecklistEl = document.getElementById('assistantVisionChecklist');
+          const visionFramesEl = document.getElementById('assistantVisionFrames');
+          const updatedEl = document.getElementById('assistantUpdatedAt');
+          if (summaryEl) {
+            const cc = view.chief_complaint ? `Chief complaint: ${view.chief_complaint}` : '';
+            const sf = Array.isArray(view.safety_flags) && view.safety_flags.length
+              ? `Safety: ${view.safety_flags.slice(0, 3).join(', ')}`
+              : '';
+            summaryEl.textContent = [cc, sf, view.summary || ''].filter(Boolean).join(' | ');
+          }
+          if (problemsEl) {
+            problemsEl.innerHTML = '';
+            (view.key_problems || []).slice(0, 4).forEach((p) => { const li = document.createElement('li'); li.textContent = '• ' + p; problemsEl.appendChild(li); });
+            (view.doc_citations || []).slice(0, 2).forEach((d) => {
+              const li = document.createElement('li');
+              const docId = d.doc_id || 'doc';
+              const title = d.doc_title || 'document';
+              const reason = d.reason ? ` (${d.reason})` : '';
+              li.textContent = `• Source ${docId}: ${title}${reason}`;
+              problemsEl.appendChild(li);
+            });
+          }
+          if (followupsEl) {
+            followupsEl.innerHTML = '';
+            (view.followups || []).slice(0, 4).forEach((q) => { const li = document.createElement('li'); li.textContent = '• ' + q; followupsEl.appendChild(li); });
+          }
+          if (codesEl) {
+            codesEl.innerHTML = '';
+            ((view.codes && view.codes.icd10) || []).slice(0, 5).forEach((c) => {
+              const code = (c.code || c) + '';
+              const wrap = document.createElement('span');
+              wrap.className = 'assistant-chip-wrap';
+              wrap.innerHTML = '<span class="assistant-chip" title="Click to jump to transcript">' + code.replace(/</g, '&lt;') + '</span><button type="button" class="confirm-btn" title="Confirm">✓</button><button type="button" class="dismiss-btn" title="Dismiss">✕</button>';
+              wrap.querySelector('.assistant-chip').onclick = () => transcriptJumpToLatest();
+              wrap.querySelector('.confirm-btn').onclick = () => { wrap.style.opacity = '0.6'; wrap.querySelector('.confirm-btn').style.color = '#4ade80'; };
+              wrap.querySelector('.dismiss-btn').onclick = () => { wrap.style.display = 'none'; };
+              codesEl.appendChild(wrap);
+            });
+          }
+          if (yoloEl) {
+            const dets = view.yolo_tracking || [];
+            if (dets.length > 0) yoloEl.innerHTML = dets.map(d => `<div style="margin-bottom:2px;display:flex;align-items:center;gap:4px;"><span style="color:#22c55e;font-weight:600;">${(d.finding || d.class || 'unknown').replace(/</g, '&lt;')}</span> <span style="color:#94a3b8;font-size:9px;">(${Math.round((d.confidence||0)*100)}%)</span><button type="button" class="confirm-btn" style="font-size:9px;" title="Confirm">✓</button><button type="button" class="dismiss-btn" style="font-size:9px;" title="Dismiss">✕</button></div>`).join('');
+            else if (view.yolo_frame_count > 0) yoloEl.innerHTML = '<div style="color:#94a3b8;">Processing frames…</div>';
+            else yoloEl.innerHTML = '<div style="color:#94a3b8;">No visual detections yet…</div>';
+          }
+          if (visionHandoffEl) {
+            const vh = view.vision_handoff || {};
+            const coverage = vh.region_coverage_map || {};
+            const quality = Array.isArray(vh.quality_notes) ? vh.quality_notes : [];
+            const reviewFlags = Array.isArray(vh.review_required_flags) ? vh.review_required_flags : [];
+            const checklistRows = Array.isArray(vh.checklist_rows) ? vh.checklist_rows : [];
+            const acceptedFrames = Array.isArray(vh.accepted_frames) ? vh.accepted_frames : [];
+            const entries = Object.entries(coverage);
+            if (!entries.length) {
+              visionHandoffEl.innerHTML = '<div style="color:#94a3b8;">No capture checklist yet...</div>';
+            } else {
+              const coverageHtml = entries
+                .slice(0, 8)
+                .map(([k, v]) => `<div><span style="color:#e2e8f0;">${String(k).replace(/_/g, ' ')}</span>: <span style="color:#93c5fd;">${String(v)}</span></div>`)
+                .join('');
+              const qualityHtml = quality
+                .slice(0, 4)
+                .map((q) => `<div><span style="color:#e2e8f0;">${String(q.region || '').replace(/_/g, ' ')}</span> <span style="color:#94a3b8;">(${q.quality_band || 'n/a'} ${q.quality_score ?? ''})</span></div>`)
+                .join('');
+              const reviewHtml = reviewFlags.length
+                ? `<div style="color:#fbbf24;">Review required: ${reviewFlags.map((r) => String(r).replace(/_/g, ' ')).join(', ')}</div>`
+                : '';
+              visionHandoffEl.innerHTML = `${coverageHtml}${qualityHtml}${reviewHtml}`;
+            }
+            if (visionChecklistEl) {
+              if (!checklistRows.length) {
+                visionChecklistEl.innerHTML = '<div style="color:#94a3b8;">No region checklist rows yet...</div>';
+              } else {
+                visionChecklistEl.innerHTML = checklistRows
+                  .slice(0, 10)
+                  .map((row) => {
+                    const region = String(row.requested_region || 'other').replace(/_/g, ' ');
+                    const status = String(row.status || 'pending');
+                    const attempts = Number(row.attempts || 0);
+                    const review = row.provider_review_required ? ' | review' : '';
+                    return `<div>${region}: <span style="color:#93c5fd;">${status}</span> | tries=${attempts}${review}</div>`;
+                  })
+                  .join('');
+              }
+            }
+            if (visionFramesEl) {
+              if (!acceptedFrames.length) {
+                visionFramesEl.innerHTML = '<div style="color:#94a3b8;">No accepted frames yet...</div>';
+              } else {
+                visionFramesEl.innerHTML = acceptedFrames
+                  .slice(0, 8)
+                  .map((f) => {
+                    const region = String(f.requested_region || 'other').replace(/_/g, ' ');
+                    const band = f.quality_band || 'n/a';
+                    const score = f.quality_score == null ? '-' : Number(f.quality_score).toFixed(2);
+                    const url = String(f.frame_url || '');
+                    const safeUrl = url.replace(/"/g, '&quot;');
+                    return `<div>${region}: ${band} (${score}) ${url ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#86efac;">open</a>` : ''}</div>`;
+                  })
+                  .join('');
+              }
+            }
+          }
+          if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) { console.warn('[assistantOverlay] fetch error', e); }
+      }
+      fetchAssistant();
+      clearTranscript();
+      try {
+        const sessionRes = await fetch(`${API_BASE}/api/video-consult/session/${encodeURIComponent(currentRoomName)}`, { credentials: 'include' });
+        const sessionJson = await sessionRes.json();
+        if (sessionJson.transcript && Array.isArray(sessionJson.transcript)) loadTranscriptFromSession(sessionJson.transcript);
+      } catch (_) {}
+      if (assistantInterval) clearInterval(assistantInterval);
+      assistantInterval = setInterval(fetchAssistant, 15000);
+    }
+
+    async function loadCaseReport(roomName) {
+      const panel = document.getElementById('caseReportPanel');
+      const body = document.getElementById('caseReportBody');
+      if (!panel || !body) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/provider/case-report?room=${encodeURIComponent(roomName)}`, { credentials: 'include' });
+        const json = await res.json();
+        if (!json.success || !json.case_report) {
+          panel.style.display = 'none';
+          return;
+        }
+        const cr = json.case_report;
+        let html = '';
+        if (cr.patient_summary) {
+          html += '<div class="case-report-section"><div class="case-report-section-title">Patient</div><div>' + (cr.patient_summary || '').replace(/</g, '&lt;') + '</div></div>';
+        }
+        if (cr.opqrst) {
+          const opqrstStr = typeof cr.opqrst === 'string' ? cr.opqrst : JSON.stringify(cr.opqrst);
+          html += '<div class="case-report-section"><div class="case-report-section-title">OPQRST</div><div class="case-report-opqrst">' + opqrstStr.replace(/</g, '&lt;') + '</div></div>';
+        }
+        if (cr.suggested_icd10 && cr.suggested_icd10.length > 0) {
+          html += '<div class="case-report-section"><div class="case-report-section-title">Suggested ICD-10</div><div class="case-report-icd">';
+          cr.suggested_icd10.forEach(c => {
+            const code = (typeof c === 'object' && c.code) ? c.code : c;
+            html += '<span>' + String(code).replace(/</g, '&lt;') + '</span>';
+          });
+          html += '</div></div>';
+        }
+        if (!html) html = '<div class="case-report-empty">No pre-visit case data yet</div>';
+        body.innerHTML = html;
+        panel.style.display = 'flex';
+      } catch (e) {
+        panel.style.display = 'none';
+      }
+    }
+
+    function stopAssistantPolling() {
+      if (assistantInterval) { clearInterval(assistantInterval); assistantInterval = null; }
+      if (sseReconnectTimeout) { clearTimeout(sseReconnectTimeout); sseReconnectTimeout = null; }
+      if (sseAbortController) { sseAbortController.abort(); sseAbortController = null; }
+      setSseStatus(false);
+      clearTranscript();
+      dismissRiskBanners();
+      const overlay = document.getElementById('assistantOverlay');
+      if (overlay) overlay.style.display = 'none';
+      const casePanel = document.getElementById('caseReportPanel');
+      if (casePanel) casePanel.style.display = 'none';
+    }
+
+    function attachExistingRemoteVideos(r) {
+      if (!r) return;
+      const container = document.getElementById('remoteVideos');
+      if (!container) return;
+      r.remoteParticipants.forEach((participant) => {
+        participant.trackPublications.forEach((publication) => {
+          if (publication.kind !== 'video' || !publication.track) return;
+          const videoId = 'remote-' + participant.identity;
+          let div = document.getElementById(videoId);
+          if (!div) {
+            div = document.createElement('div');
+            div.className = 'remote-video';
+            div.id = videoId;
+            div.innerHTML = '<video autoplay playsinline></video><span class="label">' + (participant.name || participant.identity) + '</span>';
+            container.appendChild(div);
+          }
+          const videoEl = div.querySelector('video');
+          if (videoEl) {
+            publication.track.attach(videoEl);
+            videoEl.play().catch(() => {});
+          }
+        });
+      });
+      if (r) updateConnectionStatus(r.remoteParticipants.size);
+    }
+
+    async function joinRoom() {
+      const roomInput = document.getElementById('roomInput');
+      const nameInput = document.getElementById('nameInput');
+      const roomErrorEl = document.getElementById('roomError');
+      const roomName = roomInput.value.trim();
+      const name = nameInput.value.trim() || 'Participant';
+
+      if (!roomName) {
+        if (roomErrorEl) {
+          roomErrorEl.style.display = 'block';
+          roomErrorEl.textContent = 'Enter a room name. To join a patient\'s visit: open Calendar, click the appointment, then Join — the room will be filled in.';
+        }
+        return;
+      }
+      if (roomErrorEl) { roomErrorEl.style.display = 'none'; roomErrorEl.textContent = ''; }
+      roomInput.value = roomName;
+
+      showStatus('Connecting...', 'connecting');
+      document.getElementById('joinBtn').disabled = true;
+
+      try {
+        const { token, url } = await fetchToken(roomName, 'user-' + Date.now(), name);
+
+        room = new Room({
+          adaptiveStream: true,
+          dynacast: true
+        });
+
+        room.on(RoomEvent.Connected, () => {
+          currentRoomName = roomName;
+          hideStatus();
+          showStatus('Connected to ' + roomName, '');
+          document.getElementById('joinSection').style.display = 'none';
+          document.getElementById('videoSection').style.display = 'block';
+          updateConnectionStatus(room ? room.remoteParticipants.size : 0);
+          if (roomName.startsWith('appt-')) {
+            document.getElementById('endAndClaimBtn').style.display = 'inline-block';
+            document.getElementById('endAndClaimBtn').onclick = () => handleEndAndCreateClaim(roomName);
+          }
+          enableCameraAndMic();
+          attachExistingRemoteVideos(room);
+          startSseAndAssistant();
+          startBrowserAutoTranscription();
+          loadCaseReport(roomName);
+          setClinicalPanelOpen(false);
+          setTranscriptOpen(false);
+        });
+
+        room.on(RoomEvent.Disconnected, () => {
+          currentRoomName = '';
+          document.getElementById('endAndClaimBtn').style.display = 'none';
+          showStatus('Disconnected', 'error');
+          document.getElementById('joinSection').style.display = 'block';
+          document.getElementById('videoSection').style.display = 'none';
+          document.getElementById('joinBtn').disabled = false;
+          stopAssistantPolling();
+          stopBrowserAutoTranscription();
+          setClinicalPanelOpen(false);
+          setTranscriptOpen(false);
+        });
+
+        room.on(RoomEvent.ParticipantConnected, (participant) => {
+          console.log('[Video] Remote participant joined:', participant.identity, participant.name);
+        });
+
+        room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          // Only create video elements for video tracks (camera, screen share)
+          if (publication.kind !== 'video') return;
+          console.log('[Video] Remote video track subscribed:', participant.identity);
+
+          const container = document.getElementById('remoteVideos');
+          const videoId = 'remote-' + participant.identity;
+          
+          // Check if video element already exists for this participant
+          let div = document.getElementById(videoId);
+          if (!div) {
+            // Create new video element for this participant
+            div = document.createElement('div');
+            div.className = 'remote-video';
+            div.id = videoId;
+            div.innerHTML = '<video autoplay playsinline></video><span class="label">' + (participant.name || participant.identity) + '</span>';
+            container.appendChild(div);
+          }
+          
+          // Attach the track to the video element and ensure playback (Safari)
+          const videoEl = div.querySelector('video');
+          if (videoEl) {
+            track.attach(videoEl);
+            videoEl.play().catch(() => {});
+          }
+          
+          if (room) updateConnectionStatus(room.remoteParticipants.size);
+        });
+
+        room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+          // Only remove video elements for video tracks
+          if (publication.kind === 'video') {
+            const el = document.getElementById('remote-' + participant.identity);
+            if (el) el.remove();
+          }
+          if (room) updateConnectionStatus(room.remoteParticipants.size);
+        });
+
+        await room.connect(url, token);
+      } catch (err) {
+        showStatus('Error: ' + err.message, 'error');
+        document.getElementById('joinBtn').disabled = false;
+      }
+    }
+
+    async function enableCameraAndMic() {
+      if (!room) return;
+      try {
+        await room.localParticipant.enableCameraAndMicrophone();
+      } catch (e) {
+        console.warn('Camera/mic enable failed:', e);
+      }
+      const track = room.localParticipant.getTrackPublication(Track.Source.Camera);
+      if (track?.track) {
+        document.getElementById('placeholder').style.display = 'none';
+        const localEl = document.getElementById('localVideo');
+        localEl.style.display = 'block';
+        track.track.attach(document.getElementById('localVideoEl'));
+      }
+      // Keep button labels in sync (camera and mic are on after enable)
+      localVideoEnabled = true;
+      localMicEnabled = true;
+      const tv = document.getElementById('toggleVideoBtn');
+      const tm = document.getElementById('toggleMicBtn');
+      if (tv) tv.textContent = 'Stop Video';
+      if (tm) tm.textContent = 'Mute';
+    }
+
+    function toggleVideo() {
+      if (!room) return;
+      localVideoEnabled = !localVideoEnabled;
+      room.localParticipant.setCameraEnabled(localVideoEnabled);
+      document.getElementById('toggleVideoBtn').textContent = localVideoEnabled ? 'Stop Video' : 'Start Video';
+    }
+
+    function toggleMic() {
+      if (!room) return;
+      localMicEnabled = !localMicEnabled;
+      room.localParticipant.setMicrophoneEnabled(localMicEnabled);
+      document.getElementById('toggleMicBtn').textContent = localMicEnabled ? 'Mute' : 'Unmute';
+      if (localMicEnabled) startBrowserAutoTranscription();
+      else stopBrowserAutoTranscription();
+    }
+
+    function leaveCall() {
+      if (room) {
+        room.disconnect();
+        room = null;
+      }
+      stopBrowserAutoTranscription();
+    }
+
+    function updateConnectionStatus(remoteCount) {
+      const el = document.getElementById('connectionStatus');
+      if (!el) return;
+      if (remoteCount === 0) el.textContent = '⏳ Waiting for participant to join…';
+      else el.textContent = '✓ Connected with ' + remoteCount + ' participant' + (remoteCount > 1 ? 's' : '');
+    }
+
+    async function handleEndAndCreateClaim(roomName) {
+      if (!roomName.startsWith('appt-')) return;
+      const appointmentId = roomName.replace(/^appt-/, '');
+      const endBtn = document.getElementById('endAndClaimBtn');
+      if (endBtn) { endBtn.disabled = true; endBtn.textContent = 'Ending…'; }
+      try {
+        const res = await fetch(`${API_BASE}/api/video-consult/end-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ room: roomName })
+        });
+        const data = await res.json();
+        let codes = [];
+        if (data.suggested_codes?.icd10?.length) codes = data.suggested_codes.icd10;
+        else {
+          document.querySelectorAll('#assistantCodes .assistant-chip-wrap').forEach((wrap) => {
+            if (wrap.style.display !== 'none') {
+              const chip = wrap.querySelector('.assistant-chip');
+              if (chip) { const t = chip.textContent?.trim(); if (t) codes.push(t); }
+            }
+          });
+        }
+        if (room) { room.disconnect(); room = null; }
+        const base = (typeof window.resolveBusinessPath === 'function')
+          ? window.location.origin + window.resolveBusinessPath('billing.html')
+          : window.location.origin + '/business/billing.html';
+        let url = base + '?section=scan&appointment_id=' + encodeURIComponent(appointmentId);
+        if (codes.length) url += '&suggested_codes=' + encodeURIComponent(codes.join(','));
+        window.location.href = url;
+      } catch (e) {
+        console.error('End session failed:', e);
+        if (endBtn) { endBtn.disabled = false; endBtn.textContent = 'End & Create Claim'; }
+        alert('Failed to end session. You can still go to Billing manually.');
+      }
+    }
+
+    document.getElementById('joinBtn').addEventListener('click', joinRoom);
+    document.getElementById('attachThreadBtn')?.addEventListener('click', () => {
+      document.getElementById('threadFileInput')?.click();
+    });
+    document.getElementById('threadFileInput')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target?.files || []);
+      if (!files.length || !currentRoomName) return;
+      for (const f of files.slice(0, 6)) {
+        const msg = `[Attachment] ${f.name} (${f.type || 'application/octet-stream'}, ${Math.max(1, Math.round(f.size / 1024))}KB)`;
+        appendTranscriptLine({
+          id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          ts: new Date().toISOString(),
+          speaker: 'system',
+          text: msg
+        });
+        await sendThreadEvent({
+          type: 'attachment',
+          text: msg,
+          file_name: f.name,
+          mime_type: f.type || null,
+          actor: 'provider'
+        });
+      }
+      e.target.value = '';
+    });
+    document.getElementById('toggleVideoBtn').addEventListener('click', toggleVideo);
+    document.getElementById('toggleMicBtn').addEventListener('click', toggleMic);
+    document.getElementById('leaveBtn').addEventListener('click', leaveCall);
+  </script>
+</body>
+</html>

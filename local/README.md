@@ -1,0 +1,68 @@
+# Local-only credentials (not committed)
+
+## GCP CLI / ADC
+
+For `somo-callsomo`, use **`richard@callsomo.com`** for `gcloud` and for Application Default Credentials (ADC). See [CALLSOMO_GCP_CUTOVER.md](../docs/runbooks/CALLSOMO_GCP_CUTOVER.md#local-gcloud-and-adc).
+
+## Database path (read first)
+
+Dev SQLite SSoT: [`docs/Database/ENV_AND_DB_SSOT.md`](../docs/Database/ENV_AND_DB_SSOT.md).
+
+From repo root [`run`](../run): `export DB_PATH=./middleware-dev.db` in `middleware-platform/`. Confirm at boot: log line `📁 Database path: …` or `GET /health?show_db_path=1`.
+
+## Local URLs on port 4000
+
+| URL | Purpose |
+|-----|---------|
+| `http://localhost:4000/` | Somo marketing landing (requires `somo-landing/build`; built automatically on `npm start` / `npm run dev`) |
+| `http://localhost:4000/login` | Provider portal sign-in |
+| `http://localhost:4000/business/today.html` | Provider Today dashboard (after login) |
+| `http://localhost:4000/health` | API health check |
+
+**Provider work only:** use `/login` or set `LOCAL_DEV_ROOT=login` in `middleware-platform/.env` so `/` redirects to login.
+
+**Faster API startup:** `npm run start:landing` in `middleware-platform/` (skips heavy background workers; `DEV_LIGHT_START=1`).
+
+**Landing-only Vite dev server:** `npm run dev:somo-landing` (port 5180, proxies API to `:4000`).
+
+## Provider sign-in (Somo portal)
+
+1. Copy the template:
+   ```bash
+   cp local/provider-login.credentials.example local/provider-login.credentials
+   ```
+2. Edit `local/provider-login.credentials` with your work email and password.
+3. Optionally mirror the same values in `middleware-platform/.env`:
+   ```bash
+   SOMO_OWNER_EMAIL=you@yourcompany.com
+   SOMO_OWNER_PASSWORD=your-secure-password
+   SOMO_OWNER_CLINIC_PHONE=+15551234567
+   ```
+
+## Apply account to the database
+
+From `middleware-platform/`:
+
+```bash
+npm run ensure:somo-owner
+```
+
+This creates or updates the provider customer, verifies email, and sets the password hash. Then sign in at:
+
+http://localhost:4000/login
+
+## Manual alternative
+
+Create a new provider tenant:
+
+```bash
+cd middleware-platform
+node scripts/create-web-provider-account.js \
+  --email=you@company.com \
+  --name="Your Name" \
+  --password='YourSecurePass8+' \
+  --clinic-name="Your Clinic" \
+  --phone=+15551234567
+```
+
+`local/provider-login.credentials` is listed in `.gitignore` — do not commit it.

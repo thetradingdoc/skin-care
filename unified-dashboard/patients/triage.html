@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#16a637" />
+  <title>Book a Visit - Somo Patient Portal</title>
+  <link rel="stylesheet" href="../assets/css/global.css" />
+  <script src="../assets/js/config.js" defer></script>
+  <style>
+    body { background:#f7fafc; min-height:100vh; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:260px; background:#fff; box-shadow:2px 0 10px rgba(0,0,0,0.05); position:fixed; height:100vh; overflow:auto; }
+    .main { margin-left:260px; padding:32px; flex:1; max-width:980px; }
+    .sidebar-header { padding:24px; border-bottom:1px solid var(--gray-200); }
+    .sidebar-logo { font-size:32px; line-height:1; letter-spacing:-2px; font-family:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-weight:800; color:#2d3748; }
+    .sidebar-subtitle { font-size:12px; color:var(--gray-500); margin-top:4px; }
+    .sidebar-nav { padding:16px; }
+    .nav-item { display:flex; gap:12px; align-items:center; padding:12px 16px; border-radius:8px; color:var(--gray-700); text-decoration:none; margin-bottom:4px; }
+    .nav-item:hover { background:var(--gray-50); color:#16a637; }
+    .nav-item.active { background:#16a637; color:#fff; }
+    .nav-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
+    .nav-icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+    .sidebar-footer { padding:16px; border-top:1px solid var(--gray-200); position:absolute; bottom:0; width:260px; background:#fff; }
+    .user-info { display:flex; align-items:center; gap:12px; cursor:pointer; }
+    .user-avatar { width:40px; height:40px; border-radius:999px; background:#16a637; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; }
+    .user-details { flex:1; min-width:0; }
+    .user-name { font-size:14px; font-weight:700; color:var(--gray-900); }
+    .user-role { font-size:12px; color:var(--gray-500); }
+    .logout-btn { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border:1px solid var(--gray-200); background:#fff; color:var(--gray-600); cursor:pointer; border-radius:10px; transition:all .2s ease; }
+    .logout-btn:hover { border-color:#93c5fd; color:#16a637; background:#eff6ff; }
+    .logout-btn svg { width:20px; height:20px; stroke:currentColor; }
+    .card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 4px 18px rgba(15,23,42,0.08); border:1px solid #dbeafe; }
+    .title { font-size:30px; font-weight:900; margin:0 0 6px 0; background:linear-gradient(135deg, #16a637 0%, #16a637 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.2; }
+    .sub { color:var(--gray-600); font-size:16px; margin:0 0 14px 0; line-height:1.45; }
+    .chat { border:1px solid #bfdbfe; border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(30,64,175,0.08); }
+    .msgs { height:460px; overflow:auto; padding:16px; background:#f8fbff; display:flex; flex-direction:column; gap:12px; }
+    .msg { max-width:85%; padding:14px 18px; border-radius:16px; font-size:16px; line-height:1.55; box-shadow:0 1px 2px rgba(15,23,42,0.05); transition:transform 0.15s ease, box-shadow 0.15s ease; }
+    .msg:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    .msg.user { background:#1d4ed8; color:#fff; align-self:flex-end; border-bottom-right-radius:6px; border:1px solid #16a637; }
+    .msg.user:hover { box-shadow:0 4px 16px rgba(30,64,175,0.4); }
+    .msg.assistant { background:#ffffff; color:#1e293b; align-self:flex-start; border:1px solid #dbeafe; border-bottom-left-radius:6px; }
+    .msg.assistant:hover { box-shadow:0 4px 12px rgba(30,64,175,0.12); }
+    .composer { display:flex; gap:12px; padding:14px; background:#ffffff; border-top:1px solid #dbeafe; align-items:center; }
+    .upload-attach-btn { min-width:44px; padding:10px; font-size:18px; }
+    .input { flex:1; border:2px solid #e5e7eb; border-radius:12px; padding:12px 16px; font-size:16px; transition:border-color 0.2s, box-shadow 0.2s; }
+    .input:focus { outline:none; border-color:#16a637; box-shadow:0 0 0 3px rgba(59,130,246,0.2); }
+    .btn { border:none; border-radius:12px; padding:11px 18px; font-weight:900; font-size:15px; cursor:pointer; min-height:46px; transition:transform 0.15s, box-shadow 0.15s; }
+    .btn:hover:not(:disabled) { transform:translateY(-2px); }
+    .btn.primary { background:#1d4ed8; color:#fff; box-shadow:0 4px 14px rgba(30,64,175,0.3); }
+    .btn.primary:hover:not(:disabled) { box-shadow:0 6px 20px rgba(30,64,175,0.45); }
+    .btn.secondary { background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; }
+    .btn.secondary:hover { background:#e2e8f0; }
+    .chips { display:flex; gap:10px; flex-wrap:wrap; padding:14px; border-top:1px solid #dbeafe; background:#ffffff; }
+    .chip { border:1px solid #cbd5e1; background:#ffffff; border-radius:999px; padding:11px 15px; font-weight:700; font-size:14px; cursor:pointer; transition:all 0.2s ease; color:#0f172a; }
+    .chip:hover { background:#eff6ff; border-color:#93c5fd; color:#16a637; box-shadow:0 2px 8px rgba(59,130,246,0.2); transform:translateY(-1px); }
+    .chip-modal { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; padding:20px; }
+    .chip-modal.show { display:flex; }
+    .chip-modal-content { background:#fff; border-radius:20px; padding:28px; max-width:420px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.25); border:2px solid rgba(30,64,175,0.15); }
+    .chip-modal-title { font-size:20px; font-weight:800; color:#16a637; margin:0 0 18px 0; }
+    .chip-modal-btns { display:flex; flex-direction:column; gap:12px; }
+    .chip-modal-btns .chip { width:100%; justify-content:center; padding:14px 20px; font-size:15px; }
+    .upload-zone { padding:14px; border-top:1px solid #dbeafe; background:#f8fbff; }
+    .resume-banner { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:12px 16px; margin-bottom:12px; background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border:1px solid #93c5fd; border-radius:12px; font-size:14px; color:#16a637; }
+    .resume-banner-btns { display:flex; gap:8px; flex-shrink:0; }
+    .resume-banner .btn { padding:8px 14px; font-size:13px; min-height:36px; }
+    /* Mobile Menu Toggle (match patient-dashboard.html) */
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      width: 48px;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+    }
+    .mobile-menu-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    @media (max-width: 768px) {
+      .mobile-menu-toggle { display: flex; }
+      .sidebar { transform:translateX(-100%); position:fixed; z-index:1000; transition:transform .3s ease; }
+      .sidebar.mobile-open { transform:translateX(0); }
+      .mobile-menu-overlay.active { display:block; }
+      .main { margin-left:0; padding:16px; padding-top:80px; }
+      .title { font-size:34px; }
+      .sub { font-size:17px; }
+      .msg { font-size:17px; line-height:1.6; }
+      .chip { font-size:15px; }
+      .input { font-size:16px; }
+      .btn { font-size:15px; }
+    }
+  </style>
+</head>
+
+<body>
+  <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">☰</button>
+  <div class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-subtitle">Patient Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="patient-dashboard.html" class="nav-item"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg></span><span>Home</span></a>
+        <a href="schedule.html" class="nav-item"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><span>Calendar</span></a>
+        <a href="appointments.html" class="nav-item active"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><span>Routine</span></a>
+        <a href="my-records.html" class="nav-item"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span><span>Products</span></a>
+        <a href="wallet.html" class="nav-item"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M2.5 10.5h19"/><path d="M16 14h3"/></svg></span><span>Wallet</span></a>
+        <a href="profile.html" class="nav-item"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></span><span>Profile</span></a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <div class="card">
+        <div class="title">Book a visit</div>
+        <p class="sub">Tell us what’s going on, and we’ll guide you to a booked appointment and payment.</p>
+        <div id="returnToScheduleWrap" style="display:none; margin-bottom:12px;">
+          <a id="returnToScheduleLink" href="appointments.html" class="btn secondary">Return to appointments</a>
+        </div>
+
+        <div id="resumeBanner" class="resume-banner" style="display:none;">
+          <span>You have a previous conversation. Would you like to continue or start fresh?</span>
+          <div class="resume-banner-btns">
+            <button type="button" class="btn secondary" id="resumeContinueBtn">Continue</button>
+            <button type="button" class="btn primary" id="resumeStartOverBtn">Start over</button>
+          </div>
+        </div>
+
+        <div class="chat">
+          <div class="msgs" id="msgs"></div>
+          <div class="chips" id="chips"></div>
+          <div class="upload-zone" id="uploadZone" style="display:none;">
+            <p style="font-size:13px;color:var(--gray-600);margin:0 0 8px 0;">Upload a photo (JPEG, PNG) or PDF</p>
+            <input type="file" id="uploadInput" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple style="display:none;" />
+            <button type="button" class="btn secondary" id="uploadBtn">Choose file</button>
+            <span id="uploadStatus" style="font-size:12px;color:var(--gray-600);margin-left:8px;"></span>
+          </div>
+          <div class="composer">
+            <button type="button" class="btn secondary upload-attach-btn" id="attachBtn" title="Attach photo or document">📎</button>
+            <input class="input" id="input" placeholder="Describe your symptoms or what you need help with…" />
+            <button class="btn primary" id="sendBtn">Send</button>
+          </div>
+          <input type="file" id="composerUploadInput" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple style="display:none;" />
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Choice chips modal -->
+  <div class="chip-modal" id="chipModal" onclick="if(event.target===this) hideChipModal()">
+    <div class="chip-modal-content">
+      <div class="chip-modal-title" id="chipModalTitle">Choose an option</div>
+      <div class="chip-modal-btns" id="chipModalBtns"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getPatientFeatureFlags, mountBottomTabs } from '../assets/js/patient-shell.js';
+    document.addEventListener('DOMContentLoaded', async () => {
+      mountBottomTabs();
+      const features = await getPatientFeatureFlags();
+      if (!features.chat_enabled) {
+        window.location.href = 'book.html?chat=disabled';
+      }
+    });
+  </script>
+
+  <script>
+    const API_BASE = (window.API_BASE_URL || window.API_BASE || '').replace(/\/$/, '');
+    const urlParams = new URLSearchParams(window.location.search || '');
+    const returnParam = urlParams.get('return') || '';
+    const visitModeParam = (urlParams.get('visit_mode') || '').toLowerCase();
+    const sid = localStorage.getItem('patient_session_id') || '';
+    if (!sid) {
+      const returnTo = encodeURIComponent(`triage.html${window.location.search || ''}`);
+      window.location.href = `patient-login.html?expired=1&return=${returnTo}`;
+    }
+
+    function handleSessionExpired(res, j) {
+      if (res && res.status === 401 && (j?.error === 'Invalid or expired session' || j?.error === 'x-session-id required')) {
+        localStorage.removeItem('patient_session_id');
+        localStorage.removeItem('patient_email');
+        localStorage.removeItem('patient_phone');
+        const returnTo = encodeURIComponent(`triage.html${window.location.search || ''}`);
+        window.location.href = `patient-login.html?expired=1&return=${returnTo}`;
+        return true;
+      }
+      return false;
+    }
+
+    const stateKey = 'patient_triage_state_v1';
+    let triageState = (() => {
+      try { return JSON.parse(sessionStorage.getItem(stateKey) || 'null') || {}; } catch (_) { return {}; }
+    })();
+
+    const msgs = document.getElementById('msgs');
+    const chips = document.getElementById('chips');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function add(role, text) {
+      const el = document.createElement('div');
+      el.className = 'msg ' + role;
+      el.textContent = text;
+      msgs.appendChild(el);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function hideChipModal() {
+      const modal = document.getElementById('chipModal');
+      if (modal) modal.classList.remove('show');
+    }
+
+    function showChipModal(options, title) {
+      const modal = document.getElementById('chipModal');
+      const titleEl = document.getElementById('chipModalTitle');
+      const btnsEl = document.getElementById('chipModalBtns');
+      if (!modal || !btnsEl) return;
+      titleEl.textContent = title || 'Choose an option';
+      btnsEl.innerHTML = '';
+      if (!options || !options.length) { hideChipModal(); return; }
+      for (const opt of options) {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.type = 'button';
+        b.textContent = opt.label;
+        b.addEventListener('click', () => {
+          sendMessage(opt.value, { action: opt.action || null, slot: opt.slot || null, visit_mode: opt.visit_mode || null });
+          hideChipModal();
+        });
+        btnsEl.appendChild(b);
+      }
+      modal.classList.add('show');
+    }
+
+    function setChips(options, opts) {
+      chips.innerHTML = '';
+      const useModal = opts?.display === 'modal' && options && options.length > 0;
+      if (useModal) {
+        showChipModal(options, opts?.title || 'How would you like to proceed?');
+        return;
+      }
+      hideChipModal();
+      if (!options || !options.length) return;
+      for (const opt of options) {
+        const b = document.createElement('button');
+        b.className = 'chip';
+        b.type = 'button';
+        b.textContent = opt.label;
+        b.addEventListener('click', () => {
+          sendMessage(opt.value, { action: opt.action || null, slot: opt.slot || null, visit_mode: opt.visit_mode || null });
+        });
+        chips.appendChild(b);
+      }
+    }
+
+    const LANGUAGES_LIST = 'English, Spanish, Russian, Chinese, French, German, Swahili, and other common languages';
+    function buildKellyGreeting(firstName) {
+      const first = (firstName || 'Patient').trim() || 'Patient';
+      const cap = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+      return `Hi ${cap}, my name is Kelly. I'm your virtual assistant today. How can I help you today? You can respond in any of the following languages: ${LANGUAGES_LIST}. If this feels like an emergency, please call 911 or go to the nearest ER.`;
+    }
+
+    async function fetchPatientAndHydrate() {
+      try {
+        const r = await fetch(`${API_BASE}/api/patient/me`, { headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' } });
+        const j = await r.json();
+        if (handleSessionExpired(r, j)) return null;
+        if (!r.ok || !j.success) return null;
+        const name = (j.patient && j.patient.name) ? j.patient.name : 'Patient';
+        document.getElementById('userName').textContent = name;
+        const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'P';
+        document.getElementById('userAvatar').textContent = initials;
+        const firstName = (name || '').trim().split(/\s+/)[0] || 'Patient';
+        return firstName;
+      } catch (_) { return null; }
+    }
+
+    function showUploadZone(show) {
+      const zone = document.getElementById('uploadZone');
+      if (zone) zone.style.display = show ? 'block' : 'none';
+    }
+
+    async function sendMessage(text, meta = {}) {
+      const t = (text || '').trim();
+      if (!t) return;
+      add('user', t);
+      input.value = '';
+      setChips([]);
+      sendBtn.disabled = true;
+      try {
+        const ctrl = new AbortController();
+        const to = setTimeout(() => ctrl.abort(), 900000);
+        const r = await fetch(`${API_BASE}/api/patient/triage/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' },
+          body: JSON.stringify({ message: t, state: triageState, session_id: triageState?.session_id, meta }),
+          signal: ctrl.signal
+        });
+        clearTimeout(to);
+        const j = await r.json();
+        if (handleSessionExpired(r, j)) return;
+        if (!r.ok || !j.success) throw new Error(j.error || 'Request failed');
+        triageState = { ...(j.state || {}), session_id: j.session_id || triageState?.session_id };
+        sessionStorage.setItem(stateKey, JSON.stringify(triageState));
+        const reply = (j.reply != null && String(j.reply).trim()) ? String(j.reply).trim() : "I'm here. Please try again or call us if you need help.";
+        add('assistant', reply);
+        if (j.next_chips) setChips(j.next_chips, { display: j.chips_display, title: 'How would you like to proceed?' });
+        if (j.next_step === 'UPLOAD_IMAGE') showUploadZone(true);
+        else showUploadZone(false);
+        if (j.redirect_to) window.location.href = j.redirect_to;
+      } catch (e) {
+        add('assistant', e.message || 'Something went wrong.');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    function toggleMobileMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      if (sidebar) sidebar.classList.toggle('mobile-open');
+      if (overlay) overlay.classList.toggle('active');
+    }
+
+    sendBtn.addEventListener('click', () => sendMessage(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); sendMessage(input.value); }
+    });
+
+    document.getElementById('attachBtn')?.addEventListener('click', () => document.getElementById('composerUploadInput').click());
+    async function doUpload(files, statusEl, fromZone) {
+      if (!files || files.length === 0) return;
+      if (statusEl) statusEl.textContent = 'Uploading…';
+      const formData = new FormData();
+      Array.from(files).forEach(f => formData.append('files', f));
+      const sessionId = triageState?.session_id || '';
+      if (sessionId) formData.append('session_id', sessionId);
+      try {
+        const r = await fetch(`${API_BASE}/api/patient/documents`, {
+          method: 'POST',
+          headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' },
+          body: formData
+        });
+        const j = await r.json();
+        if (handleSessionExpired(r, j)) return;
+        if (j.success) {
+          if (statusEl) statusEl.textContent = 'Uploaded.';
+          add('assistant', 'Thanks, we received your upload.');
+          if (fromZone) showUploadZone(false);
+        } else {
+          let errMsg = j.error || 'Upload failed';
+          if (j.error_code === 'LIMIT_FILE_COUNT') {
+            errMsg = `Too many files selected. Upload up to ${j.max_files || 30} files per batch.`;
+          }
+          if (statusEl) statusEl.textContent = errMsg;
+          else add('assistant', 'Sorry, upload failed: ' + errMsg);
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Network error';
+        else add('assistant', 'Sorry, upload failed. Please try again.');
+      }
+    }
+    document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('uploadInput').click());
+    document.getElementById('uploadInput').addEventListener('change', async (e) => {
+      const files = e.target.files;
+      await doUpload(files, document.getElementById('uploadStatus'), true);
+      e.target.value = '';
+    });
+    document.getElementById('composerUploadInput')?.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      await doUpload(files, null, false);
+      e.target.value = '';
+    });
+    document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('uploadInput').click());
+
+    async function loadHistoryIfResuming() {
+      const sessionId = triageState?.session_id || '';
+      if (!sessionId) return false;
+      try {
+        const r = await fetch(`${API_BASE}/api/patient/triage/history?session_id=${encodeURIComponent(sessionId)}`, {
+          headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+        });
+        const j = await r.json();
+        if (handleSessionExpired(r, j)) return false;
+        if (!j.success || !j.history?.length) return false;
+        msgs.innerHTML = '';
+        for (const t of j.history) {
+          if (t.role && t.content) add(t.role, t.content);
+        }
+        if (j.state) triageState = { ...j.state, session_id: j.session_id || sessionId };
+        sessionStorage.setItem(stateKey, JSON.stringify(triageState));
+        return true;
+      } catch (_) { return false; }
+    }
+
+    function showResumeBanner() {
+      const banner = document.getElementById('resumeBanner');
+      if (banner) banner.style.display = 'flex';
+    }
+
+    function hideResumeBanner() {
+      const banner = document.getElementById('resumeBanner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    function startOver(firstName) {
+      triageState = {};
+      sessionStorage.removeItem(stateKey);
+      hideResumeBanner();
+      msgs.innerHTML = '';
+      add('assistant', buildKellyGreeting(firstName));
+      setChips(initialChips);
+    }
+
+    const initialChips = [
+      { label: 'Book a general visit', value: 'I want to book a general visit' },
+      { label: 'I have symptoms', value: 'I have symptoms' },
+      { label: 'Billing / receipt', value: 'I need help with my receipt', action: 'billing' }
+    ];
+    if (visitModeParam === 'async_review') {
+      initialChips.unshift({ label: 'Start async review', value: 'I want an async photo review', action: 'start_async', visit_mode: 'async_review' });
+    }
+    const hasSession = triageState?.session_id;
+    (async function initGreeting() {
+      const returnWrap = document.getElementById('returnToScheduleWrap');
+      const returnLink = document.getElementById('returnToScheduleLink');
+      if (returnParam && returnWrap && returnLink) {
+        returnWrap.style.display = 'block';
+        returnLink.href = decodeURIComponent(returnParam);
+      }
+      const firstName = await fetchPatientAndHydrate();
+      const greeting = buildKellyGreeting(firstName);
+      if (hasSession) {
+        const loaded = await loadHistoryIfResuming();
+        if (msgs.children.length === 0) {
+          add('assistant', greeting);
+          setChips(initialChips);
+        } else {
+          setChips([]);
+          if (loaded) showResumeBanner();
+        }
+      } else {
+        add('assistant', greeting);
+        setChips(initialChips);
+      }
+    })();
+
+    document.getElementById('resumeContinueBtn')?.addEventListener('click', () => hideResumeBanner());
+    document.getElementById('resumeStartOverBtn')?.addEventListener('click', () => {
+      const nameEl = document.getElementById('userName');
+      const firstName = nameEl ? nameEl.textContent.trim().split(/\s+/)[0] || null : null;
+      startOver(firstName);
+    });
+  </script>
+</body>
+
+</html>
+

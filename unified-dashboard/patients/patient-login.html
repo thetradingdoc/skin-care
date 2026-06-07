@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16a637">
+    <link rel="manifest" href="../manifest.webmanifest">
+    <title>S&C Patient Portal</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <script src="../assets/js/config.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Gloock&display=swap');
+        :root {
+            --primary: #16a637;
+            --primary-dark: #16a637;
+            --primary-light: #16a637;
+            --text-ink: #131826;
+            --text-muted: #5f6b82;
+            --line-soft: #d9dfeb;
+        }
+
+        body {
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 16px;
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .auth-container {
+            background: #ffffff;
+            border-radius: 26px;
+            border: 1px solid #e7ebf4;
+            box-shadow: 0 18px 45px rgba(21, 36, 88, 0.09);
+            max-width: 640px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .auth-header {
+            background: #ffffff;
+            padding: 24px 28px 16px;
+            color: var(--text-ink);
+            border-bottom: 1px solid #edf1f8;
+            position: relative;
+        }
+
+        .auth-body {
+            padding: 28px 28px 34px;
+        }
+
+        .auth-back {
+            position: absolute;
+            right: 20px;
+            top: 18px;
+            border: 1px solid #dbe3f2;
+            background: #ffffff;
+            color: #2f3d63;
+            border-radius: 999px;
+            min-height: 38px;
+            padding: 0 14px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .auth-back:hover {
+            background: #f5f8ff;
+            border-color: #c7d3eb;
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .brand-logo {
+            width: 76px;
+            height: 76px;
+            min-width: 76px;
+            min-height: 76px;
+            flex-shrink: 0;
+            object-fit: contain;
+            display: block;
+            background: transparent;
+            transform: translateY(0);
+        }
+
+        .portal-title {
+            margin: 0;
+            font-size: 2.85rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            font-family: 'Gloock', Georgia, 'Times New Roman', serif;
+        }
+
+        .portal-sub {
+            margin: 10px 0 0 46px;
+            font-size: 18px;
+            color: var(--text-muted);
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 48px;
+            font-weight: 800;
+            margin: 0 0 12px 0;
+            color: var(--text-ink);
+            text-align: center;
+            letter-spacing: -0.02em;
+            font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+        }
+
+        .step-description {
+            color: #4b5870;
+            margin: 0 0 22px 0;
+            font-size: 18px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-ink);
+            font-size: 16px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #c6d0df;
+            border-radius: 12px;
+            font-size: 17px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(49, 77, 182, 0.12);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #2f48aa 0%, #3d5ed3 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 37px;
+            line-height: 1;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(49, 77, 182, 0.28);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            padding: 10px 14px;
+            background: #f7fafc;
+            color: #2d3748;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #eef2ff;
+            border-color: rgba(49, 77, 182, 0.35);
+        }
+
+        .code-input {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .code-digit {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+        }
+
+        .code-digit:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(49, 77, 182, 0.12);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 26px;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border-radius: 999px;
+            border: 6px solid #e4eaff;
+            border-top-color: var(--primary);
+            margin: 0 auto 14px auto;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-brand {
+            font-size: 22px;
+            font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .auth-mode {
+            display: flex;
+            gap: 6px;
+            width: fit-content;
+            margin: 0 auto 18px auto;
+            background: #eef1f9;
+            border: 1px solid #dde3f2;
+            border-radius: 999px;
+            padding: 4px;
+        }
+
+        .auth-mode-btn {
+            border: none;
+            background: transparent;
+            color: #5f6b82;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-radius: 999px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .auth-mode-btn.active {
+            background: #ffffff;
+            color: var(--text-ink);
+            box-shadow: 0 2px 8px rgba(21, 36, 88, 0.12);
+        }
+
+        .sc-orb {
+            position: fixed;
+            left: 18px;
+            bottom: 18px;
+            width: 62px;
+            height: 62px;
+            border-radius: 999px;
+            border: 1px solid #e3e8f4;
+            background: #ffffff;
+            box-shadow: 0 8px 18px rgba(19, 24, 38, 0.12);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            z-index: 40;
+        }
+
+        .sc-orb__spin {
+            font-family: 'Gloock', Georgia, 'Times New Roman', serif;
+            font-size: 22px;
+            color: #161d31;
+            line-height: 1;
+            display: inline-block;
+            transform-origin: center;
+            animation: scOrbSpin 5s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes scOrbSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .resend-link {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .resend-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .resend-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile-First Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .auth-header {
+                padding: 18px 18px 14px;
+            }
+
+            .auth-body {
+                padding: 24px 20px;
+            }
+
+            .step-title {
+                font-size: 42px;
+            }
+
+            .code-digit {
+                width: 44px;
+                height: 56px;
+                font-size: 20px;
+            }
+
+            .code-input {
+                gap: 6px;
+            }
+
+            .portal-title {
+                font-size: 2.2rem;
+            }
+
+            .portal-sub {
+                font-size: 16px;
+            }
+
+            .btn-primary {
+                font-size: 32px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-header {
+                padding: 16px 14px 12px;
+            }
+            .auth-body {
+                padding: 20px 16px;
+            }
+
+            .step-title {
+                font-size: 36px;
+            }
+
+            .code-digit {
+                width: 40px;
+                height: 52px;
+                font-size: 18px;
+            }
+
+            .portal-title {
+                font-size: 1.6rem;
+            }
+
+            .portal-sub {
+                margin-left: 0;
+                font-size: 15px;
+            }
+
+            .brand-row {
+                justify-content: flex-start;
+            }
+
+            .btn-primary {
+                font-size: 28px;
+            }
+
+            .auth-back {
+                right: 12px;
+                top: 12px;
+                min-height: 34px;
+                padding: 0 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <button type="button" class="auth-back" onclick="window.location.href='/'" aria-label="Back to landing page">
+                Back
+            </button>
+            <div class="brand-row">
+                <img class="brand-logo" src="/images/branding/logo-panda.png" alt="Somo panda logo" />
+                <div class="portal-title">Skin &amp; Care</div>
+            </div>
+        </div>
+        <div class="auth-body">
+
+        <!-- Step 1: Enter Email -->
+        <div class="step active" id="stepEmail">
+            <h2 class="step-title" id="authTitle">Sign in</h2>
+            <p class="step-description" id="authDescription">Enter your email to receive a secure 6-digit code.</p>
+
+            <div class="auth-mode" role="tablist" aria-label="Authentication mode">
+                <button type="button" class="auth-mode-btn active" id="intentSigninBtn" data-intent="signin" role="tab" aria-selected="true">Log In</button>
+                <button type="button" class="auth-mode-btn" id="intentSignupBtn" data-intent="signup" role="tab" aria-selected="false">Sign Up</button>
+            </div>
+
+            <div id="emailMessage"></div>
+
+            <form id="emailForm" onsubmit="handleEmailSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="emailInput">Email Address</label>
+                    <input type="email" id="emailInput" class="form-input" placeholder="your.email@example.com" required
+                        autocomplete="email">
+                </div>
+                <button type="submit" class="btn-primary" id="emailSubmitBtn">
+                    Continue
+                </button>
+            </form>
+        </div>
+
+        <!-- Step 2: Enter Code -->
+        <div class="step" id="stepCode">
+            <h2 class="step-title">Enter Verification Code</h2>
+            <p class="step-description">We sent a 6-digit code to <strong id="emailDisplay"></strong></p>
+
+            <div id="codeMessage"></div>
+
+            <form id="codeForm" onsubmit="handleCodeSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label">Verification Code</label>
+                    <div class="code-input">
+                        <input type="text" class="code-digit" maxlength="1" id="code1" autocomplete="off">
+                        <input type="text" class="code-digit" maxlength="1" id="code2" autocomplete="off">
+                        <input type="text" class="code-digit" maxlength="1" id="code3" autocomplete="off">
+                        <input type="text" class="code-digit" maxlength="1" id="code4" autocomplete="off">
+                        <input type="text" class="code-digit" maxlength="1" id="code5" autocomplete="off">
+                        <input type="text" class="code-digit" maxlength="1" id="code6" autocomplete="off">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="codeSubmitBtn">
+                    Verify & Sign In
+                </button>
+                <div class="resend-link">
+                    <a href="#" onclick="resendCode(); return false;">Didn't receive code? Resend</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 3: Loading -->
+        <div class="step" id="stepLoading">
+            <div class="loading">
+                <div class="loading-spinner" aria-hidden="true"></div>
+                <div class="loading-brand">S&amp;C</div>
+                <div>Signing you in...</div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <a class="sc-orb" href="/" aria-label="Back to Somo home">
+        <span class="sc-orb__spin" aria-hidden="true">S&amp;C</span>
+    </a>
+
+    <script>
+        const API_BASE = window.API_BASE || 'http://localhost:4000';
+        const API_HEADERS = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
+        let currentEmail = '';
+        let sessionId = '';
+
+        // Auto-advance code inputs
+        const codeInputs = ['code1', 'code2', 'code3', 'code4', 'code5', 'code6'];
+        codeInputs.forEach((id, index) => {
+            const input = document.getElementById(id);
+            input.addEventListener('input', (e) => {
+                if (e.target.value && index < codeInputs.length - 1) {
+                    document.getElementById(codeInputs[index + 1]).focus();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    document.getElementById(codeInputs[index - 1]).focus();
+                }
+            });
+        });
+
+        function showStep(stepId) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function showMessage(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="message message-${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        async function handleEmailSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value.trim();
+
+            if (!email) {
+                showMessage('emailMessage', 'Please enter your email address', 'error');
+                return;
+            }
+
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('emailMessage', 'Please enter a valid email address', 'error');
+                return;
+            }
+
+            currentEmail = email;
+            const btn = document.getElementById('emailSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/patient/verify/send`, {
+                    method: 'POST',
+                    headers: API_HEADERS,
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionId = data.session_id;
+                    // If backend knows whether account exists, set the UI intent accordingly
+                    if (typeof data.existing_patient === 'boolean') {
+                        setAuthIntent(data.existing_patient ? 'signin' : 'signup');
+                    }
+                    document.getElementById('emailDisplay').textContent = email;
+                    showStep('stepCode');
+                    // Focus first code input
+                    document.getElementById('code1').focus();
+                } else {
+                    showMessage('emailMessage', data.error || 'Failed to send code', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Continue';
+                }
+            } catch (error) {
+                showMessage('emailMessage', 'Network error. Please try again.', 'error');
+                if (window.showPatientAlert) {
+                    window.showPatientAlert({
+                        type: 'error',
+                        message: 'We could not send a code due to a network issue. Please check your connection and try again.',
+                        retry: () => handleEmailSubmit(new Event('submit'))
+                    });
+                }
+                btn.disabled = false;
+                btn.textContent = 'Continue';
+            }
+        }
+
+        async function handleCodeSubmit(e) {
+            e.preventDefault();
+
+            const code = codeInputs.map(id => document.getElementById(id).value).join('');
+
+            if (code.length !== 6) {
+                showMessage('codeMessage', 'Please enter the full 6-digit code', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('codeSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/patient/verify/confirm`, {
+                    method: 'POST',
+                    headers: API_HEADERS,
+                    body: JSON.stringify({ email: currentEmail, code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionId = data.session_id;
+                    // Store session in localStorage
+                    localStorage.setItem('patient_session_id', sessionId);
+
+                    showStep('stepLoading');
+
+                    // Product requirement: always land on Home after login.
+                    window.location.replace('patient-dashboard.html');
+                } else {
+                    showMessage('codeMessage', data.error || 'Invalid verification code', 'error');
+                    // Clear code inputs
+                    codeInputs.forEach(id => document.getElementById(id).value = '');
+                    document.getElementById('code1').focus();
+                    btn.disabled = false;
+                    btn.textContent = 'Verify & Sign In';
+                }
+            } catch (error) {
+                showMessage('codeMessage', 'Network error. Please try again.', 'error');
+                if (window.showPatientAlert) {
+                    window.showPatientAlert({
+                        type: 'error',
+                        message: 'We could not verify your code due to a network issue. Please try again.',
+                        retry: () => handleCodeSubmit(new Event('submit'))
+                    });
+                }
+                btn.disabled = false;
+                btn.textContent = 'Verify & Sign In';
+            }
+        }
+
+        async function resendCode() {
+            if (!currentEmail) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/patient/verify/send`, {
+                    method: 'POST',
+                    headers: API_HEADERS,
+                    body: JSON.stringify({ email: currentEmail })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showMessage('codeMessage', 'New verification code sent to your email!', 'success');
+                } else {
+                    showMessage('codeMessage', data.error || 'Failed to resend code', 'error');
+                }
+            } catch (error) {
+                showMessage('codeMessage', 'Network error. Please try again.', 'error');
+                if (window.showPatientAlert) {
+                    window.showPatientAlert({
+                        type: 'error',
+                        message: 'We could not resend your code due to a network issue. Please try again.'
+                    });
+                }
+            }
+        }
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const navEntry = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || null;
+            const isHistoryTraversal = navEntry && navEntry.type === 'back_forward';
+            // Show session expired message when redirected after invalid session
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('expired') === '1') {
+                const emailMsg = document.getElementById('emailMessage');
+                if (emailMsg) {
+                    emailMsg.innerHTML = '<div class="alert alert-info" style="display:block;">Your session expired. Please sign in again to continue.</div>';
+                }
+            }
+            // default intent
+            setAuthIntent('signin');
+
+            document.querySelectorAll('.auth-mode-btn').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    setAuthIntent(btn.dataset.intent || 'signin');
+                });
+            });
+
+            const existingSession = localStorage.getItem('patient_session_id');
+            if (existingSession && !isHistoryTraversal) {
+                // Validate session and gate by onboarding completion.
+                fetch(`${API_BASE}/api/patient/intake`, { headers: { 'ngrok-skip-browser-warning': 'true', 'x-session-id': existingSession } })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Product requirement: always land on Home after login/session restore.
+                            window.location.replace('patient-dashboard.html');
+                        } else {
+                            localStorage.removeItem('patient_session_id');
+                        }
+                    })
+                    .catch(() => {
+                        // Stay on login page
+                    });
+            }
+        });
+
+        function setAuthIntent(intent) {
+            window.__patientAuthIntent = intent === 'signup' ? 'signup' : 'signin';
+            const title = document.getElementById('authTitle');
+            const desc = document.getElementById('authDescription');
+            const signInBtn = document.getElementById('intentSigninBtn');
+            const signUpBtn = document.getElementById('intentSignupBtn');
+
+            if (window.__patientAuthIntent === 'signup') {
+                title.textContent = 'Create account';
+                desc.textContent = 'Enter your email to create your patient account. We’ll send a secure 6-digit code.';
+                signInBtn.classList.remove('active');
+                signInBtn.setAttribute('aria-selected', 'false');
+                signUpBtn.classList.add('active');
+                signUpBtn.setAttribute('aria-selected', 'true');
+            } else {
+                title.textContent = 'Sign in';
+                desc.textContent = 'Enter your email to receive a secure 6-digit code.';
+                signUpBtn.classList.remove('active');
+                signUpBtn.setAttribute('aria-selected', 'false');
+                signInBtn.classList.add('active');
+                signInBtn.setAttribute('aria-selected', 'true');
+            }
+        }
+    </script>
+</body>
+
+</html>

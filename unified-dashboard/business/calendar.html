@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#16a637">
+  <title>Somo Provider - Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Martian+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- FullCalendar (reliable grid) -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+  <link rel="stylesheet" href="/assets/css/somo-tokens.css">
+  <link rel="stylesheet" href="/assets/css/provider-portal.css">
+  <link rel="stylesheet" href="/assets/css/provider-calendar.css">
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/auth-utils.js"></script>
+  <script src="/assets/js/provider-shell.js"></script>
+  <script src="/assets/js/provider-shell-chrome.js"></script>
+  <script src="/assets/js/provider-layout.js"></script>
+</head>
+
+<body class="provider-portal provider-portal--scroll provider-portal--calendar" data-page="calendar">
+  <main class="main-content pp-content pp-content--calendar" id="ppMainContent">
+      <div class="pp-toolbar">
+        <div class="pp-toolbar-brand">
+          <span class="pp-toolbar-label">Filters</span>
+          <div id="onlineOfflineWrap" style="margin-left:20px;display:flex;align-items:center;gap:8px;">
+            <span id="onlineStatusText" class="muted" style="font-size:13px;">Offline</span>
+            <button type="button" id="onlineOfflineBtn" class="online-offline-btn offline" title="Toggle Online/Offline">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </button>
+          </div>
+        </div>
+        <div class="pp-toolbar-filters">
+          <input type="date" id="dateFilter" class="input" />
+          <select id="statusFilter" class="select">
+            <option value="">All Statuses</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <input id="providerFilter" placeholder="Provider" class="input" />
+          <button type="button" id="createApptBtn" class="pp-btn pp-btn-primary pp-btn-sm">+ Create Appointment</button>
+          <button type="button" id="setAvailabilityBtn" class="pp-btn pp-btn-outline pp-btn-sm">Set Availability</button>
+          <button type="button" id="outOfOfficeBtn" class="pp-btn pp-btn-ghost pp-btn-sm">Out of Office</button>
+          <button type="button" id="refreshBtn" class="pp-btn pp-btn-outline pp-btn-sm">Refresh</button>
+        </div>
+      </div>
+
+      <div class="pp-calendar-legend legend">
+        <button type="button" class="item legend-filter" data-status-key="scheduled"><span class="dot dot--scheduled"></span> Scheduled</button>
+        <button type="button" class="item legend-filter" data-status-key="confirmed"><span class="dot dot--confirmed"></span> Confirmed</button>
+        <button type="button" class="item legend-filter" data-status-key="cancelled"><span class="dot dot--cancelled"></span> Cancelled</button>
+        <button type="button" class="item legend-filter" data-status-key="available"><span class="dot dot--available"></span> Available</button>
+        <button type="button" class="item legend-filter" data-status-key="out_of_office"><span class="dot dot--ooo"></span> Out of Office</button>
+      </div>
+
+      <div id="todayPinnedWrap" style="display:none;">
+        <div id="todayPinnedInner">
+          <div id="todayPinnedHeader">
+            <h2 id="todayPinnedHeadingText">Today</h2>
+            <button type="button" id="todayPinnedToggle">Hide</button>
+          </div>
+          <div id="todayPinnedList"></div>
+        </div>
+      </div>
+
+      <div id="calendarWrap">
+        <div id="calendar"></div>
+      </div>
+  </main>
+
+  <!-- Create Appointment Modal -->
+  <div id="createApptModal" class="details-panel" style="display:none;">
+    <div class="details-panel-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="font-weight:700; color:#0e7490; font-size:18px;">Create New Appointment</div>
+        <button onclick="closeCreateModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✖</button>
+      </div>
+      <form id="createApptForm" style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Patient name *</label>
+          <input type="text" id="createPatientSearch" class="input" required placeholder="Type name to search or enter manually" style="width:100%;" autocomplete="off" />
+          <div id="createPatientSearchResults" style="display:none; margin-top:4px; max-height:160px; overflow-y:auto; border:1px solid #e5e7eb; border-radius:8px; background:#fff;"></div>
+        </div>
+        <input type="hidden" id="createPatientId" />
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Patient Phone *</label>
+          <input type="tel" id="createPatientPhone" class="input" required style="width:100%;" placeholder="+1234567890" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Patient Email</label>
+          <input type="email" id="createPatientEmail" class="input" style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Appointment Type</label>
+          <select id="createApptType" class="select" style="width:100%;">
+            <option value="Mental Health Somoation">Mental Health Somoation</option>
+            <option value="Video Somoation">Video Somoation</option>
+            <option value="Follow-up Session">Follow-up Session</option>
+            <option value="Initial Assessment">Initial Assessment</option>
+            <option value="Crisis Intervention">Crisis Intervention</option>
+            <option value="Group Therapy">Group Therapy</option>
+            <option value="Medication Review">Medication Review</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Date *</label>
+          <input type="date" id="createApptDate" class="input" required style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Time *</label>
+          <input type="time" id="createApptTime" class="input" required style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Provider</label>
+          <input type="text" id="createProvider" class="input" style="width:100%;" placeholder="Somo Care Team" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Notes</label>
+          <textarea id="createNotes" class="input" style="width:100%;min-height:60px;resize:vertical;"></textarea>
+        </div>
+        <div id="createApptError" style="color:#ef4444;font-size:14px;display:none;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button type="button" onclick="closeCreateModal()" class="btn" style="background:#e5e7eb;color:#374151;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#10b981;">Create Appointment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Set Availability / Out of Office Modal -->
+  <div id="availabilityModal" class="details-panel" style="display:none;">
+    <div class="details-panel-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div id="availabilityModalTitle" style="font-weight:700; color:#0e7490; font-size:18px;">Set Availability</div>
+        <button onclick="closeAvailabilityModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✖</button>
+      </div>
+      <form id="availabilityForm" style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Start Date *</label>
+          <input type="date" id="avbStartDate" class="input" required style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">Start Time *</label>
+          <input type="time" id="avbStartTime" class="input" required style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">End Date *</label>
+          <input type="date" id="avbEndDate" class="input" required style="width:100%;" />
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:4px;color:#374151;">End Time *</label>
+          <input type="time" id="avbEndTime" class="input" required style="width:100%;" />
+        </div>
+        <div id="avbError" style="color:#ef4444;font-size:14px;display:none;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button type="button" onclick="closeAvailabilityModal()" class="btn" style="background:#e5e7eb;color:#374151;">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="avbSubmitBtn" style="background:#16a637;">Save Block</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Details Side Panel (replaces full-screen overlay) -->
+  <div id="detailsModal" class="details-panel">
+    <div class="details-panel-inner">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div style="font-weight:700; color:#0e7490">Appointment Details</div>
+        <button onclick="closeModal()" style="border:none;background:none;font-size:20px;cursor:pointer">✖</button>
+      </div>
+      <div id="detailsModalSubtitle" style="display:none;" aria-live="polite"></div>
+      <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center; justify-content:space-between;">
+        <div style="display:flex; gap:8px;" role="tablist" aria-label="Appointment details">
+        <button id="tabOverview" type="button" role="tab" aria-selected="true" aria-controls="modalContent" class="btn btn-primary" style="padding:6px 10px;">Overview</button>
+        <button id="tabClinical" type="button" role="tab" aria-selected="false" aria-controls="modalContent" class="btn" style="padding:6px 10px;">Clinical prep</button>
+        <button id="tabEHR" type="button" role="tab" aria-selected="false" aria-controls="modalContent" class="btn" style="padding:6px 10px;">EHR</button>
+        </div>
+        <button id="btnSyncEhrNow" class="btn" style="padding:6px 10px; background:#0ea5e9; color:#fff; border:none;">Sync EHR Now</button>
+      </div>
+      <div id="ehrSyncStatus" style="display:none; margin-bottom:8px; font-size:12px; color:#6b7280;"></div>
+      <div id="modalContent" style="font-size:14px; color:#374151; margin-bottom:12px;"></div>
+      <div class="section">
+        <h4>Reschedule</h4>
+        <input type="date" id="rsDate" class="input" />
+        <input type="text" id="rsTime" placeholder="e.g., 3:00 PM" class="input" />
+        <select id="rsType" class="select">
+          <option>Somoation</option>
+          <option>Crisis Intervention</option>
+          <option>Follow-up Session</option>
+          <option>Initial Assessment</option>
+          <option>Group Therapy</option>
+          <option>Medication Review</option>
+        </select>
+        <select id="rsTz" class="select">
+          <option>America/New_York</option>
+          <option>America/Chicago</option>
+          <option>America/Denver</option>
+          <option>America/Los_Angeles</option>
+        </select>
+        <button id="btnCheckSlots" class="btn">Check slots</button>
+      </div>
+      <div id="slotsWrap" style="padding:8px 16px; display:none;"></div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center; margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btnJoinVideo" class="btn" style="background:#16a637;color:#fff;border:none;">Join Video</button>
+          <button id="btnCopyVideoLink" class="btn" style="background:#64748b;color:#fff;border:none;">Copy Link</button>
+          <button id="btnSendVideoLink" class="btn" style="background:#059669;color:#fff;border:none;">Send Link</button>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button id="btnPHI" class="btn">Show PHI</button>
+          <button id="btnConfirm" class="btn" style="background:#10b981;color:#fff;border:none;">Confirm</button>
+          <button id="btnReschedule" class="btn" style="background:#f59e0b;color:#fff;border:none;">Reschedule</button>
+          <button id="btnCancel" class="btn" style="background:#ef4444;color:#fff;border:none;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.API_BASE || window.location.origin || 'http://localhost:4000';
+    const API_URL = (path) => {
+      const base = (API_BASE || '').replace(/\/$/, '');
+      return base ? `${base}${path.startsWith('/') ? path : '/' + path}` : path;
+    };
+
+    // Online/Offline status (session-based, cookie auth)
+    async function loadAvailabilityStatus() {
+      const btn = document.getElementById('onlineOfflineBtn');
+      const text = document.getElementById('onlineStatusText');
+      try {
+        const res = await fetch(API_URL('/api/customers/me/availability-status'), { credentials: 'include' });
+        const data = await res.json();
+        if (data.success && data.status) {
+          const isOnline = !!data.status.is_online;
+          updateOnlineUI(isOnline);
+        } else if (!res.ok && res.status === 401) {
+          if (text) text.textContent = 'Sign in required';
+        }
+      } catch (e) {
+        console.warn('Could not load availability status:', e);
+        if (text) text.textContent = 'Offline';
+      }
+    }
+    function updateOnlineUI(isOnline) {
+      const btn = document.getElementById('onlineOfflineBtn');
+      const text = document.getElementById('onlineStatusText');
+      if (btn) btn.className = 'online-offline-btn ' + (isOnline ? 'online' : 'offline');
+      if (text) text.textContent = isOnline ? 'Online' : 'Offline';
+    }
+    async function toggleOnlineOffline() {
+      const btn = document.getElementById('onlineOfflineBtn');
+      const text = document.getElementById('onlineStatusText');
+      const currentlyOnline = btn && btn.classList.contains('online');
+      const newOnline = !currentlyOnline;
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(API_URL('/api/customers/me/availability-status'), {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_online: newOnline })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateOnlineUI(newOnline);
+        } else {
+          if (res.status === 401) alert('Session expired. Please sign in again.');
+          else alert(data.error || 'Failed to update status');
+        }
+      } catch (e) {
+        console.error('Failed to update status:', e);
+        alert('Could not connect. Check the console and ensure you are signed in.');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+    (function initOnlineOffline() {
+      const btn = document.getElementById('onlineOfflineBtn');
+      if (btn) btn.addEventListener('click', toggleOnlineOffline);
+      loadAvailabilityStatus();
+    })();
+
+
+    // Availability blocks
+    let availabilityBlockType = 'available';
+    async function fetchAvailabilityBlocks(startDate, endDate) {
+      try {
+        const params = new URLSearchParams();
+        if (startDate) params.set('start', startDate);
+        if (endDate) params.set('end', endDate);
+        const res = await fetch(`${API_BASE}/api/customers/me/availability-blocks?${params}`, { credentials: 'include' });
+        const data = await res.json();
+        return data.success ? (data.blocks || []) : [];
+      } catch (e) {
+        console.warn('Could not load availability blocks:', e);
+        return [];
+      }
+    }
+    function toAvailabilityEvents(blocks) {
+      return blocks.map(b => ({
+        id: b.id,
+        title: (b.title || (b.block_type === 'out_of_office' ? 'Out of Office' : 'Available')),
+        start: b.start_datetime,
+        end: b.end_datetime,
+        backgroundColor: b.block_type === 'out_of_office' ? '#6b7280' : '#16a637',
+        borderColor: b.block_type === 'out_of_office' ? '#4b5563' : '#128a2e',
+        textColor: '#ffffff',
+        extendedProps: { isAvailabilityBlock: true, blockId: b.id, blockType: b.block_type, title: b.title }
+      }));
+    }
+    function openAvailabilityModal(blockType) {
+      availabilityBlockType = blockType;
+      const modal = document.getElementById('availabilityModal');
+      const titleEl = document.getElementById('availabilityModalTitle');
+      const submitBtn = document.getElementById('avbSubmitBtn');
+      titleEl.textContent = blockType === 'out_of_office' ? 'Out of Office' : 'Set Availability';
+      submitBtn.textContent = blockType === 'out_of_office' ? 'Add Out of Office' : 'Add Available';
+      submitBtn.style.background = blockType === 'out_of_office' ? '#6b7280' : '#16a637';
+      const today = new Date();
+      const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      document.getElementById('avbStartDate').value = dateStr;
+      document.getElementById('avbEndDate').value = dateStr;
+      document.getElementById('avbStartTime').value = '09:00';
+      document.getElementById('avbEndTime').value = '17:00';
+      document.getElementById('avbError').style.display = 'none';
+      modal.style.display = 'block';
+    }
+    function closeAvailabilityModal() {
+      document.getElementById('availabilityModal').style.display = 'none';
+    }
+    async function saveAvailabilityBlock() {
+      const startDate = document.getElementById('avbStartDate').value;
+      const endDate = document.getElementById('avbEndDate').value;
+      const startTime = document.getElementById('avbStartTime').value;
+      const endTime = document.getElementById('avbEndTime').value;
+      const errorEl = document.getElementById('avbError');
+      errorEl.style.display = 'none';
+      const startDatetime = startDate && startTime ? `${startDate}T${startTime}:00` : null;
+      const endDatetime = endDate && endTime ? `${endDate}T${endTime}:00` : null;
+      if (!startDatetime || !endDatetime) {
+        errorEl.textContent = 'Please fill in all date and time fields';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (new Date(endDatetime) <= new Date(startDatetime)) {
+        errorEl.textContent = 'End must be after start';
+        errorEl.style.display = 'block';
+        return;
+      }
+      try {
+        const url = (typeof API_URL === 'function') ? API_URL('/api/customers/me/availability-blocks') : `${API_BASE}/api/customers/me/availability-blocks`;
+        const res = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            block_type: availabilityBlockType,
+            start_datetime: startDatetime,
+            end_datetime: endDatetime
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeAvailabilityModal();
+          if (typeof window.calendarRefresh === 'function') window.calendarRefresh();
+        } else {
+          errorEl.textContent = data.error || 'Failed to save';
+          errorEl.style.display = 'block';
+        }
+      } catch (e) {
+        errorEl.textContent = 'Failed to save. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    }
+    document.getElementById('availabilityForm')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveAvailabilityBlock();
+    });
+    document.getElementById('setAvailabilityBtn')?.addEventListener('click', () => openAvailabilityModal('available'));
+    document.getElementById('outOfOfficeBtn')?.addEventListener('click', () => openAvailabilityModal('out_of_office'));
+
+    // PHI masking helpers
+    function maskPhone(phone) {
+      if (!phone) return 'N/A';
+      const digits = phone.replace(/\D/g, '');
+      return `(***) ***-${digits.slice(-4)}`;
+    }
+    function initials(name) {
+      if (!name) return 'Unknown';
+      return name.split(/\s+/).filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase();
+    }
+
+    function statusColor(status) {
+      switch ((status || '').toLowerCase()) {
+        case 'confirmed': return '#10b981';
+        case 'cancelled': return '#ef4444';
+        default: return '#06b6d4';
+      }
+    }
+
+    function getClinicId() {
+      return (window.TENANT_CONFIG && window.TENANT_CONFIG.clinic_id) || 'clinic-default';
+    }
+    async function fetchAppointments(visibleStart, visibleEnd) {
+      const params = new URLSearchParams();
+      const status = document.getElementById('statusFilter').value;
+      const date = document.getElementById('dateFilter').value;
+      const provider = document.getElementById('providerFilter').value;
+
+      params.append('clinic_id', getClinicId());
+      if (status) params.append('status', status);
+      if (date) params.append('date', date);
+      if (provider) params.append('provider', provider);
+      if (visibleStart && visibleEnd) {
+        params.append('start_date', visibleStart);
+        params.append('end_date', visibleEnd);
+      }
+      params.append('_', Date.now());
+
+      const url = `${API_BASE}/api/admin/appointments?${params.toString()}`;
+      const res = await fetch(url, { credentials: 'include', cache: 'no-store' });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to load appointments');
+      return data.appointments || [];
+    }
+
+    function parseBufferFromNotes(notes) {
+      if (!notes) return {};
+      try { const obj = JSON.parse(notes); return obj || {}; } catch { return {}; }
+    }
+
+    /** Align calendar + lists with patient portal: use legacy date + time as local wall clock. Raw start_time is often UTC (Z) and displayed ~4h off in US. */
+    function wallClockStartEnd(a) {
+      if (!a || !a.date || a.time == null || a.time === '') return null;
+      const tm = String(a.time);
+      const parts = tm.split(':');
+      const hh = String(parts[0] || '0').padStart(2, '0');
+      const mm = String(parts[1] != null ? parts[1] : '0').padStart(2, '0');
+      const ss = parts[2] != null ? String(parts[2]).padStart(2, '0') : '00';
+      const isoLocal = `${String(a.date).slice(0, 10)}T${hh}:${mm}:${ss}`;
+      const start = new Date(isoLocal);
+      if (Number.isNaN(start.getTime())) return null;
+      let durMs = 30 * 60 * 1000;
+      if (a.duration_minutes) durMs = Number(a.duration_minutes) * 60 * 1000;
+      if (a.start_time && a.end_time) {
+        const d = new Date(a.end_time) - new Date(a.start_time);
+        if (d > 0) durMs = d;
+      }
+      const end = new Date(start.getTime() + durMs);
+      return { start, end };
+    }
+
+    function toCalendarEvents(appts) {
+      return appts.map(a => {
+        const meta = parseBufferFromNotes(a.notes);
+        const patientLabel = (a.patient_name || 'Unknown').trim();
+        const provLabel = ((a.provider || '').trim() || 'Team');
+        const we = wallClockStartEnd(a);
+        let start = we ? we.start : null;
+        let end = we ? we.end : null;
+        if (!start) {
+          start = a.start_time ? new Date(a.start_time) : (a.date && a.time ? new Date(`${a.date}T${String(a.time).split(':').length === 2 ? `${a.time}:00` : a.time}`) : null);
+        }
+        if (!end) {
+          end = a.end_time ? new Date(a.end_time) : undefined;
+        }
+        return ({
+          id: a.id,
+          title: `${patientLabel} • ${a.appointment_type || 'Somoation'} · ${provLabel}`,
+          start: start || a.start_time || `${a.date}T${a.time}:00`,
+          end: end,
+          backgroundColor: statusColor(a.status),
+          borderColor: statusColor(a.status),
+          textColor: '#ffffff',
+          extendedProps: {
+            patient_name: a.patient_name,
+            patient_phone: a.patient_phone,
+            patient_email: a.patient_email,
+            patient_initials: initials(a.patient_name),
+            phone_masked: maskPhone(a.patient_phone),
+            email: a.patient_email ? a.patient_email.replace(/(.).+(@.+)/, '$1***$2') : 'N/A',
+            appointment_type: a.appointment_type,
+            status: a.status,
+            provider: a.provider,
+            date: a.date || null,
+            time: a.time != null ? a.time : null,
+            confirmation: (a.id || '').substring(5, 13).toUpperCase(),
+            calendar_link: a.calendar_link || null,
+            patient_id: a.patient_id || null,
+            timezone: a.timezone || meta.timezone || 'America/New_York',
+            duration_minutes: a.duration_minutes,
+            buffer_before_minutes: meta.buffer_before_minutes || null,
+            buffer_after_minutes: meta.buffer_after_minutes || null,
+            start_time: a.start_time,
+            end_time: a.end_time,
+            notes: a.notes || '',
+            video_room: a.video_room_name || (a.id ? (String(a.id).startsWith('appt-') ? a.id : 'appt-' + a.id) : null),
+            ehr_sync_status: a.ehr_sync_status || null,
+            ehr_sync_last_error: a.ehr_sync_last_error || null
+          }
+        });
+      });
+    }
+
+    function getLocalDateString(d) {
+      const x = d instanceof Date ? d : new Date(d);
+      if (Number.isNaN(x.getTime())) return null;
+      const y = x.getFullYear();
+      const m = String(x.getMonth() + 1).padStart(2, '0');
+      const day = String(x.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function isAppointmentLocalDate(a, ymd) {
+      if (!a || !ymd) return false;
+      if (a.date) {
+        const d = String(a.date).slice(0, 10);
+        if (d === ymd) return true;
+      }
+      if (a.start_time) {
+        if (getLocalDateString(new Date(a.start_time)) === ymd) return true;
+      }
+      return false;
+    }
+
+    let scrollPinnedNextRefresh = false;
+    let todayPinnedCollapsed = false;
+    const legendStatusVisibility = {
+      scheduled: true,
+      confirmed: true,
+      cancelled: true,
+      available: true,
+      out_of_office: true
+    };
+
+    function statusKeyFromAppointment(a) {
+      return String(a?.status || 'scheduled').toLowerCase();
+    }
+
+    function statusKeyFromEvent(ev) {
+      const p = ev?.extendedProps || {};
+      if (p.isAvailabilityBlock) {
+        return p.blockType === 'out_of_office' ? 'out_of_office' : 'available';
+      }
+      return String(p.status || 'scheduled').toLowerCase();
+    }
+
+    function isVisibleByLegendStatus(key) {
+      const k = String(key || '').toLowerCase();
+      return Object.prototype.hasOwnProperty.call(legendStatusVisibility, k)
+        ? !!legendStatusVisibility[k]
+        : true;
+    }
+
+    function updateLegendChipsUi() {
+      document.querySelectorAll('.legend-filter').forEach((btn) => {
+        const key = btn.getAttribute('data-status-key');
+        btn.classList.toggle('is-off', !isVisibleByLegendStatus(key));
+      });
+    }
+
+    function setTodayPinnedCollapsed(nextCollapsed) {
+      todayPinnedCollapsed = !!nextCollapsed;
+      const wrap = document.getElementById('todayPinnedWrap');
+      const toggle = document.getElementById('todayPinnedToggle');
+      if (wrap) wrap.classList.toggle('is-collapsed', todayPinnedCollapsed);
+      if (toggle) toggle.textContent = todayPinnedCollapsed ? 'Show' : 'Hide';
+    }
+
+    function renderTodayPinned(appts) {
+      const wrap = document.getElementById('todayPinnedWrap');
+      const list = document.getElementById('todayPinnedList');
+      const heading = document.getElementById('todayPinnedHeadingText');
+      if (!wrap || !list || !heading) return;
+
+      const todayYmd = getLocalDateString(new Date());
+      const todayAppts = (appts || [])
+        .filter(a => isAppointmentLocalDate(a, todayYmd))
+        .filter(a => isVisibleByLegendStatus(statusKeyFromAppointment(a)))
+        .sort((a, b) => {
+          const wa = wallClockStartEnd(a);
+          const wb = wallClockStartEnd(b);
+          const ta = wa ? wa.start.getTime() : new Date(a.start_time || `${a.date}T${a.time || '00:00'}:00`).getTime();
+          const tb = wb ? wb.start.getTime() : new Date(b.start_time || `${b.date}T${b.time || '00:00'}:00`).getTime();
+          return ta - tb;
+        });
+
+      if (todayAppts.length === 0) {
+        wrap.style.display = 'none';
+        list.innerHTML = '';
+        return;
+      }
+
+      wrap.style.display = 'block';
+      heading.textContent = `Today · ${new Date().toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      })}`;
+
+      list.innerHTML = todayAppts.map(a => {
+        const ev = toCalendarEvents([a])[0];
+        const we = wallClockStartEnd(a);
+        const start = we ? we.start : (ev.start ? new Date(ev.start) : null);
+        const end = we ? we.end : (ev.end ? new Date(ev.end) : null);
+        let timeStr = '';
+        if (start && !Number.isNaN(start.getTime())) {
+          const opts = { hour: 'numeric', minute: '2-digit' };
+          timeStr = end && !Number.isNaN(end.getTime())
+            ? `${start.toLocaleTimeString([], opts)} – ${end.toLocaleTimeString([], opts)}`
+            : start.toLocaleTimeString([], opts);
+        }
+        const dot = statusColor(a.status);
+        const title = ev.title || `${a.patient_name} • ${a.appointment_type || 'Somoation'}`;
+        const idAttr = escapeHtml(a.id);
+        return `<button type="button" class="today-pinned-row" data-appt-id="${idAttr}">
+      <span class="today-pinned-time">${escapeHtml(timeStr)}</span>
+      <span class="today-pinned-dot" style="background:${dot}"></span>
+      <span class="today-pinned-title">${escapeHtml(title)}</span>
+    </button>`;
+      }).join('');
+
+      list.querySelectorAll('.today-pinned-row').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-appt-id');
+          const a = todayAppts.find(x => x.id === id);
+          if (!a) return;
+          const ev = toCalendarEvents([a])[0];
+          openModal('<div/>', ev.id, a.status, ev.extendedProps);
+        });
+      });
+      setTodayPinnedCollapsed(todayPinnedCollapsed);
+    }
+
+    function getVideoJoinUrl(roomName) {
+      const base = (typeof window.resolveBusinessPath === 'function')
+        ? window.location.origin + window.resolveBusinessPath('video-call.html')
+        : window.location.origin + '/business/video-call.html';
+
+      const params = new URLSearchParams();
+      const room = (typeof roomName === 'string' && roomName.trim()) ? roomName.trim() : '';
+      if (room) {
+        params.set('room', room);
+      }
+
+      // Pass provider name through to the video UI so it can show up in LiveKit
+      if (typeof window.getUserData === 'function') {
+        try {
+          const user = window.getUserData() || {};
+          if (user.name) {
+            params.set('name', user.name);
+          }
+        } catch (_) {
+          // ignore parsing errors and continue without name
+        }
+      }
+
+      // Auto-join when coming from an appointment so the provider lands directly in the room
+      params.set('auto', '1');
+
+      const query = params.toString();
+      return query ? `${base}?${query}` : base;
+    }
+
+    function handleJoinVideo(roomName) {
+      let room = roomName || (currentApptId ? (String(currentApptId).startsWith('appt-') ? currentApptId : 'appt-' + currentApptId) : '');
+      if (!room || room === 'appt-undefined' || room === 'appt-null') {
+        alert('This appointment does not have a video room. Please refresh the calendar or create the appointment again.');
+        return;
+      }
+      window.location.href = getVideoJoinUrl(room);
+    }
+
+    function handleCopyVideoLink(appointmentId) {
+      const room = currentVideoRoom || (appointmentId ? 'appt-' + appointmentId : '');
+      const url = getVideoJoinUrl(room);
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('btnCopyVideoLink');
+        if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy Link'; }, 2000); }
+      }).catch(() => alert('Could not copy. Please copy manually: ' + url));
+    }
+
+    async function handleSendVideoLink(appointmentId) {
+      const btn = document.getElementById('btnSendVideoLink');
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/appointments/${encodeURIComponent(appointmentId)}/send-video-link`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.success) {
+          btn.textContent = 'Sent!';
+          setTimeout(() => { btn.textContent = 'Send Link'; btn.disabled = false; }, 2000);
+        } else {
+          alert(data.error || 'Failed to send');
+          btn.disabled = false;
+          btn.textContent = 'Send Link';
+        }
+      } catch (e) {
+        alert('Failed to send link');
+        btn.disabled = false;
+        btn.textContent = 'Send Link';
+      }
+    }
+
+    let currentApptId = null;
+    let currentVideoRoom = null;
+    let showPHI = false;
+    let activeDetailsTab = 'overview';
+    let currentDetailsProps = null;
+    let currentEhrData = null;
+    let currentClinicalPrep = null;
+    let showFullCase = false;
+    let showFullTriage = false;
+
+    function escapeHtml(v) {
+      return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function looksLikeJson(s) {
+      if (s == null) return false;
+      const t = String(s).trim();
+      return (t.startsWith('{') && t.endsWith('}')) || (t.startsWith('[') && t.endsWith(']'));
+    }
+
+    function parseMaybeJson(v) {
+      if (v == null) return null;
+      if (typeof v === 'object') return v;
+      if (!looksLikeJson(v)) return null;
+      try { return JSON.parse(v); } catch (_) { return null; }
+    }
+
+    function shortText(v, max = 260) {
+      const s = String(v || '').trim();
+      if (!s) return '';
+      return s.length > max ? (s.slice(0, max).trim() + '…') : s;
+    }
+
+    async function loadClinicalPrep(apptId) {
+      currentClinicalPrep = { loading: true };
+      if (activeDetailsTab === 'clinical') renderClinicalPrep();
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/appointments/${encodeURIComponent(apptId)}/clinical-prep`, { credentials: 'include' });
+        const json = await res.json();
+        if (!json?.success || !json?.prep) {
+          currentClinicalPrep = { empty: true, message: json?.error || 'No clinical prep available.' };
+        } else {
+          currentClinicalPrep = { data: json.prep };
+        }
+      } catch (e) {
+        currentClinicalPrep = { error: true, message: e?.message || 'Failed to load clinical prep.' };
+      }
+      const btnPHI = document.getElementById('btnPHI');
+      if (btnPHI) {
+        const allowed = !!(currentClinicalPrep && currentClinicalPrep.data && currentClinicalPrep.data.phi_allowed);
+        btnPHI.disabled = !allowed;
+        btnPHI.style.opacity = allowed ? '1' : '0.55';
+        btnPHI.title = allowed ? 'Toggle PHI' : 'PHI hidden by policy for this session';
+        if (!allowed) {
+          showPHI = false;
+          btnPHI.textContent = 'Show PHI';
+        }
+      }
+      if (activeDetailsTab === 'clinical') renderClinicalPrep();
+    }
+
+    function renderClinicalPrep() {
+      const target = document.getElementById('modalContent');
+      if (!target) return;
+      if (!currentClinicalPrep || currentClinicalPrep.loading) {
+        target.innerHTML = `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;color:#6b7280;">Loading case summary...</div>
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;color:#6b7280;">Loading triage details...</div>
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;color:#6b7280;">Loading documents...</div>
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff;color:#6b7280;">Loading EHR activity...</div>
+        `;
+        return;
+      }
+      if (currentClinicalPrep.error) {
+        target.innerHTML = `<div style="color:#ef4444;">${escapeHtml(currentClinicalPrep.message || 'Failed to load clinical prep')}</div>`;
+        return;
+      }
+      if (currentClinicalPrep.empty) {
+        target.innerHTML = `<div style="color:#6b7280;">${escapeHtml(currentClinicalPrep.message || 'No clinical prep available')}</div>`;
+        return;
+      }
+
+      const prep = currentClinicalPrep.data || {};
+      const triage = prep.triage_session || {};
+      const cs = prep.case_summary || {};
+      const docs = prep.documents || {};
+      const activity = prep.activity || {};
+      const sectionStatus = prep.section_status || {};
+      const phiAllowed = !!prep.phi_allowed;
+
+      const urgency = cs.urgency || triage.urgency || 'unknown';
+      const safety = cs.safety_level || triage.safety_level || 'unknown';
+      const chiefComplaint = cs.chief_complaint || triage.soap_note || 'No chief complaint documented yet.';
+      const patientName = phiAllowed ? (prep.appointment?.patient_name || 'N/A') : ((prep.appointment?.patient_name || 'N/A'));
+      const patientPhone = phiAllowed ? (prep.appointment?.patient_phone || 'N/A') : (prep.appointment?.patient_phone || 'N/A');
+      const patientEmail = phiAllowed ? (prep.appointment?.patient_email || 'N/A') : (prep.appointment?.patient_email || 'N/A');
+
+      const triageData = [
+        ['Onset', triage.onset],
+        ['Provocation', triage.provocation],
+        ['Quality', triage.quality],
+        ['Radiation', triage.radiation],
+        ['Severity', triage.severity],
+        ['Timing', triage.timing],
+        ['Associated symptoms', triage.associated_sx],
+        ['Medications', triage.medications],
+        ['Allergies', triage.allergies],
+        ['Prior diagnoses', triage.prior_diagnoses],
+        ['Family history', triage.family_history]
+      ].filter((x) => x[1]);
+
+      const triageRows = (showFullTriage ? triageData : triageData.slice(0, 5))
+        .map(([k, v]) => `<div style="margin:2px 0;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(v))}</div>`)
+        .join('');
+
+      const rawSoap = cs.soap_note || triage.soap_note || '';
+      const soapObj = parseMaybeJson(rawSoap);
+      const soapText = soapObj ? JSON.stringify(soapObj, null, 2) : String(rawSoap || '');
+      const soapDisplay = showFullCase ? soapText : shortText(soapText, 360);
+
+      const keyProblems = Array.isArray(cs.key_problems) && cs.key_problems.length
+        ? cs.key_problems
+        : (String(triage.associated_sx || '').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean));
+      const keyProblemsHtml = (keyProblems || []).slice(0, 6).map(p => `<li>${escapeHtml(String(p))}</li>`).join('') || '<li>Not captured yet</li>';
+      const redFlags = [
+        ...(Array.isArray(cs.red_flags) ? cs.red_flags : []),
+        ...(Array.isArray(triage.red_flags) ? triage.red_flags : [])
+      ].filter(Boolean);
+      const uniqueRedFlags = Array.from(new Set(redFlags));
+      const redFlagsHtml = uniqueRedFlags.length
+        ? uniqueRedFlags.slice(0, 8).map(f => `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;margin:0 6px 6px 0;">${escapeHtml(String(f).replace(/_/g, ' '))}</span>`).join('')
+        : '<span style="font-size:12px;color:#64748b;">No explicit red flags captured.</span>';
+
+      const categories = docs.categories || {};
+      const categoryChips = Object.entries(categories).map(([k, v]) => {
+        const label = `${k}: ${v}`;
+        return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #cbd5e1;background:#f8fafc;font-size:11px;color:#475569;margin-right:6px;margin-bottom:6px;">${escapeHtml(label)}</span>`;
+      }).join('');
+
+      const docsHtml = (docs.items || []).map(d => `
+        <div style="padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:6px;background:#fff;">
+          <div style="font-weight:600;">${escapeHtml(d.title || 'Untitled')}</div>
+          <div style="font-size:12px;color:#6b7280;">${escapeHtml(d.type || 'document')}</div>
+          ${d.ai_summary
+            ? `<div style="margin-top:4px;font-size:12px;color:#334155;"><strong>AI:</strong> ${escapeHtml(d.ai_summary)}</div>`
+            : `<div style="margin-top:4px;font-size:12px;color:#64748b;">No extracted text yet. Try Sync EHR or refresh later.</div>`}
+          ${d.detail_url ? `<div style="margin-top:6px;"><a href="${escapeHtml(d.detail_url)}" target="_blank" rel="noopener" style="font-size:12px;color:#128a2e;">View details</a></div>` : ''}
+        </div>
+      `).join('') || '<div style="color:#6b7280;">No triage-linked documents.</div>';
+
+      const patientId = prep.appointment?.patient_id || '';
+      const profileHref = patientId
+        ? `patients.html?patient_id=${encodeURIComponent(patientId)}&patientId=${encodeURIComponent(patientId)}`
+        : 'patients.html';
+
+      target.innerHTML = `
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#f8fafc;">
+          <div style="font-size:12px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Chief complaint & safety</div>
+          <div style="margin-top:6px;"><strong>Chief complaint:</strong> ${escapeHtml(chiefComplaint)}</div>
+          <div style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
+            <span class="badge badge-scheduled">Urgency: ${escapeHtml(String(urgency))}</span>
+            <span class="badge badge-confirmed">Safety: ${escapeHtml(String(safety))}</span>
+          </div>
+          <div style="margin-top:6px;"><strong>Red flags:</strong> ${redFlagsHtml}</div>
+          <div style="margin-top:6px;"><strong>Patient:</strong> ${escapeHtml(patientName)} · ${escapeHtml(patientPhone)} · ${escapeHtml(patientEmail)}</div>
+          <div style="margin-top:6px;"><strong>FHIR Patient ID:</strong> ${escapeHtml(patientId || 'N/A')}</div>
+          <div style="margin-top:6px;"><a href="${profileHref}" target="_blank" rel="noopener" style="font-size:12px;color:#128a2e;">Open patient profile</a></div>
+          ${!phiAllowed ? '<div style="margin-top:4px;color:#92400e;font-size:12px;">PHI is masked by policy for this session.</div>' : ''}
+        </div>
+
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div style="font-size:12px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Case summary</div>
+            <button type="button" id="toggleFullCaseBtn" class="btn" style="padding:3px 8px;font-size:12px;">${showFullCase ? 'View less case' : 'View full case'}</button>
+          </div>
+          ${sectionStatus.case_summary && !sectionStatus.case_summary.ready ? `<div style="margin-top:6px;font-size:12px;color:#92400e;">${escapeHtml(sectionStatus.case_summary.error || 'Case summary not ready.')}</div>` : ''}
+          <div style="margin-top:6px;white-space:pre-wrap;">${escapeHtml(soapDisplay || 'No summary note yet')}</div>
+          <div style="margin-top:8px;"><strong>Key problems</strong><ul style="margin:4px 0 0 18px;">${keyProblemsHtml}</ul></div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div style="font-size:12px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Triage details</div>
+            <button type="button" id="toggleFullTriageBtn" class="btn" style="padding:3px 8px;font-size:12px;">${showFullTriage ? 'View less triage' : 'View full triage'}</button>
+          </div>
+          ${sectionStatus.triage && !sectionStatus.triage.ready ? `<div style="margin-top:6px;font-size:12px;color:#92400e;">${escapeHtml(sectionStatus.triage.error || 'Triage data unavailable.')}</div>` : ''}
+          <div style="margin-top:6px;">${triageRows || '<div style="color:#6b7280;">No triage details linked.</div>'}</div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;">
+          <div style="font-size:12px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">Documents (${Number(docs.count || 0)})</div>
+          ${sectionStatus.documents && !sectionStatus.documents.ready ? `<div style="margin-top:6px;font-size:12px;color:#92400e;">${escapeHtml(sectionStatus.documents.error || 'Documents unavailable.')}</div>` : ''}
+          <div style="margin-top:6px;">${categoryChips || '<span style="font-size:12px;color:#64748b;">No category data</span>'}</div>
+          <div style="margin-top:6px;">${docsHtml}</div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fff;">
+          <div style="font-size:12px;color:#475569;font-weight:700;letter-spacing:.04em;text-transform:uppercase;">EHR & activity</div>
+          <div style="margin-top:6px;"><strong>Case summary ready:</strong> ${activity.has_case_summary ? 'Yes' : 'No'}</div>
+          <div><strong>Triage linked:</strong> ${activity.triage_linked ? 'Yes' : 'No'}</div>
+          <div><strong>Summary ready at:</strong> ${escapeHtml(activity.summary_ready_at || 'N/A')}</div>
+          <div style="margin-top:8px;"><button type="button" id="jumpEhrBtn" class="btn btn-primary" style="padding:4px 10px;">Open EHR tab</button></div>
+        </div>
+      `;
+
+      const t1 = document.getElementById('toggleFullCaseBtn');
+      const t2 = document.getElementById('toggleFullTriageBtn');
+      const j = document.getElementById('jumpEhrBtn');
+      if (t1) t1.onclick = () => { showFullCase = !showFullCase; renderClinicalPrep(); };
+      if (t2) t2.onclick = () => { showFullTriage = !showFullTriage; renderClinicalPrep(); };
+      if (j) j.onclick = () => setDetailsTab('ehr');
+    }
+
+    async function loadEhrSummary(apptId, patientId) {
+      currentEhrData = { loading: true };
+      if (activeDetailsTab === 'ehr') renderEhrDetails();
+      try {
+        const apptRes = await fetch(`${API_BASE}/api/admin/appointments/${encodeURIComponent(apptId)}/ehr-summary`, { credentials: 'include' });
+        const apptJson = await apptRes.json();
+        if (apptJson?.success && apptJson?.synced) {
+          currentEhrData = { source: 'appointment', data: apptJson };
+          if (activeDetailsTab === 'ehr') renderEhrDetails();
+          return;
+        }
+        if (patientId) {
+          const pRes = await fetch(`${API_BASE}/api/admin/patients/${encodeURIComponent(patientId)}/ehr-summary`, { credentials: 'include' });
+          const pJson = await pRes.json();
+          if (pJson?.success && Array.isArray(pJson?.encounters) && pJson.encounters.length > 0) {
+            currentEhrData = { source: 'patient', data: pJson };
+            if (activeDetailsTab === 'ehr') renderEhrDetails();
+            return;
+          }
+        }
+        currentEhrData = { empty: true, message: apptJson?.message || 'No EHR data found for this appointment.' };
+      } catch (e) {
+        currentEhrData = { error: true, message: e?.message || 'Failed to load EHR summary' };
+      }
+      if (activeDetailsTab === 'ehr') renderEhrDetails();
+    }
+
+    async function syncEhrNow(apptId, patientId) {
+      const btn = document.getElementById('btnSyncEhrNow');
+      const statusEl = document.getElementById('ehrSyncStatus');
+      if (!apptId || !btn || !statusEl) return;
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = 'Syncing...';
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#6b7280';
+      statusEl.textContent = 'Sync started...';
+      try {
+        const res = await fetch(`${API_BASE}/api/ehr/sync/appointment/${encodeURIComponent(apptId)}`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        const json = await res.json();
+        if (!json?.success) {
+          statusEl.style.color = '#ef4444';
+          statusEl.textContent = `Sync failed: ${json?.error || 'Unknown error'}`;
+        } else {
+          statusEl.style.color = '#059669';
+          statusEl.textContent = json?.message || 'Sync completed.';
+        }
+      } catch (e) {
+        statusEl.style.color = '#ef4444';
+        statusEl.textContent = `Sync failed: ${e?.message || 'Network error'}`;
+      } finally {
+        await loadEhrSummary(apptId, patientId || null);
+        if (activeDetailsTab !== 'ehr') setDetailsTab('ehr');
+        btn.disabled = false;
+        btn.textContent = oldText;
+      }
+    }
+
+    function renderEhrDetails() {
+      const target = document.getElementById('modalContent');
+      if (!target) return;
+      if (!currentEhrData || currentEhrData.loading) {
+        target.innerHTML = '<div style="color:#6b7280;">Loading EHR summary...</div>';
+        return;
+      }
+      if (currentEhrData.error) {
+        target.innerHTML = `<div style="color:#ef4444;">${escapeHtml(currentEhrData.message || 'Failed to load EHR data')}</div>`;
+        return;
+      }
+      if (currentEhrData.empty) {
+        target.innerHTML = `<div style="color:#6b7280;">${escapeHtml(currentEhrData.message || 'No EHR data available yet.')}</div>`;
+        return;
+      }
+
+      const rows = currentEhrData.source === 'appointment'
+        ? [{ encounter: currentEhrData.data.encounter, conditions: currentEhrData.data.conditions || [], procedures: currentEhrData.data.procedures || [], observations: currentEhrData.data.observations || [] }]
+        : (currentEhrData.data.encounters || []);
+      const blocks = rows.map((row, idx) => {
+        const enc = row.encounter || {};
+        const conditions = (row.conditions || []).map(c => `<li>${escapeHtml(c.icd10_code || '')} - ${escapeHtml(c.description || '')}${c.is_primary ? ' (primary)' : ''}</li>`).join('') || '<li>None</li>';
+        const procedures = (row.procedures || []).map(p => `<li>${escapeHtml(p.cpt_code || '')}${p.modifier ? `-${escapeHtml(p.modifier)}` : ''} - ${escapeHtml(p.description || '')}</li>`).join('') || '<li>None</li>';
+        const observations = (row.observations || []).map(o => `<li>${escapeHtml(o.type || '')}: ${escapeHtml(o.value || '')}${o.unit ? ` ${escapeHtml(o.unit)}` : ''}</li>`).join('') || '<li>None</li>';
+        return `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff;">
+            <div style="font-weight:600;margin-bottom:6px;">Encounter ${idx + 1}: ${escapeHtml(enc.id || 'N/A')}</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">${escapeHtml(enc.start_time || 'N/A')} -> ${escapeHtml(enc.end_time || 'N/A')} (${escapeHtml(enc.status || 'unknown')})</div>
+            <div><strong>Conditions</strong><ul style="margin:4px 0 8px 18px;">${conditions}</ul></div>
+            <div><strong>Procedures</strong><ul style="margin:4px 0 8px 18px;">${procedures}</ul></div>
+            <div><strong>Observations</strong><ul style="margin:4px 0 0 18px;">${observations}</ul></div>
+          </div>
+        `;
+      }).join('');
+      const sourceLabel = currentEhrData.source === 'appointment' ? 'appointment-linked EHR summary' : 'patient EHR history';
+      target.innerHTML = `<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Auto-populated from ${sourceLabel}.</div>${blocks}`;
+    }
+
+    function setDetailsTab(tab) {
+      activeDetailsTab = tab === 'ehr' ? 'ehr' : (tab === 'clinical' ? 'clinical' : 'overview');
+      const tabOverview = document.getElementById('tabOverview');
+      const tabClinical = document.getElementById('tabClinical');
+      const tabEhr = document.getElementById('tabEHR');
+      const tabs = [
+        { el: tabOverview, id: 'overview' },
+        { el: tabClinical, id: 'clinical' },
+        { el: tabEhr, id: 'ehr' }
+      ];
+      tabs.forEach(({ el, id }) => {
+        if (!el) return;
+        const on = activeDetailsTab === id;
+        el.className = on ? 'btn btn-primary' : 'btn';
+        el.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      if (activeDetailsTab === 'ehr') renderEhrDetails();
+      else if (activeDetailsTab === 'clinical') renderClinicalPrep();
+      else if (currentDetailsProps) renderDetails(currentDetailsProps);
+    }
+
+    function openModal(contentHtml, apptId, status, extProps) {
+      currentApptId = apptId;
+      currentDetailsProps = extProps;
+      const rawRoom = extProps && extProps.video_room ? extProps.video_room : null;
+      const fallbackRoom = (apptId && String(apptId) !== 'undefined') ? (String(apptId).startsWith('appt-') ? apptId : 'appt-' + apptId) : null;
+      currentVideoRoom = (rawRoom && rawRoom !== 'appt-undefined' && rawRoom !== 'appt-null') ? rawRoom : fallbackRoom;
+      showPHI = false;
+      activeDetailsTab = 'overview';
+      currentEhrData = null;
+      currentClinicalPrep = null;
+      showFullCase = false;
+      showFullTriage = false;
+      document.getElementById('modalContent').innerHTML = contentHtml;
+      const modal = document.getElementById('detailsModal');
+      modal.style.display = 'block';
+
+      // Enable/disable action buttons based on status
+      const btnConfirm = document.getElementById('btnConfirm');
+      const btnCancel = document.getElementById('btnCancel');
+      const btnReschedule = document.getElementById('btnReschedule');
+
+      const s = (status || '').toLowerCase();
+      btnConfirm.disabled = s === 'confirmed' || s === 'cancelled';
+      btnCancel.disabled = s === 'cancelled';
+
+      btnConfirm.onclick = () => handleConfirm(currentApptId);
+      btnCancel.onclick = () => handleCancel(currentApptId);
+      btnReschedule.onclick = () => handleReschedule(currentApptId);
+
+      const btnJoinVideo = document.getElementById('btnJoinVideo');
+      const btnCopyVideoLink = document.getElementById('btnCopyVideoLink');
+      const btnSendVideoLink = document.getElementById('btnSendVideoLink');
+      btnJoinVideo.onclick = () => handleJoinVideo(currentVideoRoom);
+      btnCopyVideoLink.onclick = () => handleCopyVideoLink(currentApptId);
+      btnSendVideoLink.onclick = () => handleSendVideoLink(currentApptId);
+      btnJoinVideo.disabled = s === 'cancelled';
+      btnCopyVideoLink.disabled = s === 'cancelled';
+      btnSendVideoLink.disabled = s === 'cancelled';
+
+      const btnPHI = document.getElementById('btnPHI');
+      if (btnPHI) {
+        btnPHI.disabled = true;
+        btnPHI.style.opacity = '0.55';
+        btnPHI.title = 'Loading PHI policy...';
+        btnPHI.textContent = 'Show PHI';
+      }
+      if (btnPHI) {
+        btnPHI.onclick = () => {
+          const allowed = !!(currentClinicalPrep && currentClinicalPrep.data && currentClinicalPrep.data.phi_allowed);
+          if (!allowed) return;
+          showPHI = !showPHI;
+          btnPHI.textContent = showPHI ? 'Hide PHI' : 'Show PHI';
+          if (activeDetailsTab === 'overview') renderDetails(extProps);
+          if (activeDetailsTab === 'clinical') renderClinicalPrep();
+        };
+      }
+      const tabOverview = document.getElementById('tabOverview');
+      const tabClinical = document.getElementById('tabClinical');
+      const tabEhr = document.getElementById('tabEHR');
+      const btnSyncEhrNow = document.getElementById('btnSyncEhrNow');
+      const ehrSyncStatus = document.getElementById('ehrSyncStatus');
+      const bindDrawerTab = (el, name) => {
+        if (!el) return;
+        el.onclick = () => setDetailsTab(name);
+        el.onkeydown = (e) => {
+          if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+          const list = [tabOverview, tabClinical, tabEhr].filter(Boolean);
+          const idx = list.indexOf(el);
+          if (idx < 0) return;
+          e.preventDefault();
+          const next = e.key === 'ArrowRight' ? list[(idx + 1) % list.length] : list[(idx - 1 + list.length) % list.length];
+          next.focus();
+          setDetailsTab(next.id === 'tabOverview' ? 'overview' : next.id === 'tabClinical' ? 'clinical' : 'ehr');
+        };
+      };
+      bindDrawerTab(tabOverview, 'overview');
+      bindDrawerTab(tabClinical, 'clinical');
+      bindDrawerTab(tabEhr, 'ehr');
+      if (btnSyncEhrNow) btnSyncEhrNow.onclick = () => syncEhrNow(apptId, extProps?.patient_id || null);
+      if (ehrSyncStatus) {
+        ehrSyncStatus.style.display = 'none';
+        ehrSyncStatus.textContent = '';
+      }
+      setDetailsTab('clinical');
+      loadClinicalPrep(apptId);
+      loadEhrSummary(apptId, extProps?.patient_id || null);
+      renderDetails(extProps);
+    }
+    function renderDetails(p) {
+      if (activeDetailsTab !== 'overview') return;
+      const statusBadge = (s) => { const cls = s === 'confirmed' ? 'badge-confirmed' : (s === 'cancelled' ? 'badge-cancelled' : 'badge-scheduled'); return `<span class=\"badge ${cls}\">${s}</span>`; };
+      const ehrSyncBadge = (s) => {
+        const status = String(s || 'not_synced').toLowerCase();
+        const map = {
+          queued: { bg: '#e0f2fe', fg: '#0369a1', text: 'queued' },
+          in_progress: { bg: '#fef3c7', fg: '#92400e', text: 'in progress' },
+          done: { bg: '#dcfce7', fg: '#166534', text: 'synced' },
+          dead: { bg: '#fee2e2', fg: '#991b1b', text: 'failed' },
+          not_synced: { bg: '#f3f4f6', fg: '#4b5563', text: 'not synced' }
+        };
+        const m = map[status] || map.not_synced;
+        return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:${m.bg};color:${m.fg};text-transform:uppercase;letter-spacing:.02em;">${m.text}</span>`;
+      };
+      const phiAllowed = !!(currentClinicalPrep && currentClinicalPrep.data && currentClinicalPrep.data.phi_allowed);
+      const canShowPhi = showPHI && phiAllowed;
+      const patientName = canShowPhi ? (p.patient_name || 'N/A') : (p.patient_initials || 'N/A');
+      const phone = canShowPhi ? (p.patient_phone || 'N/A') : (p.phone_masked || 'N/A');
+      const email = canShowPhi ? (p.patient_email || 'N/A') : (p.email || 'N/A');
+      const link = p.calendar_link ? `<div style=\"margin-top:8px\"><a href=\"${p.calendar_link}\" target=\"_blank\" class=\"link\">Open in Google Calendar</a></div>` : '';
+      const buffers = (p.buffer_before_minutes || p.buffer_after_minutes) ? `<div><strong>Buffers:</strong> before ${p.buffer_before_minutes || 0}m • after ${p.buffer_after_minutes || 0}m</div>` : '';
+      const we = wallClockStartEnd(p);
+      const when = we
+        ? `${we.start.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })} – ${we.end.toLocaleString(undefined, { timeStyle: 'short' })}`
+        : (p.start_time ? `${new Date(p.start_time).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' })}` : 'N/A');
+      const providerLabel = escapeHtml((p.provider || '').trim() || 'Team');
+      const typeLabel = escapeHtml((p.appointment_type || 'Visit').trim());
+      const subEl = document.getElementById('detailsModalSubtitle');
+      if (subEl) {
+        subEl.style.display = 'block';
+        subEl.innerHTML = `${typeLabel} <span class="details-sub-muted">scheduled with</span> ${providerLabel}<span class="details-sub-when">${escapeHtml(when)} · ${escapeHtml(p.timezone || 'America/New_York')}</span>`;
+      }
+      document.getElementById('modalContent').innerHTML = `
+        <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px;\">
+          <div>
+            <div><strong>Confirmation:</strong> ${p.confirmation}</div>
+            <div><strong>Status:</strong> ${statusBadge(p.status)}</div>
+            <div><strong>EHR Sync:</strong> ${ehrSyncBadge(p.ehr_sync_status)}${p.ehr_sync_last_error ? ` <span style="color:#b91c1c;font-size:11px;">(${escapeHtml(String(p.ehr_sync_last_error).slice(0, 80))})</span>` : ''}</div>
+            <div><strong>Type:</strong> ${p.appointment_type}</div>
+            <div><strong>Clinician / provider:</strong> ${p.provider || 'Team'}</div>
+            <div><strong>When:</strong> ${escapeHtml(when)} (${escapeHtml(p.timezone || 'America/New_York')})</div>
+          </div>
+          <div>
+            <div><strong>Client:</strong> ${patientName}</div>
+            <div><strong>Phone:</strong> ${phone}</div>
+            <div><strong>Email:</strong> ${email}</div>
+            <div><strong>FHIR Client ID:</strong> ${p.patient_id || 'N/A'}</div>
+          </div>
+        </div>
+        <div style=\"margin-top:8px;\">${buffers}</div>
+        ${p.notes ? `<div style=\"margin-top:6px;color:#6b7280\"><strong>Notes:</strong> ${canShowPhi ? p.notes : '•••'}</div>` : ''}
+        ${link}
+      `;
+    }
+    function closeModal() {
+      const sub = document.getElementById('detailsModalSubtitle');
+      if (sub) {
+        sub.innerHTML = '';
+        sub.style.display = 'none';
+      }
+      document.getElementById('detailsModal').style.display = 'none';
+    }
+
+    function openCreateModal() {
+      const modal = document.getElementById('createApptModal');
+      modal.style.display = 'block';
+      const today = new Date();
+      document.getElementById('createApptDate').value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      const nextHour = new Date();
+      nextHour.setHours(nextHour.getHours() + 1);
+      document.getElementById('createApptTime').value = String(nextHour.getHours()).padStart(2, '0') + ':' + String(nextHour.getMinutes()).padStart(2, '0');
+      document.getElementById('createApptError').style.display = 'none';
+      document.getElementById('createApptForm').reset();
+      document.getElementById('createPatientSearch').value = '';
+      document.getElementById('createPatientSearchResults').style.display = 'none';
+      document.getElementById('createPatientSearchResults').innerHTML = '';
+    }
+
+    function closeCreateModal() {
+      document.getElementById('createApptModal').style.display = 'none';
+      document.getElementById('createApptError').style.display = 'none';
+    }
+
+    async function initCalendar() {
+      if (typeof mountProviderPage !== 'function') {
+        console.error('Provider shell scripts failed to load');
+        return;
+      }
+      mountProviderPage({
+        activeId: 'calendar',
+        eyebrow: 'Schedule',
+        title: 'Appointments calendar',
+        subtitle: 'View and manage bookings from the AI front desk',
+        topbarActions: '<button type="button" class="pp-btn pp-btn-primary pp-btn-sm" id="ppTopCreateAppt">+ New appointment</button>'
+      });
+      const topCreate = document.getElementById('ppTopCreateAppt');
+      if (topCreate) topCreate.addEventListener('click', openCreateModal);
+      // Default date filter empty = show ALL appointments (past + future); user can filter by date if needed
+      const dateInput = document.getElementById('dateFilter');
+      dateInput.placeholder = 'All dates';
+
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'listWeek',
+        customButtons: {
+          goToday: {
+            text: 'today',
+            click: function () {
+              // Navigate to today's date in the calendar UI. Do not lock backend to
+              // an exact date filter, otherwise week/day navigation can appear empty.
+              if (dateInput) dateInput.value = '';
+              scrollPinnedNextRefresh = true;
+              calendar.today();
+            }
+          }
+        },
+        headerToolbar: { left: 'prev,next goToday', center: 'title', right: 'listWeek,dayGridMonth,timeGridWeek,timeGridDay' },
+        datesSet: function () { refresh(); },
+        eventClick: function (info) {
+          const p = info.event.extendedProps;
+          if (p && p.isAvailabilityBlock) {
+            const title = info.event.title || (p.blockType === 'out_of_office' ? 'Out of Office' : 'Available');
+            if (confirm(`Delete "${title}" block?`)) {
+              fetch(`${API_BASE}/api/customers/me/availability-blocks/${encodeURIComponent(info.event.id)}`, {
+                method: 'DELETE',
+                credentials: 'include'
+              }).then(r => r.json()).then(data => {
+                if (data.success) refresh();
+              }).catch(() => alert('Failed to delete'));
+            }
+            return;
+          }
+          openModal('<div/>', info.event.id, p.status, p);
+        }
+      });
+
+      async function refresh() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const firstOfMonth = (y, m) => `${y}-${String(m + 1).padStart(2, '0')}-01`;
+        const lastOfMonth = (y, m) => new Date(y, m + 1, 0).toISOString().slice(0, 10);
+        let start = null, end = null;
+        try {
+          const view = calendar.view;
+          if (view && view.activeStart) start = view.activeStart.toISOString().slice(0, 10);
+          if (view && view.activeEnd) end = view.activeEnd.toISOString().slice(0, 10);
+        } catch (_) {}
+        if (!start || !end) {
+          start = firstOfMonth(currentYear, now.getMonth() - 1);
+          end = lastOfMonth(currentYear, now.getMonth() + 1);
+        }
+        const startYear = start ? parseInt(start.slice(0, 4), 10) : currentYear;
+        if (Math.abs(startYear - currentYear) > 1) {
+          start = firstOfMonth(currentYear, now.getMonth());
+          end = lastOfMonth(currentYear, now.getMonth() + 2);
+        }
+        const appts = await fetchAppointments(start, end);
+        renderTodayPinned(appts);
+        const events = toCalendarEvents(appts);
+        const blocks = await fetchAvailabilityBlocks(start, end);
+        const avbEvents = toAvailabilityEvents(blocks);
+        const visibleEvents = events.filter(ev => isVisibleByLegendStatus(statusKeyFromEvent(ev)));
+        const visibleAvailabilityEvents = avbEvents.filter(ev => isVisibleByLegendStatus(statusKeyFromEvent(ev)));
+        calendar.removeAllEvents();
+        calendar.addEventSource(visibleEvents);
+        calendar.addEventSource(visibleAvailabilityEvents);
+        if (scrollPinnedNextRefresh) {
+          scrollPinnedNextRefresh = false;
+          const wrap = document.getElementById('todayPinnedWrap');
+          if (wrap && wrap.style.display !== 'none') {
+            requestAnimationFrame(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+          }
+        }
+      }
+      window.calendarRefresh = refresh;
+
+      document.getElementById('refreshBtn').addEventListener('click', refresh);
+      document.getElementById('createApptBtn').addEventListener('click', openCreateModal);
+      document.getElementById('statusFilter').addEventListener('change', refresh);
+      document.getElementById('dateFilter').addEventListener('change', refresh);
+      document.getElementById('providerFilter').addEventListener('keydown', (e) => { if (e.key === 'Enter') refresh(); });
+      document.querySelectorAll('.legend-filter').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = String(btn.getAttribute('data-status-key') || '').toLowerCase();
+          if (!Object.prototype.hasOwnProperty.call(legendStatusVisibility, key)) return;
+          legendStatusVisibility[key] = !legendStatusVisibility[key];
+          updateLegendChipsUi();
+          refresh();
+        });
+      });
+      const todayPinnedToggle = document.getElementById('todayPinnedToggle');
+      if (todayPinnedToggle) {
+        todayPinnedToggle.addEventListener('click', () => setTodayPinnedCollapsed(!todayPinnedCollapsed));
+      }
+      updateLegendChipsUi();
+
+      // Patient search for create appointment
+      let searchTimeout = null;
+      document.getElementById('createPatientSearch').addEventListener('input', function () {
+        const q = this.value.trim();
+        const resultsEl = document.getElementById('createPatientSearchResults');
+        const idEl = document.getElementById('createPatientId');
+        clearTimeout(searchTimeout);
+        if (q.length < 2) {
+          resultsEl.style.display = 'none';
+          resultsEl.innerHTML = '';
+          if (idEl) idEl.value = '';
+          return;
+        }
+        searchTimeout = setTimeout(async () => {
+          try {
+            // Primary: admin patient search (includes existing appointment patients).
+            const adminRes = await fetch(`${API_BASE}/api/admin/patients/search?q=${encodeURIComponent(q)}&limit=10`, { credentials: 'include' });
+            let patients = [];
+            if (adminRes.ok) {
+              const adminJson = await adminRes.json();
+              patients = Array.isArray(adminJson?.patients) ? adminJson.patients : [];
+            }
+            // Fallback: FHIR search for patients that may not appear in appointment history yet.
+            if (patients.length === 0) {
+              const res = await fetch(`${API_BASE}/fhir/Patient?name=${encodeURIComponent(q)}&_count=10`, { credentials: 'include' });
+              const bundle = await res.json();
+              patients = (bundle.entry || []).map(e => e.resource).map(r => {
+                const nameObj = r.name && r.name[0] ? r.name[0] : {};
+                const name = `${(nameObj.given || []).join(' ')} ${nameObj.family || ''}`.trim() || 'Unknown';
+                const telecom = r.telecom || [];
+                const phone = (telecom.find(t => t.system === 'phone') || {}).value || '';
+                const email = (telecom.find(t => t.system === 'email') || {}).value || '';
+                return { id: r.id, name, phone, email };
+              });
+            }
+            if (patients.length === 0) {
+              resultsEl.innerHTML = '<div style="padding:12px;color:#6b7280;">No patient match. The name you typed will be used for this appointment.</div>';
+            } else {
+              resultsEl.innerHTML = patients.map(p => {
+                const label = [p.name, p.phone, p.email].filter(Boolean).join(' • ');
+                return `<div class="patient-search-item" data-id="${(p.id || '').replace(/"/g, '&quot;')}" data-name="${(p.name || '').replace(/"/g, '&quot;')}" data-phone="${(p.phone || '').replace(/"/g, '&quot;')}" data-email="${(p.email || '').replace(/"/g, '&quot;')}" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f3f4f6;">${label || p.id}</div>`;
+              }).join('');
+              resultsEl.querySelectorAll('.patient-search-item').forEach(el => {
+                el.addEventListener('click', () => {
+                  document.getElementById('createPatientSearch').value = el.dataset.name || '';
+                  document.getElementById('createPatientPhone').value = el.dataset.phone || '';
+                  document.getElementById('createPatientEmail').value = el.dataset.email || '';
+                  if (idEl) idEl.value = el.dataset.id || '';
+                  resultsEl.style.display = 'none';
+                  resultsEl.innerHTML = '';
+                });
+              });
+            }
+            resultsEl.style.display = 'block';
+          } catch (e) {
+            resultsEl.innerHTML = '<div style="padding:12px;color:#ef4444;">Search failed. Enter details manually.</div>';
+            resultsEl.style.display = 'block';
+          }
+        }, 300);
+      });
+      document.getElementById('createPatientSearch').addEventListener('blur', function () {
+        setTimeout(() => {
+          document.getElementById('createPatientSearchResults').style.display = 'none';
+        }, 200);
+      });
+
+      // Handle create appointment form submission
+      document.getElementById('createApptForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('createApptError');
+        errorDiv.style.display = 'none';
+        
+        const formData = {
+          patient_name: document.getElementById('createPatientSearch').value.trim(),
+          patient_phone: document.getElementById('createPatientPhone').value.trim(),
+          patient_email: document.getElementById('createPatientEmail').value.trim() || null,
+          patient_id: (document.getElementById('createPatientId') && document.getElementById('createPatientId').value.trim()) || null,
+          appointment_type: document.getElementById('createApptType').value,
+          date: document.getElementById('createApptDate').value,
+          time: document.getElementById('createApptTime').value,
+          provider: document.getElementById('createProvider').value.trim() || 'Somo Care Team',
+          notes: document.getElementById('createNotes').value.trim() || '',
+          clinic_id: (typeof getClinicId === 'function' ? getClinicId() : 'clinic-default')
+        };
+
+        if (!formData.patient_name || !formData.patient_phone || !formData.date || !formData.time) {
+          errorDiv.textContent = 'Please fill in all required fields (Name, Phone, Date, Time)';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/appointments/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          const result = await res.json();
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to create appointment');
+          }
+
+          // Success - close modal and refresh calendar
+          closeCreateModal();
+          await refresh();
+          
+          // Show success message (optional)
+          alert(`Appointment created successfully! Confirmation: ${result.appointment?.id || 'N/A'}`);
+        } catch (err) {
+          errorDiv.textContent = err.message || 'Failed to create appointment. Please try again.';
+          errorDiv.style.display = 'block';
+          console.error('Create appointment error:', err);
+        }
+      });
+
+      calendar.render();
+      await refresh();
+    }
+
+    document.addEventListener('DOMContentLoaded', initCalendar);
+
+    // Actions
+    async function handleConfirm(appointmentId) {
+      if (!appointmentId) return;
+      try {
+        const res = await fetch(`${API_BASE}/voice/appointments/confirm`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ args: { appointment_id: appointmentId } })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal();
+          location.reload();
+        } else { alert(data.error || 'Failed to confirm'); }
+      } catch (e) { alert('Confirm failed'); }
+    }
+
+    async function handleCancel(appointmentId) {
+      if (!appointmentId) return;
+      const reason = prompt('Reason for cancellation?');
+      if (reason === null) return;
+      try {
+        const res = await fetch(`${API_BASE}/voice/appointments/cancel`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ args: { appointment_id: appointmentId, reason } })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal();
+          location.reload();
+        } else { alert(data.error || 'Failed to cancel'); }
+      } catch (e) { alert('Cancel failed'); }
+    }
+
+    async function handleReschedule(appointmentId) {
+      if (!appointmentId) return;
+      const newDate = document.getElementById('rsDate').value;
+      const newTime = document.getElementById('rsTime').value;
+      if (!newDate || !newTime) { alert('Select date and time'); return; }
+      try {
+        const res = await fetch(`${API_BASE}/voice/appointments/reschedule`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ args: { appointment_id: appointmentId, new_date: newDate, new_time: newTime, reason: 'Dashboard reschedule' } })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeModal();
+          location.reload();
+        } else { alert(data.error || 'Failed to reschedule'); }
+      } catch (e) { alert('Reschedule failed'); }
+    }
+    // Check available slots for reschedule using complex scheduling logic
+    document.addEventListener('click', async (e) => {
+      if (e.target && e.target.id === 'btnCheckSlots') {
+        const date = document.getElementById('rsDate').value;
+        const apptType = document.getElementById('rsType').value;
+        const tz = document.getElementById('rsTz').value;
+        if (!date) { alert('Pick a date'); return; }
+        try {
+          const res = await fetch(`${API_BASE}/voice/appointments/available-slots`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ args: { date, appointment_type: apptType, timezone: tz } })
+          });
+          const data = await res.json();
+          const wrap = document.getElementById('slotsWrap');
+          if (data.success) {
+            wrap.style.display = 'block';
+            wrap.innerHTML = `<div style=\"margin-bottom:6px;color:#374151\"><strong>${data.appointment_type}</strong> • ${data.slot_duration_minutes}m (+${data.buffer_before_minutes}/${data.buffer_after_minutes}m buffers)</div>` +
+              (data.available_slots.length ? data.available_slots.map(t => `<button class=\"btn\" style=\"margin:4px\" onclick=\"document.getElementById('rsTime').value='${t}'\">${t}</button>`).join('') : '<div style=\"color:#991b1b\">No slots available</div>');
+          } else {
+            wrap.style.display = 'block';
+            wrap.innerHTML = `<div style=\"color:#991b1b\">${data.error || 'Failed to load slots'}</div>`;
+          }
+        } catch (err) {
+          const wrap = document.getElementById('slotsWrap'); wrap.style.display = 'block'; wrap.innerHTML = '<div style="color:#991b1b">Error loading slots</div>';
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

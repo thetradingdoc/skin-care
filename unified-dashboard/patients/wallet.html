@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16a637">
+    <link rel="manifest" href="../manifest.webmanifest">
+    <title>Wallet — Somo Patient</title>
+    <link rel="stylesheet" href="../assets/css/somo-tokens.css">
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700&display=swap">
+    <script src="../assets/js/config.js" defer></script>
+    <style>
+        :root {
+            --primary: #16a637;
+            --primary-dark: #2a409a;
+            --primary-light: #5b77de;
+        }
+
+        body {
+            font-family: 'League Spartan', var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e7ebf4;
+            box-shadow: 2px 0 14px rgba(21, 36, 88, 0.05);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sidebar-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 2px;
+            color: #131a2e;
+            text-decoration: none;
+        }
+
+        .sidebar-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            animation: sidebarSpin 6s linear infinite;
+        }
+
+        @keyframes sidebarSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sidebar-subtitle {
+            font-size: 11px;
+            color: var(--gray-500);
+            margin-top: 2px;
+            margin-left: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-nav {
+            padding: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--gray-700);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #2f48aa 0%, #3d5ed3 100%);
+            color: white;
+        }
+
+        .nav-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+        .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+            position: absolute;
+            bottom: 0;
+            width: 260px;
+            background: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--gray-200);
+            background: #ffffff;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            border-color: #93c5fd;
+            color: #16a637;
+            background: #eff6ff;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: var(--patient-space-5);
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: var(--patient-space-4);
+            margin-top: var(--patient-space-4);
+        }
+
+        .page-title {
+            font-size: var(--patient-title-size);
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: var(--patient-space-1);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        .page-subtitle {
+            font-size: var(--patient-subtitle-size);
+            color: var(--gray-600);
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1001;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: 48px;
+            height: 48px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+                padding-top: 80px;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--patient-card-radius);
+            padding: var(--patient-space-4);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: var(--patient-space-3);
+        }
+
+        .card-title {
+            font-size: var(--patient-row-title-size);
+            font-weight: 800;
+            color: var(--gray-900);
+        }
+
+        .subtext {
+            color: var(--gray-500);
+            font-size: var(--patient-row-meta-size);
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: var(--patient-chip-size);
+            font-weight: 700;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+
+        .badge.due {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            min-height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .wallet-hero-wrap {
+            max-width: 460px;
+            margin-bottom: 16px;
+        }
+        .wallet-hero-card {
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #16a637 0%, #16a637 100%);
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(30,64,175,0.28);
+        }
+        .wallet-hero-inner {
+            padding: 18px;
+        }
+        .wallet-hero-display {
+            margin-top: 10px;
+            border-radius: 14px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.10) 100%);
+            border: 1px solid rgba(255,255,255,0.22);
+        }
+        .wallet-hero-btn {
+            margin-top: 12px;
+            width: 100%;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.32);
+            color: #fff;
+        }
+        .wallet-hero-btn:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+        .receipt-row {
+            padding: 12px 0;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .receipt-amt {
+            font-weight: 800;
+        }
+
+        .receipt-meta {
+            color: var(--gray-500);
+            font-size: var(--patient-row-meta-size);
+            margin-top: 2px;
+        }
+        .wallet-eyebrow {
+            font-size: var(--patient-section-label-size);
+            opacity: 0.8;
+        }
+        .wallet-card-number {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .wallet-card-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+            font-size: var(--patient-row-meta-size);
+            opacity: 0.92;
+        }
+        .wallet-note {
+            margin-top: 10px;
+            color: var(--gray-700);
+            font-size: var(--patient-row-title-size);
+            line-height: 1.35;
+        }
+        .wallet-empty-state,
+        .wallet-error-state {
+            padding: 12px;
+            border-radius: 12px;
+            font-size: var(--patient-row-title-size);
+        }
+        .wallet-empty-state {
+            border: 1px dashed #e5e7eb;
+            color: var(--gray-600);
+        }
+        .wallet-error-state {
+            border: 1px solid #fee2e2;
+            background: #fff1f2;
+            color: #991b1b;
+        }
+        .receipt-status-text {
+            font-size: var(--patient-row-meta-size);
+            color: var(--gray-700);
+            text-transform: capitalize;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">☰</button>
+    <div class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <span class="sidebar-mark" aria-hidden="true">S&C</span>
+                </a>
+                <div class="sidebar-subtitle">Patient Portal</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="patient-dashboard.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg></span>
+                    <span>Home</span>
+                </a>
+                <a href="schedule.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+                    <span>Calendar</span>
+                </a>
+                <a href="appointments.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+                    <span>Routine</span>
+                </a>
+                <a href="my-records.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span>
+                    <span>Products</span>
+                </a>
+                <a href="wallet.html" class="nav-item active">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M2.5 10.5h19"/><path d="M16 14h3"/></svg></span>
+                    <span>Wallet</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></span>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header" style="display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px;">
+                <div>
+                    <h1 class="page-title">Wallet</h1>
+                    <p class="page-subtitle">Card first, then balances, receipts, and provider billing status.</p>
+                </div>
+            </div>
+
+            <div id="walletDetails">
+            <div class="card">
+                <div class="row" style="align-items:flex-start;">
+                    <div>
+                        <div class="card-title">Payment method</div>
+                        <div class="subtext">Your card on file is used to pay for visits when needed.</div>
+                    </div>
+                    <a class="btn btn-secondary" href="profile.html" style="white-space:nowrap;">Manage</a>
+                </div>
+                <div id="paymentMethodCard"
+                    style="margin-top:14px;border-radius:16px;padding:18px;background:linear-gradient(135deg,#16a637 0%,#16a637 100%);color:#fff;box-shadow:0 10px 25px rgba(30,64,175,0.25);">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                        <div style="font-weight:800;">My Payment Card</div>
+                        <div style="opacity:0.85;">💳</div>
+                    </div>
+                    <div id="pmNumber" style="margin-top:14px;font-family:'Courier New',monospace;letter-spacing:2px;font-weight:700;">
+                        •••• •••• •••• ••••
+                        </div>
+                    <div class="wallet-card-meta" style="opacity:0.9;">
+                        <div id="pmHolder">CARDHOLDER</div>
+                        <div id="pmExpiry">MM/YY</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="row">
+                    <div>
+                        <div class="card-title">Balance</div>
+                        <div class="subtext">Cash-only for now (clearinghouse integrations will come later).</div>
+                    </div>
+                    <div id="balanceBadge" class="badge">$0.00 USD</div>
+                </div>
+                <div style="margin-top:10px;" id="pendingPaymentsMount"></div>
+            </div>
+
+            <div class="card">
+                <div class="row" style="align-items:flex-start;">
+                    <div>
+                        <div class="card-title">Receipts</div>
+                        <div class="subtext">Your most recent payments</div>
+                    </div>
+                    <button class="btn btn-secondary" type="button" onclick="loadReceipts()" style="white-space:nowrap;">Refresh</button>
+                </div>
+                <div id="receiptsContainer" style="margin-top:12px;"></div>
+            </div>
+
+            <div class="card" id="billsClaimsCard">
+                <div class="row" style="align-items:flex-start;">
+                    <div>
+                        <div class="card-title">Bills & claims</div>
+                        <div class="subtext">Provider billing and insurer claim status</div>
+                    </div>
+                    <button class="btn btn-secondary" type="button" onclick="loadBillsClaims()" style="white-space:nowrap;">Refresh</button>
+                </div>
+                <div id="billsClaimsContainer" style="margin-top:12px;">
+                    <div class="subtext">Sign in to see bill status.</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="row" style="align-items:flex-start;">
+                    <div>
+                        <div class="card-title">Insurance</div>
+                        <div class="subtext">Connect your insurance provider</div>
+                    </div>
+                    <span class="badge">Coming soon</span>
+                </div>
+                <div class="wallet-note">
+                    Insurance linking will be available here later. For now, visits are handled as cash-only.
+                </div>
+            </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { patientApi } from '../assets/js/patient-api.js';
+        import { mountBottomTabs } from '../assets/js/patient-shell.js';
+
+        const API_BASE = window.API_BASE || 'http://localhost:4000';
+
+        mountBottomTabs();
+
+        window.loadReceipts = loadReceipts;
+        window.loadBillsClaims = loadBillsClaims;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            hydrateUserHeader();
+            loadReceipts();
+            loadPaymentMethod();
+            loadBalanceDue();
+            loadBillsClaims();
+            try {
+                const userInfo = document.querySelector('.sidebar-footer .user-info');
+                if (userInfo) {
+                    userInfo.style.cursor = 'pointer';
+                    userInfo.addEventListener('click', (e) => {
+                        if (e.target && e.target.closest && e.target.closest('.logout-btn')) return;
+                        window.location.href = 'profile.html';
+                    });
+                }
+            } catch (_) { }
+        });
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.mobile-menu-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+        window.toggleMobileMenu = toggleMobileMenu;
+
+        function logout() {
+            localStorage.removeItem('patient_session_id');
+            localStorage.removeItem('patient_phone');
+            window.location.href = 'patient-login.html';
+        }
+        window.logout = logout;
+
+        async function hydrateUserHeader() {
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                const r = await fetch(`${API_BASE}/api/patient/me`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json();
+                if (!r.ok || !data.success) return;
+                const name = (data.patient && data.patient.name) ? data.patient.name : 'Patient';
+                const initials = name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'PT';
+                document.getElementById('userName').textContent = name;
+                        document.getElementById('userAvatar').textContent = initials;
+            } catch (_) { }
+        }
+
+        function fmtMoney(amount, currency = 'USD') {
+            if (amount == null || amount === '') return '—';
+            const n = Number(amount);
+            if (Number.isNaN(n)) return `${amount} ${currency || ''}`.trim();
+            const dollars = n >= 1000 ? (n / 100).toFixed(2) : n.toFixed(2);
+            return `$${dollars} ${currency || 'USD'}`.trim();
+        }
+
+        function billStatusClass(chip) {
+            const c = String(chip || '').toLowerCase();
+            if (c === 'paid') return 'badge';
+            if (c === 'patient_due') return 'badge due';
+            if (c === 'denied') return 'badge';
+            return 'badge';
+        }
+
+        async function loadBillsClaims() {
+            const mount = document.getElementById('billsClaimsContainer');
+            if (!mount) return;
+            const sid = localStorage.getItem('patient_session_id') || '';
+            if (!sid) {
+                mount.innerHTML = '<div class="subtext">Sign in to see bill status.</div>';
+                return;
+            }
+            try {
+                const r = await fetch(`${API_BASE}/api/patient/rcm/bill-status`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json();
+                if (!r.ok || !data.success) {
+                    mount.innerHTML = `<div class="subtext">${(data.error || 'Unable to load bills').replace(/</g, '&lt;')}</div>`;
+                    return;
+                }
+                const bills = Array.isArray(data.bills) ? data.bills : [];
+                if (!bills.length) {
+                    mount.innerHTML = '<div class="subtext">No active bills or claims.</div>';
+                    return;
+                }
+                mount.innerHTML = bills.map((b) => {
+                    const amt = b.amount_due != null ? fmtMoney(b.amount_due, 'USD') : '—';
+                    const payBtn = b.pay_url
+                        ? `<a class="btn btn-primary" href="${b.pay_url}" style="padding:8px 10px;font-weight:800;">Pay</a>`
+                        : '';
+                    return `
+                      <div class="receipt-row" style="align-items:center;">
+                        <div style="min-width:0;">
+                          <div style="font-weight:900;">${(b.journey_stage_label || b.status_label || 'Bill').replace(/</g, '&lt;')}</div>
+                          <div class="receipt-meta">${(b.claim_status || b.journey_stage || '').replace(/</g, '&lt;')}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span class="${billStatusClass(b.status_chip)}">${(b.status_label || '').replace(/</g, '&lt;')}</span>
+                          <div style="font-weight:900;">${amt}</div>
+                          ${payBtn}
+                        </div>
+                      </div>`;
+                }).join('');
+            } catch (e) {
+                mount.innerHTML = `<div class="subtext">${String(e.message || e).replace(/</g, '&lt;')}</div>`;
+            }
+        }
+
+        async function loadBalanceDue() {
+            const badge = document.getElementById('balanceBadge');
+            try {
+                const data = await patientApi.getAppointments();
+                const appts = Array.isArray(data.appointments) ? data.appointments : [];
+                const pending = appts.filter(a => {
+                    const pay = (a.payment_status || '').toLowerCase();
+                    return pay === 'unpaid' || pay === 'pending' || pay === 'payment_due';
+                });
+                let due = 0;
+                for (const a of pending) {
+                    const n = Number(a.amount_due || 0);
+                    if (!Number.isNaN(n)) due += n;
+                }
+                if (pending.length) {
+                    badge.textContent = fmtMoney(due, 'USD');
+                    badge.classList.add('due');
+                } else {
+                    badge.textContent = '$0.00 USD';
+                    badge.classList.remove('due');
+                }
+
+                // Render Pay now CTA list
+                const mount = document.getElementById('pendingPaymentsMount');
+                if (mount) {
+                    if (!pending.length) {
+                        mount.innerHTML = `<div class="subtext">No payments due right now.</div>`;
+                    } else {
+                        mount.innerHTML = pending.slice(0, 5).map(a => {
+                            const when = `${a.date || ''} ${a.time || ''}`.trim();
+                            const amt = fmtMoney(a.amount_due, a.currency || 'USD');
+                            const prov = a.provider ? `<div class="receipt-meta" style="font-weight:600;color:var(--gray-800);">${String(a.provider).replace(/</g, '&lt;')}</div>` : '';
+                            return `
+                              <div class="receipt-row" style="align-items:center;">
+                                <div style="min-width:0;">
+                                  <div style="font-weight:900;color:var(--gray-900);">${(a.appointment_type || 'Appointment')}</div>
+                                  ${prov}
+                                  <div class="receipt-meta">${when || '—'}</div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                  <div style="font-weight:900;">${amt}</div>
+                                  <button class="btn btn-primary" data-pay-appt="${a.id}" style="padding:10px 12px;border-radius:10px;font-weight:900;">Pay now</button>
+                                </div>
+                              </div>
+                            `;
+                        }).join('');
+
+                        mount.querySelectorAll('button[data-pay-appt]').forEach(btn => {
+                            btn.addEventListener('click', async () => {
+                                const apptId = btn.getAttribute('data-pay-appt');
+                                try {
+                                    const sid = localStorage.getItem('patient_session_id') || '';
+                                    if (!sid) throw new Error('Please sign in again.');
+                                    btn.disabled = true;
+                                    btn.textContent = 'Opening…';
+                                    const r = await fetch(`${API_BASE}/api/patient/appointments/${encodeURIComponent(apptId)}/checkout`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' },
+                                        body: JSON.stringify({ amount_due: pending.find(p => p.id === apptId)?.amount_due })
+                                    });
+                                    const j = await r.json();
+                                    if (!r.ok || !j.success) throw new Error(j.error || 'Could not create checkout');
+                                    if (!j.checkout_url) throw new Error('Missing checkout url');
+                                    window.location.href = j.checkout_url;
+                                } catch (e) {
+                                    alert(e.message || 'Could not open checkout');
+                                    btn.disabled = false;
+                                    btn.textContent = 'Pay now';
+                                }
+                            });
+                        });
+                    }
+                }
+            } catch (_) {
+                badge.textContent = 'Balance unavailable';
+            }
+        }
+
+        async function loadReceipts() {
+            const el = document.getElementById('receiptsContainer');
+            if (!el) return;
+            el.innerHTML = `<div class="subtext">Loading…</div>`;
+            try {
+                const data = await patientApi.getReceipts();
+                if (!data.success) throw new Error(data.error || 'Failed to load');
+                const receipts = Array.isArray(data.receipts) ? data.receipts : [];
+                if (!receipts.length) {
+                    el.innerHTML = `<div class="wallet-empty-state">No receipts or invoices yet.</div>`;
+                    return;
+                }
+                el.innerHTML = `
+                  <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;">
+                    ${receipts.map(r => {
+                        const when = (r.issued_at || r.created_at || '').toString();
+                        const status = (r.status || 'issued').toString();
+                        const ref = (r.invoice_number || r.id || '').toString().replace(/</g, '&lt;');
+                        const kind = (r.source === 'invoice') ? 'Invoice' : 'Receipt';
+                return `
+                          <div class="receipt-row">
+                            <div style="min-width:0;">
+                              <div class="receipt-amt">${fmtMoney(r.amount, r.currency)}</div>
+                              <div class="receipt-meta">${kind}${ref ? ` · ${ref}` : ''}</div>
+                              <div class="receipt-meta">${when}</div>
+                            </div>
+                            <div style="text-align:right;">
+                              <div class="receipt-status-text">${status}</div>
+                    </div>
+                </div>
+                `;
+                    }).join('')}
+                        </div>
+                    `;
+            } catch (_) {
+                el.innerHTML = `<div class="wallet-error-state">Unable to load receipts.</div>`;
+            }
+        }
+
+        async function loadPaymentMethod() {
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                const me = await fetch(`${API_BASE}/api/patient/me`, { headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' } });
+                const meData = await me.json();
+                const patientId = meData?.patient?.id || null;
+                if (!patientId) return;
+
+                const r = await fetch(`${API_BASE}/api/patient/${encodeURIComponent(patientId)}/cards`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.success) return;
+                const card = Array.isArray(data.cards) ? data.cards[0] : (data.card || null);
+                if (!card) return;
+
+                const last4 = (card.last4 || '').toString().padStart(4, '•');
+                const exp = card.expiry || card.expiry_date || '';
+                const holder = card.cardholder_name || card.name || 'CARDHOLDER';
+                document.getElementById('pmNumber').textContent = `•••• •••• •••• ${last4}`;
+                document.getElementById('pmHolder').textContent = holder.toUpperCase();
+                document.getElementById('pmExpiry').textContent = exp || '—';
+                const heroNumber = document.getElementById('heroCardNumber');
+                const heroHolder = document.getElementById('heroCardHolder');
+                const heroExpiry = document.getElementById('heroCardExpiry');
+                const heroBrand = document.getElementById('heroCardBrand');
+                if (heroNumber) heroNumber.textContent = `•••• •••• •••• ${last4}`;
+                if (heroHolder) heroHolder.textContent = holder.toUpperCase();
+                if (heroExpiry) heroExpiry.textContent = exp || '—';
+                if (heroBrand) heroBrand.textContent = '💳';
+            } catch (_) { }
+        }
+    </script>
+</body>
+
+</html>
+

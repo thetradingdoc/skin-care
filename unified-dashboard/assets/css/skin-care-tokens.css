@@ -1,0 +1,4 @@
+/**
+ * @deprecated Import somo-tokens.css directly. This file re-exports Somo tokens for backward compatibility.
+ */
+@import url('./somo-tokens.css');

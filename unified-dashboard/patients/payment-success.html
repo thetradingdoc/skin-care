@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#16a637" />
+  <title>Skin &amp; Care — Payment successful</title>
+  <link rel="icon" href="../assets/images/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="../assets/images/favicon.svg" />
+  <link rel="stylesheet" href="../assets/css/global.css" />
+  <link rel="stylesheet" href="../assets/css/skin-care-tokens.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gloock&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="../assets/js/config.js" defer></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('rcm') === '1') return;
+      const sid = localStorage.getItem('patient_session_id');
+      if (!sid) {
+        const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.replace('patient-login.html?return=' + returnTo);
+      }
+    })();
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--brand-cream);
+      font-family: var(--font-ui);
+      color: var(--brand-black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      box-sizing: border-box;
+    }
+
+    .ps-top {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .ps-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ps-wordmark {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--brand-black);
+    }
+
+    .ps-panda {
+      width: 32px;
+      height: 32px;
+    }
+
+    .ps-back {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--brand-gray);
+      text-decoration: none;
+    }
+
+    .ps-back:hover {
+      color: var(--brand-black);
+      text-decoration: underline;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 560px;
+      width: 100%;
+      border: 1px solid var(--brand-border);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+      text-align: center;
+    }
+
+    .title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      color: var(--brand-black);
+      font-family: var(--font-ui);
+    }
+
+    .sub {
+      margin: 0 0 16px 0;
+      font-size: 0.9rem;
+      color: var(--brand-gray);
+      line-height: 1.45;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      min-height: 44px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-ui);
+      font-size: 0.9rem;
+    }
+
+    .btn-shop {
+      background: var(--brand-accent);
+      color: var(--brand-black);
+      border: 1px solid var(--brand-border);
+    }
+
+    .btn-primary {
+      background: var(--brand-black);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--brand-cream);
+      color: var(--brand-black);
+      border: 1px solid var(--brand-border);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: #166534;
+      font-weight: 800;
+      border: 1px solid #bbf7d0;
+      margin: 10px 0 14px;
+      font-size: 0.85rem;
+    }
+
+    .pill-warn {
+      background: #fff7ed;
+      color: #9a3412;
+      border-color: #fed7aa;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .retail-box {
+      margin: 16px 0;
+      padding: 12px;
+      background: var(--brand-kelly-bubble);
+      border-radius: 12px;
+      text-align: left;
+      border: 1px solid var(--brand-border);
+    }
+
+    .retail-box h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--brand-black);
+      margin: 0 0 6px 0;
+    }
+
+    .apt-box {
+      margin: 16px 0;
+      padding: 12px;
+      background: #f0fdf4;
+      border-radius: 12px;
+      text-align: left;
+      border: 1px solid #bbf7d0;
+    }
+
+    .apt-box h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #166534;
+      margin: 0 0 6px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="ps-top">
+    <div class="ps-brand">
+      <span class="ps-wordmark">Skin &amp; Care</span>
+      <img class="ps-panda" src="../assets/images/logo-panda.svg" width="32" height="32" alt="" />
+    </div>
+    <a class="ps-back" id="backToShopSuccess" href="/">Back to Somo</a>
+  </div>
+  <div class="card">
+    <div id="paymentStatePill" class="pill pill-warn">⏳ Confirming payment...</div>
+    <h1 class="title">You’re all set</h1>
+    <p class="sub" id="successSub">
+      Your receipt is available in your Wallet. If you booked a visit, you can see it under Appointments.
+    </p>
+    <div id="retailDetails" class="retail-box hidden">
+      <h3>Your order</h3>
+      <div id="retailNextSteps" style="font-size: 0.85rem; color: var(--brand-gray); line-height: 1.45;">
+        You will receive a confirmation email with order details. Track purchases anytime in your Wallet.
+      </div>
+    </div>
+    <div id="appointmentDetails" class="apt-box hidden">
+      <h3>Your visit</h3>
+      <div id="appointmentSummary" style="font-size: 0.9rem; color: #374151;"></div>
+      <div id="nextSteps" style="margin-top: 10px; font-size: 0.8rem; color: #6b7280;"></div>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-shop" id="btnReturnShop" href="/">Return to Somo</a>
+      <a class="btn btn-primary" id="walletCtaBtn" href="wallet.html">View Wallet</a>
+      <a class="btn btn-secondary" href="appointments.html">Appointments</a>
+      <a class="btn btn-secondary" id="btnReturnChat" href="checkout-chat.html" style="display:none">Return to chat</a>
+      <a class="btn btn-secondary" href="patient-dashboard.html">Dashboard</a>
+    </div>
+  </div>
+  <script>
+    (function () {
+      if (typeof window.LANDING_BASE === 'string' && window.LANDING_BASE) {
+        var a = document.getElementById('backToShopSuccess');
+        var b = document.getElementById('btnReturnShop');
+        if (a) a.href = window.LANDING_BASE;
+        if (b) b.href = window.LANDING_BASE;
+      }
+      const params = new URLSearchParams(window.location.search);
+      try {
+        const rawReturn = sessionStorage.getItem('checkout_chat_return');
+        if (rawReturn) {
+          const ret = JSON.parse(rawReturn);
+          const chatBtn = document.getElementById('btnReturnChat');
+          if (chatBtn && ret && ret.href) {
+            chatBtn.style.display = '';
+            chatBtn.href = ret.href;
+          }
+        }
+      } catch (_) {}
+      const API_BASE = window.API_BASE || 'http://localhost:4000';
+      const appointmentId = params.get('appointment_id');
+      const rcmMode = params.get('rcm') === '1';
+      const rcmToken = params.get('token') || params.get('rcm_token');
+      const walletCtaBtn = document.getElementById('walletCtaBtn');
+      const sid = localStorage.getItem('patient_session_id');
+      const paymentPill = document.getElementById('paymentStatePill');
+      const successSub = document.getElementById('successSub');
+      const retailBox = document.getElementById('retailDetails');
+
+      async function maybeHideWalletCta() {
+        if (!sid || !walletCtaBtn) return;
+        try {
+          const featureRes = await fetch(`${API_BASE}/api/patient/features`, {
+            headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+          });
+          const featureJson = await featureRes.json();
+          if (featureRes.ok && featureJson?.success && !featureJson?.features?.wallet_enabled) {
+            walletCtaBtn.style.display = 'none';
+          }
+        } catch (_) {}
+      }
+      maybeHideWalletCta();
+
+      if (rcmMode && rcmToken) {
+        const redirectStatus = params.get('redirect_status');
+        const paymentIntent = params.get('payment_intent');
+
+        async function settleRcmIfNeeded() {
+          if (redirectStatus !== 'succeeded' || !paymentIntent) return true;
+          try {
+            const r = await fetch(`${API_BASE}/api/public/rcm/pay/${encodeURIComponent(rcmToken)}/complete`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ method: 'stripe', payment_intent_id: paymentIntent }),
+            });
+            const data = await r.json();
+            return data.success;
+          } catch (_) {
+            return false;
+          }
+        }
+
+        settleRcmIfNeeded().then(function (ok) {
+          if (paymentPill) {
+            paymentPill.classList.remove('pill-warn');
+            paymentPill.textContent = ok ? '✅ Payment confirmed' : '✅ Payment received (processing confirmation)';
+          }
+          if (successSub) {
+            successSub.textContent =
+              'Your copay or balance payment was received. View your receipt and bill status in Wallet.';
+          }
+        });
+        return;
+      }
+
+      try {
+        if (typeof window !== 'undefined' && Array.isArray(window.dataLayer)) {
+          window.dataLayer.push({ event: 'pay_success', appointment_id: appointmentId || undefined });
+        }
+        window.dispatchEvent(
+          new CustomEvent('checkout-funnel', {
+            detail: { name: 'pay_success', appointment_id: appointmentId || undefined }
+          })
+        );
+      } catch (_) {}
+
+      if (!appointmentId) {
+        if (paymentPill) {
+          paymentPill.classList.remove('pill-warn');
+          paymentPill.textContent = '✅ Payment confirmed';
+        }
+        if (successSub) {
+          successSub.textContent =
+            'Thank you — your payment went through. Your receipt is in Wallet; order confirmations are emailed to you.';
+        }
+        if (retailBox) retailBox.classList.remove('hidden');
+        return;
+      }
+      if (!sid) return;
+      async function pollPaymentStatus() {
+        const maxAttempts = 15;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const r = await fetch(
+              `${API_BASE}/api/patient/appointments/${encodeURIComponent(appointmentId)}/payment-status`,
+              {
+                headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+              }
+            );
+            const data = await r.json();
+            if (data && data.success && data.settled) {
+              if (paymentPill) {
+                paymentPill.classList.remove('pill-warn');
+                paymentPill.textContent = '✅ Payment confirmed';
+              }
+              return;
+            }
+          } catch (_) {}
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+        if (paymentPill) {
+          paymentPill.textContent = '✅ Payment received (processing confirmation)';
+        }
+      }
+      pollPaymentStatus();
+
+      fetch(`${API_BASE}/api/patient/appointments`, {
+        headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!data.success || !data.appointments) return;
+          const apt = data.appointments.find((a) => String(a.id) === String(appointmentId));
+          if (!apt) return;
+          const el = document.getElementById('appointmentDetails');
+          const summary = document.getElementById('appointmentSummary');
+          const steps = document.getElementById('nextSteps');
+          if (!el || !summary) return;
+          const dt = apt.start_time
+            ? new Date(apt.start_time).toLocaleString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })
+            : apt.date && apt.time
+              ? apt.date + ' at ' + apt.time
+              : 'Scheduled';
+          summary.textContent = (apt.appointment_type || 'Visit') + ' - ' + dt;
+          const vm = apt.visit_mode;
+          if (vm == null || vm === '') {
+            console.warn('[payment-success] visit_mode missing for appointment; using default messaging', {
+              appointmentId: String(appointmentId)
+            });
+          }
+          const mode = vm || 'sync_video';
+          const isSync = mode === 'sync_video';
+          const isAsync = mode === 'async_review';
+          if (isSync) {
+            steps.textContent =
+              "You'll receive reminders with an upload link and a tech check link before your visit.";
+          } else if (isAsync) {
+            steps.textContent = "You'll receive a link to upload photos. A specialist will review within ~4 hours.";
+          } else {
+            steps.textContent = "We'll email you visit details and next steps shortly.";
+          }
+          el.classList.remove('hidden');
+        })
+        .catch(function () {});
+    })();
+  </script>
+</body>
+
+</html>

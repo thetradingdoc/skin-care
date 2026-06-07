@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#c85103" />
+  <link rel="manifest" href="../manifest.webmanifest" />
+  <title>Timeline - Skin &amp; Care Patient Portal</title>
+  <link rel="stylesheet" href="../assets/css/global.css" />
+  <link rel="stylesheet" href="../assets/css/skin-care-tokens.css" />
+  <link rel="stylesheet" href="../assets/css/patient-consumer.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/js/config.js" defer></script>
+  <script>
+    // Self-scheduling is now a first-class feature for the patient portal.
+    // The old FEATURE_PATIENT_SELF_SCHEDULING gate has been removed.
+  </script>
+  <style>
+    :root {
+      --primary: var(--sc-color-primary, #c85103);
+      --primary-dark: var(--brand-accent-hover, #a84402);
+      --primary-light: #faf6f3;
+      --journal-accent: var(--sc-color-primary, #c85103);
+      --journal-accent-soft: #faf6f3;
+    }
+    body {
+      background: #f7fafc;
+      min-height: 100vh;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+      background: #f7fafc;
+    }
+    .sidebar {
+      width: 260px;
+      background: white;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .sidebar-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 2px;
+      color: #131a2e;
+      text-decoration: none;
+    }
+    .sidebar-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1e3a8a;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      animation: sidebarSpin 6s linear infinite;
+    }
+    @keyframes sidebarSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .sidebar-subtitle {
+      font-size: 12px;
+      color: var(--gray-500);
+      margin-top: 2px;
+      margin-left: 0;
+    }
+    .sidebar-nav {
+      padding: 16px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--gray-700);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+      text-decoration: none;
+    }
+    .nav-item:hover {
+      background: var(--gray-50);
+      color: var(--primary);
+    }
+    .nav-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .nav-icon {
+      font-size: 20px;
+    }
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid var(--gray-200);
+      position: absolute;
+      bottom: 0;
+      width: 260px;
+      background: white;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .user-details { flex: 1; }
+    .user-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+    .user-role { font-size: 12px; color: var(--gray-500); }
+    .logout-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    .mobile-menu-toggle {
+      display: none;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      width: 48px;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+    }
+    .mobile-menu-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    @media (max-width: 768px) {
+      .mobile-menu-toggle { display: flex; }
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+      }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-overlay.active { display: block; }
+      .main-content { margin-left: 0; padding: 16px; padding-top: 80px; padding-bottom: 170px; }
+    }
+    .main-content {
+      margin-left: 260px;
+      padding: var(--patient-space-5);
+      flex: 1;
+      max-width: none;
+      width: 100%;
+    }
+    .page-header {
+      margin-bottom: var(--patient-space-4);
+      margin-top: var(--patient-space-4);
+    }
+    .page-title {
+      font-size: var(--patient-title-size);
+      font-weight: 700;
+      margin: 0 0 var(--patient-space-1) 0;
+    }
+    .page-subtitle {
+      font-size: var(--patient-subtitle-size);
+      color: var(--gray-600);
+    }
+    .card {
+      background: white;
+      border-radius: var(--patient-card-radius);
+      padding: var(--patient-space-4);
+      box-shadow: var(--shadow-md);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 2px solid var(--gray-200);
+      font-size: 14px;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+    }
+    .btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-secondary {
+      background: var(--gray-100);
+      color: var(--gray-700);
+    }
+    .slots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .slot-btn {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .slot-btn.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+      color: var(--primary-dark);
+    }
+    .message {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .message-error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .message-success {
+      background: #ecfdf3;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .calendar-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .calendar-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .calendar-stat {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .calendar-stat .n { font-weight: 800; font-size: 20px; color: var(--gray-900); }
+    .calendar-stat .k { font-size: 12px; color: var(--gray-600); }
+    .cal-view-actions { display: flex; gap: 8px; }
+    .cal-view-actions button {
+      border: 1px solid var(--gray-200);
+      background: #fff;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-700);
+    }
+    .cal-view-actions button.active {
+      border-color: var(--sc-color-primary, #c85103);
+      background: var(--sc-color-primary, #c85103);
+      color: #fff;
+    }
+    .checkin-list {
+      display: none;
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .checkin-list.show { display: block; }
+    .checkin-item {
+      border-bottom: 1px solid var(--gray-100);
+      padding: 10px 0;
+      font-size: 14px;
+      color: var(--gray-700);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .checkin-item:last-child { border-bottom: none; }
+    .checkin-list-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--gray-500);
+      margin: 12px 0 6px 0;
+    }
+    .checkin-list-section-title:first-child { margin-top: 0; }
+    .cal-day-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 2px;
+      min-height: 2.75rem;
+    }
+    .cal-day-dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      justify-content: center;
+      min-height: 6px;
+    }
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 999px;
+    }
+    .cal-dot-routine { background: #a78bfa; }
+    #conflictSafetyBanner {
+      display: none;
+      font-size: 12px;
+      line-height: 1.4;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: rgba(254, 243, 199, 0.95);
+      border: 1px solid rgba(251, 191, 36, 0.85);
+      color: #78350f;
+    }
+    #conflictSafetyBanner.show { display: block; }
+    #calendarLegend {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .schedule-visit-card--deprecated {
+      display: none;
+    }
+    .journal-calendar-panel {
+      background: #fff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      padding: 16px;
+    }
+    .journal-calendar-panel h3 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .journal-calendar-panel p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--gray-600);
+      line-height: 1.5;
+    }
+    .journal-month-stack {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .journal-range-controls {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .journal-range-btn {
+      border: 1px solid var(--primary-dark);
+      background: var(--primary);
+      color: #fff;
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .journal-range-btn:hover:not(:disabled) {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+    .journal-range-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .journal-range-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+    }
+    .journal-month {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+    }
+    .journal-month-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      margin: 0 0 8px 0;
+    }
+    .journal-week-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .journal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+    }
+    .journal-day {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      padding: 4px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-end;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      position: relative;
+      overflow: hidden;
+      min-height: 42px;
+      cursor: pointer;
+    }
+    .journal-day--empty {
+      border-color: transparent;
+      background: transparent;
+      cursor: default;
+      pointer-events: none;
+    }
+    .journal-day--off {
+      background: #f8fafc;
+      color: #94a3b8;
+      border-color: #f1f5f9;
+    }
+    .journal-day--due {
+      background: #ecfeff;
+      border-color: #bae6fd;
+      color: #0f766e;
+    }
+    .journal-day--horizon {
+      background: #f8fafc;
+      border-style: dashed;
+      border-color: #cbd5e1;
+      color: #64748b;
+    }
+    .journal-day--purge {
+      background: #fef2f2;
+      border-color: #f4a4a4;
+      color: #991b1b;
+    }
+    .journal-day__week {
+      position: absolute;
+      left: 3px;
+      bottom: 3px;
+      z-index: 3;
+      font-size: 8px;
+      font-weight: 800;
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    .journal-day__hint {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      bottom: 2px;
+      z-index: 2;
+      font-size: 7px;
+      line-height: 8px;
+      text-align: center;
+      color: #64748b;
+      overflow: hidden;
+      max-height: 18px;
+    }
+    .journal-day--logged {
+      background: #cffafe;
+      border-color: #67e8f9;
+      color: #115e59;
+    }
+    .journal-day--media {
+      border-color: #67e8f9;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    }
+    .journal-day--bill-due {
+      background: #E6F1FB;
+      border-color: #85B7EB;
+      color: #0C447C;
+    }
+    .journal-day--bill-paid {
+      background: #EAF3DE;
+      border-color: #9BC76A;
+      color: #3B6D11;
+    }
+    .journal-day--bill-review {
+      background: #FEF3C7;
+      border-color: #EF9F27;
+      color: #854F0B;
+    }
+    .journal-day__img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    .journal-day__overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.35));
+      z-index: 1;
+    }
+    .journal-day__bill-glyph {
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .journal-day--bill-due .journal-day__bill-glyph {
+      color: #0c447c;
+    }
+    .journal-day--bill-paid .journal-day__bill-glyph {
+      color: #3b6d11;
+    }
+    .journal-day--bill-review .journal-day__bill-glyph {
+      color: #854f0b;
+    }
+    .journal-day__num {
+      position: relative;
+      z-index: 2;
+    }
+    .journal-day__badge {
+      position: absolute;
+      left: 4px;
+      bottom: 4px;
+      z-index: 2;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.9);
+      color: #0f766e;
+    }
+    /* --- Visit booking card (light body: fixes select / calendar contrast) --- */
+    .schedule-visit-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--shadow-md);
+    }
+    .schedule-visit-card__hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #128a2e 100%);
+      color: #fff;
+      padding: 18px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .schedule-visit-card__eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+    .schedule-visit-card__lead {
+      margin: 8px 0 0 0;
+      font-size: 14px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.94);
+      max-width: 38rem;
+    }
+    .schedule-visit-card__chat-btn {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      white-space: nowrap;
+    }
+    .schedule-visit-card__chat-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .schedule-visit-card__body {
+      padding: 18px 20px 22px;
+      background: #fff;
+      color: var(--gray-900);
+    }
+    .schedule-pulse-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 12px;
+    }
+    .schedule-pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      flex-shrink: 0;
+    }
+    .schedule-field-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 18px;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+    .schedule-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .schedule-field label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #64748b;
+    }
+    .schedule-field select {
+      min-height: 44px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 500;
+      max-width: 100%;
+    }
+    .schedule-today-btn {
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 2px solid #cbd5e1;
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+    }
+    .schedule-today-btn:hover {
+      background: #e2e8f0;
+    }
+    .schedule-async-card {
+      display: none;
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1e3a8a;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .schedule-async-card:not(.hidden) {
+      display: block;
+    }
+    .schedule-async-card a {
+      display: inline-flex;
+      margin-top: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #16a34a;
+      color: #fff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .schedule-price-block {
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #334155;
+    }
+    .schedule-price-block #priceLine {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .schedule-price-block ul {
+      margin: 6px 0 0 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #475569;
+    }
+    #msg.message {
+      margin-bottom: 12px;
+    }
+    .calendar-panel-light {
+      background: #f1f5f9;
+      border-radius: 14px;
+      padding: 12px 10px 14px;
+      border: 1px solid #e2e8f0;
+    }
+    .cal-weekday-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .cal-day-btn {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+      background: transparent;
+      color: #0f172a;
+    }
+    .cal-day-btn:hover:not(:disabled) {
+      background: #e2e8f0;
+    }
+    .cal-day-btn--past {
+      color: #cbd5e1 !important;
+      pointer-events: none;
+      cursor: default;
+    }
+    .cal-day-btn--selected {
+      background: #4f46e5 !important;
+      color: #fff !important;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+    }
+    .cal-day-btn--today {
+      border: 2px solid #4f46e5;
+      color: #3730a3;
+      background: #eef2ff;
+    }
+    .cal-nav-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cal-nav-btn:hover {
+      background: #f1f5f9;
+    }
+    .cal-month-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .cal-step-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+    }
+    .schedule-slot-btn {
+      padding: 10px 14px;
+      margin: 4px 6px 4px 0;
+      border-radius: 999px;
+      border: 2px solid #cbd5e1;
+      background: #fff;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .schedule-slot-btn:hover {
+      border-color: #94a3b8;
+      background: #f8fafc;
+    }
+    .schedule-slot-btn.selected {
+      border-color: #16a34a;
+      background: #ecfdf5;
+      color: #14532d;
+    }
+    .schedule-slot-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      margin: 10px 0 4px;
+    }
+    .schedule-primary-btn {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 999px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+    }
+    .schedule-primary-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .schedule-secondary-btn {
+      width: 100%;
+      min-height: 48px;
+      border-radius: 999px;
+      border: 2px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #holdBox.schedule-hold {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      color: #92400e;
+    }
+    #ctaHint,
+    .schedule-legal-hint {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      margin: 6px 0 0;
+      line-height: 1.4;
+    }
+    /* Segmented: Calendar | List | Photos */
+    .cal-view-segmented {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 5px;
+      border-radius: 14px;
+      background: #faf6f3;
+      border: 1px solid rgba(200, 81, 3, 0.15);
+      align-items: stretch;
+    }
+    .cal-view-segmented button {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+    .cal-view-segmented button .seg-ico {
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      opacity: 0.85;
+    }
+    .cal-view-segmented button .seg-ico svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .cal-view-segmented button.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 1px 4px rgba(200, 81, 3, 0.15);
+    }
+    .journal-day--band-purge { box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.35); }
+    .journal-day--band-intro { box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.25); }
+    .journal-day--band-active { box-shadow: inset 0 0 0 2px rgba(200, 81, 3, 0.2); }
+    .journal-phase-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 12px;
+      font-size: 11px;
+      color: var(--gray-600);
+    }
+    .journal-phase-legend__item {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--gray-200);
+      background: #fff;
+    }
+    .journal-phase-legend__item--purge { border-color: rgba(220, 38, 38, 0.4); color: #b91c1c; }
+    .routine-compare-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 23, 42, 0.55);
+      padding: 16px;
+    }
+    .routine-compare-modal.hidden { display: none; }
+    .routine-compare-modal__panel {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 16px;
+    }
+    .routine-compare-modal__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .routine-compare-modal__grid { grid-template-columns: 1fr; }
+    }
+    .routine-compare-col img {
+      width: 100%;
+      border-radius: 10px;
+      object-fit: cover;
+      aspect-ratio: 3/4;
+    }
+    /* Journal photos strip (directional toward Routine / future month grid) */
+    .journal-photo-strip {
+      display: none;
+      margin: 14px 0 4px;
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--gray-200);
+      background: #fff;
+    }
+    .journal-photo-strip.show {
+      display: block;
+    }
+    .journal-photo-strip__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .journal-photo-strip__title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    .journal-photo-strip__link {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .journal-photo-strip__hint {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .journal-photo-thumbs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .journal-photo-thumbs {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+    }
+    .journal-photo-thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-align: center;
+      padding: 6px;
+    }
+    .journal-photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .journal-photo-thumb__week {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    .journal-photo-thumb__phase {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      font-size: 9px;
+      background: rgba(255, 255, 255, 0.88);
+      color: #334155;
+      padding: 2px 4px;
+      border-radius: 4px;
+      z-index: 2;
+      text-align: center;
+    }
+    #planSummaryText {
+      flex: 1 1 200px;
+      min-width: 0;
+      line-height: 1.45;
+    }
+    /* Batch 5: mobile thumb-zone + avoid content behind sticky CTA */
+    @media (max-width: 640px) {
+      .calendar-stats {
+        grid-template-columns: 1fr;
+      }
+      .calendar-toolbar {
+        align-items: stretch;
+      }
+      .page-content {
+        padding-bottom: 96px; /* room for sticky CTA */
+      }
+      #ctaWrap {
+        position: sticky;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 10;
+      }
+    }
+
+    /* Re-assert small-screen layout after base rules so content is not shifted right. */
+    @media (max-width: 768px) {
+      .main-content {
+        margin-left: 0 !important;
+        width: 100%;
+        max-width: none;
+        padding: 16px;
+        padding-top: 80px;
+        padding-bottom: 170px;
+      }
+    }
+  </style>
+</head>
+<body class="patient-consumer">
+  <button
+    id="mobileMenuToggleBtn"
+    class="mobile-menu-toggle"
+    onclick="toggleMobileMenu()"
+    aria-label="Open menu"
+    aria-expanded="false"
+    aria-controls="sidebar">☰</button>
+  <div class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="sidebar-logo">
+          <span class="sidebar-mark" aria-hidden="true">S&C</span>
+        </a>
+        <div class="sidebar-subtitle sidebar-subtitle-portal">Patient Portal</div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="patient-dashboard.html" class="nav-item">
+          <span class="nav-icon nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg></span><span>Today</span>
+        </a>
+        <a href="schedule.html" class="nav-item active">
+          <span class="nav-icon nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span><span>Timeline</span>
+        </a>
+        <a href="wallet.html" class="nav-item">
+          <span class="nav-icon nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M2.5 10.5h19"/><path d="M16 14h3"/></svg></span><span>Money</span>
+        </a>
+        <a href="profile.html" class="nav-item">
+          <span class="nav-icon nav-icon-svg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></span><span>Profile</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Timeline</h1>
+        <p class="page-subtitle">Your routine journal by day — progress photos, logged steps, and billing markers when you need them.</p>
+      </div>
+      <div id="routinePickBanner" class="routine-pick-banner" style="display:none;" role="status">
+        <strong>Choose a routine to start.</strong>
+        <a href="patient-routine-pick.html">Pick one of five guided templates</a>
+        to unlock your calendar.
+      </div>
+      <div class="calendar-toolbar">
+        <div id="planSummaryText" style="font-size:13px;color:var(--gray-600);">Loading your routine plan and journal activity…</div>
+        <div class="cal-view-segmented" role="tablist" aria-label="Calendar page views">
+          <button id="calendarViewBtn" class="active" type="button" role="tab" aria-selected="true" aria-controls="scheduleVisitCard" aria-label="Journal calendar view">
+            <span class="seg-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+            <span>Calendar</span>
+          </button>
+          <button id="listViewBtn" type="button" role="tab" aria-selected="false" aria-controls="checkinListPanel" aria-label="Routine list view">
+            <span class="seg-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span>
+            <span>List</span>
+          </button>
+          <button id="photosViewBtn" type="button" role="tab" aria-selected="false" aria-controls="journalPhotoStrip" aria-label="Journal photos from routine">
+            <span class="seg-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="12" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+            <span>Photos</span>
+          </button>
+        </div>
+      </div>
+      <div class="calendar-stats">
+        <article class="calendar-stat"><div class="n" id="statUpcoming">—</div><div class="k">Due this week</div></article>
+        <article class="calendar-stat"><div class="n" id="statCompleted">—</div><div class="k">Logged uses (7d)</div></article>
+        <article class="calendar-stat"><div class="n" id="statAdherence">—</div><div class="k">Routine adherence (7d)</div></article>
+      </div>
+
+      <div id="scheduleVisitCard" class="card schedule-visit-card--deprecated" style="padding:0; background:#022c5a; border-radius:18px;">
+        <div class="px-4 py-4 sm:px-6 sm:py-5 text-white">
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <div class="text-xs font-semibold tracking-wide text-sky-200 uppercase">Appointment</div>
+              <div class="mt-1 text-sm text-sky-100 max-w-xl">
+                Choose a day from the calendar and a time that works for you. This flow is for clinician visits only.
+                If this feels like an emergency, please call your local emergency number instead.
+              </div>
+            </div>
+            <button type="button" id="openChatModal" class="inline-flex items-center justify-center rounded-full bg-sky-500/90 hover:bg-sky-400 text-xs font-semibold px-4 py-2 shadow">
+              Chat with agent
+            </button>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2 text-xs text-sky-100">
+              <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Quick booking (calendar)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-sky-100 uppercase tracking-wide">Visit type</label>
+                <select id="visitModeInput" class="w-full sm:w-48 rounded-full border border-sky-500/40 bg-sky-900/60 px-3 py-1.5 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400">
+                  <option value="sync_video">Live video visit</option>
+                  <option value="async_review">Photo review (~4h)</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-[11px] font-semibold text-sky-100 uppercase tracking-wide">Appointment type</label>
+                <select id="apptTypeInput" class="w-full sm:w-56 rounded-full border border-sky-500/40 bg-sky-900/60 px-3 py-1.5 text-xs text-sky-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400">
+                  <option value="General Somo">General Somo</option>
+                  <option value="Mental Health Somoation">Mental Health Somoation</option>
+                  <option value="Telemedicine Visit">Telemedicine Visit</option>
+                  <option value="Follow-up Visit">Follow-up Visit</option>
+                </select>
+              </div>
+              <button type="button" id="todayBtn" class="hidden sm:inline-flex items-center justify-center rounded-full border border-sky-500/60 bg-sky-800/80 hover:bg-sky-700 text-[11px] font-semibold px-3 py-1.5">
+                Today
+              </button>
+            </div>
+          </div>
+
+          <div id="asyncLaneCard" class="hidden mb-4 p-4 rounded-xl bg-sky-800/80 border border-sky-500/40">
+            <p class="text-sm text-sky-100 mb-3">Upload photos and notes — a specialist will review within ~4 hours. No live video needed.</p>
+            <a id="asyncReviewLink" href="triage.html" class="inline-flex items-center justify-center rounded-full bg-emerald-500 hover:bg-emerald-400 text-sm font-semibold px-4 py-2">Start async review</a>
+          </div>
+          <div id="priceBox" class="mb-3 text-sm text-sky-100/90">
+            <div id="priceLine" style="font-weight:700;">Somoation — …</div>
+            <ul id="priceBullets" style="margin:6px 0 0 0; padding-left:18px; font-size:12px;">
+              <li>Doctor consultation</li>
+              <li>Written summary of your visit</li>
+              <li>Follow-up recommendations</li>
+            </ul>
+          </div>
+
+          <div id="msg" class="hidden text-[11px] rounded-lg px-3 py-2 mb-3 bg-red-900/40 border border-red-400/70 text-red-50"></div>
+          <div id="conflictSafetyBanner" role="status"></div>
+
+          <div id="calendarSection" class="bg-sky-900/60 rounded-2xl p-3 sm:p-4 shadow-inner">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex flex-col">
+                <span class="text-[11px] font-semibold tracking-wide text-sky-200 uppercase">Step 2 — select date</span>
+                <span id="monthLabel" class="text-sm font-semibold text-white"></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" id="prevMonthBtn" class="w-8 h-8 rounded-full bg-sky-800 hover:bg-sky-700 flex items-center justify-center text-xs">◀</button>
+                <button type="button" id="nextMonthBtn" class="w-8 h-8 rounded-full bg-sky-800 hover:bg-sky-700 flex items-center justify-center text-xs">▶</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-[11px] font-semibold text-sky-200 mb-1">
+              <div class="text-center">Sun</div>
+              <div class="text-center">Mon</div>
+              <div class="text-center">Tue</div>
+              <div class="text-center">Wed</div>
+              <div class="text-center">Thu</div>
+              <div class="text-center">Fri</div>
+              <div class="text-center">Sat</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-xs min-h-[224px]"></div>
+            <div id="calendarLegend">Purple dot = planned routine day from your active template cadence.</div>
+          </div>
+
+          <div class="mt-4 flex flex-col gap-2 text-sky-100">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold tracking-wide text-sky-200 uppercase">Step 3 — select time</span>
+              <span id="selectedDateLabel" class="text-xs text-sky-100"></span>
+            </div>
+            <div id="slots" class="hidden flex-col gap-1">
+              <div id="slotsMorning"></div>
+              <div id="slotsAfternoon"></div>
+              <div id="slotsEvening"></div>
+              <div id="slotsFallbackActions" class="hidden mt-2 flex flex-wrap gap-2">
+                <button id="retrySlotsBtn" type="button" class="inline-flex items-center justify-center rounded-full border border-sky-400/60 bg-sky-900/40 text-sky-50 text-xs font-semibold px-3 py-2 hover:bg-sky-900/60">
+                  Retry loading times
+                </button>
+                <button id="tryAnotherDateBtn" type="button" class="inline-flex items-center justify-center rounded-full border border-sky-400/60 bg-sky-900/40 text-sky-50 text-xs font-semibold px-3 py-2 hover:bg-sky-900/60">
+                  Try another date
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="ctaWrap" class="mt-4 flex flex-col gap-2">
+            <div id="holdBox" class="hidden rounded-2xl border border-amber-300/40 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-50">
+              Holding this time for <span id="holdTimer" class="font-semibold">—:—</span>. If payment fails, you can retry before the hold expires.
+            </div>
+            <button id="scheduleBtn" disabled class="inline-flex items-center justify-center w-full rounded-full bg-emerald-500 text-white text-sm font-semibold px-4 py-3 shadow hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-900 focus:ring-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed">
+              Continue to payment
+            </button>
+            <button id="retryPayBtn" type="button" class="hidden inline-flex items-center justify-center w-full rounded-full border border-sky-400/60 bg-sky-900/40 text-sky-50 text-sm font-semibold px-4 py-3 hover:bg-sky-900/60">
+              Retry payment
+            </button>
+            <p id="ctaHint" class="text-[11px] text-sky-100/80 text-center -mt-1">Pick a time to continue.</p>
+            <p class="text-[11px] text-sky-100/80 text-center mt-1">
+              Licensed doctors • Secure video visit • Average wait time &lt; 5 minutes.
+            </p>
+          </div>
+        </div>
+      </div>
+      <section id="journalCalendarPanel" class="journal-calendar-panel" aria-label="Routine journal calendar">
+        <h3>Routine calendar</h3>
+        <p>Calendar days highlight your routine cadence. Use List for daily summaries and Photos to review picture-of-day entries linked to each date.</p>
+        <div class="journal-range-controls" role="group" aria-label="Calendar range navigation">
+          <button id="journalPrevRangeBtn" class="journal-range-btn" type="button" aria-label="Previous 6 months">&lt;</button>
+          <div id="journalRangeLabel" class="journal-range-label" aria-live="polite">Loading range...</div>
+          <button id="journalNextRangeBtn" class="journal-range-btn" type="button" aria-label="Next 6 months">&gt;</button>
+        </div>
+        <div id="journalPhaseLegend" class="journal-phase-legend" hidden aria-label="Routine phase legend">
+          <span class="journal-phase-legend__item journal-phase-legend__item--intro">Intro (W1–2)</span>
+          <span class="journal-phase-legend__item journal-phase-legend__item--purge">Expected purge (W3–5)</span>
+          <span class="journal-phase-legend__item">Active treatment</span>
+        </div>
+        <div id="journalMonthStack" class="journal-month-stack"></div>
+      </section>
+      <section id="checkinListPanel" class="checkin-list" aria-label="Visits and routine summary list">
+        <div id="checkinListMount"></div>
+      </section>
+      <section id="journalPhotoStrip" class="journal-photo-strip" aria-label="Journal photo timeline">
+        <div class="journal-photo-strip__head">
+          <h3 class="journal-photo-strip__title">Photos by day</h3>
+          <a class="journal-photo-strip__link" href="appointments.html">Add photo</a>
+        </div>
+        <p class="journal-photo-strip__hint">Pictures from your routine logs appear here once linked to a day entry.</p>
+        <div id="journalPhotoThumbs" class="journal-photo-thumbs"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="routineCompareModal" class="routine-compare-modal hidden" role="dialog" aria-labelledby="routineCompareTitle" aria-modal="true">
+    <div class="routine-compare-modal__panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 id="routineCompareTitle" style="margin:0;font-size:16px;font-weight:700;">Compare progress</h3>
+        <button id="routineCompareClose" type="button" aria-label="Close compare" style="font-size:22px;line-height:1;border:none;background:transparent;">&times;</button>
+      </div>
+      <div id="routineCompareBody" class="routine-compare-modal__grid"></div>
+    </div>
+  </div>
+
+  <!-- Chat modal using existing triage tooling -->
+  <div id="chatModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 max-h-[560px] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+        <div class="text-sm font-semibold text-gray-900">Book with AI assistant</div>
+        <button id="closeChatModal" type="button" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
+      </div>
+      <div class="flex-1 flex flex-col">
+        <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2 text-sm" id="chatMsgs"></div>
+        <div class="border-t border-gray-200 px-3 py-2">
+          <div id="chatChips" class="flex flex-wrap gap-2 mb-2"></div>
+          <div id="chatCodeEntry" class="hidden mb-2 p-2 rounded-lg border border-indigo-200 bg-indigo-50">
+            <div class="text-xs text-indigo-700 mb-1">Enter your 6-digit verification code</div>
+            <div class="flex gap-2">
+              <input id="chatCodeInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" class="w-full border border-indigo-200 rounded-xl px-3 py-2 text-sm" placeholder="123456" />
+              <button id="chatCodeSubmitBtn" type="button" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Submit</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <input id="chatInput" class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm" placeholder="Describe your symptoms or what you need help with…" />
+            <button id="chatSendBtn" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.API_BASE || 'http://localhost:4000';
+    const API_HEADERS = {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+    const sessionId = localStorage.getItem('patient_session_id') || null;
+
+    const msgEl = document.getElementById('msg');
+    const slotsEl = document.getElementById('slots');
+    const slotsMorningEl = document.getElementById('slotsMorning');
+    const slotsAfternoonEl = document.getElementById('slotsAfternoon');
+    const slotsEveningEl = document.getElementById('slotsEvening');
+    const monthLabelEl = document.getElementById('monthLabel');
+    const calendarGridEl = document.getElementById('calendarGrid');
+    const selectedDateLabelEl = document.getElementById('selectedDateLabel');
+    const scheduleBtn = document.getElementById('scheduleBtn');
+    const ctaHintEl = document.getElementById('ctaHint');
+    const holdBoxEl = document.getElementById('holdBox');
+    const holdTimerEl = document.getElementById('holdTimer');
+    const retryPayBtn = document.getElementById('retryPayBtn');
+    const retrySlotsBtn = document.getElementById('retrySlotsBtn');
+    const tryAnotherDateBtn = document.getElementById('tryAnotherDateBtn');
+    const slotsFallbackActionsEl = document.getElementById('slotsFallbackActions');
+    const reasonInput = { value: '' }; // lightweight stub; reason optional for calendar-only flow
+    const calendarViewBtn = document.getElementById('calendarViewBtn');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const photosViewBtn = document.getElementById('photosViewBtn');
+    const checkinListPanel = document.getElementById('checkinListPanel');
+    const bookingCard = document.querySelector('.card');
+    const planSummaryTextEl = document.getElementById('planSummaryText');
+    const statUpcomingEl = document.getElementById('statUpcoming');
+    const statCompletedEl = document.getElementById('statCompleted');
+    const statAdherenceEl = document.getElementById('statAdherence');
+    const conflictSafetyBanner = document.getElementById('conflictSafetyBanner');
+    const checkinListMount = document.getElementById('checkinListMount');
+    const journalPhotoStrip = document.getElementById('journalPhotoStrip');
+    const journalPhotoThumbs = document.getElementById('journalPhotoThumbs');
+    const journalCalendarPanel = document.getElementById('journalCalendarPanel');
+    const journalPrevRangeBtn = document.getElementById('journalPrevRangeBtn');
+    const journalNextRangeBtn = document.getElementById('journalNextRangeBtn');
+    const journalRangeLabel = document.getElementById('journalRangeLabel');
+
+    const scheduleState = {
+      appointments: [],
+      template: null,
+      progressSummary: null,
+      routineDaySet: new Set(),
+      visitDaySet: new Set()
+    };
+    const journalState = {
+      range: { start: null, end: null },
+      dayMap: new Map(),
+      orderedDays: []
+    };
+    const JOURNAL_CALENDAR_V2 = (() => {
+      try {
+        const q = new URLSearchParams(window.location.search || '');
+        if (q.get('journal_calendar_v2') === '0') return false;
+        if (q.get('journal_calendar_v2') === '1') return true;
+        const stored = localStorage.getItem('journal_calendar_v2');
+        if (stored === '0' || stored === 'false') return false;
+        if (stored === '1' || stored === 'true') return true;
+      } catch (_) {}
+      return true;
+    })();
+
+    function activateView(next) {
+      const isCal = next === 'calendar';
+      const isList = next === 'list';
+      const isPhotos = next === 'photos';
+      calendarViewBtn?.classList.toggle('active', isCal);
+      listViewBtn?.classList.toggle('active', isList);
+      photosViewBtn?.classList.toggle('active', isPhotos);
+      calendarViewBtn?.setAttribute('aria-selected', String(isCal));
+      listViewBtn?.setAttribute('aria-selected', String(isList));
+      photosViewBtn?.setAttribute('aria-selected', String(isPhotos));
+      if (journalCalendarPanel) journalCalendarPanel.style.display = isCal ? 'block' : 'none';
+      if (bookingCard) bookingCard.style.display = 'none';
+      if (checkinListPanel) checkinListPanel.classList.toggle('show', isList);
+      if (journalPhotoStrip) journalPhotoStrip.classList.toggle('show', isPhotos);
+      if (isList) renderCheckinList();
+      if (isPhotos) renderJournalPhotos();
+    }
+
+    if (calendarViewBtn && listViewBtn && bookingCard && checkinListPanel) {
+      calendarViewBtn.addEventListener('click', () => {
+        activateView('calendar');
+      });
+      listViewBtn.addEventListener('click', () => {
+        activateView('list');
+      });
+      photosViewBtn?.addEventListener('click', () => activateView('photos'));
+    }
+
+    let currentYear;
+    let currentMonth; // 0-based
+    let selectedDate; // YYYY-MM-DD
+    let selectedTime = null;
+    let slotsLoading = false;
+    let bookingInFlight = false;
+    let checkoutInFlight = false;
+    let holdInterval = null;
+    let lastAppointmentIdForRetry = null;
+    let holdExpiresAtMs = null;
+    let journalRangeAnchor = null; // first day of current 6-month window
+    let journalRangeLoading = false;
+
+    let CLINIC_TIMEZONE = 'America/New_York';
+    let SLOT_HOLD_TTL_MINUTES = 30;
+
+    function isoDateInTz(date, timeZone) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(date);
+      const y = parts.find(p => p.type === 'year')?.value;
+      const m = parts.find(p => p.type === 'month')?.value;
+      const d = parts.find(p => p.type === 'day')?.value;
+      return `${y}-${m}-${d}`;
+    }
+
+    function nowPartsInTz(timeZone) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(new Date());
+      const y = parseInt(parts.find(p => p.type === 'year')?.value || '1970', 10);
+      const m = parseInt(parts.find(p => p.type === 'month')?.value || '01', 10);
+      const d = parseInt(parts.find(p => p.type === 'day')?.value || '01', 10);
+      return { year: y, monthIndex: m - 1, day: d };
+    }
+
+    function setCtaState() {
+      const canContinue = Boolean(selectedDate && selectedTime) && !slotsLoading && !bookingInFlight && !checkoutInFlight;
+      scheduleBtn.disabled = !canContinue;
+      let hint = 'Pick a time to continue.';
+      if (bookingInFlight || checkoutInFlight) hint = 'Starting payment…';
+      else if (slotsLoading) hint = 'Loading times…';
+      else if (!selectedTime) hint = 'Pick a time to continue.';
+      else hint = 'Step 4 — continue to payment';
+      if (selectedDate && selectedTime && activeVisitsOnDate(selectedDate).length) {
+        hint = `${hint} Same-day visit on file — confirm with your clinic if this is a second booking.`;
+      }
+      ctaHintEl.textContent = hint;
+    }
+
+    function parseLocalDateFromIso(iso) {
+      const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+
+    function isoFromLocalDate(dt) {
+      if (!dt || Number.isNaN(dt.getTime())) return null;
+      const y = dt.getFullYear();
+      const mo = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${mo}-${d}`;
+    }
+
+    function weekdayKeyFromIsoLocal(iso) {
+      const dt = parseLocalDateFromIso(iso);
+      if (!dt) return 'mon';
+      const map = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      return map[dt.getDay()];
+    }
+
+    function addDaysLocal(dt, n) {
+      const x = new Date(dt.getTime());
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+
+    function buildRoutineDaySetForMonth(year, month, template) {
+      const set = new Set();
+      if (!template || !template.start_date) return set;
+      const start = parseLocalDateFromIso(String(template.start_date).trim());
+      if (!start) return set;
+      const duration = Math.max(1, Math.min(365, Number(template.duration_days) || 28));
+      const windowEnd = addDaysLocal(start, duration - 1);
+      const cadence = String(template.repeat_cadence || 'daily').toLowerCase() === 'selected_days' ? 'selected_days' : 'daily';
+      const dow = new Set((Array.isArray(template.repeat_days_of_week) ? template.repeat_days_of_week : []).map((x) => String(x || '').toLowerCase()));
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      let cur = new Date(Math.max(first.getTime(), start.getTime()));
+      const endCap = new Date(Math.min(last.getTime(), windowEnd.getTime()));
+      if (cur > endCap) return set;
+      while (cur <= endCap) {
+        const iso = isoFromLocalDate(cur);
+        if (cadence === 'daily') set.add(iso);
+        else if (dow.has(weekdayKeyFromIsoLocal(iso))) set.add(iso);
+        cur = addDaysLocal(cur, 1);
+      }
+      return set;
+    }
+
+    function rebuildMonthMarkers() {
+      scheduleState.routineDaySet = buildRoutineDaySetForMonth(currentYear, currentMonth, scheduleState.template);
+      scheduleState.visitDaySet = new Set();
+    }
+
+    function activeVisitsOnDate(iso) {
+      return (scheduleState.appointments || []).filter((a) => {
+        const st = String(a.status || '').toLowerCase();
+        if (st === 'canceled' || st === 'cancelled') return false;
+        const d = a.date ? String(a.date).slice(0, 10) : '';
+        return d === iso;
+      });
+    }
+
+    function updateConflictSafetyBanner(iso) {
+      if (!conflictSafetyBanner) return;
+      conflictSafetyBanner.classList.remove('show');
+      conflictSafetyBanner.textContent = '';
+    }
+
+    function updatePlanSummaryText() {
+      if (!planSummaryTextEl) return;
+      const tpl = scheduleState.template;
+      const prog = scheduleState.progressSummary;
+      const nVisit = (scheduleState.appointments || []).filter((a) => {
+        const st = String(a.status || '').toLowerCase();
+        return st !== 'canceled' && st !== 'cancelled' && st !== 'completed';
+      }).length;
+      const adh = prog && prog.summary != null ? `${Math.round(Number(prog.summary.adherence_pct) || 0)}%` : '—';
+      if (!tpl) {
+        planSummaryTextEl.textContent = `No routine yet — choose a guided template to start your journal.`;
+        const banner = document.getElementById('routinePickBanner');
+        if (banner) banner.style.display = 'block';
+        return;
+      }
+      const banner = document.getElementById('routinePickBanner');
+      if (banner) banner.style.display = 'none';
+      const win = `${tpl.start_date || '—'} · ${Number(tpl.duration_days) || 28} days · ${tpl.repeat_cadence === 'selected_days' ? 'selected weekdays' : 'daily'}`;
+      planSummaryTextEl.textContent = `Routine plan window: ${win}. This week adherence ${adh}.`;
+    }
+
+    function updateToolbarStats() {
+      const prog = scheduleState.progressSummary;
+      const summary = prog && prog.summary ? prog.summary : {};
+      const up = Math.max(0, Number(summary.upcoming_checkins || summary.upcoming || 0));
+      const done = Math.max(0, Number(summary.product_uses_logged || 0));
+      const adh = prog && prog.summary != null ? `${Math.round(Number(prog.summary.adherence_pct) || 0)}%` : '—';
+      if (statUpcomingEl) statUpcomingEl.textContent = String(up);
+      if (statCompletedEl) statCompletedEl.textContent = String(done);
+      if (statAdherenceEl) statAdherenceEl.textContent = scheduleState.template ? adh : '—';
+    }
+
+    async function loadPlanContext() {
+      if (!sessionId) return;
+      const headers = { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' };
+      try {
+        const [rAp, rTpl, rProg] = await Promise.all([
+          fetch(`${API_BASE}/api/patient/appointments`, { headers }),
+          fetch(`${API_BASE}/api/patient/routine/template`, { headers }),
+          fetch(`${API_BASE}/api/patient/home/progress-summary`, { headers })
+        ]);
+        const jAp = await rAp.json().catch(() => ({}));
+        const jTpl = await rTpl.json().catch(() => ({}));
+        const jProg = await rProg.json().catch(() => ({}));
+        scheduleState.appointments = rAp.ok && jAp.success && Array.isArray(jAp.appointments) ? jAp.appointments : [];
+        scheduleState.template = rTpl.ok && jTpl.success && jTpl.template ? jTpl.template : null;
+        scheduleState.progressSummary = rProg.ok && jProg.success ? jProg : null;
+      } catch (_) {
+        scheduleState.appointments = [];
+        scheduleState.template = null;
+        scheduleState.progressSummary = null;
+      }
+      rebuildMonthMarkers();
+      updateToolbarStats();
+      updatePlanSummaryText();
+      renderCheckinList();
+    }
+
+    function classifyDay(d) {
+      if (!d) return 'off';
+      const bv = d.billing_visual;
+      if (bv === 'due') return 'bill-due';
+      if (bv === 'paid') return 'bill-paid';
+      if (bv === 'review') return 'bill-review';
+      if (d.has_media && d.thumbnail_url) return 'media';
+      if (d.has_entry) return 'logged';
+      if (d.is_routine_day) return 'due';
+      return 'off';
+    }
+
+    function billingVisualHuman(vis) {
+      if (vis === 'due') return 'Bill due';
+      if (vis === 'paid') return 'Paid';
+      if (vis === 'review') return 'Needs review';
+      return 'Billing';
+    }
+
+    function rangeMonths(startIso, endIso) {
+      const out = [];
+      const s = parseLocalDateFromIso(startIso);
+      const e = parseLocalDateFromIso(endIso);
+      if (!s || !e) return out;
+      const cur = new Date(s.getFullYear(), s.getMonth(), 1);
+      const endM = new Date(e.getFullYear(), e.getMonth(), 1);
+      while (cur <= endM) {
+        out.push({ year: cur.getFullYear(), month: cur.getMonth() });
+        cur.setMonth(cur.getMonth() + 1);
+      }
+      return out;
+    }
+
+    function addMonthsToDate(dt, months) {
+      const next = new Date(dt.getTime());
+      next.setMonth(next.getMonth() + months);
+      return new Date(next.getFullYear(), next.getMonth(), 1);
+    }
+
+    function updateJournalRangeControls() {
+      if (journalPrevRangeBtn) journalPrevRangeBtn.disabled = journalRangeLoading;
+      if (journalNextRangeBtn) journalNextRangeBtn.disabled = journalRangeLoading;
+      if (!journalRangeLabel) return;
+      if (journalRangeLoading) {
+        journalRangeLabel.textContent = 'Loading range...';
+        return;
+      }
+      const s = parseLocalDateFromIso(journalState.range.start);
+      const e = parseLocalDateFromIso(journalState.range.end);
+      if (!s || !e) {
+        journalRangeLabel.textContent = 'Range unavailable';
+        return;
+      }
+      const left = s.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      const right = e.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+      journalRangeLabel.textContent = `${left} - ${right}`;
+    }
+
+    async function loadJournalRangeData(anchorDate = null) {
+      if (!sessionId) return;
+      const base = anchorDate
+        ? new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1)
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      journalRangeAnchor = base;
+      // Load exactly 6 months per page and allow paging backward/forward by 6 months.
+      const start = isoDateInTz(base, CLINIC_TIMEZONE);
+      const end = isoDateInTz(new Date(base.getFullYear(), base.getMonth() + 6, 0), CLINIC_TIMEZONE);
+      const params = new URLSearchParams({ start, end, timezone: CLINIC_TIMEZONE });
+      journalRangeLoading = true;
+      updateJournalRangeControls();
+      try {
+        const r = await fetch(`${API_BASE}/api/patient/journal/calendar-range?${params.toString()}`, {
+          headers: { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' }
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) throw new Error(data.error || 'Could not load journal calendar range.');
+        const arr = Array.isArray(data.days) ? data.days : [];
+        journalState.range = { start: data.range?.start || start, end: data.range?.end || end };
+        journalState.orderedDays = arr;
+        journalState.dayMap = new Map(arr.map((d) => [String(d.date || ''), d]));
+      } finally {
+        journalRangeLoading = false;
+        updateJournalRangeControls();
+      }
+    }
+
+    function renderJournalMonthStack() {
+      const mount = document.getElementById('journalMonthStack');
+      if (!mount) return;
+      const months = rangeMonths(journalState.range.start, journalState.range.end);
+      if (!months.length) {
+        mount.innerHTML = '<div class="checkin-item"><span>No calendar range loaded.</span></div>';
+        return;
+      }
+      const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      mount.innerHTML = months.map(({ year, month }) => {
+        const first = new Date(year, month, 1);
+        const last = new Date(year, month + 1, 0);
+        const lead = first.getDay();
+        const cells = [];
+        for (let i = 0; i < lead; i += 1) cells.push('<div class="journal-day journal-day--empty" aria-hidden="true"></div>');
+        for (let day = 1; day <= last.getDate(); day += 1) {
+          const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          const row = journalState.dayMap.get(iso) || null;
+          let cls = classifyDay(row);
+          if (row && row.is_purge_window && row.is_routine_day && !row.has_media && cls === 'due') cls = 'purge';
+          if (row && row.is_routine_day && !row.has_media && cls === 'due') cls = 'horizon';
+          const bandCls = row && row.phase_band ? ` journal-day--band-${String(row.phase_band).replace(/[^a-z]/gi, '')}` : '';
+          const pct = row && row.has_entry ? Math.max(0, Math.min(100, Number(row.completion_score) || 0)) : null;
+          const hideRoutineMedia = row && (row.billing_visual === 'due' || row.billing_visual === 'paid' || row.billing_visual === 'review');
+          const media = row && !hideRoutineMedia && row.has_media && row.thumbnail_url ? String(row.thumbnail_url) : '';
+          const weekBadge = row && row.program_week ? `<span class="journal-day__week">W${row.program_week}</span>` : '';
+          const horizonHint =
+            row && row.is_routine_day && !row.has_media && (row.phase_expect_snippet || row.phase_label)
+              ? `<span class="journal-day__hint">${String(row.phase_expect_snippet || row.phase_label).replace(/</g, '&lt;')}</span>`
+              : '';
+          const badge = pct != null ? `<span class="journal-day__badge">${pct}%</span>` : '';
+          const img = media
+            ? `<img class="journal-day__img" src="${media}" alt="Journal media ${iso}" loading="lazy" referrerpolicy="no-referrer" /><span class="journal-day__overlay"></span>${weekBadge}`
+            : '';
+          const routineHref =
+            row && (row.is_routine_day || row.has_entry)
+              ? `patient-dashboard.html?date=${encodeURIComponent(iso)}`
+              : `appointments.html?journal_date=${encodeURIComponent(iso)}`;
+          const billA11y =
+            row && row.billing_visual === 'due'
+              ? ', bill due'
+              : row && row.billing_visual === 'paid'
+                ? ', paid'
+                : row && row.billing_visual === 'review'
+                  ? ', billing needs review'
+                  : '';
+          const billGlyph =
+            row && row.billing_visual === 'due'
+              ? 'D'
+              : row && row.billing_visual === 'paid'
+                ? 'P'
+                : row && row.billing_visual === 'review'
+                  ? '!'
+                  : '';
+          const glyphHtml = billGlyph
+            ? `<span class="journal-day__bill-glyph" aria-hidden="true">${billGlyph}</span>`
+            : '';
+          const milestone = row && row.milestone_label
+            ? `<span class="journal-day__milestone">${String(row.milestone_label).replace(/</g, '&lt;')}</span>`
+            : '';
+          cells.push(
+            `<a class="journal-day journal-day--${cls}${bandCls}" href="${routineHref}" aria-label="Open journal day ${iso}${billA11y}">${glyphHtml}${img}${horizonHint}${milestone}<span class="journal-day__num">${day}</span>${badge}</a>`
+          );
+        }
+        return `
+          <section class="journal-month" aria-label="${first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}">
+            <h4 class="journal-month-title">${first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h4>
+            <div class="journal-week-row">${weekday.map((w) => `<div>${w}</div>`).join('')}</div>
+            <div class="journal-grid">${cells.join('')}</div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    function renderCheckinList() {
+      if (!checkinListMount) return;
+      const ordered = journalState.orderedDays || [];
+      const listRows = ordered
+        .filter(
+          (d) =>
+            d &&
+            (d.has_entry || d.has_media || d.is_routine_day || (Number(d.billing_event_count) > 0))
+        )
+        .slice(0, 60);
+      if (!listRows.length) {
+        checkinListMount.innerHTML =
+          '<div class="checkin-item"><span>No routine or billing activity in this range yet.</span><span><a href="appointments.html">Routine</a></span></div>';
+        return;
+      }
+      const fmtDate = (iso) => {
+        const d = parseLocalDateFromIso(iso);
+        return d ? d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : iso;
+      };
+      const monthGroups = new Map();
+      listRows.forEach((d) => {
+        const m = String(d.date || '').slice(0, 7);
+        if (!monthGroups.has(m)) monthGroups.set(m, []);
+        monthGroups.get(m).push(d);
+      });
+      const blocks = [];
+      for (const [monthKey, rows] of monthGroups.entries()) {
+        const title = parseLocalDateFromIso(`${monthKey}-01`)?.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) || monthKey;
+        blocks.push(`<div class="checkin-list-section-title">${title}</div>`);
+        rows.forEach((d) => {
+          const billPart =
+            Number(d.billing_event_count) > 0
+              ? `${billingVisualHuman(d.billing_visual)} · ${d.billing_event_count} ${Number(d.billing_event_count) === 1 ? 'event' : 'events'}`
+              : '';
+          const status = billPart
+            ? billPart
+            : d.has_media
+              ? 'Photo linked'
+              : d.has_entry
+                ? `Logged ${Math.round(Number(d.completion_score) || 0)}%`
+                : d.is_routine_day
+                  ? 'Due'
+                  : 'No log';
+          const right = Number(d.billing_event_count) > 0 ? 'Bill' : d.has_media ? 'Photo' : d.has_entry ? 'Entry' : '—';
+          blocks.push(`<a class="checkin-item" href="appointments.html?journal_date=${encodeURIComponent(d.date)}"><span>${fmtDate(d.date)} · ${status}</span><span>${right}</span></a>`);
+        });
+      }
+      checkinListMount.innerHTML = blocks.join('');
+    }
+
+    function findPriorMediaDateWeb(rows, fromDate) {
+      const sorted = (rows || [])
+        .filter((r) => r && r.has_media && r.date && r.date < fromDate)
+        .sort((a, b) => b.date.localeCompare(a.date));
+      return sorted[0]?.date || null;
+    }
+
+    async function openRoutineCompareModal(dateA, dateB) {
+      const modal = document.getElementById('routineCompareModal');
+      const body = document.getElementById('routineCompareBody');
+      if (!modal || !body) return;
+      body.innerHTML = '<p>Loading…</p>';
+      modal.classList.remove('hidden');
+      try {
+        const headers = patientSessionHeaders(false);
+        const res = await fetch(
+          `${API_BASE}/api/patient/routine/compare?date_a=${encodeURIComponent(dateA)}&date_b=${encodeURIComponent(dateB)}`,
+          { headers }
+        );
+        const data = await res.json();
+        const col = (side, label) => {
+          const d = data[side];
+          if (!d || !d.has_entry) return `<div class="routine-compare-col"><p>${label}</p><p>No entry</p></div>`;
+          const img = d.thumbnail_url || d.media_url
+            ? `<img src="${d.thumbnail_url || d.media_url}" alt="${label}" />`
+            : '';
+          const cap = [d.program_week ? `W${d.program_week}` : '', d.phase_label || ''].filter(Boolean).join(' · ');
+          return `<div class="routine-compare-col"><p><strong>${label}</strong> ${d.date}${cap ? ` — ${cap}` : ''}</p>${img}<p style="font-size:12px;color:#64748b">${(d.assistant_summary || '').replace(/</g, '&lt;')}</p></div>`;
+        };
+        body.innerHTML = col('day_a', 'Earlier') + col('day_b', 'Later');
+      } catch (e) {
+        body.innerHTML = `<p>${String(e.message || 'Could not load compare.')}</p>`;
+      }
+    }
+
+    function wireJournalPhotoCompare(mediaRows) {
+      if (!journalPhotoThumbs) return;
+      journalPhotoThumbs.querySelectorAll('[data-compare-date]').forEach((el) => {
+        el.addEventListener('dblclick', (ev) => {
+          ev.preventDefault();
+          const date = el.getAttribute('data-compare-date');
+          const prior = findPriorMediaDateWeb(mediaRows, date);
+          if (prior) void openRoutineCompareModal(prior, date);
+        });
+      });
+    }
+
+    function renderJournalPhotos() {
+      if (!journalPhotoThumbs) return;
+      const mediaRows = (journalState.orderedDays || []).filter((d) => d && d.has_media && d.thumbnail_url).slice(0, 30);
+      const legend = document.getElementById('journalPhaseLegend');
+      const hasRoutine = (journalState.orderedDays || []).some((d) => d && d.is_routine_day);
+      if (legend) legend.hidden = !hasRoutine;
+      if (!mediaRows.length) {
+        journalPhotoThumbs.innerHTML = `
+          <a class="journal-photo-thumb" href="appointments.html" aria-label="Open routine to add first picture">
+            <span class="journal-photo-thumb__empty">No photos yet. Add one from Routine.</span>
+          </a>
+        `;
+        return;
+      }
+      journalPhotoThumbs.innerHTML = mediaRows.map((m) => {
+        const week = m.program_week ? `<span class="journal-photo-thumb__week">W${m.program_week}</span>` : '';
+        const label = m.phase_label ? `<span class="journal-photo-thumb__phase">${String(m.phase_label).replace(/</g, '&lt;')}</span>` : '';
+        const symptom = m.has_symptoms && m.top_symptom
+          ? `<span class="journal-photo-thumb__phase">${String(m.top_symptom).replace(/</g, '&lt;')}</span>`
+          : '';
+        return `
+        <a class="journal-photo-thumb" data-compare-date="${m.date}" href="patient-dashboard.html?date=${encodeURIComponent(m.date)}" aria-label="Open routine day ${m.date}. Double-click to compare with prior photo.">
+          <img src="${m.thumbnail_url}" alt="Routine photo ${m.date}" loading="lazy" referrerpolicy="no-referrer" />
+          ${week}${label}${symptom}
+        </a>
+      `;
+      }).join('');
+      wireJournalPhotoCompare(mediaRows);
+    }
+
+    (function initRoutineCompareModal() {
+      const modal = document.getElementById('routineCompareModal');
+      const closeBtn = document.getElementById('routineCompareClose');
+      if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) modal.classList.add('hidden');
+        });
+      }
+    })();
+
+    function clearHold() {
+      if (holdInterval) window.clearInterval(holdInterval);
+      holdInterval = null;
+      holdExpiresAtMs = null;
+      lastAppointmentIdForRetry = null;
+      if (holdBoxEl) holdBoxEl.classList.add('hidden');
+      if (retryPayBtn) retryPayBtn.classList.add('hidden');
+    }
+
+    function fmtCountdown(ms) {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const mm = Math.floor(s / 60);
+      const ss = s % 60;
+      return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+    }
+
+    function startHoldCountdown() {
+      if (!holdBoxEl || !holdTimerEl) return;
+      holdBoxEl.classList.remove('hidden');
+      if (holdInterval) window.clearInterval(holdInterval);
+      holdInterval = window.setInterval(() => {
+        if (!holdExpiresAtMs) return;
+        const remaining = holdExpiresAtMs - Date.now();
+        holdTimerEl.textContent = fmtCountdown(remaining);
+        if (remaining <= 0) {
+          window.clearInterval(holdInterval);
+          holdInterval = null;
+          if (retryPayBtn) retryPayBtn.classList.add('hidden');
+          showMsg('That hold expired. Please pick a new time.', 'error');
+          selectedTime = null;
+          if (selectedDate) loadSlotsForDate(selectedDate);
+          setCtaState();
+        }
+      }, 250);
+    }
+
+    function showMsg(text, type) {
+      msgEl.textContent = text;
+      msgEl.classList.remove('hidden', 'message-error', 'message-success');
+      msgEl.classList.add(
+        type === 'error' ? 'message-error' : 'message-success'
+      );
+    }
+
+    function clearMsg() {
+      msgEl.classList.add('hidden');
+    }
+
+    function fmtDateLabel(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return d;
+      return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    async function loadPrice() {
+      try {
+        const sid = sessionId;
+        if (!sid) return;
+        const visitMode = (document.getElementById('visitModeInput')?.value || 'sync_video');
+        const res = await fetch(`${API_BASE}/api/pricing/quote?visit_mode=${encodeURIComponent(visitMode)}`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) return;
+        const priceLine = document.getElementById('priceLine');
+        if (priceLine) {
+          const label = visitMode === 'async_review' ? 'Photo review' : 'Somoation';
+          priceLine.textContent = `${label} — $${data.price_usd.toFixed(2)} ${data.currency}`;
+        }
+      } catch (_) {}
+    }
+
+    function renderCalendar(year, month) {
+      currentYear = year;
+      currentMonth = month;
+      rebuildMonthMarkers();
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      const startWeekday = first.getDay();
+      const daysInMonth = last.getDate();
+
+      monthLabelEl.textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      calendarGridEl.innerHTML = '';
+
+      for (let i = 0; i < startWeekday; i++) {
+        const empty = document.createElement('div');
+        calendarGridEl.appendChild(empty);
+      }
+
+      const todayStr = isoDateInTz(new Date(), CLINIC_TIMEZONE);
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        // Civil YYYY-MM-DD for this grid cell — do not use toISOString() (UTC shifts local dates).
+        const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cal-day-wrap';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = String(day);
+        btn.className = 'w-8 h-8 mx-auto flex items-center justify-center rounded-full text-xs transition';
+
+        const isToday = iso === todayStr;
+        const isSelected = iso === selectedDate;
+        // Timezone-safe: compare YYYY-MM-DD lexicographically in the clinic timezone
+        const inPast = iso < todayStr;
+
+        if (inPast) {
+          btn.classList.add('text-gray-300', 'pointer-events-none');
+        } else if (isSelected) {
+          btn.classList.add('bg-indigo-600', 'text-white', 'font-semibold', 'shadow-sm');
+        } else if (isToday) {
+          btn.classList.add('border', 'border-indigo-500', 'text-indigo-700', 'font-semibold', 'bg-indigo-50');
+        } else {
+          btn.classList.add('text-gray-700', 'hover:bg-gray-100');
+        }
+
+        const dots = document.createElement('div');
+        dots.className = 'cal-day-dots';
+        if (scheduleState.routineDaySet && scheduleState.routineDaySet.has(iso)) {
+          const dot = document.createElement('span');
+          dot.className = 'cal-dot cal-dot-routine';
+          dot.title = 'Planned routine day';
+          dots.appendChild(dot);
+        }
+
+        btn.addEventListener('click', () => {
+          selectedDate = iso;
+          selectedTime = null;
+          renderCalendar(currentYear, currentMonth);
+          selectedDateLabelEl.textContent = fmtDateLabel(selectedDate);
+          updateConflictSafetyBanner(iso);
+          loadSlotsForDate(iso);
+          setCtaState();
+        });
+
+        wrap.appendChild(btn);
+        wrap.appendChild(dots);
+        calendarGridEl.appendChild(wrap);
+      }
+    }
+
+    function bucketForTimeLabel(label) {
+      // Expect formats like "09:00", "14:30", or with AM/PM
+      const m24 = label.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+      let h = null;
+      if (m24) {
+        h = parseInt(m24[1], 10);
+      } else {
+        const m12 = label.toLowerCase().match(/\b(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*(am|pm)\b/);
+        if (m12) {
+          h = parseInt(m12[1], 10);
+          const ampm = m12[3];
+          if (ampm === 'pm' && h !== 12) h += 12;
+          if (ampm === 'am' && h === 12) h = 0;
+        }
+      }
+      if (h == null) return 'other';
+      if (h < 12) return 'morning';
+      if (h < 17) return 'afternoon';
+      return 'evening';
+    }
+
+    function redirectToLoginWithReturn() {
+      const returnTo = encodeURIComponent(`schedule.html${window.location.search || ''}`);
+      window.location.href = `patient-login.html?expired=1&return=${returnTo}`;
+    }
+
+    function showSlotFallbackActions(show) {
+      if (!slotsFallbackActionsEl) return;
+      if (show) slotsFallbackActionsEl.classList.remove('hidden');
+      else slotsFallbackActionsEl.classList.add('hidden');
+    }
+
+    async function loadSlotsForDate(date) {
+      clearMsg();
+      slotsLoading = true;
+      setCtaState();
+      slotsEl.classList.remove('hidden');
+      slotsMorningEl.innerHTML = '';
+      slotsAfternoonEl.innerHTML = '';
+      slotsEveningEl.innerHTML = '';
+      showSlotFallbackActions(false);
+      slotsMorningEl.insertAdjacentHTML('beforebegin', '<div id="slotsLoading" class="text-xs text-sky-100/80">Loading…</div>');
+      const apptType = document.getElementById('apptTypeInput').value;
+
+      try {
+        const params = new URLSearchParams({
+          date,
+          appointment_type: apptType
+        });
+        const res = await fetch(`${API_BASE}/api/patient/booking/available-slots?${params.toString()}`, {
+          headers: { 'ngrok-skip-browser-warning': 'true', 'x-session-id': sessionId }
+        });
+        const data = await res.json();
+        const loadingNode = document.getElementById('slotsLoading');
+        if (loadingNode) loadingNode.remove();
+        slotsLoading = false;
+        setCtaState();
+        if (!res.ok || !data.success) {
+          if (res.status === 401) {
+            redirectToLoginWithReturn();
+            return;
+          }
+          showMsg(data.error || 'Unable to load availability for that day.', 'error');
+          slotsMorningEl.innerHTML = '<span class="text-xs text-sky-100/80">Unable to load slots for this date.</span>';
+          showSlotFallbackActions(true);
+          return;
+        }
+        const slots = data.slots_with_display || data.slots || data.available_slots || [];
+        if (!slots.length) {
+          slotsMorningEl.innerHTML = '<span class="text-xs text-sky-100/80">No slots available for this date. Try another date or use chat help.</span>';
+          showSlotFallbackActions(true);
+          return;
+        }
+
+        const morning = [];
+        const afternoon = [];
+        const evening = [];
+
+        slots.forEach((s) => {
+          const label = s.display || s.time || s.start_time || s;
+          const timeVal = s.time || s.value || s.start_time || s;
+          const bucket = bucketForTimeLabel(label);
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = label;
+          // Mobile thumb target: >=44px height, larger tap area
+          b.className = 'px-4 py-3 rounded-full border text-sm font-semibold border-sky-400/70 bg-sky-800/80 text-sky-50 hover:bg-emerald-500 hover:border-emerald-400';
+          b.addEventListener('click', () => {
+            selectedTime = timeVal;
+            Array.from(slotsEl.querySelectorAll('button')).forEach((btn) => {
+              btn.classList.remove('bg-emerald-500', 'border-emerald-400');
+            });
+            b.classList.add('bg-emerald-500', 'border-emerald-400');
+            setCtaState();
+            updateConflictSafetyBanner(selectedDate);
+          });
+          if (bucket === 'morning') morning.push(b);
+          else if (bucket === 'afternoon') afternoon.push(b);
+          else if (bucket === 'evening') evening.push(b);
+        });
+
+        function renderSection(container, title, items) {
+          if (!items.length) {
+            container.innerHTML = '';
+            return;
+          }
+          const header = document.createElement('div');
+          header.className = 'text-[11px] font-semibold text-sky-200 mt-1 mb-1';
+          header.textContent = title;
+          const row = document.createElement('div');
+          row.className = 'flex flex-wrap gap-2 mb-1';
+          items.forEach((b) => row.appendChild(b));
+          container.innerHTML = '';
+          container.appendChild(header);
+          container.appendChild(row);
+        }
+
+        renderSection(slotsMorningEl, 'Morning', morning);
+        renderSection(slotsAfternoonEl, 'Afternoon', afternoon);
+        renderSection(slotsEveningEl, 'Evening', evening);
+
+        // If a slot was preselected (e.g., from chat), re-apply highlight.
+        if (selectedTime) {
+          const match = Array.from(slotsEl.querySelectorAll('button')).find((b) => {
+            const t = (b.textContent || '').trim();
+            return t === selectedTime || t.includes(selectedTime);
+          });
+          if (match) match.classList.add('bg-emerald-500', 'border-emerald-400');
+        }
+        showSlotFallbackActions(false);
+      } catch (e) {
+        console.error('Error loading slots:', e);
+        const loadingNode = document.getElementById('slotsLoading');
+        if (loadingNode) loadingNode.remove();
+        slotsLoading = false;
+        setCtaState();
+        slotsMorningEl.innerHTML = '<span class="text-xs text-sky-100/80">Unable to load availability.</span>';
+        showMsg('Network error while loading availability.', 'error');
+        showSlotFallbackActions(true);
+      }
+    }
+
+    async function scheduleAppointment() {
+      clearMsg();
+      if (bookingInFlight || checkoutInFlight) return;
+      if (!selectedDate || !selectedTime) {
+        showMsg('Pick a date and time from the calendar first.', 'error');
+        return;
+      }
+      clearHold();
+      const apptType = document.getElementById('apptTypeInput').value;
+
+      const reason = reasonInput.value.trim();
+
+      try {
+        bookingInFlight = true;
+        scheduleBtn.textContent = 'Booking…';
+        setCtaState();
+        const visitMode = document.getElementById('visitModeInput')?.value || 'sync_video';
+        if (visitMode === 'async_review') {
+          showMsg('For photo review, use "Start async review" above.', 'error');
+          return;
+        }
+        const body = {
+          appointment_type: apptType,
+          date: selectedDate,
+          time: selectedTime,
+          reason,
+          visit_mode: visitMode
+        };
+        const bookingKey = `pt-book:${apptType}:${selectedDate}:${selectedTime}`;
+        const res = await fetch(`${API_BASE}/api/patient/booking/schedule`, {
+          method: 'POST',
+          headers: { ...API_HEADERS, 'x-session-id': sessionId, 'idempotency-key': bookingKey },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showMsg(data.error || 'Unable to schedule appointment.', 'error');
+          return;
+        }
+
+        const apptId = data.appointment?.id;
+        if (!apptId) {
+          showMsg('Appointment scheduled but missing id. Please check your appointments.', 'error');
+          return;
+        }
+        lastAppointmentIdForRetry = apptId;
+        holdExpiresAtMs = Date.now() + SLOT_HOLD_TTL_MINUTES * 60 * 1000;
+        startHoldCountdown();
+
+        // Create checkout session and redirect directly to Stripe
+        try {
+          checkoutInFlight = true;
+          scheduleBtn.textContent = 'Starting payment…';
+          setCtaState();
+          const checkoutRes = await fetch(`${API_BASE}/api/patient/appointments/${encodeURIComponent(apptId)}/checkout`, {
+            method: 'POST',
+            headers: { ...API_HEADERS, 'x-session-id': sessionId, 'idempotency-key': `pt-checkout:${apptId}` },
+            body: JSON.stringify({})
+          });
+          const checkoutData = await checkoutRes.json();
+          if (!checkoutRes.ok || !checkoutData.success || !checkoutData.checkout_url) {
+            showMsg(checkoutData.error || 'Unable to start payment. You can try again from Wallet.', 'error');
+            if (retryPayBtn) retryPayBtn.classList.remove('hidden');
+            return;
+          }
+          window.location.href = checkoutData.checkout_url;
+        } catch (err) {
+          console.error('Error creating checkout session:', err);
+          showMsg('Appointment booked. Payment couldn’t start automatically—complete it from Wallet to finish your visit.', 'error');
+          if (retryPayBtn) retryPayBtn.classList.remove('hidden');
+        }
+      } catch (e) {
+        console.error('Error scheduling appointment:', e);
+        showMsg('Network error while scheduling appointment.', 'error');
+      } finally {
+        bookingInFlight = false;
+        checkoutInFlight = false;
+        scheduleBtn.textContent = 'Continue to payment';
+        setCtaState();
+      }
+    }
+
+    async function retryPayment() {
+      clearMsg();
+      if (!lastAppointmentIdForRetry) {
+        showMsg('Please pick a time and continue.', 'error');
+        return;
+      }
+      if (holdExpiresAtMs && Date.now() > holdExpiresAtMs) {
+        showMsg('That hold expired. Please pick a new time.', 'error');
+        clearHold();
+        return;
+      }
+      try {
+        checkoutInFlight = true;
+        scheduleBtn.textContent = 'Starting payment…';
+        setCtaState();
+        const apptId = lastAppointmentIdForRetry;
+        const checkoutRes = await fetch(`${API_BASE}/api/patient/appointments/${encodeURIComponent(apptId)}/checkout`, {
+          method: 'POST',
+          headers: { ...API_HEADERS, 'x-session-id': sessionId, 'idempotency-key': `pt-checkout:${apptId}` },
+          body: JSON.stringify({})
+        });
+        const checkoutData = await checkoutRes.json();
+        if (!checkoutRes.ok || !checkoutData.success || !checkoutData.checkout_url) {
+          showMsg(checkoutData.error || 'Unable to start payment. You can try again from Wallet.', 'error');
+          return;
+        }
+        window.location.href = checkoutData.checkout_url;
+      } catch (e) {
+        showMsg('Network error while starting payment.', 'error');
+      } finally {
+        checkoutInFlight = false;
+        scheduleBtn.textContent = 'Continue to payment';
+        setCtaState();
+      }
+    }
+
+    scheduleBtn.addEventListener('click', scheduleAppointment);
+    if (retryPayBtn) retryPayBtn.addEventListener('click', retryPayment);
+
+    function toggleVisitModeUI() {
+      const visitMode = document.getElementById('visitModeInput')?.value || 'sync_video';
+      const calendarSection = document.getElementById('calendarSection');
+      const asyncCard = document.getElementById('asyncLaneCard');
+      const ctaWrap = document.getElementById('ctaWrap');
+      if (visitMode === 'async_review') {
+        if (calendarSection) calendarSection.classList.add('hidden');
+        if (asyncCard) asyncCard.classList.remove('hidden');
+        if (ctaWrap) ctaWrap.classList.add('hidden');
+      } else {
+        if (calendarSection) calendarSection.classList.remove('hidden');
+        if (asyncCard) asyncCard.classList.add('hidden');
+        if (ctaWrap) ctaWrap.classList.remove('hidden');
+      }
+      loadPrice();
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      setMobileMenuToggleState(false);
+      if (!sessionId) {
+        redirectToLoginWithReturn();
+        return;
+      }
+      if (JOURNAL_CALENDAR_V2) {
+        await loadScheduleConfig();
+        const nowParts = nowPartsInTz(CLINIC_TIMEZONE);
+        currentYear = nowParts.year;
+        currentMonth = nowParts.monthIndex;
+        selectedDate = isoDateInTz(new Date(), CLINIC_TIMEZONE);
+        journalRangeAnchor = new Date(nowParts.year, nowParts.monthIndex, 1);
+        await loadPlanContext();
+        await loadJournalRangeData(journalRangeAnchor);
+        renderJournalMonthStack();
+        activateView('calendar');
+        setCtaState();
+        return;
+      }
+      const asyncLink = document.getElementById('asyncReviewLink');
+      if (asyncLink) {
+        const returnTo = encodeURIComponent(`schedule.html${window.location.search || ''}`);
+        asyncLink.href = `triage.html?visit_mode=async_review&return=${returnTo}`;
+      }
+      document.getElementById('visitModeInput')?.addEventListener('change', toggleVisitModeUI);
+      retrySlotsBtn?.addEventListener('click', () => { if (selectedDate) loadSlotsForDate(selectedDate); });
+      tryAnotherDateBtn?.addEventListener('click', () => {
+        selectedTime = null;
+        const d = new Date(currentYear, currentMonth + 1, 1);
+        renderCalendar(d.getFullYear(), d.getMonth());
+      });
+      await loadScheduleConfig();
+      const nowParts = nowPartsInTz(CLINIC_TIMEZONE);
+      currentYear = nowParts.year;
+      currentMonth = nowParts.monthIndex;
+      selectedDate = isoDateInTz(new Date(), CLINIC_TIMEZONE);
+      selectedDateLabelEl.textContent = fmtDateLabel(selectedDate);
+      await loadPlanContext();
+      renderCalendar(currentYear, currentMonth);
+      updateConflictSafetyBanner(selectedDate);
+      loadSlotsForDate(selectedDate);
+      loadPrice();
+      toggleVisitModeUI();
+      setCtaState();
+    });
+
+    async function loadScheduleConfig() {
+      try {
+        const sid = sessionId;
+        if (!sid) return;
+        const res = await fetch(`${API_BASE}/api/patient/support-config`, {
+          headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (data.timezone) CLINIC_TIMEZONE = data.timezone;
+          if (typeof data.slot_hold_ttl_minutes === 'number') SLOT_HOLD_TTL_MINUTES = data.slot_hold_ttl_minutes;
+        }
+      } catch (_) {}
+    }
+
+    // Today button: jump to clinic "today" and reload.
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+      todayBtn.addEventListener('click', () => {
+        clearHold();
+        const nowParts = nowPartsInTz(CLINIC_TIMEZONE);
+        currentYear = nowParts.year;
+        currentMonth = nowParts.monthIndex;
+        selectedDate = isoDateInTz(new Date(), CLINIC_TIMEZONE);
+        selectedTime = null;
+        selectedDateLabelEl.textContent = fmtDateLabel(selectedDate);
+        renderCalendar(currentYear, currentMonth);
+        updateConflictSafetyBanner(selectedDate);
+        loadSlotsForDate(selectedDate);
+        setCtaState();
+      });
+    }
+
+    document.getElementById('prevMonthBtn').addEventListener('click', () => {
+      const d = new Date(currentYear, currentMonth - 1, 1);
+      renderCalendar(d.getFullYear(), d.getMonth());
+    });
+    document.getElementById('nextMonthBtn').addEventListener('click', () => {
+      const d = new Date(currentYear, currentMonth + 1, 1);
+      renderCalendar(d.getFullYear(), d.getMonth());
+    });
+
+    if (journalPrevRangeBtn) {
+      journalPrevRangeBtn.addEventListener('click', async () => {
+        if (journalRangeLoading) return;
+        try {
+          journalRangeAnchor = addMonthsToDate(journalRangeAnchor || new Date(), -6);
+          await loadJournalRangeData(journalRangeAnchor);
+          renderJournalMonthStack();
+          renderCheckinList();
+          renderJournalPhotos();
+        } catch (e) {
+          journalRangeLoading = false;
+          updateJournalRangeControls();
+          showMsg(e.message || 'Could not load previous months.', 'error');
+        }
+      });
+    }
+    if (journalNextRangeBtn) {
+      journalNextRangeBtn.addEventListener('click', async () => {
+        if (journalRangeLoading) return;
+        try {
+          journalRangeAnchor = addMonthsToDate(journalRangeAnchor || new Date(), 6);
+          await loadJournalRangeData(journalRangeAnchor);
+          renderJournalMonthStack();
+          renderCheckinList();
+          renderJournalPhotos();
+        } catch (e) {
+          journalRangeLoading = false;
+          updateJournalRangeControls();
+          showMsg(e.message || 'Could not load next months.', 'error');
+        }
+      });
+    }
+
+    // Chat modal wiring (reuse /api/patient/triage/message)
+    const sid = localStorage.getItem('patient_session_id') || '';
+    const chatModal = document.getElementById('chatModal');
+    const openChatModal = document.getElementById('openChatModal');
+    const closeChatModal = document.getElementById('closeChatModal');
+    const chatMsgs = document.getElementById('chatMsgs');
+    const chatChips = document.getElementById('chatChips');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    const chatCodeEntry = document.getElementById('chatCodeEntry');
+    const chatCodeInput = document.getElementById('chatCodeInput');
+    const chatCodeSubmitBtn = document.getElementById('chatCodeSubmitBtn');
+    const triageStateKey = 'patient_triage_state_v1';
+    let triageState = (() => {
+      try { return JSON.parse(sessionStorage.getItem(triageStateKey) || 'null') || {}; } catch (_) { return {}; }
+    })();
+
+    function chatAdd(role, text) {
+      const el = document.createElement('div');
+      el.className = role === 'user'
+        ? 'ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-indigo-600 text-white px-3 py-2'
+        : 'mr-auto max-w-[80%] rounded-2xl rounded-bl-sm bg-gray-100 text-gray-900 px-3 py-2 border border-gray-200';
+      el.textContent = text;
+      chatMsgs.appendChild(el);
+      chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    }
+
+    function chatSetChips(options) {
+      chatChips.innerHTML = '';
+      if (!options || !options.length) return;
+      for (const opt of options) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'px-3 py-1.5 rounded-full border text-xs font-semibold border-gray-200 bg-white hover:bg-gray-50';
+        b.textContent = opt.label;
+        b.addEventListener('click', () => {
+          // If the assistant is offering concrete times, allow a direct handoff into the calendar UI.
+          if (opt.action === 'select_slot') {
+            const slot = opt.slot || null;
+            const date = slot?.date || slot?.start_time?.slice?.(0, 10) || (triageState && triageState.date) || selectedDate || isoDateInTz(new Date(), CLINIC_TIMEZONE);
+            const time = slot?.display || slot?.time || slot?.start_time || opt.value || null;
+            if (date && time) {
+              clearHold();
+              selectedDate = date;
+              selectedTime = time;
+              selectedDateLabelEl.textContent = fmtDateLabel(selectedDate);
+              if (triageState?.appointment_type && document.getElementById('apptTypeInput')) {
+                const apptEl = document.getElementById('apptTypeInput');
+                const val = String(triageState.appointment_type);
+                const hasOpt = Array.from(apptEl.options).some(o => o.value === val);
+                if (!hasOpt) {
+                  const opt = document.createElement('option');
+                  opt.value = val;
+                  opt.textContent = val;
+                  apptEl.appendChild(opt);
+                }
+                apptEl.value = val;
+              }
+              const d = new Date(`${selectedDate}T00:00:00`);
+              if (!Number.isNaN(d.getTime())) {
+                renderCalendar(d.getFullYear(), d.getMonth());
+              }
+              updateConflictSafetyBanner(selectedDate);
+              loadSlotsForDate(selectedDate);
+              setCtaState();
+              chatModal.classList.add('hidden');
+              chatModal.classList.remove('flex');
+              return;
+            }
+          }
+          if (opt.action === 'upload') {
+            window.location.href = 'triage.html';
+            return;
+          }
+          chatSendMessage(opt.value, { action: opt.action || null, slot: opt.slot || null });
+        });
+        chatChips.appendChild(b);
+      }
+    }
+
+    async function chatSendMessage(text, meta = {}) {
+      const t = (text || '').trim();
+      if (!t) return;
+      chatAdd('user', t);
+      chatInput.value = '';
+      if (chatCodeEntry) chatCodeEntry.classList.add('hidden');
+      chatSetChips([]);
+      chatSendBtn.disabled = true;
+      try {
+        const r = await fetch(`${API_BASE}/api/patient/triage/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' },
+          body: JSON.stringify({ message: t, state: triageState, meta })
+        });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || 'Request failed');
+        triageState = { ...(j.state || {}), session_id: j.session_id || triageState?.session_id };
+        sessionStorage.setItem(triageStateKey, JSON.stringify(triageState));
+        if (j.reply) chatAdd('assistant', j.reply);
+        const needsCodeInput = /6-?digit|verification code|enter the code/i.test(String(j.reply || ''));
+        if (chatCodeEntry) chatCodeEntry.classList.toggle('hidden', !needsCodeInput);
+        const chips = j.next_chips || [];
+        if (j.next_step === 'UPLOAD_IMAGE') {
+          chips.push({ label: 'Upload photo', value: '[upload]', action: 'upload' });
+        }
+        if (chips.length) chatSetChips(chips);
+        if (j.redirect_to) window.location.href = j.redirect_to;
+      } catch (e) {
+        chatAdd('assistant', e.message || 'Something went wrong.');
+      } finally {
+        chatSendBtn.disabled = false;
+      }
+    }
+
+    if (openChatModal) {
+      openChatModal.addEventListener('click', () => {
+        if (!sid) {
+          window.location.href = 'patient-login.html';
+          return;
+        }
+        chatModal.classList.remove('hidden');
+        chatModal.classList.add('flex');
+        if (!chatMsgs.hasChildNodes()) {
+          chatAdd('assistant', 'Hi — I can help you choose a time and set up your visit. What can we help you with today?');
+          chatSetChips([
+            { label: 'Book a general visit', value: 'I want to book a general visit' },
+            { label: 'I have symptoms', value: 'I have symptoms' },
+            { label: 'Billing / receipt', value: 'I need help with my receipt', action: 'billing' }
+          ]);
+        }
+      });
+    }
+
+    if (closeChatModal) {
+      closeChatModal.addEventListener('click', () => {
+        chatModal.classList.add('hidden');
+        chatModal.classList.remove('flex');
+      });
+    }
+
+    chatSendBtn.addEventListener('click', () => chatSendMessage(chatInput.value));
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); chatSendMessage(chatInput.value); }
+    });
+    chatCodeSubmitBtn?.addEventListener('click', () => {
+      const code = String(chatCodeInput?.value || '').replace(/\D/g, '').slice(0, 6);
+      if (code.length !== 6) return;
+      chatSendMessage(code, { action: 'verify_checkout_code' });
+      if (chatCodeInput) chatCodeInput.value = '';
+    });
+
+    function setMobileMenuToggleState(isOpen) {
+      const btn = document.getElementById('mobileMenuToggleBtn');
+      if (!btn) return;
+      btn.textContent = isOpen ? '✕' : '☰';
+      btn.setAttribute('aria-expanded', String(isOpen));
+      btn.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+    }
+
+    function toggleMobileMenu() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.mobile-menu-overlay');
+      const nextOpen = !(sidebar && sidebar.classList.contains('mobile-open'));
+      if (sidebar) sidebar.classList.toggle('mobile-open', nextOpen);
+      if (overlay) overlay.classList.toggle('active', nextOpen);
+      setMobileMenuToggleState(nextOpen);
+    }
+
+    function logout() {
+      localStorage.removeItem('patient_session_id');
+      localStorage.removeItem('patient_phone');
+      window.location.href = 'patient-login.html';
+    }
+  </script>
+  <script type="module">
+    import { mountBottomTabs } from '../assets/js/patient-shell.js';
+    mountBottomTabs();
+  </script>
+</body>
+</html>
+

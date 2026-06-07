@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#c85103">
+    <link rel="manifest" href="../manifest.webmanifest">
+    <title>Today - Skin &amp; Care</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/skin-care-tokens.css">
+    <link rel="stylesheet" href="../assets/css/patient-consumer.css">
+    <script src="../assets/js/config.js" defer></script>
+    <style>
+        :root {
+            --primary: var(--sc-color-primary, #c85103);
+            --primary-dark: var(--brand-accent-hover, #a84402);
+            --primary-light: #faf6f3;
+            --cta-primary: #000000;
+            --cta-primary-hover: #1a1a1a;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background: #f7fafc;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            background: #f7fafc;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e7ebf4;
+            box-shadow: 2px 0 14px rgba(21, 36, 88, 0.05);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 18px 16px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .sidebar-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 2px;
+            color: #131a2e;
+            text-decoration: none;
+        }
+        .sidebar-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            animation: sidebarSpin 6s linear infinite;
+        }
+        @keyframes sidebarSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sidebar-subtitle {
+            font-size: 11px;
+            color: var(--gray-500);
+            margin-top: 2px;
+            margin-left: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sidebar-nav {
+            padding: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--gray-700);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .nav-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+        .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+            position: absolute;
+            bottom: 0;
+            width: 260px;
+            background: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: var(--patient-space-5);
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: var(--patient-space-5);
+            margin-top: var(--patient-space-4);
+            padding-top: 0;
+        }
+
+        .page-title {
+            font-size: var(--patient-title-size);
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 8px;
+            margin-top: 0;
+            line-height: 1.05;
+        }
+
+        .page-subtitle {
+            font-size: var(--patient-subtitle-size);
+            color: var(--gray-600);
+        }
+
+        .routine-board {
+            background: #fff;
+            border-radius: 26px;
+            padding: 24px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            margin-top: 18px;
+        }
+        .routine-board-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .routine-board-title {
+            font-size: 28px;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            margin: 0 0 6px 0;
+            color: #1f2937;
+        }
+        .routine-board-subtitle {
+            margin: 0;
+            font-size: var(--patient-row-meta-size);
+            color: #6b7280;
+        }
+        .routine-board-date {
+            font-size: var(--patient-stat-size);
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .routine-board-topline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .routine-stats {
+            display: flex;
+            gap: 26px;
+            flex-wrap: wrap;
+        }
+        .routine-stat .n {
+            font-size: var(--patient-stat-size);
+            font-weight: 700;
+            color: #111827;
+            line-height: 1;
+        }
+        .routine-stat .k {
+            margin-top: 4px;
+            color: #4b5563;
+            font-size: var(--patient-row-meta-size);
+        }
+        .routine-view-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .routine-view-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            color: #374151;
+            font-size: 18px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .routine-view-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+        .routine-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .routine-card-grid.list-mode {
+            grid-template-columns: 1fr;
+        }
+        /* Card chrome: patient-consumer.css (portfolio pastels) */
+        .routine-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .routine-card-actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+        }
+        .routine-card-actions .btn {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .routine-create-btn {
+            background: var(--primary);
+            color: #fff;
+        }
+        .routine-open-products-btn {
+            background: var(--sc-color-secondary, #f5f5f5);
+            color: var(--sc-color-primary, #c85103);
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 0.01em;
+        }
+        .routine-empty-state {
+            border: 1px dashed rgba(200, 81, 3, 0.35);
+            background: #faf6f3;
+            border-radius: 14px;
+            padding: 16px;
+            color: #000;
+            display: none;
+        }
+
+        .home-empty-card .routine-card-title {
+            font-size: 22px;
+        }
+
+        .home-stats-summary {
+            margin-top: 6px;
+            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .home-stat-tile {
+            background: var(--sc-color-secondary, #f5f5f5);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+        .home-stat-label {
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-size: var(--patient-section-label-size);
+            color: #6b7280;
+            font-weight: 700;
+        }
+        .home-stat-value {
+            margin-top: 6px;
+            font-size: var(--patient-stat-size);
+            font-weight: 800;
+            line-height: 1;
+            color: #111827;
+        }
+        .home-create-row {
+            margin-top: 14px;
+        }
+        .home-create-btn {
+            width: 100%;
+            min-height: 50px;
+            border-radius: 999px;
+            border: 0;
+            background: var(--cta-primary, #000);
+            color: #fff;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            font-size: 15px;
+            cursor: pointer;
+            font-family: var(--font-ui);
+        }
+        .home-create-btn:hover {
+            background: var(--cta-primary-hover, #1a1a1a);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--cta-primary, #000);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--cta-primary-hover, #1a1a1a);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--gray-200);
+            background: #ffffff;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            border-color: rgba(200, 81, 3, 0.35);
+            color: var(--primary);
+            background: #faf6f3;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: var(--gray-600);
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--gray-500);
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none !important;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1001;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: 48px;
+            height: 48px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Mobile-First Responsive Design */
+        @media (max-width: 768px) {
+            .mobile-menu-toggle { display: none !important; }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .mobile-menu-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 16px;
+                padding-top: 80px;
+                padding-bottom: 170px;
+            }
+
+            .page-header {
+                margin-top: 16px;
+                margin-bottom: 24px;
+            }
+
+            .page-title {
+                font-size: var(--patient-title-size);
+                margin-top: 0;
+            }
+
+            .page-subtitle {
+                font-size: var(--patient-subtitle-size);
+            }
+
+            .routine-card-grid {
+                grid-template-columns: 1fr;
+            }
+            .routine-board-title {
+                font-size: 24px;
+            }
+            .routine-board-date {
+                font-size: var(--patient-stat-size);
+            }
+            .routine-stat .n {
+                font-size: var(--patient-stat-size);
+            }
+            .home-stats-summary {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 12px;
+                padding-top: 70px;
+                padding-bottom: 170px;
+            }
+
+            .page-header {
+                margin-top: 12px;
+                margin-bottom: 20px;
+            }
+
+            .page-title {
+                font-size: var(--patient-title-size);
+                margin-bottom: 4px;
+            }
+
+            .btn-primary,
+            .btn-secondary {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body class="patient-consumer">
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">☰</button>
+    <div class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <span class="sidebar-mark" aria-hidden="true">S&C</span>
+                </a>
+                <div class="sidebar-subtitle">Patient Portal</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="patient-dashboard.html" class="nav-item active">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg></span>
+                    <span>Today</span>
+                </a>
+                <a href="schedule.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+                    <span>Timeline</span>
+                </a>
+                <a href="wallet.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M2.5 10.5h19"/><path d="M16 14h3"/></svg></span>
+                    <span>Money</span>
+                </a>
+                <a href="profile.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></span>
+                    <span>Profile</span>
+                </a>
+            </nav>
+
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title" id="greetingTitle">Today</h1>
+                <p class="page-subtitle">Log today&apos;s progress photo, follow your routine, and open Timeline or Money when you need them.</p>
+            </div>
+            
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="portalHealthBanner" class="error-message" style="display: none; background: #fffbeb; color: #92400e; border: 1px solid #fcd34d;"></div>
+
+            <section class="routine-board" aria-label="Routine management board">
+                <div class="routine-board-header">
+                    <div>
+                        <h2 class="routine-board-title">Today at a glance</h2>
+                        <p class="routine-board-subtitle">Your routine, daily logging, and what to do next.</p>
+                    </div>
+                    <div class="routine-board-date" id="routineBoardDate" aria-live="polite">—</div>
+                </div>
+                <div class="routine-board-topline" id="homeRoutineTopline">
+                    <div class="routine-view-actions">
+                        <button class="routine-view-btn active" id="homeListBtn" type="button" aria-pressed="true" aria-label="Switch to list view">≣</button>
+                        <button class="routine-view-btn" id="homeGridBtn" type="button" aria-pressed="false" aria-label="Switch to grid view">⊞</button>
+                    </div>
+                </div>
+                <div id="homeTodayPrimary" class="home-today-primary" hidden>
+                    <article id="homePhaseCard" class="today-phase-card" aria-label="This week in your program">
+                        <p class="today-phase-kicker" id="homePhaseKicker"></p>
+                        <p class="today-phase-body" id="homePhaseBody"></p>
+                        <button type="button" class="today-phase-expand" id="homePhaseExpandBtn" hidden aria-expanded="false">More about this phase</button>
+                        <p class="today-phase-notes" id="homePhaseNotes" hidden></p>
+                    </article>
+                    <div class="today-photo-block" id="homePhotoBlock">
+                        <button type="button" class="home-create-btn today-photo-btn" id="homePhotoBtn">Add today&apos;s photo</button>
+                        <input type="file" id="homePhotoInput" accept="image/jpeg,image/png,image/webp" hidden />
+                        <p class="today-photo-done" id="homePhotoDone" hidden>Logged for today ✓</p>
+                    </div>
+                    <div class="today-steps-collapse" id="homeStepsCollapse" hidden>
+                        <button type="button" class="today-steps-toggle" id="homeStepsToggle" aria-expanded="false">
+                            <span id="homeStepsSummary">Today&apos;s steps</span>
+                            <span class="today-steps-chevron" aria-hidden="true">▾</span>
+                        </button>
+                        <ul class="today-steps-list" id="homeStepsList" hidden></ul>
+                    </div>
+                    <div class="today-red-flags" id="homeRedFlags" hidden role="alert">
+                        <p class="today-red-title">When to seek help</p>
+                        <ul id="homeRedFlagsList"></ul>
+                    </div>
+                </div>
+                <div class="home-stats-summary" aria-label="Stats summary">
+                    <article class="home-stat-tile">
+                        <div class="home-stat-label">Logged today</div>
+                        <div class="home-stat-value" id="summaryInProgress">0</div>
+                    </article>
+                    <article class="home-stat-tile">
+                        <div class="home-stat-label">This week</div>
+                        <div class="home-stat-value" id="summaryUpcoming">0</div>
+                    </article>
+                    <article class="home-stat-tile">
+                        <div class="home-stat-label">Routine steps</div>
+                        <div class="home-stat-value" id="summaryTotalTasks">0</div>
+                    </article>
+                </div>
+                <div class="routine-card-grid list-mode" id="homeCardsGrid"></div>
+                <div class="home-create-row">
+                    <button class="home-create-btn" id="homeCreateRoutineBtn" type="button">Choose your routine</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.API_BASE || 'http://localhost:4000';
+
+        // Check authentication - patient portal session only (mvp-fhir-14: no PHI in storage)
+        function checkAuth() {
+            const patientSessionId = localStorage.getItem('patient_session_id');
+            if (!patientSessionId) {
+                window.location.href = 'patient-login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Initialize authentication check
+        if (!checkAuth()) {
+            // Will redirect, so stop execution
+        }
+
+        // Load user info - will be updated with patient data
+        let patientId = null;
+        const userData = JSON.parse(sessionStorage.getItem('user') || '{}');
+        const patientName = userData.name || userData.patientName || '';
+        const fallbackLabel = patientName || 'Patient';
+        const initials = fallbackLabel
+            .split(' ')
+            .map(part => part.charAt(0))
+            .join('')
+            .substring(0, 2)
+            .toUpperCase() || 'PT';
+
+        function setElText(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        setElText('userName', fallbackLabel);
+        setElText('userAvatar', initials);
+
+        // Update with server-resolved patient identity (mvp-fhir-12/13)
+        async function updateUserInfo() {
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                const r = await fetch(`${API_BASE}/api/patient/me`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json();
+                if (!r.ok || !data.success) return;
+                const name = (data.patient && data.patient.name) ? data.patient.name : 'Patient';
+                patientId = (data.patient && data.patient.id) ? data.patient.id : null;
+                setElText('userName', name);
+                const nameParts = name.split(' ').filter(Boolean);
+                const firstName = nameParts[0] || name;
+                const initials2 = nameParts.map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'PT';
+                setElText('greetingTitle', `Hi ${firstName}`);
+                setElText('userAvatar', initials2);
+            } catch (_) { }
+        }
+        updateUserInfo();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try { configureHomeFab(false); } catch (_) {}
+            try { initHomeTodayInteractions(); } catch (_) {}
+            void (async () => {
+                try {
+                    await loadHomeProgressSummary();
+                } catch (_) {}
+                try {
+                    await loadCatalogHealthBanner();
+                } catch (_) {}
+            })();
+            try {
+                const gridBtn = document.getElementById('homeGridBtn');
+                const listBtn = document.getElementById('homeListBtn');
+                const grid = document.getElementById('homeCardsGrid');
+                if (gridBtn && listBtn && grid) {
+                    gridBtn.addEventListener('click', () => {
+                        grid.classList.remove('list-mode');
+                        gridBtn.classList.add('active');
+                        listBtn.classList.remove('active');
+                        gridBtn.setAttribute('aria-pressed', 'true');
+                        listBtn.setAttribute('aria-pressed', 'false');
+                    });
+                    listBtn.addEventListener('click', () => {
+                        grid.classList.add('list-mode');
+                        listBtn.classList.add('active');
+                        gridBtn.classList.remove('active');
+                        listBtn.setAttribute('aria-pressed', 'true');
+                        gridBtn.setAttribute('aria-pressed', 'false');
+                    });
+                }
+            } catch (_) {}
+            try {
+                const userInfo = document.querySelector('.sidebar-footer .user-info');
+                if (userInfo) {
+                    userInfo.style.cursor = 'pointer';
+                    userInfo.addEventListener('click', (e) => {
+                        if (e.target && e.target.closest && e.target.closest('.logout-btn')) return;
+                        window.location.href = 'profile.html';
+                    });
+                }
+            } catch (_) {}
+            try {
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach((item) => {
+                    item.addEventListener('click', () => {
+                        const sidebar = document.getElementById('sidebar');
+                        const overlay = document.querySelector('.mobile-menu-overlay');
+                        if (sidebar) sidebar.classList.remove('mobile-open');
+                        if (overlay) overlay.classList.remove('active');
+                    });
+                });
+            } catch (_) {}
+            try { setRoutineBoardDate(); } catch (_) {}
+        });
+
+        function setRoutineBoardDate() {
+            const el = document.getElementById('routineBoardDate');
+            if (!el) return;
+            const d = new Date();
+            el.textContent = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+        }
+
+        function homeEsc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function setHomeRoutineChrome(hasTemplate) {
+            const top = document.getElementById('homeRoutineTopline');
+            if (top) {
+                top.style.display = hasTemplate ? '' : 'none';
+                top.setAttribute('aria-hidden', hasTemplate ? 'false' : 'true');
+            }
+        }
+
+        function patientSessionHeaders(json) {
+            const sid = localStorage.getItem('patient_session_id') || '';
+            const h = { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' };
+            if (json) h['Content-Type'] = 'application/json';
+            return h;
+        }
+
+        function todayIso() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
+        function selectedRoutineDateIso() {
+            try {
+                const q = new URLSearchParams(window.location.search).get('date');
+                if (q && /^\d{4}-\d{2}-\d{2}$/.test(q)) return q;
+            } catch (_) {}
+            return todayIso();
+        }
+
+        function configureHomePhotoUi(todayLogged, allowsPhoto = true) {
+            const btn = document.getElementById('homePhotoBtn');
+            const done = document.getElementById('homePhotoDone');
+            const input = document.getElementById('homePhotoInput');
+            if (!allowsPhoto) {
+                if (btn) btn.hidden = true;
+                if (input) input.disabled = true;
+                if (done) done.hidden = true;
+                return;
+            }
+            if (todayLogged) {
+                if (btn) btn.hidden = true;
+                if (input) input.disabled = true;
+                if (done) done.hidden = false;
+            } else {
+                if (btn) btn.hidden = false;
+                if (input) input.disabled = false;
+                if (done) done.hidden = true;
+            }
+        }
+
+        async function ensureTodayDailyEntry() {
+            const date = selectedRoutineDateIso();
+            const r = await fetch(`${API_BASE}/api/patient/routine/daily?date=${encodeURIComponent(date)}`, {
+                headers: patientSessionHeaders(false),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (data?.daily_entry?.id) return String(data.daily_entry.id);
+            const cr = await fetch(`${API_BASE}/api/patient/routine/daily`, {
+                method: 'POST',
+                headers: patientSessionHeaders(true),
+                body: JSON.stringify({ entry_date: date, item_logs: [] }),
+            });
+            const created = await cr.json().catch(() => ({}));
+            if (!cr.ok || !created.success) throw new Error(created.error || 'Could not create daily entry.');
+            return String(created.daily_entry_id);
+        }
+
+        async function uploadTodayPhoto(file) {
+            const entryId = await ensureTodayDailyEntry();
+            const form = new FormData();
+            form.append('file', file);
+            const r = await fetch(
+                `${API_BASE}/api/patient/routine/daily/${encodeURIComponent(entryId)}/photo`,
+                { method: 'POST', headers: patientSessionHeaders(false), body: form }
+            );
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.success) throw new Error(data.error || 'Photo upload failed.');
+            return data;
+        }
+
+        async function loadRoutinePhase(todayLogged) {
+            const primary = document.getElementById('homeTodayPrimary');
+            if (!primary) return;
+            const sid = localStorage.getItem('patient_session_id') || '';
+            if (!sid) {
+                primary.hidden = true;
+                return;
+            }
+            const date = selectedRoutineDateIso();
+            const r = await fetch(`${API_BASE}/api/patient/routine/phase?date=${encodeURIComponent(date)}`, {
+                headers: patientSessionHeaders(false),
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.has_template || !data.phase) {
+                primary.hidden = true;
+                return;
+            }
+            primary.hidden = false;
+            const phase = data.phase;
+            const week = Number(phase.program_week) || 1;
+            const total = Number(phase.total_weeks) || 12;
+            const label = phase.label ? String(phase.label).trim() : '';
+            const kicker = document.getElementById('homePhaseKicker');
+            const body = document.getElementById('homePhaseBody');
+            const expandBtn = document.getElementById('homePhaseExpandBtn');
+            const notesEl = document.getElementById('homePhaseNotes');
+            if (kicker) {
+                kicker.textContent = label
+                    ? `Week ${week} of ${total} · ${label}`
+                    : `Week ${week} of ${total}`;
+            }
+            if (body) {
+                body.textContent = phase.expect
+                    ? String(phase.expect)
+                    : phase.focus
+                      ? String(phase.focus)
+                      : 'Add a progress photo when you are ready — we track your week for you.';
+            }
+            const notes = phase.notes ? String(phase.notes).trim() : '';
+            if (expandBtn && notesEl) {
+                if (notes) {
+                    expandBtn.hidden = false;
+                    notesEl.textContent = notes;
+                    notesEl.hidden = true;
+                    expandBtn.setAttribute('aria-expanded', 'false');
+                } else {
+                    expandBtn.hidden = true;
+                    notesEl.hidden = true;
+                }
+            }
+            const items = Array.isArray(data.items) ? data.items : [];
+            const am = items.filter((i) => String(i.usage_time || '').toLowerCase() === 'am').length;
+            const pm = items.filter((i) => String(i.usage_time || '').toLowerCase() === 'pm').length;
+            const stepsCollapse = document.getElementById('homeStepsCollapse');
+            const stepsSummary = document.getElementById('homeStepsSummary');
+            const stepsList = document.getElementById('homeStepsList');
+            if (stepsCollapse && stepsSummary && stepsList) {
+                if (items.length) {
+                    stepsCollapse.hidden = false;
+                    stepsSummary.textContent = `AM · ${am} step${am === 1 ? '' : 's'} · PM · ${pm} step${pm === 1 ? '' : 's'}`;
+                    stepsList.innerHTML = items
+                        .map((row) => {
+                            const slot = homeEsc(String(row.usage_time || 'any').toUpperCase());
+                            const name = homeEsc(row.product_name || 'Step');
+                            const goal = row.goal ? `<span class="today-step-goal">${homeEsc(row.goal)}</span>` : '';
+                            return `<li><span class="today-step-slot">${slot}</span><span class="today-step-name">${name}</span>${goal}</li>`;
+                        })
+                        .join('');
+                } else {
+                    stepsCollapse.hidden = true;
+                }
+            }
+            const flags = Array.isArray(phase.red_flags) ? phase.red_flags.slice(0, 3) : [];
+            const redWrap = document.getElementById('homeRedFlags');
+            const redList = document.getElementById('homeRedFlagsList');
+            if (redWrap && redList) {
+                if (flags.length) {
+                    redWrap.hidden = false;
+                    redList.innerHTML = flags.map((f) => `<li>${homeEsc(f)}</li>`).join('');
+                } else {
+                    redWrap.hidden = true;
+                }
+            }
+            const allowsPhoto = data.allows_photo !== false && data.day_mode !== 'historical';
+            const isViewDate = date !== todayIso();
+            if (isViewDate && kicker) {
+                kicker.textContent = `${date} · ${kicker.textContent}`;
+            }
+            if (data.day_mode === 'historical' && body) {
+                body.textContent = 'Viewing history — this day is read-only.';
+            }
+            if (data.day_mode === 'backfill' && body && !todayLogged) {
+                body.textContent = `Backfill for ${date} — add a progress photo for this day.`;
+            }
+            configureHomePhotoUi(!!todayLogged, allowsPhoto);
+        }
+
+        function initHomeTodayInteractions() {
+            const photoBtn = document.getElementById('homePhotoBtn');
+            const photoInput = document.getElementById('homePhotoInput');
+            if (photoBtn && photoInput) {
+                photoBtn.addEventListener('click', async () => {
+                    try {
+                        const date = selectedRoutineDateIso();
+                        let ghostUrl = null;
+                        for (let back = 1; back <= 14; back += 1) {
+                            const d = new Date(`${date}T12:00:00`);
+                            d.setDate(d.getDate() - back);
+                            const iso = d.toISOString().slice(0, 10);
+                            const prior = await fetch(`${API_BASE}/api/patient/routine/daily?date=${encodeURIComponent(iso)}`, {
+                                headers: patientSessionHeaders(false)
+                            }).then((r) => r.json()).catch(() => ({}));
+                            const media = prior?.daily_entry?.media;
+                            if (Array.isArray(media) && media[0]?.media_url) {
+                                ghostUrl = media[0].media_url;
+                                break;
+                            }
+                        }
+                        if (ghostUrl && window.confirm('Align with your last photo guide, then continue to pick a new photo?')) {
+                            const preview = document.createElement('div');
+                            preview.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+                            preview.innerHTML = `<div style="max-width:320px;background:#fff;border-radius:12px;padding:12px;text-align:center"><img src="${ghostUrl}" style="width:100%;opacity:0.35;border-radius:8px" alt="Guide"/><p style="margin-top:8px;font-size:13px;color:#475569">Faint guide from your last photo</p><button type="button" id="ghostContinueBtn" style="margin-top:8px;padding:8px 14px">Continue</button></div>`;
+                            document.body.appendChild(preview);
+                            await new Promise((resolve) => {
+                                preview.querySelector('#ghostContinueBtn')?.addEventListener('click', () => {
+                                    preview.remove();
+                                    resolve();
+                                });
+                            });
+                        }
+                    } catch (_) {}
+                    photoInput.click();
+                });
+                photoInput.addEventListener('change', async () => {
+                    const file = photoInput.files && photoInput.files[0];
+                    photoInput.value = '';
+                    if (!file) return;
+                    try {
+                        photoBtn.disabled = true;
+                        const data = await uploadTodayPhoto(file);
+                        const expect = data?.skin_report?.assistant_summary;
+                        if (expect) {
+                            const body = document.getElementById('homePhaseBody');
+                            if (body) body.textContent = expect;
+                        }
+                        configureHomePhotoUi(true);
+                        await loadHomeProgressSummary();
+                        if (typeof window.showPatientToast === 'function') {
+                            window.showPatientToast('Logged for today', 'success');
+                        }
+                    } catch (e) {
+                        const errEl = document.getElementById('errorMessage');
+                        if (errEl) {
+                            errEl.textContent = e.message || 'Could not upload photo.';
+                            errEl.style.display = 'block';
+                        }
+                    } finally {
+                        photoBtn.disabled = false;
+                    }
+                });
+            }
+            const stepsToggle = document.getElementById('homeStepsToggle');
+            const stepsList = document.getElementById('homeStepsList');
+            if (stepsToggle && stepsList) {
+                stepsToggle.addEventListener('click', () => {
+                    const open = stepsList.hidden;
+                    stepsList.hidden = !open;
+                    stepsToggle.setAttribute('aria-expanded', String(open));
+                    const chev = stepsToggle.querySelector('.today-steps-chevron');
+                    if (chev) chev.textContent = open ? '▴' : '▾';
+                });
+            }
+            const expandBtn = document.getElementById('homePhaseExpandBtn');
+            const notesEl = document.getElementById('homePhaseNotes');
+            if (expandBtn && notesEl) {
+                expandBtn.addEventListener('click', () => {
+                    const open = notesEl.hidden;
+                    notesEl.hidden = !open;
+                    expandBtn.setAttribute('aria-expanded', String(open));
+                    expandBtn.textContent = open ? 'Hide phase details' : 'More about this phase';
+                });
+            }
+        }
+
+        function renderRoutineCards(cards = [], opts = {}) {
+            const grid = document.getElementById('homeCardsGrid');
+            if (!grid) return;
+            const empty = opts.emptyNewUser === true;
+            if (!Array.isArray(cards) || !cards.length) {
+                grid.classList.add('list-mode');
+                if (empty) {
+                    grid.innerHTML = `
+                    <article class="routine-card home-empty-card" style="--card-bg:#e9e7fd;--card-accent:#4f3ff0">
+                        <div class="routine-card-top">
+                            <span class="routine-card-date">Routine</span>
+                        </div>
+                        <h3 class="routine-card-title">Choose your routine</h3>
+                        <p class="routine-card-sub">Pick one of five guided templates to unlock daily AM/PM steps and progress photos.</p>
+                    </article>
+                `;
+                } else {
+                    grid.innerHTML = `
+                    <article class="routine-card" style="--card-bg:#ffd3e2;--card-accent:#df3670">
+                        <h3 class="routine-card-title">Could not load routine</h3>
+                        <p class="routine-card-sub">Check your connection and refresh the page.</p>
+                    </article>
+                `;
+                }
+                return;
+            }
+            const palettes = [
+                { bg: '#fee4cb', accent: '#ff942e' },
+                { bg: '#e9e7fd', accent: '#4f3ff0' },
+                { bg: '#dbf6fd', accent: '#096c86' },
+                { bg: '#ffd3e2', accent: '#df3670' },
+                { bg: '#c8f7dc', accent: '#34c471' },
+                { bg: '#d5deff', accent: '#4067f9' }
+            ];
+            grid.innerHTML = cards.map((c, idx) => {
+                const p = palettes[idx % palettes.length];
+                const pct = Math.max(0, Math.min(100, Number(c.progress_pct) || 0));
+                const windowDays = Number(c.days_window) > 0 ? Number(c.days_window) : 7;
+                let daysLeft = Number(c.days_left);
+                if (!Number.isFinite(daysLeft)) {
+                    daysLeft = Math.max(0, windowDays - Math.round((pct / 100) * windowDays));
+                }
+                const daysLabel = daysLeft === 0
+                    ? (pct >= 100 ? 'On track' : windowDays + ' Days Left')
+                    : daysLeft + ' Day' + (daysLeft === 1 ? '' : 's') + ' Left';
+                return `
+                    <article class="routine-card" style="--card-bg:${p.bg};--card-accent:${p.accent}">
+                        <div class="routine-card-top">
+                            <span class="routine-card-date">${homeEsc(c.date_label || 'Last 7 days')}</span>
+                        </div>
+                        <h3 class="routine-card-title">${homeEsc(c.title || 'Routine task')}</h3>
+                        <p class="routine-card-sub">${homeEsc(c.subtitle || 'Routine task')}</p>
+                        <p class="routine-progress-label">Progress</p>
+                        <div class="routine-progress-track">
+                            <span class="routine-progress-bar" style="width:${pct}%"></span>
+                        </div>
+                        <p class="routine-progress-pct">${pct}%</p>
+                        <footer class="routine-card-footer">
+                            <span class="routine-days-left">${homeEsc(daysLabel)}</span>
+                        </footer>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function configureHomeFab(hasTemplate) {
+            const fab = document.getElementById('patientScanFab');
+            if (!fab) return;
+            fab.style.display = '';
+            fab.removeAttribute('aria-hidden');
+            fab.classList.add('compact');
+            if (!hasTemplate) {
+                fab.href = 'patient-routine-pick.html';
+                fab.setAttribute('aria-label', 'Choose your routine');
+                fab.title = 'Choose your routine';
+                return;
+            }
+            fab.href = 'schedule.html';
+            fab.setAttribute('aria-label', 'Add progress photo');
+            fab.title = 'Add progress photo';
+        }
+
+        function configureHomePrimaryCta(hasTemplate) {
+            const btn = document.getElementById('homeCreateRoutineBtn');
+            if (!btn) return;
+            if (hasTemplate) {
+                btn.textContent = 'Open Timeline';
+                btn.onclick = () => { window.location.href = 'schedule.html'; };
+            } else {
+                btn.textContent = 'Choose your routine';
+                btn.onclick = () => { window.location.href = 'patient-routine-pick.html'; };
+            }
+        }
+
+        async function fireHomeSummaryViewed() {
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                await fetch(`${API_BASE}/api/patient/analytics/event`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify({ event: 'home_summary_viewed' })
+                });
+            } catch (_) {}
+        }
+
+        async function loadCatalogHealthBanner() {
+            const el = document.getElementById('portalHealthBanner');
+            const err = document.getElementById('errorMessage');
+            if (!el) return;
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                const r = await fetch(`${API_BASE}/api/patient/health/catalog`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.success || data.catalog_ok) {
+                    el.style.display = 'none';
+                    return;
+                }
+                el.textContent = data.message || 'Product search indexes may be unavailable.';
+                el.style.display = 'block';
+                if (err && err.style.display === 'block') {
+                    el.style.marginTop = '8px';
+                }
+            } catch (_) {
+                el.style.display = 'none';
+            }
+        }
+
+        async function loadHomeProgressSummary() {
+            try {
+                const sid = localStorage.getItem('patient_session_id') || '';
+                if (!sid) return;
+                const errEl = document.getElementById('errorMessage');
+                const r = await fetch(`${API_BASE}/api/patient/home/progress-summary`, {
+                    headers: { 'x-session-id': sid, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.success) {
+                    if (errEl) {
+                        errEl.textContent = 'Could not load your home summary. Check your connection and refresh.';
+                        errEl.style.display = 'block';
+                    }
+                    return;
+                }
+                if (errEl) errEl.style.display = 'none';
+                void fireHomeSummaryViewed();
+                const s = data.summary || {};
+                const setText = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(v);
+                };
+                const hasTemplate = !!data.has_template;
+                setHomeRoutineChrome(hasTemplate);
+                setText('summaryInProgress', hasTemplate ? (s.today_logged ? 'Yes' : 'Not yet') : '—');
+                setText('summaryUpcoming', hasTemplate ? `${Number(s.adherence_pct) || 0}%` : '—');
+                setText('summaryTotalTasks', Number(hasTemplate ? (s.total_tasks || 0) : 0));
+                if (!hasTemplate) {
+                    const primary = document.getElementById('homeTodayPrimary');
+                    if (primary) primary.hidden = true;
+                    renderRoutineCards([], { emptyNewUser: true });
+                } else {
+                    const c = Array.isArray(data.cards) ? data.cards : [];
+                    if (!c.length) {
+                        renderRoutineCards([{
+                            title: 'Your routine',
+                            subtitle: 'Add today\'s progress photo above to track your week.',
+                            progress_pct: 0,
+                            date_label: 'This week'
+                        }]);
+                    } else {
+                        renderRoutineCards(c);
+                    }
+                    try {
+                        await loadRoutinePhase(!!s.today_logged);
+                    } catch (_) {}
+                }
+                configureHomeFab(hasTemplate);
+                configureHomePrimaryCta(hasTemplate);
+            } catch (_) {
+                const errEl = document.getElementById('errorMessage');
+                if (errEl) {
+                    errEl.textContent = 'Could not load your home summary. Check your connection and refresh.';
+                    errEl.style.display = 'block';
+                }
+                setHomeRoutineChrome(true);
+                const setText = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = String(v);
+                };
+                setText('summaryInProgress', '—');
+                setText('summaryUpcoming', '—');
+                setText('summaryTotalTasks', '—');
+                renderRoutineCards([], { emptyNewUser: false });
+                configureHomeFab(true);
+                configureHomePrimaryCta(false);
+            }
+        }
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.mobile-menu-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        function logout() {
+            // Clear both patient and business sessions
+            localStorage.removeItem('patient_session_id');
+            localStorage.removeItem('patient_phone');
+            sessionStorage.clear();
+            window.location.href = 'patient-login.html';
+        }
+
+    </script>
+    <script type="module">
+        import { mountBottomTabs, showToast } from '../assets/js/patient-shell.js';
+        window.showPatientToast = showToast;
+        mountBottomTabs();
+        if (new URLSearchParams(window.location.search).get('started') === '1') {
+            showToast('Routine started — log your first progress photo today.', 'success');
+            try {
+                const u = new URL(window.location.href);
+                u.searchParams.delete('started');
+                window.history.replaceState({}, '', u.pathname + u.search);
+            } catch (_) {}
+        }
+    </script>
+</body>
+
+</html>

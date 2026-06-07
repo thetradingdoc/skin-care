@@ -1,0 +1,742 @@
+{
+  "functions": [
+    {
+      "type": "function",
+      "name": "collect_insurance",
+      "description": "Collect and verify insurance information. Use when caller wants to check insurance coverage or before booking an appointment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "description": "Insurance member ID or policy number (required)"
+          },
+          "patient_name": {
+            "type": "string",
+            "description": "Patient's full name"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient's phone number (if available from caller ID)"
+          },
+          "patient_email": {
+            "type": "string",
+            "description": "Patient's email address (optional)"
+          },
+          "payer_name": {
+            "type": "string",
+            "description": "Insurance company name (e.g., Cigna, Aetna, Blue Cross) - optional, system will try to find it"
+          },
+          "payer_id": {
+            "type": "string",
+            "description": "Insurance payer ID (if known)"
+          },
+          "service_code": {
+            "type": "string",
+            "description": "CPT code for specific service type (e.g., 90834 for therapy)"
+          }
+        },
+        "required": ["member_id"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_available_slots",
+      "description": "Get available appointment time slots for a specific date and appointment type. Supports provider-level availability via practitioner_id.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format"
+          },
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment (e.g., Therapy Session - Psychiatry, Primary Care Consultation)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Timezone (default: America/New_York)"
+          },
+          "practitioner_id": {
+            "type": "string",
+            "description": "Practitioner ID for provider-specific availability. When set, only shows slots available for that provider."
+          }
+        },
+        "required": ["date"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "schedule_appointment",
+      "description": "Schedule a new appointment after the caller picks a time.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_name": {
+            "type": "string",
+            "description": "Patient's full name (required)"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient's phone number (required)"
+          },
+          "patient_email": {
+            "type": "string",
+            "description": "Patient's email address (required for confirmations)"
+          },
+          "dob": {
+            "type": "string",
+            "description": "Patient date of birth (YYYY-MM-DD). Collect during/after booking for onboarding."
+          },
+          "country": {
+            "type": "string",
+            "description": "Patient country (e.g., United States). Collect during/after booking for onboarding."
+          },
+          "city": {
+            "type": "string",
+            "description": "Patient city (e.g., Austin). Collect during/after booking for onboarding."
+          },
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment (e.g., Therapy Session - Psychiatry, Primary Care Consultation)"
+          },
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format (required)"
+          },
+          "time": {
+            "type": "string",
+            "description": "Time in HH:MM or 12-hour format like '2:00 PM' (required)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Timezone (default: America/New_York)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes about the appointment, insurance information, or patient preferences"
+          },
+          "visit_mode": {
+            "type": "string",
+            "description": "sync_video (live visit) or async_review (specialist reviews within hours)"
+          },
+          "practitioner_id": {
+            "type": "string",
+            "description": "Practitioner ID to assign this appointment to a specific provider"
+          },
+          "provider_override_emergency": {
+            "type": "boolean",
+            "description": "Set to true only when a provider confirms an EMERGENT block was a false positive and scheduling should proceed despite emergency symptoms"
+          }
+        },
+        "required": ["patient_name", "patient_phone", "patient_email", "date", "time"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "patient_intake",
+      "description": "Capture patient onboarding details (DOB + country/city) and sync them to the patient portal.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "FHIR patient ID if known (preferred)"
+          },
+          "patient_email": {
+            "type": "string",
+            "description": "Patient email (resolve patient if patient_id missing)"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient phone (resolve patient if patient_id missing)"
+          },
+          "first_name": {
+            "type": "string",
+            "description": "First name"
+          },
+          "last_name": {
+            "type": "string",
+            "description": "Last name"
+          },
+          "dob": {
+            "type": "string",
+            "description": "Date of birth (YYYY-MM-DD)"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country"
+          },
+          "city": {
+            "type": "string",
+            "description": "City"
+          }
+        },
+        "required": ["dob", "country", "city"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_patient_intake_status",
+      "description": "Check which onboarding fields are missing (DOB/country/city) so you only ask what is needed.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "FHIR patient ID if known"
+          },
+          "patient_email": {
+            "type": "string",
+            "description": "Patient email (resolve patient if patient_id missing)"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient phone (resolve patient if patient_id missing)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_appointments",
+      "description": "Search for existing appointments by phone number or email. Use when caller asks about an existing booking.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_term": {
+            "type": "string",
+            "description": "Phone number or email address to search for"
+          }
+        },
+        "required": ["search_term"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "confirm_appointment",
+      "description": "Confirm an existing appointment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "Appointment ID or confirmation number"
+          }
+        },
+        "required": ["appointment_id"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "cancel_appointment",
+      "description": "Cancel an existing appointment. Ask why and offer reschedule first.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "Appointment ID or confirmation number"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for cancellation (optional)"
+          }
+        },
+        "required": ["appointment_id"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "reschedule_appointment",
+      "description": "Reschedule an existing appointment to a new date and time. Check availability before rescheduling.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "Appointment ID or confirmation number"
+          },
+          "new_date": {
+            "type": "string",
+            "description": "New date in YYYY-MM-DD format (required)"
+          },
+          "new_time": {
+            "type": "string",
+            "description": "New time in HH:MM or 12-hour format like '2:00 PM' (required)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "Timezone (default: America/New_York)"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for rescheduling (optional)"
+          }
+        },
+        "required": ["appointment_id", "new_date", "new_time"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "send_document_upload_link",
+      "description": "Send the patient a secure link to upload documents (lab results, photos) before their visit. Use when the patient mentions they have lab results, reports, photos, or documents they want to share before the appointment.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_email": {
+            "type": "string",
+            "description": "Patient's email address (to send the upload link)"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient's phone number (if email not available)"
+          },
+          "patient_id": {
+            "type": "string",
+            "description": "FHIR patient ID if already known from context"
+          },
+          "appointment_id": {
+            "type": "string",
+            "description": "Optional appointment ID to associate uploads with a specific visit"
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "create_appointment_checkout",
+      "description": "Create a checkout for appointment payment. This sends a 6-digit verification code to the patient's email. Amount should be the patient's responsibility after insurance coverage.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "appointment_id": {
+            "type": "string",
+            "description": "Appointment ID (required)"
+          },
+          "customer_name": {
+            "type": "string",
+            "description": "Customer's name"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer's email address (required)"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number"
+          },
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Amount the patient owes after insurance coverage"
+          },
+          "payment_method": {
+            "type": "string",
+            "description": "Payment method: 'link' (default), 'mastercard', 'visa' (voice commerce; mandate_id required)"
+          },
+          "mandate_id": {
+            "type": "string",
+            "description": "Voice commerce mandate ID (required when payment_method is 'mastercard' or 'visa')"
+          }
+        },
+        "required": ["appointment_id", "customer_email"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "verify_checkout_code",
+      "description": "Verify the 6-digit code sent to the patient's email. After verification, a payment link will be sent to the patient.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "payment_token": {
+            "type": "string",
+            "description": "Payment token from create_appointment_checkout (required)"
+          },
+          "verification_code": {
+            "type": "string",
+            "description": "6-digit verification code from email (required)"
+          }
+        },
+        "required": ["payment_token", "verification_code"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "request_patient_payment",
+      "description": "Create a secure pay link for patient copay or balance due (RCM). Sends link by email and/or SMS. Use when patient owes copay after eligibility or when collecting an outstanding balance — never collect card numbers on the call.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "description": "Amount in USD (optional if journey or eligibility has copay_amount)"
+          },
+          "journey_id": {
+            "type": "string",
+            "description": "RCM journey id when known"
+          },
+          "patient_id": {
+            "type": "string",
+            "description": "FHIR patient id when known"
+          },
+          "patient_email": {
+            "type": "string",
+            "description": "Patient email for pay link delivery"
+          },
+          "patient_phone": {
+            "type": "string",
+            "description": "Patient phone for SMS pay link"
+          },
+          "delivery": {
+            "type": "string",
+            "description": "email, sms, or both (default both)"
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_patient_claims",
+      "description": "Get patient's medical claims and billing information. Use when caller asks about recent claims, bills, or medical services they received. For billing inquiries, ask for insurance number (member_id) first, NOT phone number or email.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "member_id": {
+            "type": "string",
+            "description": "Insurance member ID (required for claim lookups)"
+          },
+          "patient_name": {
+            "type": "string",
+            "description": "Patient's full name"
+          },
+          "payer_name": {
+            "type": "string",
+            "description": "Insurance company name (optional)"
+          }
+        },
+        "required": ["member_id", "patient_name"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_order_tracking",
+      "description": "Get tracking information for a customer's order. Use when caller asks about order status, delivery, or where their order is. For cannabis dispensary orders, this provides real-time GPS tracking and delivery status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "description": "Order ID or confirmation number (if customer provides it)"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer's email address (use if order_id not provided)"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number (alternative to email, use if order_id not provided)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_products",
+      "description": "Search for products by name, category, or description. Use when caller asks about products, wants to browse, or is looking for something specific.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query - product name, category, or description (e.g., 'pre rolls', 'CBD oil', 'edibles')"
+          },
+          "merchant_id": {
+            "type": "string",
+            "description": "Merchant ID (optional, will use default if not provided)"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "create_checkout",
+      "description": "Create a checkout session for a product purchase. Use ONLY after you have collected the customer's email address and they have confirmed their purchase. This function REQUIRES customer_email to be included in the function call arguments.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "description": "Product ID (required)"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity to purchase (required, default: 1)"
+          },
+          "customer_name": {
+            "type": "string",
+            "description": "Customer's full name (required)"
+          },
+          "customer_email": {
+            "type": "string",
+            "description": "Customer's email address (REQUIRED - MUST be included in function call arguments. Use the email you collected and confirmed with the customer)"
+          },
+          "customer_phone": {
+            "type": "string",
+            "description": "Customer's phone number (optional - from caller ID or ask if needed)"
+          },
+          "merchant_id": {
+            "type": "string",
+            "description": "Merchant ID (optional, will use default if not provided)"
+          },
+          "payment_method": {
+            "type": "string",
+            "description": "Payment method: 'link' (default), 'mastercard', 'visa' (voice commerce; mandate_id required)"
+          },
+          "mandate_id": {
+            "type": "string",
+            "description": "Voice commerce mandate ID (required when payment_method is 'mastercard' or 'visa')"
+          }
+        },
+        "required": ["product_id", "quantity", "customer_name", "customer_email"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_available_payment_methods",
+      "description": "Get available payment options (link, Stripe, Mastercard, Visa). Call before checkout when caller asks how they can pay, or to offer 'pay with Mastercard' / 'pay with Visa' when supported.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "merchant_id": {
+            "type": "string",
+            "description": "Merchant ID (optional)"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_icd10_codes",
+      "description": "Search ICD-10 diagnosis codes by symptom, condition, or code. Use when caller mentions a diagnosis, symptom, or when you need to look up diagnosis codes for medical coding.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search term - symptom, condition name, or ICD-10 code (e.g., 'diabetes', 'anxiety', 'Z00.00')"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results to return (default 10)"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_cpt_codes",
+      "description": "Search CPT procedure codes by procedure name or code. Use when caller mentions a service, procedure, or when you need to look up procedure codes for medical billing.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search term - procedure name or CPT code (e.g., 'office visit', '99213', 'therapy')"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results to return (default 10)"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "extract_medical_text",
+      "description": "Extract structured medical data from patient utterance: symptoms, vitals, severity, temporal info. Use when patient describes symptoms to get structured data for triage or coding.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "patient_utterance": {
+            "type": "string",
+            "description": "Patient's spoken description of symptoms, condition, or reason for visit (e.g., 'I have chest pain and shortness of breath for 2 days')"
+          }
+        },
+        "required": ["patient_utterance"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "assess_urgency",
+      "description": "Assess if patient symptoms indicate an emergency or urgent care need. Call when the patient describes symptoms before scheduling or coding. Returns EMERGENT (call 911), URGENT (same-day care), or ROUTINE.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "symptoms_text": {
+            "type": "string",
+            "description": "Patient's description of symptoms (e.g., 'chest pain radiating to arm, shortness of breath')"
+          }
+        },
+        "required": ["symptoms_text"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "suggest_codes_from_symptoms",
+      "description": "Get suggested ICD-10 and CPT codes from patient's description of symptoms or reason for visit. Use when patient describes their condition (e.g., 'I have diabetes and need a checkup', 'anxiety follow-up'). Returns top codes with patient-friendly descriptions and validated_pairs for compatible ICD-10+CPT combinations.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "clinical_text": {
+            "type": "string",
+            "description": "Patient's description of symptoms, reason for visit, or clinical note (e.g., 'type 2 diabetes follow-up', 'anxiety and depression')"
+          },
+          "max_icd10": {
+            "type": "number",
+            "description": "Max ICD-10 codes to return (default 5)"
+          },
+          "max_cpt": {
+            "type": "number",
+            "description": "Max CPT codes to return (default 5)"
+          }
+        },
+        "required": ["clinical_text"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "validate_code_pair",
+      "description": "Validate ICD-10 + CPT compatibility for billing. suggest_codes_from_symptoms returns pre-validated pairs; call this when combining codes from search_icd10_codes + search_cpt_codes.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "icd10_code": {
+            "type": "string",
+            "description": "ICD-10 diagnosis code (e.g., 'E11.9')"
+          },
+          "cpt_code": {
+            "type": "string",
+            "description": "CPT procedure code (e.g., '99213')"
+          }
+        },
+        "required": ["icd10_code", "cpt_code"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "check_payer_guidelines",
+      "description": "Check if a payer has fee schedule/guidelines available for billing. Use when caller asks about insurance coverage for specific codes or before quoting prices.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "payer_id": {
+            "type": "string",
+            "description": "Payer ID (e.g. BCBS, AETNA, UHC)"
+          },
+          "payer_name": {
+            "type": "string",
+            "description": "Payer name if payer_id not known"
+          }
+        },
+        "required": ["payer_id"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_code_pricing",
+      "description": "Get allowed amounts for CPT codes from payer fee schedule. Use when caller asks about cost, copay, or after suggesting codes when patient wants pricing info. Requires payer_id.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "payer_id": {
+            "type": "string",
+            "description": "Payer ID (e.g. BCBS, AETNA)"
+          },
+          "cpt_codes": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "CPT codes to look up (e.g. ['99213', '99214'])"
+          },
+          "date_of_service": {
+            "type": "string",
+            "description": "Date of service YYYY-MM-DD (optional)"
+          }
+        },
+        "required": ["payer_id", "cpt_codes"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_hcpcs_codes",
+      "description": "Search HCPCS Level II codes (supplies, DME, drugs, modifiers). Use for procedures/supplies not in CPT (e.g., DME, injectable drugs, certain modifiers).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search term - procedure, supply, modifier name or HCPCS code (e.g., 'wheelchair', 'E0601', 'modifier')"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results to return (default 10)"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "schedule_demo",
+      "description": "Schedule a product demo for a clinic interested in Somo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "clinic_name": { "type": "string", "description": "Name of the clinic" },
+          "contact_name": { "type": "string", "description": "Name of the person you spoke with" },
+          "contact_email": { "type": "string", "description": "Email address for demo confirmation" },
+          "contact_phone": { "type": "string", "description": "Phone number for follow-up" },
+          "preferred_date": { "type": "string", "description": "Preferred demo date (YYYY-MM-DD)" },
+          "preferred_time": { "type": "string", "description": "Preferred demo time (HH:MM)" },
+          "timezone": { "type": "string", "description": "Timezone (default: America/New_York)" },
+          "notes": { "type": "string", "description": "Additional notes about the clinic or conversation" }
+        },
+        "required": ["clinic_name", "contact_name", "contact_email", "preferred_date", "preferred_time"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "collect_contact_info",
+      "description": "Collect contact information from a clinic for follow-up.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "clinic_name": { "type": "string", "description": "Name of the clinic" },
+          "contact_name": { "type": "string", "description": "Name of the person you spoke with" },
+          "contact_email": { "type": "string", "description": "Email address" },
+          "contact_phone": { "type": "string", "description": "Phone number" },
+          "role": { "type": "string", "description": "Their role (e.g., Office Manager, Practice Administrator)" },
+          "interest_level": { "type": "string", "description": "Level of interest: high, medium, low, or not_interested" }
+        },
+        "required": ["clinic_name", "contact_name", "contact_email"]
+      }
+    },
+    {
+      "type": "function",
+      "name": "end_call",
+      "description": "End the call when the customer is done or when the conversation is complete."
+    }
+  ]
+}
+

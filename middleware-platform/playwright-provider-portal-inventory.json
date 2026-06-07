@@ -1,0 +1,13 @@
+{
+  "base": "http://127.0.0.1:4000",
+  "login": {
+    "email": "provider@callsomo.com",
+    "ok": false
+  },
+  "sidebarFromToday": null,
+  "pages": [],
+  "checks": {
+    "noHangingLoading": []
+  },
+  "fatal": "apiRequestContext.post: connect ECONNREFUSED 127.0.0.1:4000\nCall log:\n\u001b[2m  - → POST http://127.0.0.1:4000/api/customers/login\u001b[22m\n\u001b[2m    - user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36\u001b[22m\n\u001b[2m    - accept: */*\u001b[22m\n\u001b[2m    - accept-encoding: gzip,deflate,br\u001b[22m\n\u001b[2m    - content-type: application/json\u001b[22m\n\u001b[2m    - content-length: 74\u001b[22m\n"
+}

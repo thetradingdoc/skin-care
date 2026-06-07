@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Somo — Start your free trial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/somo-tokens.css" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-somo.css" />
+  <style>
+    /* Critical: works even if a stylesheet request fails */
+    [data-signup-step].hidden { display: none !important; }
+    body.signup-wizard-body { margin: 0; font-family: 'League Spartan', system-ui, sans-serif; background: #fff; color: #1a1a1a; }
+  </style>
+</head>
+
+<body class="signup-wizard-body">
+  <div class="signup-shell">
+    <header class="signup-top-bar">
+      <button type="button" class="signup-back" id="signupBack" aria-label="Go back">←</button>
+    </header>
+
+    <div class="signup-wizard">
+    <a href="/" class="signup-logo-link" aria-label="Somo home">
+      <img
+        class="signup-logo-img"
+        src="/unified-dashboard/assets/brand/somo-logo.png"
+        alt="Somo"
+        width="160"
+        height="54"
+        fetchpriority="high"
+      />
+    </a>
+
+    <div class="signup-step-panel" data-signup-step="persona">
+      <p class="signup-eyebrow">Setting up your Somo front desk</p>
+      <h1 class="signup-title">Which best describes you?</h1>
+      <p class="signup-sub">We will tailor your AI receptionist in a few quick steps. No credit card required.</p>
+      <div class="signup-persona-grid" id="signupPersonaGrid"></div>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="business">
+      <p class="signup-eyebrow">Your business</p>
+      <h1 class="signup-title">Tell us about you</h1>
+      <p class="signup-sub">This is how we will reach you and set up your account.</p>
+      <div class="signup-field">
+        <label for="signupName">Your name</label>
+        <input type="text" id="signupName" required autocomplete="name" placeholder="Alex Morgan" />
+      </div>
+      <div class="signup-field">
+        <label for="signupCompany">Business name</label>
+        <input type="text" id="signupCompany" autocomplete="organization" placeholder="Morgan Dental" />
+      </div>
+      <div class="signup-field">
+        <label for="signupEmail">Work email</label>
+        <input type="email" id="signupEmail" required autocomplete="email" placeholder="you@yourbusiness.com" />
+      </div>
+      <div class="signup-field">
+        <label for="signupPhone">Mobile number</label>
+        <div class="signup-phone-row">
+          <select id="signupDialCode" aria-label="Country code">
+            <option value="+1" selected>+1</option>
+            <option value="+44">+44</option>
+            <option value="+61">+61</option>
+            <option value="+91">+91</option>
+          </select>
+          <input type="tel" id="signupPhone" required autocomplete="tel" placeholder="555 123 4567" />
+        </div>
+      </div>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="location">
+      <p class="signup-eyebrow">Your location</p>
+      <h1 class="signup-title">Where are you based?</h1>
+      <p class="signup-sub">We use this to assign a local phone number for your AI front desk.</p>
+      <div class="signup-field">
+        <label for="signupCountry">Country</label>
+        <select id="signupCountry" required>
+          <option value="">Select country</option>
+        </select>
+      </div>
+      <div class="signup-row-2">
+        <div class="signup-field">
+          <label for="signupCity">City</label>
+          <input type="text" id="signupCity" list="signupCityList" required autocomplete="address-level2"
+            placeholder="City" />
+          <datalist id="signupCityList"></datalist>
+        </div>
+        <div class="signup-field">
+          <label for="signupPostal">Postal / ZIP</label>
+          <input type="text" id="signupPostal" required autocomplete="postal-code" placeholder="94102" />
+        </div>
+      </div>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="credentials">
+      <p class="signup-eyebrow">Optional</p>
+      <h1 class="signup-title">Practice credentials</h1>
+      <p class="signup-sub">Add your license now or skip and complete later in Settings.</p>
+      <div class="signup-field">
+        <label for="signupSpecialty">Medical specialty</label>
+        <select id="signupSpecialty">
+          <option value="">Skip for now</option>
+          <option value="family_medicine">Family Medicine</option>
+          <option value="dermatology">Dermatology</option>
+          <option value="pediatrics">Pediatrics</option>
+          <option value="internal_medicine">Internal Medicine</option>
+          <option value="telehealth">Telehealth</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="signup-row-2">
+        <div class="signup-field">
+          <label for="signupLicenseNumber">License number</label>
+          <input type="text" id="signupLicenseNumber" placeholder="Optional" />
+        </div>
+        <div class="signup-field">
+          <label for="signupLicenseState">State</label>
+          <select id="signupLicenseState">
+            <option value="">—</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="signup-btn signup-btn-ghost" id="signupSkipCredentials">Skip for now</button>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="email">
+      <p class="signup-eyebrow">Verify your email</p>
+      <h1 class="signup-title">Check your inbox</h1>
+      <p class="signup-sub" id="codeInstructions">We sent a 6-digit code to your email.</p>
+      <div class="signup-code-grid" id="signupCodeGrid">
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 1" />
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 2" />
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 3" />
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 4" />
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 5" />
+        <input type="text" maxlength="1" inputmode="numeric" aria-label="Digit 6" />
+      </div>
+      <button type="button" class="signup-link-btn" id="signupResendEmail">Resend code</button>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="phone">
+      <p class="signup-eyebrow">Activate your line</p>
+      <h1 class="signup-title">Confirm your mobile</h1>
+      <p class="signup-sub">We will text you a code, then assign your dedicated Somo number.</p>
+
+      <div id="signupPhoneForm">
+        <div class="signup-field">
+          <label for="signupPhoneDisplay">Mobile number</label>
+          <input type="tel" id="signupPhoneDisplay" readonly />
+        </div>
+        <p class="signup-sub hidden" id="phoneSmsHint"></p>
+        <div class="signup-field">
+          <label for="signupPhoneCode">SMS code</label>
+          <input type="text" id="signupPhoneCode" inputmode="numeric" maxlength="8" placeholder="000000" />
+        </div>
+        <button type="button" class="signup-link-btn" id="signupResendSms">Resend SMS code</button>
+      </div>
+
+      <div class="signup-reveal hidden" id="signupReveal">
+        <p class="signup-reveal-label">Your Somo line is live</p>
+        <p class="signup-reveal-number" id="signupRevealNumber"></p>
+        <p class="signup-reveal-trial">60 free minutes · 7-day trial</p>
+        <div class="signup-reveal-actions">
+          <a class="signup-btn signup-btn-primary" id="signupCallLine" href="#">Call my Somo line</a>
+          <button type="button" class="signup-btn signup-btn-ghost" id="signupCopyLine">Copy number</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="signup-step-panel hidden" data-signup-step="terms">
+      <p class="signup-eyebrow">Almost there</p>
+      <h1 class="signup-title">Terms of Service</h1>
+      <p class="signup-sub">Review and accept to start your free trial. Payment comes later if you choose to subscribe.</p>
+      <div class="signup-terms-box">
+        By continuing you agree to the Somo Terms of Service, including usage billing after your free trial minutes,
+        acceptable use, and data handling. Read the full terms at
+        <a href="/terms?customer_type=saas" target="_blank" rel="noopener">/terms</a>.
+      </div>
+      <label class="signup-terms-check">
+        <input type="checkbox" id="signupTermsCheck" />
+        <span>I agree to the Somo Terms of Service and Privacy Policy. I understand my free trial includes 60 minutes
+          and 7 days, and I can subscribe later to keep my number.</span>
+      </label>
+    </div>
+
+    </div>
+
+    <footer class="signup-bottom-bar" aria-label="Signup progress">
+      <div class="signup-bottom-main">
+        <div class="signup-toast error hidden" id="signupError"></div>
+        <button type="button" class="signup-btn signup-btn-primary hidden" id="signupContinueBtn">Continue</button>
+        <div class="signup-progress-wrap">
+          <div class="signup-progress-meta" id="signupProgressMeta">Step 1 of 6</div>
+          <div class="signup-progress-track">
+            <div class="signup-progress-fill" id="signupProgressFill" style="width: 16%"></div>
+          </div>
+        </div>
+      </div>
+      <p class="signup-footer-link">
+        Already have an account? <a href="/login">Sign in</a>
+      </p>
+    </footer>
+  </div>
+
+  <script src="/assets/js/api-base.js"></script>
+  <script src="/unified-dashboard/assets/data/provider-signup-data.js"></script>
+  <script src="/unified-dashboard/assets/js/provider-session.js"></script>
+  <script src="/unified-dashboard/assets/js/signup-wizard.js"></script>
+  <script>
+    document.getElementById('signupSkipCredentials')?.addEventListener('click', () => {
+      document.getElementById('signupSpecialty').value = '';
+      document.getElementById('signupLicenseNumber').value = '';
+      document.getElementById('signupContinueBtn')?.click();
+    });
+  </script>
+</body>
+
+</html>

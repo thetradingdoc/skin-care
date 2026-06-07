@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16a637">
+    <link rel="manifest" href="../manifest.webmanifest">
+    <title>My Profile - Somo Patient Portal</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <script src="../assets/js/config.js"></script>
+    <style>
+        :root {
+            --primary: #16a637;
+            --primary-dark: #1e3a8a;
+            --primary-light: #16a637;
+        }
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+            background: #f7fafc;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .sidebar-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 2px;
+            color: #131a2e;
+            text-decoration: none;
+        }
+        .sidebar-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            animation: sidebarSpin 6s linear infinite;
+        }
+        @keyframes sidebarSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 2px;
+            margin-left: 0;
+        }
+
+        .sidebar-nav {
+            padding: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--gray-700);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+        .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+            position: absolute;
+            bottom: 0;
+            width: 260px;
+            background: white;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .user-details { flex: 1; }
+        .user-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+        .user-role { font-size: 12px; color: var(--gray-500); }
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--gray-200);
+            background: #ffffff;
+            color: var(--gray-600);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            border-color: #93c5fd;
+            color: #16a637;
+            background: #eff6ff;
+        }
+        .logout-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: var(--patient-space-5);
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: var(--patient-space-5);
+            margin-top: var(--patient-space-4);
+        }
+
+        .page-title {
+            font-size: var(--patient-title-size);
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: var(--patient-space-1);
+        }
+
+        .page-subtitle {
+            font-size: var(--patient-subtitle-size);
+            color: var(--gray-600);
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1001;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: 48px;
+            height: 48px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle { display: flex; }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1000;
+            }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .mobile-menu-overlay.active { display: block; }
+            .main-content { margin-left: 0; padding: 16px; padding-top: 80px; }
+        }
+
+        .container {
+            max-width: 700px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+        }
+        .profile-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .profile-tab-btn {
+            border: 1px solid var(--gray-200);
+            background: #f8fafc;
+            color: var(--gray-700);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: var(--patient-chip-size);
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .profile-tab-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        .profile-tab-panel {
+            display: none;
+        }
+        .profile-tab-panel.active {
+            display: block;
+        }
+
+        .profile-section {
+            margin-bottom: 32px;
+        }
+
+        .profile-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--gray-900);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--gray-900);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .form-input:disabled {
+            background: var(--gray-100);
+            cursor: not-allowed;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .message-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray-600);
+        }
+
+        @media (max-width: 640px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle menu">☰</button>
+    <div class="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <span class="sidebar-mark" aria-hidden="true">S&C</span>
+                </a>
+                <div class="sidebar-subtitle">Patient Portal</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="patient-dashboard.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.8V21h14V9.8"/></svg></span>
+                    <span>Home</span>
+                </a>
+                <a href="schedule.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+                    <span>Calendar</span>
+                </a>
+                <a href="appointments.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+                    <span>Routine</span>
+                </a>
+                <a href="my-records.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h6"/></svg></span>
+                    <span>Products</span>
+                </a>
+                <a href="wallet.html" class="nav-item">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="2.5" y="6.5" width="19" height="11" rx="2"/><path d="M2.5 10.5h19"/><path d="M16 14h3"/></svg></span>
+                    <span>Wallet</span>
+                </a>
+                <a href="profile.html" class="nav-item active">
+                    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.6-6 8-6s6.5 2 8 6"/></svg></span>
+                    <span>Profile</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">Profile</h1>
+                <p class="page-subtitle">Personal settings, wallet, and health records.</p>
+            </div>
+            <div id="messageContainer"></div>
+            <div class="profile-card" id="profileCard">
+                <div class="loading">Loading profile...</div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.API_BASE || 'http://localhost:4000';
+        let sessionId = localStorage.getItem('patient_session_id');
+        let recordsState = [];
+        let docsState = [];
+
+        if (!sessionId) {
+            window.location.href = 'patient-login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProfile();
+        });
+
+        function esc(str) {
+            return String(str == null ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_BASE}/api/patient/intake`, {
+                    headers: { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await response.json();
+
+                if (!data.success) {
+                    if (data.error && data.error.includes('session')) {
+                        localStorage.removeItem('patient_session_id');
+                        localStorage.removeItem('patient_phone');
+                        window.location.href = 'patient-login.html';
+                        return;
+                    }
+                    throw new Error(data.error || 'Unable to load profile.');
+                }
+                displayProfile(data.intake || {});
+                await loadHealthRecords();
+            } catch (error) {
+                document.getElementById('profileCard').innerHTML = `
+                    <div class="message message-error">${esc(error.message || 'Network error. Please try again.')}</div>
+                `;
+            }
+        }
+
+        function displayProfile(intake) {
+            const card = document.getElementById('profileCard');
+            const fullName = [intake.first_name, intake.last_name].filter(Boolean).join(' ') || intake.name || '';
+            const address = intake.address || {};
+            let cached = null;
+            try {
+                cached = JSON.parse(localStorage.getItem('patient_identity_cache') || '{}');
+                if (cached && cached.session_id !== sessionId) cached = null;
+            } catch (_) { cached = null; }
+            const postal = (address.postal_code || intake.postal_code || cached?.postal_code || '').toString();
+            const line1 = (address.line1 || intake.address_line1 || cached?.address_line1 || '').toString();
+            const canConnectRecords = (() => {
+                const hasName = !!fullName.trim();
+                const hasDob = !!(intake.dob || '');
+                const hasContact = !!((intake.email || '').trim() || (intake.phone || '').trim());
+                const hasPostal = !!postal.trim();
+                return hasName && hasDob && hasContact && hasPostal;
+            })();
+            card.innerHTML = `
+                <div class="profile-tabs" role="tablist" aria-label="Profile sections">
+                    <button class="profile-tab-btn active" type="button" data-tab="personal" role="tab" aria-selected="true">Personal Profile</button>
+                    <button class="profile-tab-btn" type="button" data-tab="wallet" role="tab" aria-selected="false">Wallet</button>
+                    <button class="profile-tab-btn" type="button" data-tab="records" role="tab" aria-selected="false">Health Records</button>
+                </div>
+
+                <section class="profile-tab-panel active" data-panel="personal">
+                    <div class="profile-section">
+                        <h2 class="section-title">Personal Information</h2>
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" value="${esc(fullName)}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" class="form-input" value="${esc(intake.dob || '')}" disabled>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Contact Information</h2>
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" value="${esc(intake.phone || '')}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" value="${esc(intake.email || '')}" disabled>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Address</h2>
+                        <div class="form-group">
+                            <label class="form-label">Country</label>
+                            <input type="text" class="form-input" value="${esc(address.country || '')}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">City</label>
+                            <input type="text" class="form-input" value="${esc(address.city || '')}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Address line 1</label>
+                            <input type="text" class="form-input" value="${esc(line1)}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Postal / ZIP code</label>
+                            <input type="text" class="form-input" value="${esc(postal)}" disabled>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-tab-panel" data-panel="wallet">
+                    <div class="profile-section">
+                        <h2 class="section-title">Wallet</h2>
+                        <div style="border-radius:16px;padding:18px;background:linear-gradient(135deg,#16a637 0%,#16a637 100%);color:#fff;box-shadow:0 10px 24px rgba(30,64,175,0.25);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <div style="font-weight:800;">My Payment Card</div>
+                                <div style="opacity:0.9;">💳</div>
+                            </div>
+                            <div style="margin-top:14px;font-family:'Courier New',monospace;letter-spacing:2px;font-weight:700;">•••• •••• •••• ••••</div>
+                            <div style="display:flex;justify-content:space-between;gap:12px;margin-top:14px;font-size:12px;opacity:0.9;">
+                                <div>${esc(fullName || 'CARDHOLDER').toUpperCase()}</div>
+                                <div>MM/YY</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+                            <a class="btn btn-primary" href="wallet.html" style="text-decoration:none;">Open full wallet</a>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Insurance</h2>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                            <div style="color: var(--gray-700); font-size: 14px; line-height: 1.35;">
+                                Add your insurance details and cards from Wallet.
+                            </div>
+                            <span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:800;font-size:12px;">Coming soon</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="profile-tab-panel" data-panel="records">
+                    <div class="profile-section">
+                        <h2 class="section-title">Health Records</h2>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                            <button class="btn btn-primary" type="button" id="connectRecordsBtn" ${canConnectRecords ? '' : 'disabled'}>Connect my records</button>
+                            <a class="btn btn-secondary" href="onboarding.html" style="text-decoration:none;">Update my details</a>
+                        </div>
+                        ${canConnectRecords ? '' : `<div style="margin-top:10px;color:#6b7280;font-size:13px;">To connect records, please add your postal/ZIP code in onboarding.</div>`}
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Upload Documents</h2>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <input id="profileUploadInput" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                            <button class="btn btn-primary" type="button" id="profileUploadBtn">Upload documents</button>
+                        </div>
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Visit Summaries</h2>
+                        <div id="profileRecordsList" style="font-size:14px;color:#475569;">Loading records...</div>
+                    </div>
+                    <div class="profile-section">
+                        <h2 class="section-title">Uploaded Documents</h2>
+                        <div id="profileDocsList" style="font-size:14px;color:#475569;">Loading documents...</div>
+                    </div>
+                </section>
+            `;
+            bindProfileTabs();
+
+            const connectBtn = document.getElementById('connectRecordsBtn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', () => {
+                    const identity = {
+                        session_id: sessionId,
+                        first_name: intake.first_name || (fullName.split(' ')[0] || ''),
+                        last_name: intake.last_name || (fullName.split(' ').slice(1).join(' ') || ''),
+                        dob: intake.dob || '',
+                        phone: intake.phone || '',
+                        email: intake.email || '',
+                        country: address.country || intake.country || '',
+                        city: address.city || intake.city || '',
+                        address_line1: line1 || '',
+                        postal_code: postal || ''
+                    };
+                    try { sessionStorage.setItem('connect_records_identity', JSON.stringify(identity)); } catch (_) {}
+                    window.location.href = 'connect-records.html';
+                });
+            }
+            const uploadBtn = document.getElementById('profileUploadBtn');
+            if (uploadBtn) uploadBtn.addEventListener('click', uploadHealthDocuments);
+        }
+
+        function bindProfileTabs() {
+            const buttons = Array.from(document.querySelectorAll('.profile-tab-btn'));
+            const panels = Array.from(document.querySelectorAll('.profile-tab-panel'));
+            buttons.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.getAttribute('data-tab');
+                    buttons.forEach((b) => {
+                        const active = b === btn;
+                        b.classList.toggle('active', active);
+                        b.setAttribute('aria-selected', active ? 'true' : 'false');
+                    });
+                    panels.forEach((panel) => panel.classList.toggle('active', panel.getAttribute('data-panel') === tab));
+                });
+            });
+        }
+
+        function renderHealthRecords() {
+            const recordsEl = document.getElementById('profileRecordsList');
+            const docsEl = document.getElementById('profileDocsList');
+            if (recordsEl) {
+                if (!recordsState.length) {
+                    recordsEl.innerHTML = `<div style="border:1px dashed #cbd5e1;border-radius:10px;padding:12px;">No visit summaries available yet.</div>`;
+                } else {
+                    recordsEl.innerHTML = recordsState.map((rec) => `
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;">
+                            <div style="font-weight:700;color:#0f172a;">Visit summary</div>
+                            <div style="font-size:12px;color:#64748b;">Created: ${esc(rec.created_at || '-')}</div>
+                            <div style="margin-top:6px;color:#334155;">${esc(rec.summary || 'No summary text available yet.')}</div>
+                        </div>
+                    `).join('');
+                }
+            }
+            if (docsEl) {
+                if (!docsState.length) {
+                    docsEl.innerHTML = `<div style="border:1px dashed #cbd5e1;border-radius:10px;padding:12px;">No documents uploaded yet.</div>`;
+                } else {
+                    docsEl.innerHTML = docsState.map((doc) => `
+                        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                            <div>
+                                <div style="font-weight:700;color:#0f172a;">${esc(doc.file_name || 'Document')}</div>
+                                <div style="font-size:12px;color:#64748b;">Uploaded: ${esc(doc.created_at || '-')}</div>
+                            </div>
+                            <button class="btn btn-secondary" type="button" data-doc-id="${esc(doc.id || '')}">Download</button>
+                        </div>
+                    `).join('');
+                    docsEl.querySelectorAll('[data-doc-id]').forEach((btn) => {
+                        btn.addEventListener('click', () => downloadDocument(btn.getAttribute('data-doc-id')));
+                    });
+                }
+            }
+        }
+
+        async function loadHealthRecords() {
+            try {
+                const [recordsRes, docsRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/patient/my-records`, { headers: { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' } }),
+                    fetch(`${API_BASE}/api/patient/documents`, { headers: { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' } })
+                ]);
+                const recordsData = await recordsRes.json();
+                const docsData = await docsRes.json();
+                recordsState = recordsData.success && Array.isArray(recordsData.records) ? recordsData.records : [];
+                docsState = docsData.success && Array.isArray(docsData.documents) ? docsData.documents : [];
+            } catch (_) {
+                recordsState = [];
+                docsState = [];
+            }
+            renderHealthRecords();
+        }
+
+        async function uploadHealthDocuments() {
+            const uploadInput = document.getElementById('profileUploadInput');
+            const uploadBtn = document.getElementById('profileUploadBtn');
+            const files = uploadInput && uploadInput.files ? Array.from(uploadInput.files) : [];
+            if (!files.length) {
+                showMessage('Choose at least one file before uploading.', 'error');
+                return;
+            }
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            try {
+                const formData = new FormData();
+                files.forEach((f) => formData.append('files', f));
+                const res = await fetch(`${API_BASE}/api/patient/documents`, {
+                    method: 'POST',
+                    headers: {
+                        'x-session-id': sessionId,
+                        'idempotency-key': `profile-upload-${Date.now()}`,
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed');
+                uploadInput.value = '';
+                showMessage('Documents uploaded.', 'success');
+                await loadHealthRecords();
+            } catch (err) {
+                showMessage(err.message || 'Upload failed. Please try again.', 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload documents';
+            }
+        }
+
+        async function downloadDocument(docId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/patient/documents/${encodeURIComponent(docId)}/download`, {
+                    headers: { 'x-session-id': sessionId, 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success || !data.url) throw new Error(data.error || 'Download unavailable');
+                window.open(data.url, '_blank', 'noopener,noreferrer');
+            } catch (err) {
+                showMessage(err.message || 'Unable to generate download link.', 'error');
+            }
+        }
+
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="message message-${type}">${esc(message)}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.mobile-menu-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('patient_session_id');
+            localStorage.removeItem('patient_phone');
+            window.location.href = 'patient-login.html';
+        }
+    </script>
+    <script type="module">
+        import { mountBottomTabs, showHelp } from '../assets/js/patient-shell.js';
+        mountBottomTabs();
+        window.showHelp = showHelp;
+
+        try {
+            const userInfo = document.querySelector('.sidebar-footer .user-info');
+            if (userInfo) {
+                userInfo.style.cursor = 'pointer';
+                userInfo.addEventListener('click', (e) => {
+                    if (e.target && e.target.closest && e.target.closest('.logout-btn')) return;
+                    window.location.href = 'profile.html';
+                });
+            }
+        } catch (_) {}
+    </script>
+</body>
+
+</html>
