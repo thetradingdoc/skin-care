@@ -297,8 +297,7 @@ function getBillingStatus(customerId) {
   const {
     isTrialSimEnabledForCustomer,
     getTrialMinutesAllocated,
-    getTrialMinutesRemaining,
-    isSomoDemoSignup
+    getTrialMinutesRemaining
   } = require('./trial-lifecycle');
 
   let trialDaysLeft = null;
@@ -329,7 +328,6 @@ function getBillingStatus(customerId) {
     trial_minutes_allocated: trialMinutesAllocated,
     trial_minutes_remaining: trialMinutesRemaining,
     phone_verified: customer.phone_verified === 1,
-    is_somo_demo_signup: isSomoDemoSignup(customer),
     sim_trial_enabled: simTrial,
     trial_welcome_dismissed: !!customer.trial_welcome_dismissed_at
   };

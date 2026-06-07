@@ -31,14 +31,20 @@
     return;
   }
 
-  const PROD_API = 'https://api.callsomo.com';
+  const PROD_API =
+    (typeof window.__SKIN_CARE_API_BASE__ === 'string' && window.__SKIN_CARE_API_BASE__.trim()) ||
+    'https://api.callsomo.com';
   const host = hostname.toLowerCase();
-  const isCallsomoHost =
+  const isConsumerProdHost =
+    host === 'myskinandcare.com' ||
+    host === 'www.myskinandcare.com' ||
+    host === 'skinandcare.com' ||
+    host === 'www.skinandcare.com' ||
     host === 'callsomo.com' ||
     host === 'www.callsomo.com' ||
     host.endsWith('.callsomo.com');
 
-  if (isCallsomoHost) {
+  if (isConsumerProdHost) {
     window.API_BASE = PROD_API;
     console.log('🌐 API Base URL (production):', window.API_BASE);
     return;
@@ -146,7 +152,7 @@
     subdomain,
     tenant_type: 'clinic',
     navItems: NAV_BY_TENANT.clinic,
-    sidebarSubtitle: 'Somo AI'
+    sidebarSubtitle: 'Skin & Care'
   };
 
   window.MEDICAL_NAV_ITEMS = MEDICAL_NAV_ITEMS;
@@ -341,7 +347,7 @@
   if (typeof window.LANDING_BASE === 'string' && window.LANDING_BASE.length) {
     return;
   }
-  /** Root-relative Somo marketing landing */
+  /** Root-relative Skin & Care consumer landing */
   var SHOP_INDEX = '/';
   try {
     var base = new URL(window.location.href);

@@ -3,7 +3,7 @@
 
 /**
  * Assemble Firebase Hosting bundle for callsomo.com (Firebase somo-4ddf6):
- *   - Somo landing SPA (/)
+ *   - Skin & Care consumer landing SPA (/)
  *   - Provider signup/login + business portal static HTML
  *   - Unified-dashboard assets at /assets and /unified-dashboard/assets
  *
@@ -17,7 +17,7 @@ const { spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const UD = path.join(ROOT, 'unified-dashboard');
-const LANDING = path.join(UD, 'somo-landing');
+const LANDING = path.join(UD, 'skin-care-landing');
 const OUT = path.join(UD, 'hosting-dist');
 
 function rmrf(dir) {
@@ -58,13 +58,15 @@ function copyDir(src, dest, { merge = false } = {}) {
 }
 
 function main() {
-  console.log('Building somo-landing…');
-  const env = {
-    ...process.env,
-    VITE_API_BASE: process.env.VITE_API_BASE || 'https://api.callsomo.com',
-    VITE_SIGNUP_URL: process.env.VITE_SIGNUP_URL || '/signup?utm_source=somo',
-    VITE_LOGIN_URL: process.env.VITE_LOGIN_URL || '/login?utm_source=somo'
-  };
+  console.log('Building skin-care-landing…');
+  const env = { ...process.env };
+  const install = spawnSync('npm', ['ci'], {
+    cwd: LANDING,
+    stdio: 'inherit',
+    env,
+    shell: process.platform === 'win32'
+  });
+  if (install.status !== 0) process.exit(install.status || 1);
   const build = spawnSync('npm', ['run', 'build'], {
     cwd: LANDING,
     stdio: 'inherit',
@@ -86,12 +88,8 @@ function main() {
   console.log('  landing vite assets (merge)');
   copyDir(path.join(LANDING, 'build', 'assets'), path.join(OUT, 'assets'), { merge: true });
 
-  const landingBrand = path.join(LANDING, 'build', 'assets', 'brand');
-  const outBrand = path.join(OUT, 'assets', 'brand');
-  if (fs.existsSync(landingBrand)) {
-    console.log('  landing brand assets (overwrite portal copies)');
-    copyDir(landingBrand, outBrand);
-  }
+  console.log('  patient portal HTML');
+  copyDir(path.join(UD, 'patients'), path.join(OUT, 'patients'));
 
   console.log('  business portal HTML');
   copyDir(path.join(UD, 'business'), path.join(OUT, 'business'));

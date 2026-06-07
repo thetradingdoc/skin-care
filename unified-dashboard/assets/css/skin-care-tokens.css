@@ -1,4 +1,49 @@
 /**
- * @deprecated Import somo-tokens.css directly. This file re-exports Somo tokens for backward compatibility.
+ * Skin & Care — design tokens (consumer + provider surfaces).
+ * Matches patient-app/constants/journalTokens.ts palette.
  */
-@import url('./somo-tokens.css');
+
+:root {
+  --sc-cream: #f8f3ea;
+  --sc-card: #fffdf9;
+  --sc-ink: #1f2937;
+  --sc-muted: #6b7280;
+  --sc-line: #e9e2d6;
+  --sc-brand-blue: #314db6;
+  --sc-accent: #57bfd4;
+  --sc-terracotta: #c16e52;
+  --sc-success: #4f8a5b;
+
+  /* Aliases for legacy --brand-* imports */
+  --brand-accent: var(--sc-brand-blue);
+  --brand-accent-hover: #283fa0;
+  --brand-black: var(--sc-ink);
+  --brand-gray: var(--sc-muted);
+  --brand-white: #ffffff;
+  --brand-border: var(--sc-line);
+  --brand-cream: var(--sc-cream);
+  --brand-assistant-bubble: #eef4ff;
+  --brand-header-h: 72px;
+  --font-ui: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Gloock', Georgia, 'Times New Roman', serif;
+  --font-brand: var(--font-ui);
+  --radius-pill: 999px;
+  --radius-card: 20px;
+  --radius-panel: 14px;
+  --shadow-nav: 0 22px 40px rgba(0, 0, 0, 0.08);
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.06);
+
+  /* Checkout / step indicators */
+  --cc-step-idle-bg: var(--sc-cream);
+  --cc-step-idle-border: var(--sc-line);
+  --cc-step-active-bg: #eef4ff;
+  --cc-step-active-border: #c7d7f5;
+  --cc-step-active-color: #1e3a8a;
+  --cc-step-done-bg: #eef4ff;
+  --cc-step-done-border: #c7d7f5;
+  --cc-step-done-color: var(--sc-brand-blue);
+
+  /* Provider shell + shared CTAs */
+  --primary: var(--sc-brand-blue);
+  --primary-hover: var(--brand-accent-hover);
+}

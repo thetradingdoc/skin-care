@@ -39,12 +39,12 @@ jobs:
           cache: npm
           cache-dependency-path: |
             middleware-platform/package-lock.json
-            unified-dashboard/somo-landing/package-lock.json
+            unified-dashboard/skin-care-landing/package-lock.json
 
       - name: Install root + middleware deps
         run: |
           npm ci --prefix middleware-platform
-          npm ci --prefix unified-dashboard/somo-landing
+          npm ci --prefix unified-dashboard/skin-care-landing
 
       - name: Build staging hosting bundle
         run: |

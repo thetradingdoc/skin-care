@@ -1,11 +1,10 @@
 /**
- * Somo signup wizard — step flow from landing to trial activation
+ * Skin & Care signup wizard — step flow from landing to trial activation
  */
 (function () {
   'use strict';
 
   const API_BASE = (typeof resolveApiBase === 'function' ? resolveApiBase() : window.location.origin.replace(/\/$/, ''));
-  const PREFILL_KEY = 'somo_signup_prefill';
   const BRAND_ASSETS = '/unified-dashboard/assets/brand';
   const PERSONA_ICONS = `${BRAND_ASSETS}/signup`;
 
@@ -235,31 +234,6 @@
     const list = orderedSteps();
     const idx = list.indexOf(state.step);
     if (idx < list.length - 1) showStep(list[idx + 1]);
-  }
-
-  function applyPrefill() {
-    try {
-      const raw = sessionStorage.getItem(PREFILL_KEY);
-      if (!raw) return;
-      const pre = JSON.parse(raw);
-      if (pre.name) draft.name = pre.name;
-      if (pre.phone) {
-        const digits = String(pre.phone).replace(/\D/g, '');
-        if (digits.length >= 10) {
-          if (String(pre.phone).startsWith('+')) {
-            draft.phone_raw = digits.slice(-10);
-          } else {
-            draft.phone_raw = digits.slice(-10);
-          }
-        }
-      }
-      if (pre.use_case) {
-        draft.persona = USE_CASE_TO_PERSONA[pre.use_case] || 'small_business';
-        draft.use_case = draft.persona;
-      }
-    } catch (_) {
-      /* ignore */
-    }
   }
 
   function buildE164() {
@@ -752,7 +726,6 @@
   }
 
   function init() {
-    applyPrefill();
     populateCountries();
     const countrySel = $('signupCountry');
     if (countrySel) {

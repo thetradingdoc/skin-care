@@ -16,7 +16,7 @@ Use this table to find the **one** doc to edit per topic. Each folder keeps at m
 | **Provider portal shell** | [`design/PROVIDER_PORTAL_SHELL.md`](../design/PROVIDER_PORTAL_SHELL.md) | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) (Today layout) |
 | **Provider Today UI** | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) | [`todos/pending/PROVIDER_TODAY_UI_TODOS.md`](../../todos/pending/PROVIDER_TODAY_UI_TODOS.md) |
 | **Staging profile** | [`meta/README.md`](./README.md#staging-profile) | [`testing/README.md`](../testing/README.md) |
-| **Somo demo (landing outbound)** | [`agent/somo-demo/RUNBOOK.md`](../agent/somo-demo/RUNBOOK.md#phase-a-go-recovery-runbook) | [`agent/somo-demo/README.md`](../agent/somo-demo/README.md) |
+| **Kelly voice (paying clinics)** | [`voice-agent/README.md`](../voice-agent/README.md) | [`agent/README.md`](../agent/README.md) |
 | **Kelly agentic rails** | [`architecture/LIVE.md`](../architecture/LIVE.md#kelly-agentic-rails-target-and-build-plan) | [`kelly-rails/`](../../middleware-platform/services/kelly-rails/) in code |
 | **Kelly Phase C (language + voice)** | [`todos/pending/KELLY_RAILS_PHASE_C_EXECUTION.md`](../../todos/pending/KELLY_RAILS_PHASE_C_EXECUTION.md) | [`KELLY_RAILS_PHASE_C_PENDING.md`](../../todos/pending/KELLY_RAILS_PHASE_C_PENDING.md), [`DEMO_SCENARIO_HEALTHCARE_SPECIALIST.md`](../agent/kelly-rails/DEMO_SCENARIO_HEALTHCARE_SPECIALIST.md), [`KELLY_RAILS_PHASE_C_LANGUAGE.md`](../../todos/pending/KELLY_RAILS_PHASE_C_LANGUAGE.md) |
 | **Payor / provider search** | [`Payor/README.md`](../Payor/README.md) | [`Payor/OPERATIONS.md`](../Payor/OPERATIONS.md) |

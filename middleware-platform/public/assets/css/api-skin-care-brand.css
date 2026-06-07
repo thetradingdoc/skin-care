@@ -1,5 +1,5 @@
-/* Shared Somo branding for api.callsomo.com static pages */
-@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap');
+/* Shared Skin & Care branding for api.callsomo.com static pages */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Gloock&display=swap');
 
 .logo-brand {
   text-align: center;
@@ -32,10 +32,10 @@
 }
 
 .logo-brand-text {
-  font-family: 'League Spartan', system-ui, sans-serif;
+  font-family: 'Gloock', Georgia, 'Times New Roman', serif;
   font-size: 2.5rem;
-  font-weight: 700;
-  color: #164437;
+  font-weight: 400;
+  color: #314db6;
   letter-spacing: -0.02em;
   line-height: 1;
 }
@@ -45,6 +45,5 @@
   color: #64748b;
   font-size: 0.9rem;
   margin-top: 8px;
-  font-family: 'League Spartan', system-ui, sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
-

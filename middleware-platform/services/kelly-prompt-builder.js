@@ -91,20 +91,20 @@ function buildPhasePrompt(phase, context) {
 function phaseIntroLine(phase) {
   switch (phase) {
     case KELLY_ORCHESTRATOR_PHASE.ROUTINE_INTAKE:
-      return 'You are Kelly, a warm assistant for Somo (Somo / routine intake this turn).';
+      return 'You are Kelly, a warm assistant for Skin & Care (routine intake this turn).';
     case KELLY_ORCHESTRATOR_PHASE.ROUTINE_FOLLOWUP:
-      return 'You are Kelly, a warm assistant for Somo (Somo — after assessment this turn).';
+      return 'You are Kelly, a warm assistant for Skin & Care (after assessment this turn).';
     case KELLY_ORCHESTRATOR_PHASE.TRIAGE_DISCOVERY:
     case KELLY_ORCHESTRATOR_PHASE.TRIAGE_ACTIVE:
-      return 'You are Kelly, a warm clinical assistant for Somo (symptom triage and routing this turn).';
+      return 'You are Kelly, a warm clinical assistant for Skin & Care (symptom triage and routing this turn).';
     case KELLY_ORCHESTRATOR_PHASE.BOOKING:
-      return 'You are Kelly, a warm assistant for Somo (appointment scheduling this turn).';
+      return 'You are Kelly, a warm assistant for Skin & Care (appointment scheduling this turn).';
     case KELLY_ORCHESTRATOR_PHASE.APPOINTMENT_CHECKOUT:
-      return 'You are Kelly, a warm assistant for Somo (appointment payment / checkout this turn).';
+      return 'You are Kelly, a warm assistant for Skin & Care (appointment payment / checkout this turn).';
     case KELLY_ORCHESTRATOR_PHASE.BILLING:
-      return 'You are Kelly, a warm assistant for Somo (billing and insurance claims this turn).';
+      return 'You are Kelly, a warm assistant for Skin & Care (billing and insurance claims this turn).';
     default:
-      return 'You are Kelly, a warm assistant for Somo.';
+      return 'You are Kelly, a warm assistant for Skin & Care.';
   }
 }
 
@@ -183,7 +183,7 @@ function buildRoutineIntakePhasePrompt(context) {
   const { channel, kellyScriptHint } = context || {};
   const isVoice = channel === 'voice';
   const lines = [
-    '## Your role: Somo / routine intake (consumer)',
+    '## Your role: Skin & Care / routine intake (consumer)',
     'You are Kelly for **skincare and routine product** conversations — supportive and clear, not a clinic triage interview.',
     '### What counts as the “problem”',
     '- Breakouts, acne, texture, dryness, irritation, rash appearance, or cosmetic skin concerns **are** the main concern. Do not ask “what symptoms?” as if they had none.',
@@ -235,7 +235,7 @@ function buildRoutineFollowupPhasePrompt(context) {
   const { channel, kellyScriptHint } = context || {};
   const isVoice = channel === 'voice';
   const lines = [
-    '## Your role: Somo after assessment (consumer)',
+    '## Your role: Skin & Care after assessment (consumer)',
     'The patient finished the **skincare assessment** for this session. Your job is to **summarise what you understood**, offer **helpful education and routine-oriented guidance**, and sound like a trusted skincare guide — **not** a clinic triage interviewer.',
     '### Optional follow-up questions',
     '- If **INTAKE / TRIAGE SO FAR** lists **Nice to clarify**, you may gently offer to capture those when the patient is receptive — never as a rigid clinic questionnaire.',

@@ -13,13 +13,13 @@ const { registerEarlySomoLandingStatic } = require('../bootstrap/static-hosting'
 
 const rootDir = path.join(__dirname, '..');
 
-describe('Somo landing root on localhost', () => {
+describe('Skin & Care landing root on localhost', () => {
   const { getSomoLandingBuildPath } = createStaticPathHelpers(rootDir);
 
   beforeAll(() => {
     if (!isSomoLandingBuildReady(getSomoLandingBuildPath)) {
       throw new Error(
-        'Missing somo-landing build. Run: cd middleware-platform && npm run build:somo-landing'
+        'Missing skin-care-landing build. Run: cd middleware-platform && npm run build:skin-care-landing'
       );
     }
   });

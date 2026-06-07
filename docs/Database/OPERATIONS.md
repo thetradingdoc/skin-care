@@ -455,7 +455,7 @@ Reference: [ENV_AND_DB_SSOT.md](./ENV_AND_DB_SSOT.md) · [Verification matrix](#
 | D1-03 | `mkdir -p backups && cp middleware-dev.db backups/middleware-dev-$(date +%Y%m%d).db` | Timestamped backup exists |
 | D1-04 | Audit `.env` against env checklist in ENV doc | All voice vars documented |
 | D1-05 | Copy `.env.example` → `.env`; fill secrets | New dev can boot without silent failures |
-| D1-06 | `curl -s -o /dev/null -w '%{http_code}' http://localhost:5180/login` | `200` (somo-landing proxy → :4000) |
+| D1-06 | `curl -s -o /dev/null -w '%{http_code}' http://localhost:5180/patients/patient-login.html` | `200` (skin-care-landing Vite proxy → :4000) |
 
 ---
 

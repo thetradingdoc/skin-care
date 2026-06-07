@@ -1,6 +1,6 @@
 # LIVE
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-07
 
 
 ---
@@ -21,7 +21,7 @@
 
 ## 1) Executive Summary
 
-Somo (callsomo.com) and legacy Somo surfaces share a Node/Express middleware (`middleware-platform`) that orchestrates:
+Skin & Care (myskinandcare.com target) and the shared Somo platform API (`api.callsomo.com`) run on a Node/Express middleware (`middleware-platform`) that orchestrates:
 
 - Voice workflows (Retell + Twilio + booking/payment/insurance tools)
 - Patient web portal and native mobile app experiences
@@ -77,7 +77,7 @@ Primary runtime surfaces:
 
 - `middleware-platform/` - Core backend API + orchestration + workers + integrations
 - `unified-dashboard/` - Static/web portals (patient, business, admin, insurer) and shared JS/CSS
-- `unified-dashboard/somo-landing/` - Somo marketing SPA at `/` (`:5180` dev, proxies `/api` → `:4000`)
+- `unified-dashboard/skin-care-landing/` - Skin & Care consumer SPA at `/` (`:5180` dev, proxies `/api` → `:4000`)
 - `unified-dashboard/_archive/littlelab-landing/` - Archived CRA landing + Kelly/LiveKit assistant (retired 2026-05-29)
 - `patient-app/` - Expo/React Native app (auth + appointments + checkout chat integration)
 - `docs/` - Consolidated canonical documentation
@@ -123,7 +123,7 @@ flowchart TB
       U1[unified-dashboard/patients]
       U2[unified-dashboard/business]
       U3[unified-dashboard/admin]
-      U4[somo-landing Vite SPA]
+      U4[skin-care-landing Vite SPA]
       M1[patient-app Expo RN]
     end
 
@@ -211,12 +211,12 @@ Characteristics:
 - Calls middleware APIs directly
 - Implements multiple patient/payment experiences including Stripe checkout redirects
 
-## 6.2 Landing Experience (`somo-landing`)
+## 6.2 Landing Experience (`skin-care-landing`)
 
-- Vite + React marketing SPA at `/` (hero, capabilities, demo, ROI, pricing, languages, FAQ)
-- Image 1 palette via `somo-tokens.css` + `somo-landing/src/styles/somo.css`
-- Public demo: `POST /api/public/somo-demo/request-call`
-- Legacy CRA + Kelly/LiveKit assistant funnel: `_archive/littlelab-landing/` (archived 2026-05-29)
+- Vite + React consumer SPA at `/` (hero, value props, signup/sign-in CTAs)
+- Palette via `skin-care-tokens.css` + `skin-care-landing/src/styles/landing.css`
+- Patient auth: `/patients/patient-login.html` (email + 6-digit code)
+- Legacy B2B marketing SPA: `_archive/` (B2B); legacy funnel: `_archive/littlelab-landing/`
 
 ## 6.3 Patient Mobile App (`patient-app`)
 
@@ -653,17 +653,16 @@ RCM_E2E_USE_EXISTING_SERVER=1 npm run test:e2e:rcm:conversation
 **Last updated:** 2026-06-02  
 ## 0. Phase status snapshot (closure checkpoint)
 
-- Phase A foundation (Somo demo / API infra — **GO** 2026-06-02):
-  - Canonical `/api/public/somo-demo/*` live on `api.callsomo.com` → Cloud Run `somo-middleware`.
-  - Legacy demo alias routes and pre-cutover Cloud Run service **decommissioned** ([`GCP_SOMO_SERVICE_CUTOVER.md`](../deployment/GCP_SOMO_SERVICE_CUTOVER.md)).
+- Phase A foundation (shared API infra — **GO** 2026-06-02):
+  - Production API live on `api.callsomo.com` → Cloud Run `somo-middleware`.
+  - Legacy pre-cutover Cloud Run service **decommissioned** ([`GCP_SOMO_SERVICE_CUTOVER.md`](../deployment/GCP_SOMO_SERVICE_CUTOVER.md)).
   - Rolling 24h duplicate lock semantics are implemented in repo.
   - Deterministic API error codes (`DUPLICATE_PHONE_WINDOW`, `IP_RATE_LIMIT`, etc.) are implemented.
   - V2 resolver fallback is explicit (`KELLY_ALLOW_HYBRID_GRAPH=1` only).
-  - Recovery playbook: `docs/agent/somo-demo/PHASE_A_GO_RECOVERY_RUNBOOK.md`
-  - Deploy / cutover: `docs/deployment/SOMO_CLOUD_RUN_DEPLOY.md`, `docs/deployment/GCP_SOMO_SERVICE_CUTOVER.md`
+  - Deploy / cutover: `docs/deployment/OPERATIONS.md#somo-cloud-run-deploy`, `docs/deployment/OPERATIONS.md#gcp-somo-service-cutover`
   - Routing smoke: `npm run verify:prod:routing-smoke --prefix middleware-platform`
 - Phase B+ (Kelly rails / outbound analytics):
-  - V2 implementation in repo; Kelly E7-1 F2 and Sheets telemetry remain open per `todos/pending/KELLY_CONVERSATION_RAILS_TODOS.md` and Somo demo backlog.
+  - V2 implementation in repo; Kelly E7-1 F2 and Sheets telemetry remain open per `todos/pending/KELLY_CONVERSATION_RAILS_TODOS.md`.
 
 **North star:** Cold-start patient ride — symptom → triage → book → copay link — without `seedBookingReady` or skip-triage fixtures.
 
@@ -1209,15 +1208,15 @@ Single map for “what listens where” on the main Node process. **Compose entr
 - **Entry:** `node server.js` from [`middleware-platform/package.json`](../../middleware-platform/package.json).
 - **Default port:** `4000` (or `PORT`).
 
-## Somo marketing landing (`somo-landing`)
+## Skin & Care consumer landing (`skin-care-landing`)
 
-The Somo marketing Vite bundle (`unified-dashboard/somo-landing/build`) is served at:
+The Skin & Care Vite bundle (`unified-dashboard/skin-care-landing/build`) is served at:
 
 | Pattern | Notes |
 |---------|--------|
-| `GET /` | Somo landing SPA (hero, capabilities, demo, pricing). See [SOMO_LANDING.md](../deployment/SOMO_LANDING.md). |
+| `GET /` | Skin & Care landing SPA. See [skin-care-landing](../deployment/OPERATIONS.md#skin-care-landing). |
 
-Legacy Skin & Care CRA + Kelly assistant (`_archive/littlelab-landing/build`) is **not** mounted at `/` (archived 2026-05-29). Historical routes (`/shop`, `/find-provider`, landing-assistant APIs) referred to that bundle — see archive README.
+Legacy B2B marketing (`_archive/`) and CRA funnel (`_archive/littlelab-landing/`) are **not** mounted at `/`.
 
 ## Patient Navigator (legacy CRA, archived)
 
@@ -1232,7 +1231,7 @@ Client-side routing for the archived app: [`unified-dashboard/_archive/littlelab
 
 ## Static dashboards
 
-SPA static mounts (`/unified-dashboard`, `/patients`, `/business`, `/insurer`, somo-landing build) are registered via [`bootstrap/static-hosting.js`](../../middleware-platform/bootstrap/static-hosting.js) from `server.js`.
+SPA static mounts (`/unified-dashboard`, `/patients`, `/business`, `/insurer`, skin-care-landing build) are registered via [`bootstrap/static-hosting.js`](../../middleware-platform/bootstrap/static-hosting.js) from `server.js`.
 
 ## Public catalog / consumer APIs (representative)
 
@@ -1277,7 +1276,7 @@ SPA static mounts (`/unified-dashboard`, `/patients`, `/business`, `/insurer`, s
 ## Primary Entrypoints
 
 - **API runtime:** `middleware-platform/server.js`
-- **Marketing landing:** `unified-dashboard/somo-landing/src/main.jsx`
+- **Marketing landing:** `unified-dashboard/skin-care-landing/src/main.jsx`
 - **Archived landing assistant:** `unified-dashboard/_archive/littlelab-landing/src/index.js`
 - **Patient app (Expo Router):** `patient-app/app/_layout.tsx`
 - **Ops/verification scripts:** `scripts/` (repo root), `middleware-platform/scripts/`

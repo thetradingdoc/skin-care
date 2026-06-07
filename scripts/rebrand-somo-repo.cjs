@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const DIRS = [path.join(ROOT, 'docs'), path.join(ROOT, 'todos'), path.join(ROOT, 'unified-dashboard/somo-landing')];
+const DIRS = [path.join(ROOT, 'docs'), path.join(ROOT, 'todos'), path.join(ROOT, 'unified-dashboard/skin-care-landing')];
 const SKIP = new Set(['node_modules', '.git', 'archive', '_archive', 'hosting-dist']);
 const EXT = new Set(['.md', '.html', '.json']);
 

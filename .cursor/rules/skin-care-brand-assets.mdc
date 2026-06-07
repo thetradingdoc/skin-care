@@ -1,0 +1,33 @@
+---
+description: Skin & Care brand assets — logo, colors, sync scripts
+globs:
+  - unified-dashboard/assets/**
+  - unified-dashboard/**/*.html
+  - middleware-platform/public/assets/**
+  - scripts/sync-brand-assets.cjs
+  - scripts/generate-brand-favicons.cjs
+  - docs/Brand/**
+---
+
+# Skin & Care brand assets
+
+Read **docs/Brand/SKIN_AND_CARE_GUIDELINES.md** before changing logos, favicons, or consumer colors.
+
+## Rules
+
+1. **Logo SSOT:** `unified-dashboard/assets/images/logo-panda.svg` (also copied to `assets/brand/logo-panda.svg` for sync).
+2. **Consumer tokens:** `unified-dashboard/assets/css/skin-care-tokens.css` — do not reintroduce `somo-tokens.css`.
+3. **Sync:** After changing brand files, run `npm run brand:favicons` then `npm run brand:sync`.
+4. **Do not** add Somo gecko PNGs, `somo-logo.png`, or deprecated wordmark SVGs to UI.
+5. **Provider sidebar:** panda SVG + "Skin & Care" wordmark via `provider-shell-chrome.js`.
+6. **Email:** use `middleware-platform/lib/skin-care-email-layout.js` and journal blue palette (`#314db6`).
+
+## Quick reference
+
+| Need | Use |
+|------|-----|
+| Nav / auth logo | `/assets/images/logo-panda.svg` |
+| Primary blue | `#314db6` (`--sc-brand-blue`) |
+| Cream background | `#f8f3ea` (`--sc-cream`) |
+| Display font | Gloock |
+| UI font | DM Sans |

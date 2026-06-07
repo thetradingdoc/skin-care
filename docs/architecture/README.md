@@ -3,7 +3,7 @@
 
 **Last Updated:** 2026-05-30
 
-> **Marketing landing:** Active SPA is [`unified-dashboard/somo-landing/`](../../unified-dashboard/somo-landing/) at `/`. Legacy CRA + Kelly/LiveKit assistant lives in [`unified-dashboard/_archive/littlelab-landing/`](../../unified-dashboard/_archive/littlelab-landing/) (retired 2026-05-29). See [`SURFACE_OWNERSHIP_MAP.md`](../meta/SURFACE_OWNERSHIP_MAP.md).
+> **Marketing landing:** Active SPA is [`unified-dashboard/skin-care-landing/`](../../unified-dashboard/skin-care-landing/) at `/`. Archived B2B marketing: `unified-dashboard/_archive/`. Legacy consumer funnel: [`unified-dashboard/_archive/littlelab-landing/`](../../unified-dashboard/_archive/littlelab-landing/).
 
 > **Medical coding:** Canonical architecture and operations live in **[docs/Medical Coding/ARCHITECTURE.md](../Medical%20Coding/ARCHITECTURE.md)** and **[OPERATIONS.md](../Medical%20Coding/OPERATIONS.md)**. Do **not** expand this 12k-line file for codebook/RAG updates — patch the Medical Coding docs and link from here. The [#voice-agent-runbook](#voice-agent-runbook) section below is partially refreshed; older tables elsewhere may still reference `getCodeCandidates` or `localhost:4000` RAG defaults.
 
@@ -1089,7 +1089,7 @@ If issues occur:
 ## Public agentic checkout (catalog → quote → pay)
 
 
-Unauthenticated flows for retail products on the patient portal and the Somo marketing landing (`somo-landing`; legacy Skin & Care commerce in `_archive/littlelab-landing`). **Charge amounts are never taken from the browser alone** for capture: they come from the product row in SQLite (`products.price`) × quantity, via `PaymentOrchestrator` or payment-link fallback.
+Unauthenticated flows for retail products on the patient portal and the Somo marketing landing (`skin-care-landing`; legacy Skin & Care commerce in `_archive/littlelab-landing`). **Charge amounts are never taken from the browser alone** for capture: they come from the product row in SQLite (`products.price`) × quantity, via `PaymentOrchestrator` or payment-link fallback.
 
 ## Endpoints
 
@@ -1552,7 +1552,7 @@ Accepted.
 
 ## Context
 
-Patients may start from the **Somo marketing landing** (`somo-landing`), **deep links**, or the **Expo app** (legacy Skin & Care chat-first funnel: `_archive/littlelab-landing`). Checkout must feel chat-first while using **server-locked quotes** and **Stripe** for payment.
+Patients may start from the **Somo marketing landing** (`skin-care-landing`), **deep links**, or the **Expo app** (legacy Skin & Care chat-first funnel: `_archive/littlelab-landing`). Checkout must feel chat-first while using **server-locked quotes** and **Stripe** for payment.
 
 ## Decision
 
@@ -12204,7 +12204,7 @@ Primary runtime surfaces:
 
 - `middleware-platform/` - Core backend API + orchestration + workers + integrations
 - `unified-dashboard/` - Static/web portals (patient, business, admin, insurer) and shared JS/CSS
-- `unified-dashboard/somo-landing/` - Somo marketing SPA at `/`
+- `unified-dashboard/skin-care-landing/` - Somo marketing SPA at `/`
 - `unified-dashboard/_archive/littlelab-landing/` - Archived React/CRA landing and assistant experience
 - `patient-app/` - Expo/React Native app (auth + appointments + checkout chat integration)
 - `docs/` - Consolidated canonical documentation
@@ -12250,7 +12250,7 @@ flowchart TB
       U1[unified-dashboard/patients]
       U2[unified-dashboard/business]
       U3[unified-dashboard/admin]
-      U4[somo-landing Vite SPA]
+      U4[skin-care-landing Vite SPA]
       M1[patient-app Expo RN]
     end
 
@@ -12338,7 +12338,7 @@ Characteristics:
 - Calls middleware APIs directly
 - Implements multiple patient/payment experiences including Stripe checkout redirects
 
-## 6.2 Landing Experience (`somo-landing`)
+## 6.2 Landing Experience (`skin-care-landing`)
 
 - React/CRA app for marketing + assistant funnel
 - Includes assistant pages, scan/ingredient/product experiences, tests, and media assets

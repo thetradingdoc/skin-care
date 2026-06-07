@@ -91,7 +91,7 @@ test.describe('Provider Today portal — static assets + shell', () => {
     expect(layout.alertBeforeKpi).toBe(true);
     expect(layout.mainBeforeAside).toBe(true);
     expect(layout.appointmentsInMain).toBe(true);
-    expect(layout.brandIcon).toMatch(/somo-icon\.png/);
+    expect(layout.brandIcon).toMatch(/logo-panda\.svg/);
     expect(layout.hasUrgentPanel).toBe(false);
 
     const buttons = await page.evaluate(() => {

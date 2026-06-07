@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * Production probe: dermatology-practice persona on landing-assistant + barcode lookup.
+ * Production probe: landing-assistant turns + consumer UI home + API health.
  * Emits JSON for latency/availability (not CER/WER — no reference transcripts).
  */
 const API_BASE = (process.env.PW_PROD_API_BASE_URL || 'https://api.callsomo.com').replace(/\/$/, '');
@@ -19,7 +19,7 @@ async function timedFetch(url, init) {
   } catch (_) {
     json = { _raw_preview: text.slice(0, 200) };
   }
-  return { status: res.status, ms, json, contentType: res.headers.get('content-type') };
+  return { status: res.status, ms, json, contentType: res.headers.get('content-type'), text };
 }
 
 async function main() {
@@ -27,10 +27,11 @@ async function main() {
   const messages = [
     'Hi — I run a dermatology practice and need after-hours phone coverage.',
     'We get calls about rashes, acne follow-ups, and Mohs scheduling.',
-    'Can Somo handle Spanish-speaking patients too?'
+    'Can Skin & Care handle Spanish-speaking patients too?'
   ];
 
-  const health = await timedFetch(`${API_BASE}/api/public/somo-demo/health`);
+  const health = await timedFetch(`${API_BASE}/health`);
+  const retiredDemo = await timedFetch(`${API_BASE}/api/public/somo-demo/health`);
   const turns = [];
   for (const message of messages) {
     const r = await timedFetch(`${API_BASE}/api/public/landing-assistant/turn`, {
@@ -58,10 +59,14 @@ async function main() {
     persona: 'dermatology_practice_owner',
     api_base: API_BASE,
     ui_base: UI_BASE,
-    somo_demo_health: {
+    api_health: {
       status: health.status,
-      latency_ms: health.ms,
-      demo_enabled: health.json?.demo_enabled
+      latency_ms: health.ms
+    },
+    retired_somo_demo: {
+      status: retiredDemo.status,
+      latency_ms: retiredDemo.ms,
+      expect_404: retiredDemo.status === 404
     },
     landing_assistant_turns: turns,
     barcode_lookup: {
@@ -71,7 +76,11 @@ async function main() {
       success: !!scan.json?.success,
       product_name: scan.json?.product?.product_name || null
     },
-    ui_home: { status: ui.status, latency_ms: ui.ms }
+    ui_home: {
+      status: ui.status,
+      latency_ms: ui.ms,
+      has_skin_care_copy: /Skin\s*&\s*Care/i.test(ui.text || '')
+    }
   };
 
   console.log(JSON.stringify(report, null, 2));

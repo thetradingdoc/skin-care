@@ -17,18 +17,25 @@ const PATTERNS = [
   { re: /myskin-middleware/i, label: 'myskin-middleware (decommissioned Cloud Run service)' },
   { re: /\/api\/public\/dodgecall\//i, label: '/api/public/dodgecall/ (removed HTTP routes)' },
   { re: /dodgecall\/health/i, label: 'dodgecall/health probe (use somo-demo/health)' },
+  { re: /unified-dashboard\/somo-landing\//i, label: 'unified-dashboard/somo-landing/ (archived; use skin-care-landing)' },
+  { re: /\bsomo-landing\b/i, label: 'somo-landing (archived B2B landing; use skin-care-landing)' },
+  { re: /\/api\/public\/somo-demo\//i, label: '/api/public/somo-demo/ (not consumer Skin & Care surface)' },
+  { re: /\bsomo-demo\b/i, label: 'somo-demo (archived agent docs; not indexed for Skin & Care)' },
 ];
 
 const ALLOW_PATH = [
   /[/\\]docs[/\\]archive[/\\]/i,
   /[/\\]legacy-doclittle-myskin[/\\]/i,
   /[/\\]agent[/\\]dodgecall[/\\]/i,
+  /[/\\]agent[/\\]somo-demo[/\\]/i,
   /GCP_SOMO_SERVICE_CUTOVER\.md$/i,
   /check-docs-stale-strings\.cjs$/i,
   /INFRA_BRAND_DEFERRAL\.md$/i,
   /ENGINEERING_DOC_HYGIENE\.md$/i,
   /[/\\]deployment[/\\]OPERATIONS\.md$/i,
+  /[/\\]runbooks[/\\]OPERATIONS\.md$/i,
   /[/\\]Brand[/\\]README\.md$/i,
+  /_archive\/somo-landing/i,
 ];
 
 function walk(dir, out = []) {

@@ -1,17 +1,25 @@
 /**
  * Shared API base for provider portal pages on split-domain staging.
- * config.js sets window.API_BASE on callsomo.com → api.callsomo.com
+ * config.js sets window.API_BASE on consumer hosts → api.callsomo.com
  */
 (function (global) {
+  const PROD_API =
+    (typeof global.__SKIN_CARE_API_BASE__ === 'string' && global.__SKIN_CARE_API_BASE__.trim()) ||
+    'https://api.callsomo.com';
+
   function resolveApiBase() {
     if (global.API_BASE) return String(global.API_BASE).replace(/\/$/, '');
     const host = (global.location?.hostname || '').toLowerCase();
     if (
+      host === 'myskinandcare.com' ||
+      host === 'www.myskinandcare.com' ||
+      host === 'skinandcare.com' ||
+      host === 'www.skinandcare.com' ||
       host === 'callsomo.com' ||
       host === 'www.callsomo.com' ||
       host.endsWith('.callsomo.com')
     ) {
-      return 'https://api.callsomo.com';
+      return PROD_API;
     }
     return (global.location?.origin || 'http://localhost:4000').replace(/\/$/, '');
   }

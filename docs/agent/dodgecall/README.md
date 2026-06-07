@@ -1,5 +1,7 @@
-# Moved: Somo demo agent docs
+# DodgeCall (retired)
 
-Documentation for the landing-page demo agent lives under **[../somo-demo/ARCHITECTURE.md](../somo-demo/ARCHITECTURE.md)**.
+The landing-page demo agent product is **retired**. User-facing brand is **Skin & Care**.
 
-The `dodgecall` product name is retired. Use **Somo** and `/api/public/somo-demo/*` only.
+For consumer landing, see [skin-care-landing](../../unified-dashboard/skin-care-landing/).
+
+Historical `dodgecall` / `somo-demo` API routes have been removed from the middleware.

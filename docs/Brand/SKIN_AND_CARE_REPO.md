@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-06-07
 
-Skin & Care is a **consumer brand** on the shared Somo platform API. This repo is the only engineering home for Skin & Care product work.
+Skin & Care is a **unified brand** (consumer + provider) on the shared platform API. This repo is the engineering home for Skin & Care product work.
 
 ## Repos and domains
 
@@ -77,23 +77,64 @@ npx expo start
 
 | Host | Role |
 |------|------|
-| myskinandcare.com | Consumer marketing + `/start` funnel (configure DNS when ready) |
-| api.callsomo.com | Shared API — all Skin & Care app builds point here |
-| callsomo.com | Somo platform (B2B) — separate brand |
+| myskinandcare.com | Consumer marketing + web funnel (DNS cutover target) |
+| callsomo.com | Provider portal + shared web shell (Skin & Care UI) |
+| api.callsomo.com | Shared API — all app and web builds point here |
 
 Privacy policy and terms URLs for App Store should live on **myskinandcare.com**.
 
 ## EAS / TestFlight
 
+Full runbook: **[docs/runbooks/TESTFLIGHT.md](../runbooks/TESTFLIGHT.md)**
+
 ```bash
 cd patient-app
+npm ci
 npx eas login
-npx eas init
-npx eas build --platform ios --profile preview --non-interactive
+npx eas init          # one-time — links Expo project
+npm run verify:testflight
+npm run build:testflight
+npm run submit:testflight
 ```
 
-See [`todos/pending/IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md`](../../todos/pending/IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md).
+Install via Apple **TestFlight** app after adding your Apple ID as an internal tester in App Store Connect.
+
+## DNS cutover checklist (myskinandcare.com)
+
+**Status:** Prep only — no DNS change until operator sign-off. Infra IDs (`somo-4ddf6`, `somo-callsomo`) stay as-is.
+
+### Preconditions
+
+- [x] `npm run build:skin-care-landing` + `node scripts/verify-hosting-dist-landing.cjs` (local bundle verifier)
+- [ ] `npm run build:staging-hosting` succeeds in CI (Node 20.x hosting-dist job)
+- [ ] `npm run test:e2e-skin-care-landing --prefix middleware-platform` green on `main`
+- [ ] App Store / TestFlight privacy and terms URLs updated to `https://myskinandcare.com/patients/legal/*` (after DNS live)
+- [x] `EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com` in EAS production profile (unchanged)
+
+### DNS (registrar / Firebase Hosting)
+
+- [ ] Add custom domain **myskinandcare.com** (+ `www`) to Firebase project `somo-4ddf6` (or successor hosting project)
+- [ ] Publish A/AAAA or CNAME records per Firebase console
+- [ ] Verify TLS certificate active for apex and `www`
+- [ ] Optional: 301 `callsomo.com/` → `myskinandcare.com/` only for consumer paths after launch (provider `/signup`, `/business/*` may stay on callsomo.com)
+
+### Post-cutover smoke
+
+```bash
+curl -sS -I https://myskinandcare.com/
+curl -sS -I https://myskinandcare.com/patients/patient-login.html
+node scripts/verify-hosting-dist-landing.cjs --live https://myskinandcare.com
+```
+
+- [ ] Landing hero shows Skin & Care copy (not Somo B2B)
+- [ ] Signup/login CTAs resolve on same host
+- [ ] Mobile app still reaches `api.callsomo.com/health/live`
+
+### Rollback
+
+- [ ] Revert DNS to previous target; redeploy last known-good `hosting-dist` if needed
+- [ ] App builds unaffected (API host unchanged)
 
 ## Multi-brand note
 
-Somo may power other consumer brands from separate repos. Each brand gets its own GitHub repo, bundle ID, Stripe product, and domain — all sharing **one** `api.callsomo.com` deployment.
+The shared API (`api.callsomo.com`) may serve other consumer brands from separate repos. Each brand gets its own GitHub repo, bundle ID, Stripe product, and domain — all sharing **one** middleware deployment.

@@ -18,23 +18,6 @@ const DRY_RUN = process.argv.includes('--dry-run');
 
 /** @type {Record<string, { index: string, second: string, intoIndex: string[], intoSecond: string[] }>} */
 const PLANS = {
-  'agent/somo-demo': {
-    index: 'README.md',
-    second: 'RUNBOOK.md',
-    intoIndex: [
-      'ARCHITECTURE.md',
-      'DECISIONS.md',
-      'ISOLATION_CONTRACT.md',
-      'TEMPLATE_REGISTRY.md',
-      'PLAYBOOK_MEDICAL.md',
-      'GOOGLE_SHEETS_SYNC_DESIGN.md',
-    ],
-    intoSecond: [
-      'PHASE_A_GO_RECOVERY_RUNBOOK.md',
-      'PROD_OUTBOUND_SALES_RUNBOOK.md',
-      'PROD_E2E_EXECUTION_REPORT_2026-06-02.md',
-    ],
-  },
   deployment: {
     index: 'README.md',
     second: 'OPERATIONS.md',

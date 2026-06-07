@@ -1,5 +1,5 @@
 /**
- * Somo auth pages (login) — extends signup-somo.css
+ * Skin & Care auth pages (login) — extends signup-skin-care.css
  */
 
 .login-shell {
@@ -20,7 +20,7 @@
   box-sizing: border-box;
 }
 
-/* Match somo-landing nav logo size and breathing room */
+/* Match marketing nav logo size and breathing room */
 .login-main .signup-logo-link {
   display: block;
   margin-top: 0;

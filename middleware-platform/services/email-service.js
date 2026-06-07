@@ -24,12 +24,12 @@ try {
   azureEmailClient = null;
 }
 
-const SomoEmail = require('../lib/somo-email-layout');
+const SkinCareEmail = require('../lib/skin-care-email-layout');
 
 class EmailService {
-  /** @private Somo-branded HTML wrapper — see lib/somo-email-layout.js */
-  static _somoLayout(title, subtitle, bodyHtml, opts = {}) {
-    return SomoEmail.layout({ title, subtitle, bodyHtml, ...opts });
+  /** @private Skin & Care-branded HTML wrapper — see lib/skin-care-email-layout.js */
+  static _skinCareLayout(title, subtitle, bodyHtml, opts = {}) {
+    return SkinCareEmail.layout({ title, subtitle, bodyHtml, ...opts });
   }
   /**
    * Check if Azure Communication Services is configured
@@ -231,7 +231,7 @@ class EmailService {
 
       // Try SMTP
       const transporter = this.getTransporter();
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER || process.env.AZURE_EMAIL_SENDER || 'Somo <info@callsomo.com>';
+      const from = process.env.SMTP_FROM || process.env.SMTP_USER || process.env.AZURE_EMAIL_SENDER || 'Skin & Care <info@callsomo.com>';
 
       if (transporter) {
         const mailOptions = {
@@ -333,22 +333,22 @@ class EmailService {
       : '';
 
     const calBtn = appointment.calendar_link
-      ? `<p style="text-align:center;margin-top:16px;">${SomoEmail.button(appointment.calendar_link, 'Add to calendar')}</p>`
+      ? `<p style="text-align:center;margin-top:16px;">${SkinCareEmail.button(appointment.calendar_link, 'Add to calendar')}</p>`
       : '';
-    const html = this._somoLayout('Appointment confirmed', dateTime, `
-      <h2>Hi ${SomoEmail.escapeHtml(appointment.patient_name)},</h2>
+    const html = this._skinCareLayout('Appointment confirmed', dateTime, `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p>Your appointment is scheduled.</p>
-      ${SomoEmail.infoRows([
+      ${SkinCareEmail.infoRows([
         { label: 'Date & time', value: dateTime },
         { label: 'Type', value: appointment.appointment_type || 'Consultation' },
         { label: 'Duration', value: `${appointment.duration_minutes || 50} minutes` },
-        { label: 'Provider', value: appointment.provider || 'Somo care team' },
+        { label: 'Provider', value: appointment.provider || 'Skin & Care team' },
         { label: 'Confirmation', value: confirmationNumber }
       ])}
       ${uploadBlock}
       ${calBtn}
       <p>You will receive a reminder about one hour before your visit.</p>
-      <p>Best regards,<br>The Somo team</p>
+      <p>Best regards,<br>The Skin & Care team</p>
     `, { preheader: `Confirmed: ${dateTime}` });
 
     return await this.sendEmail({
@@ -381,20 +381,20 @@ class EmailService {
       ? `<p><strong>Join here:</strong> <a href="${joinLink}">${joinLink}</a></p>`
       : '';
 
-    const html = this._somoLayout('Appointment in 1 hour', dateTime, `
-      <h2>Hi ${SomoEmail.escapeHtml(appointment.patient_name)},</h2>
+    const html = this._skinCareLayout('Appointment in 1 hour', dateTime, `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p><strong>Your appointment starts in about one hour.</strong></p>
       ${joinBlock}
-      ${SomoEmail.infoRows([
+      ${SkinCareEmail.infoRows([
         { label: 'Date & time', value: dateTime },
         { label: 'Type', value: appointment.appointment_type || 'Consultation' },
-        { label: 'Provider', value: appointment.provider || 'Somo care team' }
+        { label: 'Provider', value: appointment.provider || 'Skin & Care team' }
       ])}
       <p style="text-align:center;">
-        ${SomoEmail.button(rescheduleLink, 'Reschedule', 'warning')}
-        ${SomoEmail.button(cancelLink, 'Cancel', 'danger')}
+        ${SkinCareEmail.button(rescheduleLink, 'Reschedule', 'warning')}
+        ${SkinCareEmail.button(cancelLink, 'Cancel', 'danger')}
       </p>
-      <p>Best regards,<br>The Somo team</p>
+      <p>Best regards,<br>The Skin & Care team</p>
     `, { preheader: `Reminder: ${dateTime}` });
 
     return await this.sendEmail({
@@ -424,17 +424,17 @@ class EmailService {
       ? `<p>Upload documents before your visit: <a href="${uploadLink}">${uploadLink}</a></p>`
       : '';
 
-    const html = this._somoLayout('Appointment tomorrow', dateTime, `
-      <h2>Hi ${SomoEmail.escapeHtml(appointment.patient_name)},</h2>
+    const html = this._skinCareLayout('Appointment tomorrow', dateTime, `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p><strong>Your appointment is tomorrow.</strong></p>
       ${uploadBlock}
-      ${SomoEmail.infoRows([
+      ${SkinCareEmail.infoRows([
         { label: 'When', value: dateTime },
         { label: 'Type', value: appointment.appointment_type || 'Consultation' },
-        { label: 'Provider', value: appointment.provider || 'Somo care team' }
+        { label: 'Provider', value: appointment.provider || 'Skin & Care team' }
       ])}
       <p>We will send another reminder about one hour before your visit.</p>
-      <p>Best regards,<br>The Somo team</p>
+      <p>Best regards,<br>The Skin & Care team</p>
     `);
 
     return await this.sendEmail({
@@ -448,9 +448,9 @@ class EmailService {
    * Send checkout verification code to email
    */
   static async sendCheckoutVerificationCode(email, code) {
-    const html = this._somoLayout('Verification code', 'Checkout', `
+    const html = this._skinCareLayout('Verification code', 'Checkout', `
       <p>Enter this code to continue checkout:</p>
-      ${SomoEmail.codeBox(code)}
+      ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 15 minutes.</strong></p>
     `, { preheader: `Code: ${code}` });
     return await this.sendEmail({
@@ -464,16 +464,16 @@ class EmailService {
    * Send patient portal verification code
    */
   static async sendPatientVerificationCode(email, code) {
-    const html = this._somoLayout('Patient portal sign-in', 'Verification code', `
-      <p>Use this code to sign in to your Somo patient portal:</p>
-      ${SomoEmail.codeBox(code)}
+    const html = this._skinCareLayout('Patient portal sign-in', 'Verification code', `
+      <p>Use this code to sign in to your Skin & Care patient portal:</p>
+      ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 10 minutes.</strong></p>
       <p>If you did not request this code, you can ignore this email.</p>
     `, { preheader: `Code: ${code}` });
 
     return await this.sendEmail({
       to: email,
-      subject: 'Somo — Patient portal verification code',
+      subject: 'Skin & Care — Patient portal verification code',
       html
     });
   }
@@ -489,17 +489,17 @@ class EmailService {
     const baseUrl = process.env.BASE_URL || process.env.API_BASE_URL || 'https://api.callsomo.com';
     const appointmentsUrl = baseUrl.replace(/\/$/, '') + '/patients/appointments.html';
 
-    const html = this._somoLayout('Complete your payment', 'Secure checkout', `
+    const html = this._skinCareLayout('Complete your payment', 'Secure checkout', `
       <p>Your email is verified. Use the button below to pay securely.</p>
-      ${SomoEmail.infoRows([
+      ${SkinCareEmail.infoRows([
         { label: 'Product', value: order?.product_name || 'Service' },
         ...(aptLine ? [{ label: 'Appointment', value: aptLine }] : []),
         { label: 'Amount', value: `$${(order?.amount || 0).toFixed(2)}` }
       ])}
-      <p style="text-align:center;">${SomoEmail.button(paymentLink, 'Pay now')}</p>
-      <p style="word-break:break-all;font-size:14px;">${SomoEmail.escapeHtml(paymentLink)}</p>
+      <p style="text-align:center;">${SkinCareEmail.button(paymentLink, 'Pay now')}</p>
+      <p style="word-break:break-all;font-size:14px;">${SkinCareEmail.escapeHtml(paymentLink)}</p>
       <p>After payment, view your appointment at <a href="${appointmentsUrl}">My appointments</a>.</p>
-    `, { preheader: 'Complete payment for your Somo visit' });
+    `, { preheader: 'Complete payment for your Skin & Care visit' });
 
     const result = await this.sendEmail({
       to: email,
@@ -670,7 +670,7 @@ class EmailService {
         <div class="wrapper">
         <div class="container">
           <div class="header">
-            <h1 class="brand">Somo</h1>
+            <h1 class="brand">Skin & Care</h1>
             <p class="header-subtitle">Payment receipt</p>
           </div>
           <div class="content">
@@ -739,7 +739,7 @@ class EmailService {
             <p>An escrow settlement has exceeded the timeout threshold and requires attention.</p>
             <p><strong>Claim ID:</strong> ${claimId}<br><strong>Provider amount:</strong> $${Number(amount).toFixed(2)}</p>
             <p>Please review and retry settlement via the admin recovery endpoint if needed.</p>
-            <p>Somo Finance Team</p>
+            <p>Skin & Care Finance Team</p>
           </div>
         </div>
       </body>
@@ -808,7 +808,7 @@ class EmailService {
 
             <p>Please process this claim according to your standard procedures.</p>
             
-            <p>Best regards,<br>Somo Healthcare Platform</p>
+            <p>Best regards,<br>Skin & Care Healthcare Platform</p>
           </div>
           <div class="footer">
             <p>This is an automated billing notification. Please do not reply to this email.</p>
@@ -887,7 +887,7 @@ class EmailService {
             
             <p>If you have any questions about this bill, please contact us.</p>
             
-            <p>Best regards,<br>Somo Billing Department</p>
+            <p>Best regards,<br>Skin & Care Billing Department</p>
           </div>
           <div class="footer">
             <p>This is an automated billing statement. Please do not reply to this email.</p>
@@ -926,17 +926,17 @@ class EmailService {
    * Send email verification code
    */
   static async sendVerificationCode(email, code, name) {
-    const html = this._somoLayout('Verify your email', 'Somo API', `
-      <h2>Hi ${SomoEmail.escapeHtml(name) || 'there'},</h2>
+    const html = this._skinCareLayout('Verify your email', 'Skin & Care API', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>Thanks for signing up. Use this code to verify your email:</p>
-      ${SomoEmail.codeBox(code)}
+      ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 15 minutes.</strong></p>
       <p>If you did not request this, you can ignore this email.</p>
     `, { preheader: `Verification code: ${code}` });
 
     return await this.sendEmail({
       to: email,
-      subject: 'Somo — Verify your email',
+      subject: 'Skin & Care — Verify your email',
       html
     });
   }
@@ -954,7 +954,7 @@ class EmailService {
    * @param {string} promotion.end_date - End date (optional)
    * @param {string} merchantName - Merchant/business name
    */
-  static async sendPromotionalEmail(email, customerName, promotion, merchantName = 'Somo') {
+  static async sendPromotionalEmail(email, customerName, promotion, merchantName = 'Skin & Care') {
     const discountText = promotion.discount_type === 'percentage'
       ? `${promotion.discount_value}% OFF`
       : `$${promotion.discount_value} OFF`;
@@ -968,17 +968,17 @@ class EmailService {
       : null;
 
     const shopUrl = `${(process.env.BASE_URL || 'https://api.callsomo.com').replace(/\/$/, '')}/storefront`;
-    const html = this._somoLayout('Special offer', SomoEmail.escapeHtml(merchantName), `
-      <h2>Hi ${SomoEmail.escapeHtml(customerName) || 'there'},</h2>
+    const html = this._skinCareLayout('Special offer', SkinCareEmail.escapeHtml(merchantName), `
+      <h2>Hi ${SkinCareEmail.escapeHtml(customerName) || 'there'},</h2>
       <p style="text-align:center;">
-        <span style="display:inline-block;background:${SomoEmail.TOKENS.green};color:#fff;font-size:32px;font-weight:700;padding:16px 28px;border-radius:12px;">${SomoEmail.escapeHtml(discountText)}</span>
+        <span style="display:inline-block;background:${SkinCareEmail.TOKENS.brandBlue};color:#fff;font-size:32px;font-weight:700;padding:16px 28px;border-radius:12px;">${SkinCareEmail.escapeHtml(discountText)}</span>
       </p>
-      <h2 style="text-align:center;color:${SomoEmail.TOKENS.text};">${SomoEmail.escapeHtml(promotion.name || 'Special offer')}</h2>
-      ${promotion.description ? `<p>${SomoEmail.escapeHtml(promotion.description)}</p>` : ''}
-      ${promotion.code ? SomoEmail.codeBox(promotion.code) : ''}
-      ${endDateText ? SomoEmail.infoRows([{ label: 'Valid until', value: endDateText }]) : ''}
-      <p style="text-align:center;">${SomoEmail.button(shopUrl, 'Shop now')}</p>
-      <p>Best regards,<br>${SomoEmail.escapeHtml(merchantName)}</p>
+      <h2 style="text-align:center;color:${SkinCareEmail.TOKENS.text};">${SkinCareEmail.escapeHtml(promotion.name || 'Special offer')}</h2>
+      ${promotion.description ? `<p>${SkinCareEmail.escapeHtml(promotion.description)}</p>` : ''}
+      ${promotion.code ? SkinCareEmail.codeBox(promotion.code) : ''}
+      ${endDateText ? SkinCareEmail.infoRows([{ label: 'Valid until', value: endDateText }]) : ''}
+      <p style="text-align:center;">${SkinCareEmail.button(shopUrl, 'Shop now')}</p>
+      <p>Best regards,<br>${SkinCareEmail.escapeHtml(merchantName)}</p>
     `, { preheader: `${discountText} from ${merchantName}` });
 
     return await this.sendEmail({
@@ -1022,25 +1022,25 @@ class EmailService {
     }
     rows.push({
       label: 'Total due',
-      valueHtml: `<strong style="font-size:20px;color:${SomoEmail.TOKENS.green}">$${invoice.total.toFixed(2)}</strong>`
+      valueHtml: `<strong style="font-size:20px;color:${SkinCareEmail.TOKENS.brandBlue}">$${invoice.total.toFixed(2)}</strong>`
     });
 
-    const html = this._somoLayout(
+    const html = this._skinCareLayout(
       'Monthly invoice',
       `Invoice #${invoice.invoice_number}`,
       `
-      <h2>Hi ${SomoEmail.escapeHtml(name) || 'there'},</h2>
-      <p>Your invoice for <strong>${SomoEmail.escapeHtml(billingMonth)}</strong> is ready.</p>
-      ${SomoEmail.infoRows(rows)}
+      <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
+      <p>Your invoice for <strong>${SkinCareEmail.escapeHtml(billingMonth)}</strong> is ready.</p>
+      ${SkinCareEmail.infoRows(rows)}
       <p>Payment is due within 15 days. Your stored payment method will be charged on the due date.</p>
-      <p style="text-align:center;">${SomoEmail.button('https://api.callsomo.com/docs', 'View dashboard')}</p>
-      <p>Questions? Contact <a href="mailto:${SomoEmail.SUPPORT_EMAIL}">${SomoEmail.SUPPORT_EMAIL}</a>.</p>
+      <p style="text-align:center;">${SkinCareEmail.button('https://api.callsomo.com/docs', 'View dashboard')}</p>
+      <p>Questions? Contact <a href="mailto:${SkinCareEmail.SUPPORT_EMAIL}">${SkinCareEmail.SUPPORT_EMAIL}</a>.</p>
     `
     );
 
     return await this.sendEmail({
       to: email,
-      subject: `Somo invoice — $${invoice.total.toFixed(2)} due (${invoice.invoice_number})`,
+      subject: `Skin & Care invoice — $${invoice.total.toFixed(2)} due (${invoice.invoice_number})`,
       html
     });
   }
@@ -1072,23 +1072,23 @@ class EmailService {
     if (password) {
       infoRows.push({
         label: 'Temporary password',
-        valueHtml: `<strong style="color:${SomoEmail.TOKENS.green}">${SomoEmail.escapeHtml(password)}</strong>`
+        valueHtml: `<strong style="color:${SkinCareEmail.TOKENS.brandBlue}">${SkinCareEmail.escapeHtml(password)}</strong>`
       });
     }
 
-    const html = this._somoLayout('Welcome to Somo', 'Your account is ready', `
-      <h2>Hi ${SomoEmail.escapeHtml(customerName) || 'there'},</h2>
-      <p>Your Somo account is ready. Sign in to access your ${SomoEmail.escapeHtml(dashboardType)}.</p>
-      ${SomoEmail.infoRows(infoRows)}
-      ${password ? SomoEmail.panel('<p style="margin:0;color:#92400e;font-weight:600;">Save this password securely. You can change it in account settings.</p>', 'warning') : ''}
-      <p style="text-align:center;">${SomoEmail.button(loginUrl, 'Log in')}</p>
-      ${subdomain ? `<p style="text-align:center;"><a href="https://${SomoEmail.escapeHtml(subdomain)}.${SomoEmail.escapeHtml(baseDomain)}">https://${SomoEmail.escapeHtml(subdomain)}.${SomoEmail.escapeHtml(baseDomain)}</a></p>` : ''}
-      <p>Best regards,<br>The Somo team</p>
+    const html = this._skinCareLayout('Welcome to Skin & Care', 'Your account is ready', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(customerName) || 'there'},</h2>
+      <p>Your Skin & Care account is ready. Sign in to access your ${SkinCareEmail.escapeHtml(dashboardType)}.</p>
+      ${SkinCareEmail.infoRows(infoRows)}
+      ${password ? SkinCareEmail.panel('<p style="margin:0;color:#92400e;font-weight:600;">Save this password securely. You can change it in account settings.</p>', 'warning') : ''}
+      <p style="text-align:center;">${SkinCareEmail.button(loginUrl, 'Log in')}</p>
+      ${subdomain ? `<p style="text-align:center;"><a href="https://${SkinCareEmail.escapeHtml(subdomain)}.${SkinCareEmail.escapeHtml(baseDomain)}">https://${SkinCareEmail.escapeHtml(subdomain)}.${SkinCareEmail.escapeHtml(baseDomain)}</a></p>` : ''}
+      <p>Best regards,<br>The Skin & Care team</p>
     `);
 
     return await this.sendEmail({
       to: customerEmail,
-      subject: 'Welcome to Somo — your account is ready',
+      subject: 'Welcome to Skin & Care — your account is ready',
       html
     });
   }
@@ -1097,18 +1097,18 @@ class EmailService {
    * Send password reset email
    */
   static async sendPasswordResetEmail(email, name, resetUrl) {
-    const html = this._somoLayout('Reset your password', 'Somo account', `
-      <h2>Hi ${SomoEmail.escapeHtml(name) || 'there'},</h2>
+    const html = this._skinCareLayout('Reset your password', 'Skin & Care account', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>We received a request to reset your password.</p>
-      <p style="text-align:center;">${SomoEmail.button(resetUrl, 'Reset password')}</p>
-      <p style="word-break:break-all;font-family:monospace;font-size:14px;">${SomoEmail.escapeHtml(resetUrl)}</p>
-      ${SomoEmail.panel('<p style="margin:0;color:#92400e;"><strong>This link expires in 1 hour.</strong> If you did not request a reset, ignore this email.</p>', 'warning')}
-      <p>Best regards,<br>The Somo team</p>
+      <p style="text-align:center;">${SkinCareEmail.button(resetUrl, 'Reset password')}</p>
+      <p style="word-break:break-all;font-family:monospace;font-size:14px;">${SkinCareEmail.escapeHtml(resetUrl)}</p>
+      ${SkinCareEmail.panel('<p style="margin:0;color:#92400e;"><strong>This link expires in 1 hour.</strong> If you did not request a reset, ignore this email.</p>', 'warning')}
+      <p>Best regards,<br>The Skin & Care team</p>
     `);
 
     return await this.sendEmail({
       to: email,
-      subject: 'Somo — Reset your password',
+      subject: 'Skin & Care — Reset your password',
       html
     });
   }
@@ -1277,7 +1277,7 @@ class EmailService {
           </div>
           
           <div class="footer">
-            <p style="margin: 0;">This is an automated notification from Somo API</p>
+            <p style="margin: 0;">This is an automated notification from Skin & Care API</p>
             <p style="margin: 8px 0 0 0; font-size: 0.85rem;">
               <a href="https://api.callsomo.com" style="color: #2563eb;">API Documentation</a> | 
               <a href="https://callsomo.com" style="color: #2563eb;">Website</a>
@@ -1424,7 +1424,7 @@ class EmailService {
               </p>
             </div>
             <div class="footer">
-              <p>This is an automated alert from Somo.</p>
+              <p>This is an automated alert from Skin & Care.</p>
               <p style="margin-top: 10px;">
                 <a href="${dashboardUrl}" style="color: #16a637; text-decoration: none;">Manage Credits</a> | 
                 <a href="https://callsomo.com" style="color: #16a637; text-decoration: none;">Visit Website</a>

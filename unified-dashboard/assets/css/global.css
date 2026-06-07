@@ -1,6 +1,6 @@
 /* ============================================
-   GLOBAL STYLES - Somo (legacy pages + patient routes)
-   Provider shell uses provider-portal.css + somo-tokens.
+   GLOBAL STYLES - Skin & Care (legacy pages + patient routes)
+   Provider shell uses provider-portal.css + skin-care-tokens.
    ============================================ */
 
 * {
@@ -10,7 +10,7 @@
 }
 
 :root {
-    /* Brand Colors - Somo green */
+    /* Brand Colors - Skin & Care palette */
     --primary: #16a637;
     --primary-dark: #128a2e;
     --primary-light: #16a637;
@@ -212,7 +212,7 @@ button, .btn, a.btn, .nav-item, .patient-bottom-tabs .tab {
     .patient-scan-fab:active { transform: scale(0.98); }
 }
 
-/* Brand wordmark (Somo) */
+/* Brand wordmark (Skin & Care) */
 .sidebar-logo,
 .logo,
 .logo-brand {

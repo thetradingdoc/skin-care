@@ -1,5 +1,5 @@
 /**
- * Redirect legacy business/*.html routes to canonical Somo provider shell pages.
+ * Redirect legacy business/*.html routes to canonical Skin & Care provider shell pages.
  */
 (function () {
   const file = (window.location.pathname.split('/').pop() || '').split('?')[0];

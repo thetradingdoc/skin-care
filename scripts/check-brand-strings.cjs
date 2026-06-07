@@ -3,25 +3,20 @@
 
 /**
  * Fail CI when banned legacy brand strings appear in user-facing UI paths.
- * Allowlist: infra URLs, internal module paths, docs/archive, brand-allowlist comments.
+ * Bans "Somo" in unified-dashboard, middleware-platform/public, patient-app.
+ * Allows infra identifiers (api.callsomo.com, env vars, comments).
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const BRAND_PROFILE = (process.env.BRAND_PROFILE || 'skin-and-care').trim().toLowerCase();
 
-const ALL_SCAN_ROOTS = [
+const SCAN_DIRS = [
   path.join(ROOT, 'unified-dashboard'),
-  path.join(ROOT, 'middleware-platform/public'),
+  path.join(ROOT, 'middleware-platform', 'public'),
   path.join(ROOT, 'patient-app'),
 ];
-
-/** Consumer brand branches (e.g. skin-and-care) use Skin & Care copy in patient-app. */
-const SCAN_ROOTS = BRAND_PROFILE === 'skin-and-care'
-  ? ALL_SCAN_ROOTS.filter((p) => !p.endsWith(`${path.sep}patient-app`))
-  : ALL_SCAN_ROOTS;
 
 const SKIP_DIRS = new Set([
   'node_modules',
@@ -31,7 +26,6 @@ const SKIP_DIRS = new Set([
   '.git',
   'playwright-report',
   'test-results',
-  'dodgecall/dist',
   '_archive',
 ]);
 
@@ -41,33 +35,27 @@ const BANNED = [
   { re: /\bdodgecall\b/i, label: 'dodgecall' },
   { re: /\bdoclittle\b/i, label: 'doclittle' },
   { re: /\bdoctor\s+little\b/i, label: 'doctor little' },
-  { re: /\bmyskinandcare\b/i, label: 'myskinandcare (display)' },
-  { re: /\bskin\s*&\s*care\b/i, label: 'skin & care' },
+  { re: /\bSomo\b/, label: 'Somo' },
 ];
 
 const ALLOW_PATH = [
-  /middleware-platform\/services\/dodgecall-/i,
-  /\/api\/public\/dodgecall\//i,
-  /dodgecall-demo/i,
-  /business\/trial-activation\.html/i,
-  /somo-landing\//i, // folder name until infra rename complete
+  /\.env\.example$/i,
   /brand-allowlist/i,
-  /docs\/archive\//i,
-  /INFRA_BRAND_DEFERRAL/i,
   /check-brand-strings/i,
-  /rebrand-somo-ui/i,
 ];
 
 const ALLOW_LINE = [
   /brand-allowlist/i,
   /process\.env\./i,
-  /STEDI_/i,
-  /KELLY_/i,
-  /dodgecall-demo/i,
-  /dodgecallDemo/i,
-  /isDodgecallApiPath/i,
-  /\/dodgecall\//,
-  /source === 'dodgecall'/,
+  /somo-platform/i,
+  /api\.callsomo/i,
+  /callsomo\.com/i,
+  /utm_source.*somo/i,
+  /SomoCheckoutChat/i,
+  /videoSomoTranslate/i,
+  /Somo-shell/i,
+  /^\s*\/\//,
+  /^\s*\*/,
 ];
 
 function walk(dir, files = []) {
@@ -89,45 +77,27 @@ function isAllowedLine(line) {
   return ALLOW_LINE.some((re) => re.test(line));
 }
 
-const violations = [];
-
-for (const base of SCAN_ROOTS) {
-  for (const file of walk(base)) {
-    const rel = path.relative(ROOT, file);
-    if (isAllowedFile(rel)) continue;
-    let raw;
-    try {
-      raw = fs.readFileSync(file, 'utf8');
-    } catch (err) {
-      if (err && err.code === 'ENOENT') continue;
-      throw err;
-    }
-    const lines = raw.split('\n');
-    lines.forEach((line, i) => {
-      if (isAllowedLine(line)) return;
-      for (const { re, label } of BANNED) {
-        if (re.test(line)) {
-          violations.push({ file: rel, line: i + 1, label, snippet: line.trim().slice(0, 120) });
-        }
-      }
-    });
-  }
+const files = [];
+for (const dir of SCAN_DIRS) {
+  for (const f of walk(dir)) files.push(f);
 }
 
-const API_PUBLIC = path.join(ROOT, 'middleware-platform', 'public');
-const LOGO_BANNED_IN_API_HTML = [
-  { re: /somo-logo-wordmark\.svg/i, label: 'deprecated text-only logo (use somo-logo.png)' },
-  { re: /<span[^>]*class=["']doc["']/i, label: 'DocLittle CSS logo spans' },
-  { re: /<span[^>]*class=["']little["']/i, label: 'DocLittle CSS logo spans' },
-];
+const violations = [];
 
-for (const file of walk(API_PUBLIC).filter((f) => f.endsWith('.html'))) {
+for (const file of files) {
   const rel = path.relative(ROOT, file);
-  const raw = fs.readFileSync(file, 'utf8');
+  if (isAllowedFile(rel)) continue;
+  let raw;
+  try {
+    raw = fs.readFileSync(file, 'utf8');
+  } catch (err) {
+    if (err && err.code === 'ENOENT') continue;
+    throw err;
+  }
   const lines = raw.split('\n');
   lines.forEach((line, i) => {
     if (isAllowedLine(line)) return;
-    for (const { re, label } of LOGO_BANNED_IN_API_HTML) {
+    for (const { re, label } of BANNED) {
       if (re.test(line)) {
         violations.push({ file: rel, line: i + 1, label, snippet: line.trim().slice(0, 120) });
       }

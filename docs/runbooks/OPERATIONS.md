@@ -1,6 +1,8 @@
 # OPERATIONS
 
-**Last updated:** 2026-06-02
+> **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
+
+**Last updated:** 2026-06-07
 
 
 ---
@@ -255,7 +257,8 @@ See [deployment README § CI and deployment](../deployment/README.md#ci-and-depl
 
 ```bash
 curl -sS -i https://api.callsomo.com/health
-curl -sS -i https://api.callsomo.com/api/public/somo-demo/health
+curl -sS -o /dev/null -w "%{http_code}\n" https://api.callsomo.com/api/public/somo-demo/health
+# Expect API health 200; retired somo-demo 404
 curl -sS -i -X POST https://api.callsomo.com/api/public/landing-assistant/turn \
   -H 'content-type: application/json' -d '{"session_id":"rollback-smoke","message":"hello"}'
 npm run verify:prod:routing-smoke --prefix middleware-platform
@@ -264,9 +267,8 @@ npm run verify:prod:routing-smoke --prefix middleware-platform
 ### Landing (Firebase Hosting)
 
 ```bash
-cd unified-dashboard/somo-landing
-VITE_API_BASE=https://api.callsomo.com npm run build
-# deploy via firebase deploy (project configured in unified-dashboard/firebase.json)
+npm run build:skin-care-landing
+# deploy hosting-dist via firebase deploy (project configured in unified-dashboard/firebase.json)
 ```
 
 ## Post-deploy smoke

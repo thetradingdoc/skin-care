@@ -1,7 +1,7 @@
-# Somo Platform Documentation
-> Last reviewed: 2026-06-02
+# Skin & Care Platform Documentation
+> Last reviewed: 2026-06-07
 
-**Last Updated:** 2026-06-02
+**Last Updated:** 2026-06-07
 
 
 > **📌 Source of Truth**: This `docs/` folder is the canonical documentation for the platform. All `.md` files belong in `docs/` (or `todos/` for active/archive task tracking).  
@@ -9,12 +9,12 @@
 >
 > **Doc count policy (June 2026):** Each `docs/<folder>/` keeps at most **two** markdown files (`README.md` + one companion). Retired paths are listed in [`_consolidated_path_redirects.json`](./_consolidated_path_redirects.json). Regenerate merges: `node scripts/consolidate-docs-two-per-folder.cjs`.
 
-### Consumer brand (Somo)
+### Consumer brand (Skin & Care)
 
-- **Single source of truth:** **[SOMO_GUIDELINES.md](./Brand/SOMO_GUIDELINES.md)** — naming, tokens, typography.
-- **Logo / favicon / email HTML:** **[LOGO_AND_ICON_SSOT.md](./Brand/LOGO_AND_ICON_SSOT.md)**
-- **Index:** **[Brand folder README](./Brand/README.md)**
-- **Doc hygiene (what to read first):** **[meta/ENGINEERING_DOC_HYGIENE.md](./meta/ENGINEERING_DOC_HYGIENE.md)**
+- **Workspace runbook:** **[SKIN_AND_CARE_REPO.md](./Brand/SKIN_AND_CARE_REPO.md)** — GitHub, myskinandcare.com, EAS, DNS cutover.
+- **Brand index:** **[Brand folder README](./Brand/README.md)** — consumer vs infra deferral.
+- **Logo / favicon:** **[LOGO_AND_ICON_SSOT.md](./Brand/LOGO_AND_ICON_SSOT.md)**
+- **Doc hygiene:** **[meta/ENGINEERING_DOC_HYGIENE.md](./meta/ENGINEERING_DOC_HYGIENE.md)**
 
 ### Documentation placement policy (April 2026)
 
@@ -69,16 +69,14 @@
 - **[Canonical map](./meta/CANONICAL_DOC_MAP.md)** — one doc per topic
 - **[Meta README](./meta/README.md)** — hygiene, staging profile, gap tracker anchors
 
-#### Somo demo (production API + outbound)
-- **[Agent index](./agent/README.md)** — Somo demo vs Kelly
-- **[Somo demo reference](./agent/somo-demo/README.md)** — architecture, ADRs, templates
-- **[Somo demo runbook](./agent/somo-demo/RUNBOOK.md)** — local dev, Phase A prod gates, outbound sales
-- Backlog: [`../todos/pending/SOMO_DEMO_PROD_GAP_BACKLOG.md`](../todos/pending/SOMO_DEMO_PROD_GAP_BACKLOG.md)
+#### Voice agents
+- **[Agent index](./agent/README.md)** — Kelly (paying clinics)
+- **[Voice agent config](./voice-agent/README.md)** — Retell, prompts
 
-#### Marketing landing (Somo)
-- **[Somo landing](./deployment/OPERATIONS.md#somo-landing)** — build, hosts, demo API
-- **[Image 1 marketing colors](./design/SOMO_MARKETING_COLORS.md)** — lizard / MSU / grass palette
-- **[Hero layout](./deployment/OPERATIONS.md#somo-landing-hero)** — nav, copy, breakpoints
+#### Marketing landing (Skin & Care)
+- **[Skin & Care landing](./deployment/OPERATIONS.md#skin-care-landing)** — build, hosts, local dev
+- **[Hero layout](./deployment/OPERATIONS.md#skin-care-landing-hero)** — nav, copy, tokens
+- **[User journey](./user-journey/JOURNEY.md)** — signup funnel and URL map
 
 #### Database and voice foundation (2026)
 - **[Database index](./Database/README.md)** — SSOT, migrations

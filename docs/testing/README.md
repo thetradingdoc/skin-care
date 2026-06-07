@@ -73,7 +73,7 @@ Use this when validating **landing → login → checkout-chat → quote → pay
 
 - Middleware running with Stripe test keys and seed products (e.g. demo serums).
 - Patient portal reachable at `REACT_APP_PATIENT_PORTAL_PREFIX` (default `/unified-dashboard/patients`).
-- Somo marketing landing (`somo-landing`) built with `VITE_API_BASE` (empty = same-origin). Legacy Skin & Care CRA tests used `_archive/littlelab-landing` + `REACT_APP_API_BASE`.
+- Skin & Care landing (`skin-care-landing`) built with `VITE_API_BASE` (empty = same-origin). Legacy CRA tests used `_archive/littlelab-landing` + `REACT_APP_API_BASE`.
 
 ## Flow
 

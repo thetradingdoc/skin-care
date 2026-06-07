@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <title>Somo Provider - Settings</title>
-  <link rel="stylesheet" href="/assets/css/somo-tokens.css">
+  <title>Skin & Care Provider — Settings</title>
+  <link rel="stylesheet" href="/assets/css/skin-care-tokens.css">
   <link rel="stylesheet" href="/assets/css/provider-portal.css">
   <link rel="stylesheet" href="/assets/css/provider-settings.css?v=1">
   <script src="/assets/js/config.js"></script>
@@ -116,7 +116,7 @@
                     <div class="service-icon" style="background: #dbeafe;">📄</div>
                     <div class="service-info">
                         <h4>Usage & Invoices</h4>
-                        <p class="service-status">View your Somo usage, credits, and invoices</p>
+                        <p class="service-status">View your Skin &amp; Care usage, credits, and invoices</p>
                     </div>
                     <a href="revenue.html?tab=payments" class="btn btn-secondary btn-sm" style="text-decoration: none;">View</a>
                 </div>
@@ -1598,7 +1598,7 @@
                 const blob = await res.blob();
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = `Somo-export-${Date.now()}.json`;
+                a.download = `skin-care-export-${Date.now()}.json`;
                 a.click();
                 URL.revokeObjectURL(a.href);
                 alert('Data export downloaded.');

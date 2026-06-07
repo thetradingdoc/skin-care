@@ -21,7 +21,6 @@ function isResolvedSaasTenant(customer) {
  * @param {object} params
  * @param {object|null} params.matchedCustomer
  * @param {string|null} params.customerId
- * @param {boolean} params.isSomoDemoDemo
  * @param {boolean} params.isOutboundSales
  * @param {string} params.currentRetellAgentId
  * @param {string} [params.defaultAgentId]
@@ -30,12 +29,11 @@ function isResolvedSaasTenant(customer) {
 function resolveInboundRetellAgent({
   matchedCustomer,
   customerId,
-  isSomoDemoDemo,
   isOutboundSales,
   currentRetellAgentId,
   defaultAgentId
 }) {
-  if (isSomoDemoDemo || isOutboundSales) {
+  if (isOutboundSales) {
     return {
       retellAgentId: currentRetellAgentId,
       failClosed: false,

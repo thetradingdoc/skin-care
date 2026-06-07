@@ -8,7 +8,7 @@
  * Verifies:
  * 1) UI domain does NOT serve HTML for /api endpoints
  * 2) API base returns JSON health
- * 3) Canonical somo-demo health on API base
+ * 3) Retired somo-demo route returns 404 on API base
  * 4) landing-assistant turn endpoint returns JSON (not SPA HTML)
  */
 
@@ -43,39 +43,18 @@ function printCheck(ok, id, detail) {
   console.log(`${icon} ${id}${detail ? ` — ${detail}` : ''}`);
 }
 
-function parseDemoHealthPayload(body = '') {
+async function checkSomoDemoRemoved() {
+  const retiredPath = '/api/public/somo-demo/health';
+  let res;
   try {
-    const j = JSON.parse(String(body || '').trim());
-    return { ok: Boolean(j.ok), demo_enabled: Boolean(j.demo_enabled) };
-  } catch {
-    return null;
-  }
-}
-
-async function checkSomoDemoHealth() {
-  const canonicalPath = '/api/public/somo-demo/health';
-  let canonical;
-  try {
-    canonical = await fetchText(`${API_BASE}${canonicalPath}`);
+    res = await fetchText(`${API_BASE}${retiredPath}`);
   } catch (e) {
-    printCheck(false, 'API_SOMO_DEMO_HEALTH', String(e?.message || e));
+    printCheck(false, 'API_SOMO_DEMO_REMOVED', String(e?.message || e));
     return false;
   }
-
-  const canonicalOk =
-    canonical.status === 200 &&
-    !looksLikeHtml(canonical.text, canonical.contentType) &&
-    looksLikeJson(canonical.text, canonical.contentType);
-
-  const canonicalPayload = parseDemoHealthPayload(canonical.text);
-  const payloadOk = canonicalPayload && canonicalPayload.ok === true;
-
-  printCheck(canonicalOk, 'API_SOMO_DEMO_HEALTH', `status=${canonical.status} path=${canonicalPath}`);
-  printCheck(payloadOk, 'SOMO_DEMO_HEALTH_PAYLOAD', payloadOk
-    ? `demo_enabled=${canonicalPayload.demo_enabled}`
-    : `body=${canonical.text.slice(0, 120)}`);
-
-  return canonicalOk && payloadOk;
+  const ok = res.status === 404;
+  printCheck(ok, 'API_SOMO_DEMO_REMOVED', `status=${res.status} path=${retiredPath}`);
+  return ok;
 }
 
 async function main() {
@@ -118,7 +97,7 @@ async function main() {
     printCheck(false, 'API_BASE_HEALTH_JSON', String(e?.message || e));
   }
 
-  checks.push(await checkSomoDemoHealth());
+  checks.push(await checkSomoDemoRemoved());
 
   // API turn endpoint on API base (optional — Somo landing is marketing-only)
   if (process.env.SKIP_LANDING_TURN_SMOKE === '1') {

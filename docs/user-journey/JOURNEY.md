@@ -1,6 +1,6 @@
 # JOURNEY
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-07
 
 
 ---
@@ -21,13 +21,13 @@ Frictionless path: **optional age hook → intent (why you’re here) → match 
 
 - **One auth moment** — email and 6-digit code only (no password, no duplicate login on web then app).
 - **No profile gate** — do not block routine pick on demographics, insurance, or `onboarding.html`.
-- **Web discovers and verifies** — landing and biological age on littlelab; account can start on `/start` (inline OTP) or `patient-login.html`.
+- **Web discovers and verifies** — Skin & Care landing at `/`; account starts on `patient-login.html` (email + code).
 - **App and web share the routine** — picker, Today, Timeline, Money; see [06-mobile-and-web-parity.md](./06-mobile-and-web-parity.md).
 - **Age never blocks signup** — `/start` is optional; Signup from `/` skips the photo step.
 
 ## Happy path (7 steps)
 
-1. **Discover** — User opens `/` (landing: `RoutineLanding.jsx`). CTAs: **Guess my age** or **Signup**.
+1. **Discover** — User opens `/` (landing: `skin-care-landing` SPA). CTAs: **Get started** or **Sign in**.
 2. **Optional hook + value** — **Guess my age** → `/start` (`BiologicalAgePage.jsx`): selfie → face-read estimate → confirm or correct age → **intent** (two routes: track routine or find dermatologist) → **match** (`POST /api/public/funnel/match` with `user_goal`, optional `clarify_answers`) → **program**, **specialist**, **clarify**, or **dual** (dual only after specialist upsell). Session stores `sc_user_goal`, `sc_match_json`, `sc_concern_id`, `sc_preview_json`, `sc_zip`, `sc_clarify_answers`.
 3. **Account on funnel** — **Save** on `/start`: email → verify → `POST /api/patient/routine/template` only when `route` is `program` or `dual`. Specialist-only saves email + bridge meta without template. **Done** primary CTA: log today’s photo → `patient-dashboard.html`.
 4. **Handoff** — **Get the app** (`POST /api/patient/auth/handoff/create` → `patientapp://auth?ticket=…`) or **Continue on web** (`patient-routine-pick.html` or dashboard if template exists).
@@ -119,10 +119,10 @@ When behavior changes, update this table and [06-mobile-and-web-parity.md](./06-
 # 1. Inference (optional for /start photo step)
 ./scripts/start-face-scan-stack.sh   # teamkelly :8765
 
-# 2. Build Somo marketing landing
-cd unified-dashboard/somo-landing && npm install && npm run build
+# 2. Build Skin & Care consumer landing
+cd unified-dashboard/skin-care-landing && npm install && npm run build
 
-# 3. Middleware (serves somo-landing build + patient static + APIs)
+# 3. Middleware (serves skin-care-landing build + patient static + APIs)
 cd middleware-platform && npm start   # :4000
 
 # 4. Patient app
@@ -135,8 +135,8 @@ Open `http://127.0.0.1:4000/`
 
 | URL | Surface | Purpose |
 |-----|---------|---------|
-| `/` | somo-landing | Somo marketing (hero, demo, pricing, signup CTA) |
-| `/start` | _archive/littlelab-landing | Legacy funnel: face-age → match → OTP (archived CRA) |
+| `/` | skin-care-landing | Skin & Care consumer marketing (hero, app/sign-in CTAs) |
+| `/start` | redirect → `/` | Legacy funnel path (archived littlelab) |
 | `/patients/patient-login.html` | unified-dashboard (static on middleware) | **Consumer signup/login** — email + 6-digit code (`?intent=signup` opens Sign Up tab) |
 | `/app` | middleware redirect | **302** → `patient-login.html` (legacy; not a bridge page) |
 | `/join` | middleware redirect | **302** → `patient-login.html` (legacy alias) |
@@ -165,10 +165,11 @@ Open `http://127.0.0.1:4000/`
 
 | Path | Role |
 |------|------|
-| `unified-dashboard/somo-landing/` | Somo marketing SPA (`/`) |
-| `unified-dashboard/_archive/littlelab-landing/` | Archived consumer funnel (`/start`, Kelly) |
+| `unified-dashboard/skin-care-landing/` | Skin & Care consumer SPA (`/`) |
+| `unified-dashboard/_archive/` (B2B marketing) | Archived Somo B2B SPA |
+| `unified-dashboard/_archive/littlelab-landing/` | Archived consumer funnel (Kelly) |
 | `unified-dashboard/patients/` | Web patient login + legacy dashboard |
-| `middleware-platform/` | API + serves `somo-landing/build/` + patient static |
+| `middleware-platform/` | API + serves `skin-care-landing/build/` + patient static |
 | `patient-app/` | Routine picker, daily loop, prescriptions, bills |
 | `teamkelly/` | Inference (gitignored in parent repo) |
 

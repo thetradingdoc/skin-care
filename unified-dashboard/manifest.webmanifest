@@ -1,6 +1,6 @@
 {
-  "name": "Somo Patient Portal",
-  "short_name": "Somo",
+  "name": "Skin & Care Patient Portal",
+  "short_name": "Skin & Care",
   "start_url": "/unified-dashboard/patients/patient-dashboard.html",
   "display": "standalone",
   "background_color": "#f7fafc",

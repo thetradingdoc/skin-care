@@ -31,7 +31,7 @@ Legacy pages may ship only `<main class="main-content">` and call `mountProvider
 | `provider-shell-chrome.js` | Gecko sidebar header + Kelly widget |
 | `provider-layout.js` | `mountProviderPage()` for legacy pages |
 
-Styles: [`somo-tokens.css`](../../unified-dashboard/assets/css/somo-tokens.css) + [`provider-portal.css`](../../unified-dashboard/assets/css/provider-portal.css).
+Styles: [`skin-care-tokens.css`](../../unified-dashboard/assets/css/skin-care-tokens.css) + [`provider-portal.css`](../../unified-dashboard/assets/css/provider-portal.css).
 
 ## Page header (topbar)
 

@@ -14,7 +14,7 @@ From repo root [`run`](../run): `export DB_PATH=./middleware-dev.db` in `middlew
 
 | URL | Purpose |
 |-----|---------|
-| `http://localhost:4000/` | Somo marketing landing (requires `somo-landing/build`; built automatically on `npm start` / `npm run dev`) |
+| `http://localhost:4000/` | Skin & Care consumer landing (requires `skin-care-landing/build`; built automatically on `npm start` / `npm run dev`) |
 | `http://localhost:4000/login` | Provider portal sign-in |
 | `http://localhost:4000/business/today.html` | Provider Today dashboard (after login) |
 | `http://localhost:4000/health` | API health check |
@@ -23,7 +23,7 @@ From repo root [`run`](../run): `export DB_PATH=./middleware-dev.db` in `middlew
 
 **Faster API startup:** `npm run start:landing` in `middleware-platform/` (skips heavy background workers; `DEV_LIGHT_START=1`).
 
-**Landing-only Vite dev server:** `npm run dev:somo-landing` (port 5180, proxies API to `:4000`).
+**Landing-only Vite dev server:** `npm run dev:skin-care-landing` (port 5180, proxies API to `:4000`).
 
 ## Provider sign-in (Somo portal)
 

@@ -4,51 +4,39 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const request = require('supertest');
-const { registerEarlySomoLandingStatic } = require('../bootstrap/static-hosting');
+const {
+  createStaticPathHelpers,
+  isSkinCareLandingBuildReady,
+} = require('../lib/static-hosting-paths');
+const { registerEarlyConsumerLandingStatic } = require('../bootstrap/static-hosting');
 
 const rootDir = path.join(__dirname, '..');
-const heroAsset = path.join(
-  rootDir,
-  '..',
-  'unified-dashboard',
-  'somo-landing',
-  'build',
-  'assets',
-  'brand',
-  'hero-phone-v2.jpg'
-);
 
-describe('registerEarlySomoLandingStatic', () => {
+describe('registerEarlyConsumerLandingStatic', () => {
+  const { getSkinCareLandingBuildPath } = createStaticPathHelpers(rootDir);
+
   beforeAll(() => {
-    if (!fs.existsSync(heroAsset)) {
+    if (!isSkinCareLandingBuildReady(getSkinCareLandingBuildPath)) {
       throw new Error(
-        'Missing somo-landing build. Run: cd unified-dashboard/somo-landing && npm run build'
+        'Missing skin-care-landing build. Run: cd middleware-platform && npm run build:skin-care-landing'
       );
     }
   });
 
-  it('serves landing-only /assets/brand/hero-phone-v2.jpg on localhost', async () => {
+  it('serves hashed landing CSS from build on localhost', async () => {
+    const cssName = fs
+      .readdirSync(getSkinCareLandingBuildPath('assets'))
+      .find((f) => f.endsWith('.css') && f.startsWith('index-'));
+    expect(cssName).toBeTruthy();
+
     const app = express();
-    registerEarlySomoLandingStatic(app, { express, rootDir });
+    registerEarlyConsumerLandingStatic(app, { express, rootDir });
 
     const res = await request(app)
-      .head('/assets/brand/hero-phone-v2.jpg')
+      .get(`/assets/${cssName}`)
       .set('Host', 'localhost:4000');
 
     expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toMatch(/image\/jpeg/i);
-    expect(Number(res.headers['content-length'])).toBeGreaterThan(10_000);
-  });
-
-  it('serves somo logo from landing build on localhost', async () => {
-    const app = express();
-    registerEarlySomoLandingStatic(app, { express, rootDir });
-
-    const res = await request(app)
-      .get('/assets/brand/somo-logo.png')
-      .set('Host', 'localhost:4000');
-
-    expect(res.status).toBe(200);
-    expect(res.headers['content-type']).toMatch(/image\/png/i);
+    expect(res.headers['content-type']).toMatch(/text\/css/i);
   });
 });

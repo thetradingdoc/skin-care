@@ -436,7 +436,7 @@ function _buildCompactSystemPrompt(context) {
     KellyOrchestratorPhase.orchestratorEnabled() && orchestration
       ? ` Phase: ${orchestration.phase}.`
       : '';
-  return `You are Kelly (Somo).${orchHint}
+  return `You are Kelly (Skin & Care).${orchHint}
 
 GOAL: triage OPQRST and route to the right specialist, then book (cash-only; no insurance step).
 
@@ -1099,7 +1099,7 @@ function _buildSystemPromptLegacy(context) {
       ? `\n${KellyOrchestratorPhase.buildOrchestrationPromptSection(orchestration)}\n`
       : '';
 
-  return `You are Kelly, a warm and empathetic medical voice assistant for Somo.
+  return `You are Kelly, a warm and empathetic medical voice assistant for Skin & Care.
 ${orchestrationBlock}
 ## Your Role
 You help patients:
@@ -6061,7 +6061,7 @@ Antworten Sie durchgehend auf Deutsch.`,
 
       if (endCall) {
         // Do one more LLM call to get a closing reply (LLMRouter respects forceProvider / primary)
-        let closeReply = 'Thank you for calling Somo. Take care!';
+        let closeReply = 'Thank you for calling Skin & Care. Take care!';
         try {
           const closeOpts = { messages, tools: [], channel, maxTokens: 100 };
           if (forceProvider) closeOpts.forceProvider = forceProvider;

@@ -3,7 +3,7 @@
 
 **Last Updated:** 2026-05-30
 
-**Somo marketing landing** at `/` is [`somo-landing`](../../unified-dashboard/somo-landing/). Kelly/LiveKit CRA client paths below refer to [`_archive/littlelab-landing`](../../unified-dashboard/_archive/littlelab-landing/) unless noted.
+**Skin & Care consumer landing** at `/` is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/). Kelly/LiveKit CRA client paths below refer to [`_archive/littlelab-landing`](../../unified-dashboard/_archive/littlelab-landing/) unless noted.
 
 **Voice runtime (2026):** [`services/voice-agent-runtime.js`](../../middleware-platform/services/voice-agent-runtime.js), migrations `053`/`054`, [VOICE_PROMPT_SSOT.md](../architecture/VOICE_PROMPT_SSOT.md), [voice-inbound troubleshooting](../runbooks/voice-inbound-troubleshooting.md).
 

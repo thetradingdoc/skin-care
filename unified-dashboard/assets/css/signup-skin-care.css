@@ -1,24 +1,16 @@
 /**
- * Somo signup wizard — marketing-aligned light layout
- * Load somo-tokens.css via a separate <link> in signup.html (before this file).
+ * Skin & Care signup wizard — consumer-aligned light layout
+ * Load skin-care-tokens.css via a separate <link> in signup.html (before this file).
  */
 
 :root {
-  --font-brand: 'League Spartan', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --somo-msu: #164437;
-  --somo-lizard: #b5e930;
-  --somo-lizard-hover: #9fd628;
-  --somo-green-marketing: var(--somo-lizard);
-  --somo-green-marketing-hover: var(--somo-lizard-hover);
-  --somo-text-marketing: #1a1a1a;
-  --somo-muted-marketing: #6b6b6b;
-  --somo-border-marketing: #e8e4dc;
+  --font-brand: var(--font-ui, 'DM Sans', system-ui, sans-serif);
   --signup-bg: #ffffff;
-  --signup-green: var(--somo-lizard, #b5e930);
-  --signup-green-hover: var(--somo-lizard-hover, #9fd628);
-  --signup-text: var(--somo-text-marketing, #1a1a1a);
-  --signup-muted: var(--somo-muted-marketing, #6b6b6b);
-  --signup-border: var(--somo-border-marketing, #e8e4dc);
+  --signup-green: var(--sc-brand-blue, #314db6);
+  --signup-green-hover: var(--brand-accent-hover, #283fa0);
+  --signup-text: var(--sc-ink, #1f2937);
+  --signup-muted: var(--sc-muted, #6b7280);
+  --signup-border: var(--sc-line, #e9e2d6);
   --signup-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
   --signup-max: 520px;
 }
@@ -155,9 +147,13 @@ body.signup-wizard-body {
 }
 
 .signup-logo-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-top: 12px;
   margin-bottom: 48px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .signup-logo-img {
@@ -166,6 +162,18 @@ body.signup-wizard-body {
   max-width: min(200px, 72vw);
   display: block;
   object-fit: contain;
+}
+
+.signup-logo-img.signup-logo-panda {
+  height: 40px;
+  width: 40px;
+  max-width: none;
+}
+
+.signup-logo-wordmark {
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
 }
 
 .signup-step-panel > .signup-eyebrow:first-child {
@@ -229,8 +237,8 @@ body.signup-wizard-body {
 
 .signup-persona-card.selected {
   border-color: var(--signup-green);
-  background: #f7fce8;
-  box-shadow: 0 0 0 2px rgba(147, 211, 59, 0.35);
+  background: #eef4ff;
+  box-shadow: 0 0 0 2px rgba(49, 77, 182, 0.25);
 }
 
 .signup-persona-icon {
@@ -306,7 +314,7 @@ body.signup-wizard-body {
 .signup-field select:focus {
   outline: none;
   border-color: var(--signup-green);
-  box-shadow: 0 0 0 3px rgba(147, 211, 59, 0.25);
+  box-shadow: 0 0 0 3px rgba(49, 77, 182, 0.2);
 }
 
 .signup-row-2 {
@@ -348,7 +356,7 @@ body.signup-wizard-body {
 
 .signup-btn-primary {
   background: var(--signup-green);
-  color: var(--signup-text);
+  color: #ffffff;
   margin-top: 8px;
 }
 
@@ -430,7 +438,7 @@ body.signup-wizard-body {
   text-align: center;
   padding: 28px 20px;
   border-radius: 20px;
-  background: linear-gradient(180deg, #f7fce8 0%, #fff 100%);
+  background: linear-gradient(180deg, #eef4ff 0%, #fff 100%);
   border: 1px solid var(--signup-border);
   margin: 20px 0;
 }

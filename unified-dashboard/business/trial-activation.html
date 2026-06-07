@@ -5,12 +5,12 @@
   <script src="/assets/js/legacy-provider-redirect.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Somo — Your line is live</title>
+  <title>Skin &amp; Care — Your line is live</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/unified-dashboard/assets/css/somo-tokens.css" />
-  <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-somo.css" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/skin-care-tokens.css" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-skin-care.css" />
   <style>
     .activation-wrap {
       max-width: 560px;
@@ -38,28 +38,30 @@
 
 <body class="signup-wizard-body">
   <div class="activation-wrap">
-    <a href="/" class="signup-logo-link" aria-label="Somo home">
+    <a href="/" class="signup-logo-link" aria-label="Skin &amp; Care home">
       <img
-        class="signup-logo-img"
-        src="/unified-dashboard/assets/brand/somo-logo.png"
-        alt="Somo"
-        width="160"
-        height="54"
+        class="signup-logo-img signup-logo-panda"
+        src="/assets/images/logo-panda.svg"
+        alt=""
+        aria-hidden="true"
+        width="40"
+        height="40"
       />
+      <span class="signup-logo-wordmark">Skin &amp; Care</span>
     </a>
 
     <p class="signup-eyebrow" style="margin-top: 24px;">Free trial active</p>
     <h1 class="signup-title" id="activationHeadline">Your AI front desk is live</h1>
     <p class="signup-sub" id="activationSub">
-      Forward your business line or call your Somo number now to hear your AI receptionist.
+      Forward your business line or call your number now to hear your AI receptionist.
     </p>
 
     <div class="signup-reveal" id="activationReveal" style="margin-top: 20px;">
-      <p class="signup-reveal-label">Your Somo number</p>
+      <p class="signup-reveal-label">Your phone number</p>
       <p class="signup-reveal-number" id="activationNumber">Loading…</p>
       <p class="signup-reveal-trial" id="activationTrialMeta">60 free minutes · 7-day trial</p>
       <div class="signup-reveal-actions">
-        <a class="signup-btn signup-btn-primary" id="activationCall" href="#">Call my Somo line</a>
+        <a class="signup-btn signup-btn-primary" id="activationCall" href="#">Call my line</a>
         <button type="button" class="signup-btn signup-btn-ghost" id="activationCopy">Copy number</button>
       </div>
     </div>
@@ -86,21 +88,12 @@
   <script>
     (function () {
       const API_BASE = window.location.origin.replace(/\/$/, '');
-      const PREFILL_KEY = 'somo_signup_prefill';
 
       function showError(msg) {
         const el = document.getElementById('activationError');
         el.textContent = msg;
         el.className = 'signup-toast error';
         el.classList.remove('hidden');
-      }
-
-      function hadDemoPrefill() {
-        try {
-          return !!sessionStorage.getItem(PREFILL_KEY);
-        } catch (_) {
-          return false;
-        }
       }
 
       async function load() {
@@ -137,7 +130,7 @@
         } catch (_) {}
 
         const source = String(attr.utm_source || '').toLowerCase();
-        const demoAware = (source === 'somo' || source === 'somo-demo') && hadDemoPrefill();
+        const demoAware = source === 'somo' || source === 'somo-demo';
 
         if (demoAware) {
           document.getElementById('activationHeadline').textContent = 'Your AI receptionist line is live';
@@ -177,9 +170,6 @@
               method: 'POST',
               credentials: 'include'
             });
-          } catch (_) {}
-          try {
-            sessionStorage.removeItem(PREFILL_KEY);
           } catch (_) {}
           window.location.href = 'voice-setup.html';
         });

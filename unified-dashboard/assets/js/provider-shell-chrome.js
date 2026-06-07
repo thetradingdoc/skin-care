@@ -1,5 +1,5 @@
 /**
- * Shared sidebar chrome: Somo gecko icon + Kelly live widget.
+ * Shared sidebar chrome: Skin & Care logo + Kelly live widget.
  * Loaded after provider-shell.js; used by provider-layout and built-in shell pages.
  */
 (function () {
@@ -16,7 +16,7 @@
       <a class="pp-kelly-live kelly-provisioning" id="ppKellyLive" href="${agentHref}">
         <span class="pp-kelly-dot" aria-hidden="true"></span>
         <div>
-          <div class="pp-kelly-label" id="ppKellyLabel">Somo front desk</div>
+          <div class="pp-kelly-label" id="ppKellyLabel">Kelly</div>
           <div class="pp-kelly-sub" id="ppKellySub">Voice · scheduling · RCM</div>
           <div class="pp-kelly-phone" id="ppKellyPhone"></div>
         </div>
@@ -26,11 +26,12 @@
 
   window.ppSidebarHeaderHtml = function ppSidebarHeaderHtml() {
     const todayHref = resolveHref('today.html');
-    const logoSrc = '/assets/brand/somo-icon.png';
+    const logoSrc = '/assets/images/logo-panda.svg';
     return `
       <div class="pp-clinic-header">
-        <a class="pp-sb-brand pp-sb-brand--icon" href="${todayHref}">
-          <img src="${logoSrc}" alt="Somo" class="pp-sb-logo-img" width="36" height="36" />
+        <a class="pp-sb-brand" href="${todayHref}">
+          <img src="${logoSrc}" alt="" aria-hidden="true" class="pp-sb-logo-img" width="36" height="36" />
+          <span class="pp-sb-logo-text">Skin &amp; Care</span>
         </a>
         <div class="pp-sb-clinic-meta">
           <div class="pp-sb-cn" id="ppClinicName">Clinic</div>

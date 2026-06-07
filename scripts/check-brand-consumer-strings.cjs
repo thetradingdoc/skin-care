@@ -125,11 +125,11 @@ for (const file of files) {
 }
 
 if (strictLanding) {
-  const landingReadme = path.join(ROOT, 'unified-dashboard/somo-landing/README.md');
+  const landingReadme = path.join(ROOT, 'unified-dashboard/skin-care-landing/README.md');
   if (fs.existsSync(landingReadme)) {
     const text = fs.readFileSync(landingReadme, 'utf8');
     if (/myskinandcare/i.test(text)) {
-      violations.push({ file: 'unified-dashboard/somo-landing/README.md', line: 0, label: 'myskinandcare', snippet: 'landing README' });
+      violations.push({ file: 'unified-dashboard/skin-care-landing/README.md', line: 0, label: 'myskinandcare', snippet: 'landing README' });
     }
   }
 }

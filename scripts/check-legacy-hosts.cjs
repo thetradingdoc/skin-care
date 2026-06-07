@@ -4,6 +4,7 @@
 /**
  * Fail CI when legacy production hostnames appear in active code paths.
  * Excludes docs/archive, FHIR namespace, and demo seed emails by default.
+ * Allows myskinandcare.com in config, env examples, and docs.
  *
  * Usage: node scripts/check-legacy-hosts.cjs [--include-docs]
  */
@@ -16,7 +17,6 @@ const includeDocs = process.argv.includes('--include-docs');
 
 const PATTERNS = [
   { re: /doclittle\.site/i, label: 'doclittle.site' },
-  { re: /myskinandcare\.com/i, label: 'myskinandcare.com' },
   { re: /doctor-little-c688d/i, label: 'doctor-little-c688d' },
   { re: /api\.doclittle/i, label: 'api.doclittle' },
 ];
@@ -42,6 +42,11 @@ const ALLOW_PATH = [
   /LEGACY_DOMAIN_RETIREMENT\.md$/i,
   /STAGING_MYSKINANDCARE\.md$/i,
   /legacy-doclittle-myskin[/\\]/i,
+  /SKIN_AND_CARE_REPO\.md$/i,
+  /config\.js$/i,
+  /api-base\.js$/i,
+  /static-hosting-paths\.js$/i,
+  /\.env\.example$/i,
 ];
 
 const EXT = new Set([

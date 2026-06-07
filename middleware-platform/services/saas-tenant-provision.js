@@ -46,7 +46,7 @@ function provisionSaasTenant(dbModule, options = {}) {
   }
 
   const sqlite = dbModule.db;
-  const displayName = clinicName || customer.company_name || customer.name || 'Somo Clinic';
+  const displayName = clinicName || customer.company_name || customer.name || 'Skin & Care Clinic';
   const normalizedPhone = (phone || customer.phone_number || customer.twilio_phone_number || '')
     .replace(/\s+/g, '') || null;
   const contactEmail = email || customer.email || null;

@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Somo — Start your free trial</title>
+  <title>Skin &amp; Care — Start your free trial</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/unified-dashboard/assets/css/somo-tokens.css" />
-  <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-somo.css" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/skin-care-tokens.css" />
+  <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-skin-care.css" />
   <style>
     /* Critical: works even if a stylesheet request fails */
     [data-signup-step].hidden { display: none !important; }
@@ -24,19 +24,21 @@
     </header>
 
     <div class="signup-wizard">
-    <a href="/" class="signup-logo-link" aria-label="Somo home">
+    <a href="/" class="signup-logo-link" aria-label="Skin &amp; Care home">
       <img
-        class="signup-logo-img"
-        src="/unified-dashboard/assets/brand/somo-logo.png"
-        alt="Somo"
-        width="160"
-        height="54"
+        class="signup-logo-img signup-logo-panda"
+        src="/assets/images/logo-panda.svg"
+        alt=""
+        aria-hidden="true"
+        width="40"
+        height="40"
         fetchpriority="high"
       />
+      <span class="signup-logo-wordmark">Skin &amp; Care</span>
     </a>
 
     <div class="signup-step-panel" data-signup-step="persona">
-      <p class="signup-eyebrow">Setting up your Somo front desk</p>
+      <p class="signup-eyebrow">Setting up your Skin &amp; Care assistant</p>
       <h1 class="signup-title">Which best describes you?</h1>
       <p class="signup-sub">We will tailor your AI receptionist in a few quick steps. No credit card required.</p>
       <div class="signup-persona-grid" id="signupPersonaGrid"></div>
@@ -145,7 +147,7 @@
     <div class="signup-step-panel hidden" data-signup-step="phone">
       <p class="signup-eyebrow">Activate your line</p>
       <h1 class="signup-title">Confirm your mobile</h1>
-      <p class="signup-sub">We will text you a code, then assign your dedicated Somo number.</p>
+      <p class="signup-sub">We will text you a code, then assign your dedicated phone number.</p>
 
       <div id="signupPhoneForm">
         <div class="signup-field">
@@ -161,11 +163,11 @@
       </div>
 
       <div class="signup-reveal hidden" id="signupReveal">
-        <p class="signup-reveal-label">Your Somo line is live</p>
+        <p class="signup-reveal-label">Your line is live</p>
         <p class="signup-reveal-number" id="signupRevealNumber"></p>
         <p class="signup-reveal-trial">60 free minutes · 7-day trial</p>
         <div class="signup-reveal-actions">
-          <a class="signup-btn signup-btn-primary" id="signupCallLine" href="#">Call my Somo line</a>
+          <a class="signup-btn signup-btn-primary" id="signupCallLine" href="#">Call my line</a>
           <button type="button" class="signup-btn signup-btn-ghost" id="signupCopyLine">Copy number</button>
         </div>
       </div>
@@ -176,13 +178,13 @@
       <h1 class="signup-title">Terms of Service</h1>
       <p class="signup-sub">Review and accept to start your free trial. Payment comes later if you choose to subscribe.</p>
       <div class="signup-terms-box">
-        By continuing you agree to the Somo Terms of Service, including usage billing after your free trial minutes,
+        By continuing you agree to the Skin &amp; Care Terms of Service, including usage billing after your free trial minutes,
         acceptable use, and data handling. Read the full terms at
         <a href="/terms?customer_type=saas" target="_blank" rel="noopener">/terms</a>.
       </div>
       <label class="signup-terms-check">
         <input type="checkbox" id="signupTermsCheck" />
-        <span>I agree to the Somo Terms of Service and Privacy Policy. I understand my free trial includes 60 minutes
+        <span>I agree to the Skin &amp; Care Terms of Service and Privacy Policy. I understand my free trial includes 60 minutes
           and 7 days, and I can subscribe later to keep my number.</span>
       </label>
     </div>

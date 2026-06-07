@@ -255,7 +255,7 @@ Pass: `voice_call_log.customer_id` = trial customer (not owner default).
 
 ### C4 — Landing demo (optional)
 
-`POST /api/public/somo-demo/request-call` — see [somo-landing E2E](../../middleware-platform/e2e/somo-landing.spec.cjs); separate from tenant inbound.
+Skin & Care landing E2E: `npm run test:e2e-skin-care-landing --prefix middleware-platform` (`middleware-platform/e2e/skin-care-landing.spec.cjs`).
 
 ### Call failure matrix
 

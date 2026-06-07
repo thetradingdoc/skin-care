@@ -1,6 +1,8 @@
 # OPERATIONS
 
-**Last updated:** 2026-06-02
+> **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
+
+**Last updated:** 2026-06-07
 
 
 ---
@@ -47,17 +49,15 @@ Production deploy preserves existing service env vars (image-only) and targets w
 ## Post-deploy verification
 
 ```bash
-curl -i https://api.callsomo.com/api/public/somo-demo/health
+curl -sS -o /dev/null -w "%{http_code}\n" https://api.callsomo.com/health
+curl -sS -o /dev/null -w "%{http_code}\n" https://api.callsomo.com/api/public/somo-demo/health
+# Expect health 200; retired somo-demo route 404
 curl -i -X POST https://api.callsomo.com/api/public/landing-assistant/turn \
   -H 'content-type: application/json' \
   -d '{"session_id":"smoke","message":"hello"}'
 npm run verify:prod:routing-smoke --prefix middleware-platform
 npm run test:prod:smoke --prefix middleware-platform
 ```
-
-## Somo demo secrets
-
-Prefer `SOMO_DEMO_*` in Secret Manager / `.env`. Legacy `DODGECALL_*` values are read via [somo-demo-env.js](../../middleware-platform/lib/somo-demo-env.js).
 
 ## Kelly rails (production profile)
 
@@ -112,7 +112,7 @@ Smoke the direct URL before remapping DNS:
 
 ```bash
 SOMO_URL=$(gcloud run services describe somo-middleware --region us-central1 --format='value(status.url)')
-curl -sS "$SOMO_URL/api/public/somo-demo/health"
+curl -sS "$SOMO_URL/health"
 ```
 
 ## 3) Deploy production
@@ -150,7 +150,8 @@ gcloud run services update-traffic somo-middleware \
 gcloud beta run domain-mappings describe --domain api.callsomo.com \
   --region us-central1 --format='value(spec.routeName)'
 
-curl -sS https://api.callsomo.com/api/public/somo-demo/health
+curl -sS https://api.callsomo.com/health
+curl -sS -o /dev/null -w "%{http_code}\n" https://api.callsomo.com/api/public/somo-demo/health
 curl -sS -X POST https://api.callsomo.com/api/public/landing-assistant/turn \
   -H 'content-type: application/json' \
   -d '{"session_id":"cutover","message":"hello"}'
@@ -159,7 +160,7 @@ npm run verify:prod:routing-smoke --prefix middleware-platform
 npm run test:prod:smoke --prefix middleware-platform
 ```
 
-Expect `spec.routeName` = `somo-middleware`, somo-demo health `200`, landing turn `200`.
+Expect `spec.routeName` = `somo-middleware`, API health `200`, retired somo-demo `404`, landing turn `200`.
 
 ## 7) Decommission legacy Cloud Run service
 
@@ -179,51 +180,46 @@ Optional: remove unused container images `gcr.io/somo-callsomo/myskin-middleware
 
 ---
 
-<a id="somo-landing"></a>
+<a id="skin-care-landing"></a>
 
-## SOMO LANDING
+## SKIN CARE LANDING
 
-*Merged from `docs/deployment/SOMO_LANDING.md` on 2026-06-02.*
+# Skin & Care consumer landing
 
-# Somo landing
+**Last Updated:** 2026-06-07
 
-**Last Updated:** 2026-05-30
-
-Single marketing SPA for **Somo** — voice demo + provider signup CTA.
+Single marketing SPA for **Skin & Care** — daily skin tracking, signup/sign-in CTAs, legal links.
 
 ## Hero UI
 
-See [SOMO_LANDING_HERO.md](./SOMO_LANDING_HERO.md) for hero structure, assets, breakpoints, and copy.
+See [#skin-care-landing-hero](#skin-care-landing-hero) for hero structure, assets, and copy.
 
 ## Signup handoff
 
-CTAs use `VITE_SIGNUP_URL` or `/signup?utm_source=somo`. The signup wizard ([signup.html](../../unified-dashboard/signup.html)) shares marketing tokens (white background, League Spartan, Image 1 Green Lizard `#b5e930`). Palette and component mapping: [SOMO_MARKETING_COLORS.md](../design/SOMO_MARKETING_COLORS.md). After a live demo, name/phone/use case are prefilled via `sessionStorage` key `somo_signup_prefill`. Flow details: [PROVIDER_SIGNUP_FLOW.md](./PROVIDER_SIGNUP_FLOW.md).
+CTAs use `/patients/patient-login.html?intent=signup` and `/patients/patient-login.html`. Legal pages: `/patients/legal/privacy.html`, `/patients/legal/terms.html`.
 
 ## Repos / paths
 
 | Piece | Path |
 |-------|------|
-| Landing (Vite + React) | `unified-dashboard/somo-landing/` |
-| Public demo API | `POST /api/public/somo-demo/request-call` |
-| Service | `middleware-platform/services/somo-demo-service.js` |
-| Telephony | `call_type=somo_demo` on `/voice/incoming` |
-| Archived legacy landing | `unified-dashboard/_archive/littlelab-landing/` |
+| Landing (Vite + React) | `unified-dashboard/skin-care-landing/` |
+| Tokens | `unified-dashboard/assets/css/skin-care-tokens.css` |
+| Patient login (static) | `unified-dashboard/patients/patient-login.html` |
+| Archived B2B marketing | `unified-dashboard/_archive/` |
+| Archived consumer funnel | `unified-dashboard/_archive/littlelab-landing/` |
 
 ## Hosts
 
 | Host | Serves |
 |------|--------|
-| `https://callsomo.com` | Somo landing (Firebase Hosting → `somo-landing/build`) |
-| `http://localhost:4000/` | Somo landing (middleware, local dev) |
+| `https://myskinandcare.com` | **Target** consumer landing (DNS cutover pending) |
+| `http://localhost:4000/` | Skin & Care landing (middleware, local dev) |
 | `https://api.callsomo.com` | Middleware API only |
-
-Legacy marketing paths (`/shop`, `/landing`, `/find-provider`, etc.) redirect to `/`.
+| `https://callsomo.com` | Somo B2B provider portal (separate brand) |
 
 ## Local dev
 
 ### Fast profile (recommended)
-
-Heavy background workers and catalog sync block the Node event loop on large local SQLite files. Use the light profile when working on the landing:
 
 ```bash
 cd middleware-platform
@@ -236,7 +232,7 @@ npm start
 
 Or from repo root: `npm run start:landing --prefix middleware-platform`
 
-Open **http://localhost:4000/** — Somo hero + “Try Our Live Demo”.
+Open **http://localhost:4000/** — Skin & Care hero + Get started / Sign in.
 
 ### Fast UI iteration (Vite HMR)
 
@@ -245,148 +241,88 @@ Open **http://localhost:4000/** — Somo hero + “Try Our Live Demo”.
 npm run start:landing --prefix middleware-platform
 
 # Terminal 2 — landing UI at http://localhost:5180 (proxies /api → :4000)
-npm run dev:landing:ui
+npm run dev:skin-care-landing
 ```
 
-### Full middleware (voice, RCM, workers)
+### Full middleware
 
 ```bash
-cd unified-dashboard/somo-landing && npm install && npm run build
+npm run build:skin-care-landing
 cd middleware-platform && npm start
 ```
-
-### Optional: bloated local DB
-
-If `:4000` is still slow with the light profile, `middleware-dev.db` may be very large. Back it up and start fresh, or run `VACUUM` after auditing growth.
-
-## Env (middleware)
-
-```bash
-DODGECALL_DEMO_ENABLED=1
-API_BASE_URL=http://localhost:4000
-TWILIO_OUTBOUND_WEBHOOK_URL=https://YOUR-SUBDOMAIN.ngrok-free.app  # for real demo calls locally
-```
-
-| Variable | Notes |
-|----------|-------|
-| `DEV_LIGHT_START` | `1` skips post-listen background workers (local only) |
-| `CATALOG_MASTER_SYNC_ENABLED` | `0` disables OBF catalog sync child in dev |
-| `EHR_SYNC_ENABLED` | `0` disables EHR polling workers |
 
 ## Env (landing)
 
 | Variable | Notes |
 |----------|-------|
 | `VITE_API_BASE` | Empty = same-origin API |
-| `VITE_SIGNUP_URL` | Default `/signup?utm_source=somo` |
+| `VITE_IOS_APP_URL` | Optional App Store / TestFlight link for CTA |
 
 ## Deploy (Firebase)
 
 ```bash
-npm run deploy:landing-hosting
+npm run deploy:staging-hosting
 ```
 
-Builds `somo-landing` and deploys to Firebase Hosting (`callsomo.com`).
+Builds `skin-care-landing` into `hosting-dist` via `scripts/build-staging-hosting.cjs`.
 
 ## Scripts
 
 ```bash
-npm run build:somo-landing --prefix middleware-platform
-npm run test:e2e-somo-landing --prefix middleware-platform
-npm run smoke:somo-demo --prefix middleware-platform
-npm run start:landing --prefix middleware-platform   # light middleware for landing dev
-npm run dev:landing:ui                               # Vite on :5180
+npm run build:skin-care-landing --prefix middleware-platform
+npm run test:e2e-skin-care-landing --prefix middleware-platform
+npm run start:landing --prefix middleware-platform
+npm run dev:skin-care-landing
+node scripts/verify-hosting-dist-landing.cjs
 ```
-
-## Signup CTA
-
-`/signup?utm_source=somo` on the same host as the landing.
 
 
 ---
 
-<a id="somo-landing-hero"></a>
+<a id="skin-care-landing-hero"></a>
 
-## SOMO LANDING HERO
+## SKIN CARE LANDING HERO
 
-*Merged from `docs/deployment/SOMO_LANDING_HERO.md` on 2026-06-02.*
+# Skin & Care landing — hero section
 
-# Somo landing — hero section
+**Last Updated:** 2026-06-07
 
-**Last Updated:** 2026-05-30
-
-Marketing hero at `/` (`unified-dashboard/somo-landing/`). Styles: `src/styles/somo-hero.css` (imported via `somo.css`). Palette: [SOMO_MARKETING_COLORS.md](../design/SOMO_MARKETING_COLORS.md).
+Marketing hero at `/` (`unified-dashboard/skin-care-landing/`). Styles: `src/styles/landing.css` (imports `skin-care-tokens.css`).
 
 ## Structure
 
 | Piece | Component / class |
 |-------|-------------------|
-| Nav | `Hero.jsx` → `.somo-nav`, `.somo-nav-cta` |
-| Copy | `.somo-hero-copy` (badge, h1, sub, CTAs, checks) |
-| Phone | `.somo-hero-visual` → `hero-phone-v2.jpg` |
-| Trust bar | `TrustBar.jsx` → `.somo-hero-trust` |
+| Nav | `Hero.jsx` → `.sc-nav`, `.sc-logo-link` |
+| Copy | `.sc-hero-inner` (eyebrow, h1, sub, CTAs) |
+| Value section | `ValueSection.jsx` → `.sc-value` |
 
 ## Assets
 
 | File | Use |
 |------|-----|
-| `public/assets/brand/somo-logo.png` | Nav lockup |
-| `public/assets/brand/hero-phone-v2.jpg` | Hero phone + language orbit (1024×858) |
-| `public/assets/brand/trusted/*.svg` | Trust bar logos |
-
-Preloaded in `index.html`: logo + hero phone.
-
-## Desktop (≥961px)
-
-- Hero background: **white** (`#ffffff`). Page body matches.
-- Hero fills **one viewport** (`min-height` / `max-height: 100dvh`); demo section is below the fold.
-- Grid: ~`0.88fr` copy / `1.12fr` visual (`1.14fr` visual at ≥1280px).
-- Phone scales to **100% height** of the grid row (`object-fit: contain`), clipped inside `.somo-hero-visual` so it does not overlap the trust bar.
-- Nav: larger logo (68px) and “Try for $0” pill.
-
-## Mobile (≤960px)
-
-- Stacked grid; hero height is **auto** (scroll to demo + trust).
-- Checks and trust logos: single centered rows.
+| `/assets/images/logo-panda.svg` | Nav mark (from unified-dashboard assets) |
 
 ## Copy (current)
 
-- Headline: “Never answer business calls again.”
-- Sub: “Somo is your smartest assistant. It answers calls, books appointments, and handles billing so you can focus on what matters.”
-- Hero CTAs: “Try live demo” (scroll to `#demo`), “Sign Up” (`VITE_SIGNUP_URL`).
-- Nav CTA: “Try for $0” (signup).
+- Headline: “Track your skin, every day.”
+- Sub: Skin & Care daily photo logging and concern-based routines.
+- Hero CTAs: “Get started” (signup), “Sign in”.
 
 ## Local preview
 
 ```bash
-cd unified-dashboard/somo-landing && npm run build
+npm run build:skin-care-landing
 cd middleware-platform && npm run start:landing
 # http://localhost:4000/
 ```
 
-Or `npm run dev:landing:ui` → http://localhost:5180 (rebuild or HMR for CSS).
+Or `npm run dev:skin-care-landing` → http://localhost:5180.
 
 ## Related
 
-- [SOMO_LANDING.md](./SOMO_LANDING.md) — dev, env, deploy
-- [../Brand/SOMO_GUIDELINES.md](../Brand/SOMO_GUIDELINES.md) — tokens and palette
-
-
----
-
-<a id="somo-demo-landing"></a>
-
-## SOMO DEMO LANDING
-
-*Merged from `docs/deployment/SOMO_DEMO_LANDING.md` on 2026-06-02.*
-
-# Somo demo landing (superseded)
-
-This doc moved to **[SOMO_LANDING.md](./SOMO_LANDING.md)**.
-
-**Last Updated:** 2026-05-30
-
-The unified Somo marketing landing lives at `unified-dashboard/somo-landing/`. Legacy `littlelab-landing` is archived under `unified-dashboard/_archive/littlelab-landing/`.
+- [../Brand/SKIN_AND_CARE_REPO.md](../Brand/SKIN_AND_CARE_REPO.md) — DNS cutover checklist
+- [../user-journey/JOURNEY.md](../user-journey/JOURNEY.md) — consumer funnel
 
 
 ---
@@ -1224,7 +1160,7 @@ After verify-email, verify-phone, or accept-terms, the UI hydrates `sessionStora
 
 ## Landing → signup prefill
 
-After a successful demo call, [somo-landing](../../unified-dashboard/somo-landing/) stores `somo_signup_prefill` (`name`, `phone`, `use_case`) for the wizard.
+Skin & Care landing CTAs route to `patient-login.html`; legacy B2B demo prefill (`somo_signup_prefill`) applied only on archived provider signup flows.
 
 ## Staging / cron
 
@@ -1236,7 +1172,7 @@ TWILIO_VERIFY_SERVICE_SID=...
 
 E2E:
 
-- `npx playwright test middleware-platform/e2e/somo-signup-wizard.spec.cjs`
+- `npx playwright test middleware-platform/e2e/skin-care-signup-wizard.spec.cjs`
 - `npx playwright test --project provider-trial` (API trial path)
 
 
@@ -1580,12 +1516,12 @@ Use **one** pattern in production. Do not mix patterns without understanding the
 
 | Role | Host | Serves |
 |------|------|--------|
-| Marketing / SPA | `https://callsomo.com` | Firebase Hosting (`unified-dashboard/firebase.json` → `somo-landing/build`) |
+| Marketing / SPA | `https://myskinandcare.com` (target) | Firebase Hosting → `skin-care-landing/build` in `hosting-dist` |
 | Middleware API | `https://api.callsomo.com` | Google **Cloud Run** (custom domain mapping + TLS) |
 
 The landing build must target the API host explicitly:
 
-- **`deploy:landing-hosting`** builds `somo-landing` and deploys to Firebase (same-origin API calls go to `api.callsomo.com` via browser on split-domain).
+- **`deploy:staging-hosting`** builds `skin-care-landing` into `hosting-dist` and deploys to Firebase (API calls go to `api.callsomo.com`).
 
 ### Why `https://callsomo.com/api/*` returns HTML
 

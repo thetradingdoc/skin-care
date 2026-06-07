@@ -1,5 +1,7 @@
 # GitHub secrets — somo-platform
 
+> **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
+
 Configure on the **somo-platform** GitHub repository (Settings → Secrets and variables → Actions).
 
 ## Required for CI/CD

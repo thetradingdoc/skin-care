@@ -1,5 +1,5 @@
 /**
- * Somo provider sign-in — POST /api/customers/login, forgot password, safe redirect.
+ * Skin & Care provider sign-in — POST /api/customers/login, forgot password, safe redirect.
  */
 (function () {
   const API_BASE = (typeof resolveApiBase === 'function' ? resolveApiBase() : (window.API_BASE || window.location.origin).replace(/\/$/, ''));

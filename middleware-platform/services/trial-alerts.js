@@ -7,12 +7,11 @@ const {
   isTrialSimEnabledForCustomer,
   getTrialMinutesAllocated,
   getTrialMinutesRemaining,
-  getTrialMinutesConsumed,
-  isSomoDemoSignup
+  getTrialMinutesConsumed
 } = require('./trial-lifecycle');
 const { getTrialDurationDays } = require('./plan-catalog');
 
-const BRAND = process.env.EMAIL_FROM_NAME || 'Somo';
+const BRAND = process.env.EMAIL_FROM_NAME || 'Skin & Care';
 
 function portalBase() {
   return (
@@ -72,14 +71,14 @@ function maybeSendTrialWelcome(customerId) {
 
   const name = customer.company_name || customer.name || 'there';
   const url = agentUrl();
-  const number = customer.twilio_phone_number || 'your Somo line';
+  const number = customer.twilio_phone_number || 'your Skin & Care line';
   const days = getTrialDurationDays();
   const minutes = getTrialMinutesAllocated();
 
   return sendTrialNudge(customer, 'trial_welcome', {
     smsBody: `${BRAND}: Your trial line ${number} is live. Call it to test your AI front desk: ${url}`,
-    emailSubject: 'Welcome to your Somo trial',
-    emailText: `Hi ${name},\n\nYour Somo trial is active (${days} days, ${minutes} minutes included).\n\nYour line: ${number}\nOpen your voice agent dashboard: ${url}\n\n— ${BRAND}`
+    emailSubject: 'Welcome to your Skin & Care trial',
+    emailText: `Hi ${name},\n\nYour Skin & Care trial is active (${days} days, ${minutes} minutes included).\n\nYour line: ${number}\nOpen your voice agent dashboard: ${url}\n\n— ${BRAND}`
   });
 }
 
@@ -173,6 +172,5 @@ module.exports = {
   maybeSendTrialUsageNudges,
   maybeSendTrialLifecycleNudges,
   runScheduledTrialNudges,
-  sendTrialNudge,
-  isSomoDemoSignup
+  sendTrialNudge
 };

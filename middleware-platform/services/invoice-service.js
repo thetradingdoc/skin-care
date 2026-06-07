@@ -5,7 +5,7 @@
 
 const db = require('../database');
 const EOBCalculationService = require('./eob-calculation-service');
-const SomoEmail = require('../lib/somo-email-layout');
+const SkinCareEmail = require('../lib/skin-care-email-layout');
 
 class InvoiceService {
   /**
@@ -289,7 +289,7 @@ class InvoiceService {
     const itemsTable =
       items.length > 0
         ? `<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
-        <thead><tr style="background:${SomoEmail.TOKENS.greenSoft};">
+        <thead><tr style="background:${SkinCareEmail.TOKENS.brandBlueSoft};">
           <th style="padding:10px;text-align:left;">Date</th>
           <th style="padding:10px;text-align:left;">Description</th>
           <th style="padding:10px;text-align:right;">Amount</th>
@@ -297,22 +297,22 @@ class InvoiceService {
         ${items
           .map(
             (item) => `<tr>
-          <td style="padding:10px;border-bottom:1px solid ${SomoEmail.TOKENS.border};">${item.service_date ? new Date(item.service_date).toLocaleDateString() : '—'}</td>
-          <td style="padding:10px;border-bottom:1px solid ${SomoEmail.TOKENS.border};">${SomoEmail.escapeHtml(item.description)}</td>
-          <td style="padding:10px;border-bottom:1px solid ${SomoEmail.TOKENS.border};text-align:right;">$${item.total_price.toFixed(2)}</td>
+          <td style="padding:10px;border-bottom:1px solid ${SkinCareEmail.TOKENS.border};">${item.service_date ? new Date(item.service_date).toLocaleDateString() : '—'}</td>
+          <td style="padding:10px;border-bottom:1px solid ${SkinCareEmail.TOKENS.border};">${SkinCareEmail.escapeHtml(item.description)}</td>
+          <td style="padding:10px;border-bottom:1px solid ${SkinCareEmail.TOKENS.border};text-align:right;">$${item.total_price.toFixed(2)}</td>
         </tr>`
           )
           .join('')}
         </tbody></table>`
         : '';
 
-    const html = SomoEmail.layout({
+    const html = SkinCareEmail.layout({
       title: `Invoice ${invoice.invoice_number}`,
       subtitle: balance > 0 ? `Due ${dueDate}` : 'Paid in full',
       bodyHtml: `
-        <h2>Dear ${SomoEmail.escapeHtml(patientName)},</h2>
-        <p>Here is your invoice for services from Somo.</p>
-        ${SomoEmail.infoRows([
+        <h2>Dear ${SkinCareEmail.escapeHtml(patientName)},</h2>
+        <p>Here is your invoice for services from Skin & Care.</p>
+        ${SkinCareEmail.infoRows([
           { label: 'Invoice number', value: invoice.invoice_number },
           { label: 'Date', value: new Date(invoice.created_at).toLocaleDateString() },
           { label: 'Due date', value: dueDate },
@@ -320,18 +320,18 @@ class InvoiceService {
             label: 'Balance',
             valueHtml:
               balance > 0
-                ? `<strong style="color:${SomoEmail.TOKENS.green};font-size:18px;">$${balance.toFixed(2)}</strong>`
+                ? `<strong style="color:${SkinCareEmail.TOKENS.brandBlue};font-size:18px;">$${balance.toFixed(2)}</strong>`
                 : '<strong style="color:#10b981;">Paid in full</strong>'
           }
         ])}
         ${itemsTable}
-        ${balance > 0 ? `<p>Please pay by ${SomoEmail.escapeHtml(dueDate)}.</p>` : ''}
-        <p>Questions? <a href="mailto:${SomoEmail.SUPPORT_EMAIL}">${SomoEmail.SUPPORT_EMAIL}</a></p>
+        ${balance > 0 ? `<p>Please pay by ${SkinCareEmail.escapeHtml(dueDate)}.</p>` : ''}
+        <p>Questions? <a href="mailto:${SkinCareEmail.SUPPORT_EMAIL}">${SkinCareEmail.SUPPORT_EMAIL}</a></p>
       `
     });
 
     return {
-      subject: `Somo invoice ${invoice.invoice_number} — ${balanceLabel}`,
+      subject: `Skin & Care invoice ${invoice.invoice_number} — ${balanceLabel}`,
       html,
       text: `
 Invoice ${invoice.invoice_number}
@@ -349,7 +349,7 @@ Total: $${invoice.amount.toFixed(2)}
 
 ${balance > 0 ? `Please remit payment by ${dueDate}.` : 'This invoice has been paid in full.'}
 
-— Somo
+— Skin & Care
       `.trim()
     };
   }

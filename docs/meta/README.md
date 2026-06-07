@@ -47,7 +47,7 @@ Browse by anchor above. Each section notes the former file path.
 
 | Surface | Code | Docs |
 |---------|------|------|
-| Marketing landing | `unified-dashboard/somo-landing/` | [`deployment/OPERATIONS.md`](../deployment/OPERATIONS.md#somo-landing), [`design/SOMO_MARKETING_COLORS.md`](../design/SOMO_MARKETING_COLORS.md) |
+| Marketing landing | `unified-dashboard/skin-care-landing/` | [`deployment/OPERATIONS.md`](../deployment/OPERATIONS.md#skin-care-landing), [`Brand/SKIN_AND_CARE_REPO.md`](../Brand/SKIN_AND_CARE_REPO.md) |
 | Middleware API | `middleware-platform/` | [`middleware-platform/README.md`](../middleware-platform/README.md), [`architecture/LIVE.md`](../architecture/LIVE.md) |
 | Patient mobile | `patient-app/` | [`patient-app/README.md`](../patient-app/README.md) |
 
