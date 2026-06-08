@@ -17,7 +17,7 @@ const HOSTING_DIST = path.join(ROOT, 'unified-dashboard', 'hosting-dist');
 const LIVE_ARG = process.argv.find((a) => a.startsWith('--live'));
 const LIVE_BASE = LIVE_ARG ? process.argv[process.argv.indexOf(LIVE_ARG) + 1] : null;
 
-const HERO_COPY = /Track today|Glow tomorrow|Find your face age/i;
+const HERO_COPY = /Track today|Glow tomorrow|Facial Age Checker/i;
 const BRAND_COPY = /Skin\s*&\s*Care/i;
 
 function fail(msg) {

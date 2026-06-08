@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Contact Skin &amp; Care — partnerships, press, and app support.">
+  <title>Contact — Skin &amp; Care</title>
+  <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gloock&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/sc-static-pages.css">
+</head>
+<body class="sc-page">
+  <header class="sc-static-header">
+    <div class="sc-static-header-inner">
+      <a class="sc-static-brand" href="/" aria-label="Skin &amp; Care home">
+        <span class="sc-logo-wordmark" role="img" aria-label="skin care">
+          <span class="sc-logo-skin" aria-hidden="true">skin</span>
+          <span class="sc-logo-mark-slot" aria-hidden="true">
+            <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215">
+          </span>
+          <span class="sc-logo-care" aria-hidden="true">care</span>
+        </span>
+      </a>
+      <nav class="sc-static-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/#how">How It Works</a>
+      </nav>
+      <div class="sc-static-nav-spacer" aria-hidden="true"></div>
+    </div>
+  </header>
+
+  <main class="sc-contact-page">
+    <div class="sc-contact-grid">
+      <div class="sc-contact-intro">
+        <h1>Get in touch</h1>
+        <p>
+          Questions about our research, partnerships, or the Skin &amp; Care app?
+          Send us a message — we read every note.
+        </p>
+        <p class="sc-contact-details">
+          For clinical emergencies, contact your healthcare provider.
+        </p>
+      </div>
+
+      <form id="contact-form" class="sc-contact-form" novalidate>
+        <div class="sc-field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" autocomplete="name" required>
+        </div>
+        <div class="sc-field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="sc-field">
+          <label for="subject">Subject</label>
+          <select id="subject" name="subject">
+            <option value="Research inquiry">Research inquiry</option>
+            <option value="Partnership">Partnership</option>
+            <option value="Press">Press</option>
+            <option value="App support">App support</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="sc-field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required placeholder="How can we help?"></textarea>
+        </div>
+        <button type="submit" class="sc-btn-dark">Send message</button>
+        <p id="form-status" class="sc-form-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </main>
+
+  <footer class="sc-static-footer">
+    <div class="sc-static-footer-links">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/patients/legal/privacy.html">Privacy</a>
+      <a href="/patients/legal/terms.html">Terms</a>
+      <a href="/patients/patient-login.html">Sign in</a>
+    </div>
+    <p class="sc-static-footer-disclaimer">For wellness tracking only · Not a medical diagnosis</p>
+    <p class="sc-static-footer-copy">&copy; <span id="year"></span> Skin&amp;Care</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+  <script src="/assets/js/contact-form.js"></script>
+</body>
+</html>

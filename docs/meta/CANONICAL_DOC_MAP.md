@@ -1,18 +1,21 @@
 # Canonical documentation map
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-06
 
 Use this table to find the **one** doc to edit per topic. Each folder keeps at most **two** markdown files (`README.md` + one companion); see [`meta/README.md` § Engineering doc hygiene](./README.md#engineering-doc-hygiene).
 
 | Topic | Read first | Companion / depth |
 |-------|------------|-------------------|
+| **Local dev** | [`LOCAL.md`](../LOCAL.md) | [`local/README.md`](../../local/README.md), [`setup/ENV.md`](../setup/ENV.md) |
+| **Cloud / deploy** | [`CLOUD.md`](../CLOUD.md) | [`Brand/SKIN_AND_CARE_REPO.md`](../Brand/SKIN_AND_CARE_REPO.md), [`deployment/OPERATIONS.md`](../deployment/OPERATIONS.md) |
+| **Mobile app** | [`MOBILE.md`](../MOBILE.md) | [`runbooks/TESTFLIGHT.md`](../runbooks/TESTFLIGHT.md), [`patient-app/README.md`](../patient-app/README.md) |
 | **Repo overview** | Root [`README.md`](../../README.md), [`CONTRIBUTING.md`](../../CONTRIBUTING.md) | [`docs/README.md`](../README.md) |
 | **Deploy / CI / GCP (live)** | [`runbooks/OPERATIONS.md`](../runbooks/OPERATIONS.md#callsomo-gcp-cutover) | [`deployment/OPERATIONS.md`](../deployment/OPERATIONS.md), [`deployment/README.md`](../deployment/README.md) (historical) |
 | **Retell agent inventory** | [`deployment/OPERATIONS.md`](../deployment/OPERATIONS.md#retell-agent-inventory) + [`retell-agent-inventory.json`](../deployment/retell-agent-inventory.json) | `npm run verify:agent-config` |
 | **Architecture snapshot** | [`architecture/LIVE.md`](../architecture/LIVE.md#current-state-architecture) | [`architecture/README.md`](../architecture/README.md) (archive TOC only) |
 | **Routes & call paths** | [`architecture/LIVE.md`](../architecture/LIVE.md#runtime-entrypoints-and-route-ownership) | [`middleware-platform/server.js`](../../middleware-platform/server.js) |
 | **Environment variables** | [`setup/README.md`](../setup/README.md) | Former `ENVIRONMENT_VARIABLES_BY_SURFACE` merged into setup README |
-| **Brand / logo / email HTML** | [`Brand/SOMO_GUIDELINES.md`](../Brand/SOMO_GUIDELINES.md) | [`Brand/README.md`](../Brand/README.md) |
+| **Brand / logo / email HTML** | [`Brand/SKIN_AND_CARE_GUIDELINES.md`](../Brand/SKIN_AND_CARE_GUIDELINES.md) | [`Brand/README.md`](../Brand/README.md) |
 | **Provider portal shell** | [`design/PROVIDER_PORTAL_SHELL.md`](../design/PROVIDER_PORTAL_SHELL.md) | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) (Today layout) |
 | **Provider Today UI** | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) | [`todos/pending/PROVIDER_TODAY_UI_TODOS.md`](../../todos/pending/PROVIDER_TODAY_UI_TODOS.md) |
 | **Staging profile** | [`meta/README.md`](./README.md#staging-profile) | [`testing/README.md`](../testing/README.md) |
@@ -33,4 +36,4 @@ Use this table to find the **one** doc to edit per topic. Each folder keeps at m
 
 ## Middleware consolidated README
 
-Kelly, checkout, Retell, and LangGraph depth: [`docs/middleware-platform/README.md`](../middleware-platform/README.md). Consumer naming: [`Brand/SOMO_GUIDELINES.md`](../Brand/SOMO_GUIDELINES.md).
+Kelly, checkout, Retell, and LangGraph depth: [`docs/middleware-platform/README.md`](../middleware-platform/README.md). Consumer naming: [`Brand/SKIN_AND_CARE_GUIDELINES.md`](../Brand/SKIN_AND_CARE_GUIDELINES.md).

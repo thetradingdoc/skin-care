@@ -32,6 +32,14 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       }
     ],
+    "redirects": [
+      {
+        "source": "**",
+        "destination": "https://myskinandcare.com",
+        "type": 301,
+        "host": "www.myskinandcare.com"
+      }
+    ],
     "rewrites": [
       { "source": "/signup", "destination": "/signup.html" },
       { "source": "/login", "destination": "/login.html" },

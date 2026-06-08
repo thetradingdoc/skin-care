@@ -8,6 +8,7 @@ const {
   getHostname,
   shouldServeConsumerLanding,
   isConsumerLandingApiPath,
+  isMarketingStaticHtmlPath,
   isUnifiedDashboardAssetPath,
   isSkinCareLandingBuildReady,
   SKIN_CARE_LANDING_BUILD_INSTRUCTIONS_HTML,
@@ -17,7 +18,6 @@ const {
 const LEGACY_LANDING_REDIRECT_PREFIXES = [
   '/start',
   '/find-provider',
-  '/about',
   '/shop',
   '/products',
   '/cart',
@@ -63,7 +63,7 @@ function registerStaticHosting(app, { express, rootDir }) {
     maxAge: isProd ? '1y' : 0,
     immutable: isProd,
   }));
-  // Legacy alias for older deploy bundles
+  // Legacy path alias (pre-2026-06 skin-care-landing rename) — remove after CDN cache TTL
   app.use('/somo-landing-assets', express.static(getSkinCareLandingBuildPath('assets'), {
     maxAge: isProd ? '1y' : 0,
     immutable: isProd,
@@ -105,11 +105,18 @@ function registerEarlyConsumerLandingStatic(app, { express, rootDir }) {
     return trySendBuildFile(res, getUnifiedDashboardPath('assets', rel));
   }
 
+  function trySendMarketingStaticHtml(req, res) {
+    if (!isMarketingStaticHtmlPath(req.path)) return false;
+    const rel = req.path.replace(/^\//, '');
+    return trySendBuildFile(res, getUnifiedDashboardPath(rel));
+  }
+
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (!shouldServeConsumerLanding(getHostname(req))) return next();
-    if (isConsumerLandingApiPath(req.path)) return next();
 
+    if (trySendMarketingStaticHtml(req, res)) return;
+    if (isConsumerLandingApiPath(req.path)) return next();
     if (trySendLandingBuildAsset(req, res)) return;
     if (trySendUnifiedDashboardAsset(req, res)) return;
 

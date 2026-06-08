@@ -17,7 +17,7 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.myskinandcare.com"
       }
     },
     "testflight": {
@@ -27,7 +27,8 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.myskinandcare.com",
+        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://myskinandcare.com/scan"
       }
     },
     "production": {
@@ -37,13 +38,20 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.myskinandcare.com",
+        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://myskinandcare.com/scan"
       }
     }
   },
   "submit": {
     "testflight": {
-      "ios": {}
+      "ios": {
+        "ascAppId": "6778105762",
+        "appleTeamId": "33PP5ZAK59",
+        "ascApiKeyPath": "../docs/password/AuthKey_97D48L3W4N.p8",
+        "ascApiKeyId": "97D48L3W4N",
+        "ascApiKeyIssuerId": "e43b5f6b-80c6-4818-a3b1-1ff6d4fbf3f0"
+      }
     },
     "production": {
       "ios": {}

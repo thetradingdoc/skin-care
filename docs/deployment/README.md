@@ -2,7 +2,7 @@
 
 > **Historical:** Most sections below reference **api.callsomo.com**, Azure App Service, or **callsomo.com**. **Do not follow them for production.**
 >
-> **Read first:** [`CALLSOMO_GCP_CUTOVER.md`](../runbooks/CALLSOMO_GCP_CUTOVER.md) · [`GCP_DEPLOY_ROLLBACK_RUNBOOK.md`](../runbooks/GCP_DEPLOY_ROLLBACK_RUNBOOK.md) · [`INFRA_BRAND_DEFERRAL.md`](../Brand/INFRA_BRAND_DEFERRAL.md)
+> **Read first (2026-06-06):** [`docs/CLOUD.md`](../CLOUD.md) · [`Brand/SKIN_AND_CARE_REPO.md`](../Brand/SKIN_AND_CARE_REPO.md) · [`runbooks/OPERATIONS.md`](../runbooks/OPERATIONS.md#callsomo-gcp-cutover) · [`deployment/OPERATIONS.md`](OPERATIONS.md)
 
 **Single file:** All former `docs/deployment/**/*.md` content is merged here. **Last updated:** 2026-06-02
 

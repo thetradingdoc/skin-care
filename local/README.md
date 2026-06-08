@@ -2,7 +2,9 @@
 
 ## GCP CLI / ADC
 
-For `somo-callsomo`, use **`richard@callsomo.com`** for `gcloud` and for Application Default Credentials (ADC). See [CALLSOMO_GCP_CUTOVER.md](../docs/runbooks/CALLSOMO_GCP_CUTOVER.md#local-gcloud-and-adc).
+**Last reviewed:** 2026-06-06
+
+For `somo-callsomo`, use **`richard@callsomo.com`** for `gcloud` and for Application Default Credentials (ADC). See [OPERATIONS.md](../docs/runbooks/OPERATIONS.md#callsomo-gcp-cutover).
 
 ## Database path (read first)
 

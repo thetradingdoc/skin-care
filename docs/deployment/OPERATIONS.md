@@ -2,7 +2,7 @@
 
 > **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-06
 
 
 ---
@@ -24,7 +24,7 @@ Last updated: 2026-06-02
 | GCP project | `somo-callsomo` |
 | Region | `us-central1` |
 | Cloud Run service | **`somo-middleware`** |
-| Public API host | `https://api.callsomo.com` |
+| Public API host | `https://api.myskinandcare.com` (consumer) · `https://api.callsomo.com` (legacy alias) |
 
 Constants: [scripts/lib/cloudrun-deploy-env.sh](../../scripts/lib/cloudrun-deploy-env.sh)
 
@@ -214,8 +214,10 @@ CTAs use `/patients/patient-login.html?intent=signup` and `/patients/patient-log
 |------|--------|
 | `https://myskinandcare.com` | **Target** consumer landing (DNS cutover pending) |
 | `http://localhost:4000/` | Skin & Care landing (middleware, local dev) |
-| `https://api.callsomo.com` | Middleware API only |
-| `https://callsomo.com` | Somo B2B provider portal (separate brand) |
+| `https://api.myskinandcare.com` | Consumer middleware API |
+| `https://api.callsomo.com` | Legacy API alias (same Cloud Run service) |
+| `https://myskinandcare.com` | Consumer marketing + web funnel |
+| `https://callsomo.com` | Provider portal (unified Skin & Care brand, shared Firebase project) |
 
 ## Local dev
 

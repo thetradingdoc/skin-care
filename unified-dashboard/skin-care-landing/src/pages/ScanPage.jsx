@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import FunnelShell from '../components/FunnelShell';
 import { postFaceRead } from '../lib/faceReadApi';
 import { setFaceRead } from '../lib/skinAgeStorage';
+import { useFaceGuide } from '../lib/useFaceGuide';
 
 export default function ScanPage() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export default function ScanPage() {
   const [denied, setDenied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  const guide = useFaceGuide(videoRef, ready);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,10 +87,6 @@ export default function ScanPage() {
     [analyzeBlob]
   );
 
-  const skip = useCallback(() => {
-    navigate('/concerns');
-  }, [navigate]);
-
   if (denied) {
     return (
       <FunnelShell>
@@ -111,35 +110,42 @@ export default function ScanPage() {
           <button type="button" className="sc-btn sc-btn-dark sc-btn-block" onClick={() => fileRef.current?.click()}>
             Upload selfie
           </button>
-          <button type="button" className="sc-funnel-link" onClick={skip}>
-            Skip for now
-          </button>
         </div>
       </FunnelShell>
     );
   }
 
+  const canCapture = ready && !busy && guide.canScan;
+
   return (
-    <FunnelShell>
-      <div className="sc-scan-page">
-        <video ref={videoRef} className="sc-scan-video" playsInline muted />
-        <div className="sc-scan-overlay">
+    <div className="sc-scan-page">
+      <video ref={videoRef} className="sc-scan-video" playsInline muted />
+      <div className="sc-scan-face-layer" aria-hidden="true">
+        <div className={`sc-scan-oval sc-scan-oval--${guide.status}`} />
+      </div>
+      <div className="sc-scan-overlay">
+        <header className="sc-scan-topbar">
           <Link to="/" className="sc-scan-back">
             ← Back
           </Link>
-          <p className="sc-scan-badge">Skin age estimate</p>
-          <h1 className="sc-scan-headline">Find your face age</h1>
-          <p className="sc-scan-hint">Center your face in the oval</p>
-          <div className="sc-scan-oval-wrap">
-            <div className="sc-scan-oval" />
-          </div>
-          {error ? <p className="sc-scan-error">{error}</p> : null}
+        </header>
+
+        <div className="sc-scan-copy">
+          <h1 className="sc-scan-headline">Facial Age Checker</h1>
+          <p className="sc-scan-hint">{guide.hint}</p>
+        </div>
+
+        <div className="sc-scan-spacer" aria-hidden="true" />
+
+        {error ? <p className="sc-scan-error">{error}</p> : null}
+
+        <div className="sc-scan-actions">
           <button
             type="button"
-            className="sc-btn sc-btn-dark sc-btn-block"
-            disabled={!ready || busy}
+            className={`sc-btn sc-btn-dark sc-btn-block${guide.status === 'locked' ? ' sc-btn-ready' : ''}`}
+            disabled={!canCapture}
             onClick={() => void capture()}>
-            {busy ? 'Analyzing…' : 'Scan now'}
+            {busy ? 'Analyzing…' : guide.status === 'locked' ? 'Scan now' : 'Align your face to scan'}
           </button>
           <input
             ref={fileRef}
@@ -149,15 +155,16 @@ export default function ScanPage() {
             className="sc-hidden-input"
             onChange={(e) => void onFilePick(e)}
           />
-          <button type="button" className="sc-funnel-link sc-funnel-link-light" onClick={() => fileRef.current?.click()}>
+          <button
+            type="button"
+            className="sc-funnel-link sc-funnel-link-light"
+            disabled={busy}
+            onClick={() => fileRef.current?.click()}>
             Upload instead
           </button>
-          <button type="button" className="sc-funnel-link sc-funnel-link-light" onClick={skip} disabled={busy}>
-            Skip for now
-          </button>
-          <p className="sc-scan-disclaimer">Skin age estimate · Not a medical diagnosis</p>
+          <p className="sc-scan-disclaimer">Images aren&apos;t saved until you create an account</p>
         </div>
       </div>
-    </FunnelShell>
+    </div>
   );
 }

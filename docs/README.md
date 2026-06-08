@@ -1,13 +1,21 @@
 # Skin & Care Platform Documentation
-> Last reviewed: 2026-06-07
+> Last reviewed: 2026-06-06
 
-**Last Updated:** 2026-06-07
+**Last Updated:** 2026-06-06
 
 
 > **📌 Source of Truth**: This `docs/` folder is the canonical documentation for the platform. All `.md` files belong in `docs/` (or `todos/` for active/archive task tracking).  
 > **Overlapping topics:** start with **[meta/CANONICAL_DOC_MAP.md](./meta/CANONICAL_DOC_MAP.md)** so you do not maintain the same story in two places.
 >
 > **Doc count policy (June 2026):** Each `docs/<folder>/` keeps at most **two** markdown files (`README.md` + one companion). Retired paths are listed in [`_consolidated_path_redirects.json`](./_consolidated_path_redirects.json). Regenerate merges: `node scripts/consolidate-docs-two-per-folder.cjs`.
+
+### Architecture (start here)
+
+| Surface | Doc |
+|---------|-----|
+| **Local dev** | **[LOCAL.md](./LOCAL.md)** — port 4000, Expo, Vite landing |
+| **Cloud / deploy** | **[CLOUD.md](./CLOUD.md)** — Firebase, Cloud Run, DNS |
+| **Mobile app** | **[MOBILE.md](./MOBILE.md)** — Expo, EAS, TestFlight |
 
 ### Consumer brand (Skin & Care)
 

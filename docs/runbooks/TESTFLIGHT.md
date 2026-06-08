@@ -1,6 +1,6 @@
 # TestFlight — Skin & Care iOS (physical device)
 
-Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use production API `https://api.callsomo.com` (configured in `patient-app/eas.json` → `testflight` profile).
+Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use production API `https://api.myskinandcare.com` (configured in `patient-app/eas.json` → `testflight` profile).
 
 ## Prerequisites (one-time)
 
@@ -11,10 +11,10 @@ Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use producti
 | **Expo account** | [expo.dev](https://expo.dev) — free tier works for builds |
 | **EAS CLI** | `npm i -g eas-cli` or `npx eas-cli` |
 
-Privacy/terms URLs for App Store Connect (can use callsomo.com until myskinandcare.com DNS is live):
+Privacy/terms URLs for App Store Connect:
 
-- Privacy: `https://callsomo.com/patients/legal/privacy.html`
-- Terms: `https://callsomo.com/patients/legal/terms.html`
+- Privacy: `https://myskinandcare.com/patients/legal/privacy.html`
+- Terms: `https://myskinandcare.com/patients/legal/terms.html`
 
 ## Step 1 — Link Expo project
 
@@ -57,10 +57,46 @@ EAS builds in the cloud (no Mac required for compile, but Apple credentials are 
 
 ```bash
 cd patient-app
+npm run doctor:testflight   # prints blockers + exact commands
 npm run build:testflight
 ```
 
-First run: EAS prompts for Apple Team ID and can create/manage signing credentials. Choose **Let EAS handle credentials** unless you have existing certs.
+### Apple login (required first build)
+
+EAS asks for your **Apple Developer** account — not your Expo password.
+
+| Field | Value |
+|-------|--------|
+| Apple ID | Full email from App Store Connect (e.g. `you@email.com`) |
+| Password | **App-specific password** from [appleid.apple.com](https://appleid.apple.com) → Sign-In and Security → App-Specific Passwords |
+| Team ID | `33PP5ZAK59` (pre-set in `eas.json`) |
+
+**Do not** use your normal Apple password if 2FA is on. **Do not** use a username like `doctorjay` — use the full Apple ID email.
+
+If you see **error -20209 (account locked)**: unlock at [iforgot.apple.com](https://iforgot.apple.com), wait 15–30 minutes, then retry.
+
+Optional non-interactive build (set in terminal, never commit):
+
+```bash
+export EXPO_APPLE_ID="your-apple-id@email.com"
+export EXPO_APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export EXPO_APPLE_TEAM_ID="33PP5ZAK59"
+npm run build:testflight
+```
+
+### App Store Connect API key (no app-specific password)
+
+1. App Store Connect → **Users and Access** → **Integrations** → **App Store Connect API** → copy **Issuer ID**
+2. Save `AuthKey_*.p8` under `docs/password/` (gitignored)
+3. Copy `docs/password/asc.env.example` → `docs/password/asc.env` and paste Issuer ID
+4. Build:
+
+```bash
+cd patient-app
+npm run build:testflight:asc:submit
+```
+
+First run: choose **Let EAS handle credentials** unless you have existing certs.
 
 Watch build: link printed in terminal or [expo.dev](https://expo.dev) → your project → Builds.
 
@@ -99,7 +135,7 @@ Uses live API — no local middleware required.
 4. **Timeline** shows the logged day
 5. **Account** → subscription flow (Stripe) optional
 
-If sign-in fails with network errors, confirm the build used `EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com` (see build logs on expo.dev).
+If sign-in fails with network errors, confirm the build used `EXPO_PUBLIC_API_BASE_URL=https://api.myskinandcare.com` (see build logs on expo.dev).
 
 ## Profiles reference
 
@@ -116,6 +152,9 @@ If sign-in fails with network errors, confirm the build used `EXPO_PUBLIC_API_BA
 |-------|-----|
 | `No bundle identifier` | Set `ios.bundleIdentifier` in `app.json` |
 | `Missing eas.projectId` | Run `npx eas init` |
+| Apple account locked (-20209) | [iforgot.apple.com](https://iforgot.apple.com) → unlock → app-specific password → retry build |
+| Invalid Apple username/password | Use full Apple ID email + app-specific password (not Expo/Gmail password) |
+| `Couldn't find any builds` on submit | Build must finish first — check [expo.dev](https://expo.dev) → Builds |
 | Build fails signing | `npx eas credentials` → iOS → reset provisioning |
 | TestFlight stuck Processing | Wait; check email for export compliance (we set `ITSAppUsesNonExemptEncryption: false`) |
 | OTP email not received | Check spam; verify prod middleware email config |

@@ -1,4 +1,12 @@
-# Contributing to Somo
+# Contributing to Skin & Care
+
+**Last reviewed:** 2026-06-06
+
+## Architecture
+
+- **Local:** [`docs/LOCAL.md`](docs/LOCAL.md)
+- **Cloud:** [`docs/CLOUD.md`](docs/CLOUD.md)
+- **Mobile:** [`docs/MOBILE.md`](docs/MOBILE.md)
 
 ## Branching and pull requests
 

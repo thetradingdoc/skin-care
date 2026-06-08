@@ -2,6 +2,7 @@ const path = require('path');
 const { defineConfig } = require('@playwright/test');
 
 const landingBuild = path.join(__dirname, '..', 'unified-dashboard', 'skin-care-landing', 'build');
+const udRoot = path.join(__dirname, '..', 'unified-dashboard');
 const serveScript = path.join(__dirname, 'scripts', 'serve-cra-build.cjs');
 const port = String(process.env.PW_SKIN_CARE_LANDING_PORT || '5180').trim() || '5180';
 const origin = `http://127.0.0.1:${port}`;
@@ -21,7 +22,7 @@ module.exports = defineConfig({
     serviceWorkers: 'block'
   },
   webServer: {
-    command: `node "${serveScript}" "${landingBuild}" ${port}`,
+    command: `node "${serveScript}" "${landingBuild}" ${port} "${udRoot}"`,
     url: origin,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

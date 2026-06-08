@@ -11,6 +11,7 @@ One user-facing brand for **consumer** (app, marketing, patient web) and **provi
 | [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, journal palette, typography, tokens |
 | [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, **myskinandcare.com**, EAS/TestFlight, DNS cutover |
 | [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, favicon, panda mark — paths and code SSOT |
+| [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) | Trademarks, Be Vietnam Pro OFL, logo build-script archive |
 
 **Product name:** Skin & Care (not "MySkinAndCare").
 

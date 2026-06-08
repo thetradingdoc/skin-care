@@ -19,6 +19,18 @@ Two marks — see [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) for full path
 - **Landing hero copy** still uses Gloock (`--font-display`); logo text uses Be Vietnam Pro only.
 - **Do not** use legacy Somo gecko PNGs or deprecated bird-arc / dove wordmark assets on the landing.
 
+## Intellectual property
+
+**Skin & Care owns** the tulip icon, the skin + tulip + care wordmark lockup, and the consumer landing favicon. These are proprietary brand marks — not licensed for third-party use without permission.
+
+**Be Vietnam Pro** (wordmark typeface) is third-party font software under the [SIL Open Font License 1.1](https://openfontlicense.org). Skin & Care does not own or trademark the typeface. License text: [`assets/brand/fonts/OFL-BeVietnamPro.txt`](../../unified-dashboard/assets/brand/fonts/OFL-BeVietnamPro.txt).
+
+**Trademark notice** (footers, app stores, legal pages):
+
+> Skin & Care™, the Skin & Care tulip mark, and the skin + tulip + care wordmark are trademarks of Skin & Care. Unauthorized use is prohibited.
+
+Full IP inventory, OFL checklist, and logo build-script archive: [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md).
+
 ## Color palette (consumer journal)
 
 Matches `patient-app/constants/journalTokens.ts` and `unified-dashboard/assets/css/skin-care-tokens.css`.

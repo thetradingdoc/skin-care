@@ -54,7 +54,8 @@ Landing-only dev serves static files locally — **no middleware required** for 
 - `/`, `/scan`, `/reveal`, `/concerns` — landing SPA (React Router)
 - `/assets/*` — portal assets
 - `/patients/*` — signup/login HTML
-- `/about.html` — unified-dashboard about page (Vite dev middleware)
+- `/about.html` — research lab about page (Vite dev middleware)
+- `/contact.html` — contact form
 - `/manifest.webmanifest` — PWA manifest
 
 Only `/api` is proxied to `VITE_API_PROXY` (default `http://127.0.0.1:4000`).
@@ -64,7 +65,7 @@ Only `/api` is proxied to `VITE_API_PROXY` (default `http://127.0.0.1:4000`).
 **OTP / face-read** need an API unless mocked:
 
 - Run middleware on `:4000`, or
-- `VITE_FACE_READ_MOCK=1` for scan, and login with `&api=https://api.callsomo.com`
+- `VITE_FACE_READ_MOCK=1` for scan, and login with `&api=https://api.myskinandcare.com` (or `http://127.0.0.1:4000` locally)
 
 ## Full stack on :4000
 

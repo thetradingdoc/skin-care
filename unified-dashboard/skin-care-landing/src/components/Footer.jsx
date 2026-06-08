@@ -9,6 +9,8 @@ export default function Footer() {
           <LogoWordmark className="sc-brand-logo" height={28} />
         </div>
         <div className="sc-footer-links">
+          <a href="/about.html">About</a>
+          <a href="/contact.html">Contact</a>
           <a href={CTAS.privacy}>Privacy</a>
           <a href={CTAS.terms}>Terms</a>
           <a href={CTAS.signin}>Sign in</a>

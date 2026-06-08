@@ -100,6 +100,11 @@ function main() {
     if (fs.existsSync(src)) copyFile(src, path.join(OUT, page));
   }
 
+  for (const page of ['about.html', 'contact.html']) {
+    const src = path.join(UD, page);
+    if (fs.existsSync(src)) copyFile(src, path.join(OUT, page));
+  }
+
   const termsSrc = path.join(ROOT, 'middleware-platform', 'public', 'signup', 'terms.html');
   if (fs.existsSync(termsSrc)) {
     copyFile(termsSrc, path.join(OUT, 'terms.html'));

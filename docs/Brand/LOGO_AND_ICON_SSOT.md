@@ -86,9 +86,17 @@ Hosted under `unified-dashboard/assets/brand/fonts/`:
 | `BeVietnamPro-Bold.ttf` | 700 normal | `care` |
 | `BeVietnamPro-Italic.ttf` | 400 italic | Loaded; not used in current wordmark |
 
-`@font-face` declarations: `skin-care-landing/src/styles/landing.css` (bundled by Vite in production).
+`@font-face` declarations: `skin-care-landing/src/styles/landing.css` (bundled by Vite in production). Be Vietnam Pro is licensed under **SIL OFL 1.1** — see [`OFL-BeVietnamPro.txt`](../../unified-dashboard/assets/brand/fonts/OFL-BeVietnamPro.txt) and [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md). Skin & Care does **not** own the typeface; we bundle it for the wordmark only.
 
-Source: [Be Vietnam Pro](https://github.com/bettergui/BeVietnamPro) (SIL OFL).
+Upstream: [Be Vietnam Pro](https://github.com/bettergui/BeVietnamPro).
+
+---
+
+## Intellectual property
+
+The **tulip mark**, **skin + tulip + care wordmark lockup**, and **landing favicon** are proprietary **Skin & Care** brand assets. Be Vietnam Pro is third-party font software under OFL.
+
+Full ownership, trademark notice, font compliance, and design-archive lineage: [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md).
 
 ---
 
@@ -142,7 +150,7 @@ Do **not** overwrite landing tulip favicons with panda output without updating t
 
 | Item | Reason |
 |------|--------|
-| `skin-care-landing/scripts/build-logo-wordmark.py` | Superseded by live SVG wordmark |
+| `skin-care-landing/scripts/build-logo-wordmark.py` | Deprecated PNG compositor — see [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) and `assets/brand/scripts/build-logo-wordmark-portable.py` |
 | `logo-wordmark.png`, `logo-wordmark@2x.png` | Baked PNG compositor output |
 | Old bird-arc `DoveIcon` stroke paths | Wrong mark shape |
 | `dove-mark.png`, `logo-dove.svg` for header | Superseded by `tulip-mark.svg` |
@@ -153,6 +161,7 @@ Do **not** overwrite landing tulip favicons with panda output without updating t
 
 ## Related docs
 
+- [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) — trademarks, OFL, build-script archive
 - [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) — palette, typography, tokens
 - [README.md](./README.md) — brand doc index
 - [Transactional email layout](../../middleware-platform/lib/skin-care-email-layout.js) — panda mark in email

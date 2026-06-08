@@ -11,7 +11,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.skinandcare.app",
-      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Skin & Care uses the camera for daily progress photos so you can track changes in your skin over time.",
         "NSPhotoLibraryUsageDescription": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo.",
@@ -27,7 +26,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
@@ -59,6 +61,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "16b5d1d9-a703-4035-b41a-be2401f95c68"
+      }
     }
   }
 }

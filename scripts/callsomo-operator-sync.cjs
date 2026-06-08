@@ -231,9 +231,9 @@ async function main() {
     console.log('\nTip: npm run callsomo:operator-sync -- --deploy-ui');
   }
 
-  console.log('\n==> Manual (registrar)');
-  console.log('  Squarespace: 301 redirect myskinandcare.com → https://callsomo.com');
-  console.log('  Optional: api.myskinandcare.com → https://api.callsomo.com');
+  console.log('\n==> Manual (IONOS DNS for myskinandcare.com)');
+  console.log('  See docs/runbooks/MYSKINANDCARE_IONOS_DNS.md');
+  console.log('  npm run setup:myskinandcare:somo');
 }
 
 main().catch((e) => {

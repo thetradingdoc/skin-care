@@ -71,9 +71,13 @@ const apiOk = process.env.SKIP_API_CHECK === '1';
 if (apiOk) {
   pass('API_HEALTH', 'skipped (SKIP_API_CHECK=1)');
 } else {
-  fetch('https://api.callsomo.com/health/live')
+  const apiHealthUrl = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.myskinandcare.com').replace(
+    /\/$/,
+    ''
+  );
+  fetch(`${apiHealthUrl}/health/live`)
     .then((r) => {
-      if (r.ok) pass('API_HEALTH', 'https://api.callsomo.com/health/live');
+      if (r.ok) pass('API_HEALTH', `${apiHealthUrl}/health/live`);
       else fail('API_HEALTH', `status ${r.status}`);
       finish();
     })

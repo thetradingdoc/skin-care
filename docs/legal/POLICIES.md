@@ -1,6 +1,6 @@
 # POLICIES
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-08
 
 
 ---
@@ -11,14 +11,14 @@
 
 *Merged from `docs/legal/PRIVACY_POLICY.md` on 2026-06-02.*
 
-# Somo Privacy Policy
+# Skin & Care Privacy Policy
 
 **Version 1.0**  
 **Last Updated: May 29, 2026**
 
 ## 1. Introduction
 
-Somo ("we", "us", or "our") provides an AI front desk and revenue cycle management platform for healthcare and business customers. This Privacy Policy describes how we collect, use, disclose, and protect information when you use our websites, applications, and APIs.
+Skin & Care ("we", "us", or "our") provides an AI front desk and revenue cycle management platform for healthcare and business customers. This Privacy Policy describes how we collect, use, disclose, and protect information when you use our websites, applications, and APIs.
 
 Production services may be served from **callsomo.com** and related infrastructure until **somopay.ai** cutover. See [INFRA_BRAND_DEFERRAL.md](../Brand/INFRA_BRAND_DEFERRAL.md).
 
@@ -26,7 +26,7 @@ Production services may be served from **callsomo.com** and related infrastructu
 
 - **Account data:** name, email, business name, billing details you provide at signup.
 - **Usage data:** API calls, voice session metadata, logs, and security events.
-- **Healthcare-related data:** when you use Somo pay or clinical integrations, we process data you or your EHR submit for eligibility, claims, and patient billing — subject to your agreements and applicable law (including HIPAA where we act as a business associate).
+- **Healthcare-related data:** when you use Skin & Care pay or clinical integrations, we process data you or your EHR submit for eligibility, claims, and patient billing — subject to your agreements and applicable law (including HIPAA where we act as a business associate).
 
 ## 3. How we use information
 
@@ -51,7 +51,7 @@ You may request access, correction, or deletion of account data by contacting su
 
 ## 7. Contact
 
-For privacy questions: use the support contact on your Somo account or the address provided in your order form.
+For privacy questions: use the support contact on your Skin & Care account or the address provided in your order form.
 
 ## 8. Changes
 
@@ -66,18 +66,18 @@ We may update this policy; material changes will be posted with an updated "Last
 
 *Merged from `docs/legal/TERMS_OF_SERVICE.md` on 2026-06-02.*
 
-# Somo API Terms of Service
+# Skin & Care API Terms of Service
 
 **Version 1.0**  
 **Last Updated: November 17, 2025**
 
 ## 1. Agreement to Terms
 
-By accessing or using the Somo API Service ("Service") provided by Somo ("Company", "we", "us", or "our"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you do not have permission to access the Service.
+By accessing or using the Skin & Care API Service ("Service") provided by Skin & Care ("Company", "we", "us", or "our"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these terms, then you do not have permission to access the Service.
 
 ## 2. Description of Service
 
-Somo provides an API service that enables voice commerce, healthcare integration, payment processing, and related services through voice agents and webhook integrations. The Service includes:
+Skin & Care provides an API service that enables voice commerce, healthcare integration, payment processing, and related services through voice agents and webhook integrations. The Service includes:
 
 - Voice agent integration via Retell AI
 - Telephony services via Twilio
@@ -186,11 +186,22 @@ If you use the Service to process Protected Health Information (PHI) or healthca
 ## 7. Intellectual Property and Copyright Protection
 
 ### 7.1 Service Ownership and Copyright
-- The Service, including all content, features, functionality, code, designs, documentation, and proprietary methods, is owned by Somo and protected by copyright laws
-- All trademarks, service marks, logos, and brand names are the exclusive property of Somo
+- The Service, including all content, features, functionality, code, designs, documentation, and proprietary methods, is owned by Skin & Care and protected by copyright laws
+- All trademarks, service marks, logos, and brand names are the exclusive property of Skin & Care
 - The Service is protected by copyright, trademark, trade secret, and other intellectual property laws in the United States and internationally
 
-### 7.2 Prohibited Use - No Copying or Reverse Engineering
+### 7.2 Consumer Brand Marks
+The following consumer-facing brand assets are the exclusive property of Skin & Care:
+- The **Skin & Care tulip icon** (standalone mark and SVG source)
+- The **skin + tulip + care wordmark lockup** (text and icon composition)
+- The **consumer landing favicon** and related icon derivatives
+
+Unauthorized copying, modification, or use of these marks outside Skin & Care products and approved marketing is prohibited. See [BRAND_IP_AND_LICENSES.md](../Brand/BRAND_IP_AND_LICENSES.md) for the canonical asset inventory.
+
+### 7.3 Third-Party Fonts and Licensed Materials
+Some brand surfaces embed third-party font software (for example, **Be Vietnam Pro** for the consumer wordmark) under separate licenses such as the SIL Open Font License 1.1. Skin & Care does **not** claim ownership of those typefaces. Font files are bundled only in compliance with their respective licenses. Documents and screenshots that merely display text set in those fonts are not subject to font license restrictions.
+
+### 7.4 Prohibited Use - No Copying or Reverse Engineering
 **YOU ARE EXPRESSLY PROHIBITED FROM:**
 - Copying, reproducing, or duplicating any part of the Service, including but not limited to:
   - Source code, API structures, or technical documentation
@@ -203,14 +214,14 @@ If you use the Service to process Protected Health Information (PHI) or healthca
 - Redistributing, sublicensing, or reselling the Service without written authorization
 - Removing, altering, or obscuring any copyright, trademark, or proprietary notices
 
-### 7.3 Protection of Our Work
-- Somo invests significant resources in developing, maintaining, and improving the Service
+### 7.5 Protection of Our Work
+- Skin & Care invests significant resources in developing, maintaining, and improving the Service
 - Any unauthorized use, copying, or distribution of our intellectual property may result in:
   - Immediate termination of your account and access to the Service
   - Legal action for copyright infringement and damages
   - Claims for lost profits, statutory damages, and attorney fees
 
-### 7.4 Your Content
+### 7.6 Your Content
 - You retain ownership of any data or content you provide through the Service
 - By using the Service, you grant us a limited, non-exclusive license to use your data solely to provide the Service
 - You are responsible for ensuring you have rights to any data you provide
@@ -296,7 +307,7 @@ TO THE MAXIMUM EXTENT PERMITTED BY LAW:
 
 ## 14. Indemnification
 
-You agree to indemnify, defend, and hold harmless Somo and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including attorney's fees) arising from:
+You agree to indemnify, defend, and hold harmless Skin & Care and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including attorney's fees) arising from:
 - Your use of the Service
 - Your violation of these Terms
 - Your violation of any third-party rights
@@ -322,7 +333,7 @@ These Terms shall be governed by and construed in accordance with the laws of [Y
 ## 17. General Provisions
 
 ### 17.1 Entire Agreement
-These Terms, together with our Privacy Policy, constitute the entire agreement between you and Somo.
+These Terms, together with our Privacy Policy, constitute the entire agreement between you and Skin & Care.
 
 ### 17.2 Severability
 If any provision of these Terms is found to be unenforceable, the remaining provisions shall remain in full effect.
@@ -338,11 +349,11 @@ Notices may be sent via email to the address associated with your account or pos
 
 ## 18. Contact Information
 
-**Somo**  
+**Skin & Care**  
 Email: support@api.callsomo.com  
 API Documentation: https://api.api.callsomo.com/docs  
 Website: https://api.callsomo.com
 
 ---
 
-**By creating an account and using the Somo API Service, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**
+**By creating an account and using the Skin & Care API Service, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.**

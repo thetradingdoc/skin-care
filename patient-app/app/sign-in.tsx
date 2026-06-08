@@ -5,14 +5,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 
 import { OtpForm } from '@/components/OtpForm';
-import { API_BASE_URL } from '@/config';
+import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { JournalTokens } from '@/constants/journalTokens';
 import { PENDING_ROUTINE_CONCERN_KEY } from '@/constants/routineSession';
 import { ROUTINE_PICK_HREF, TODAY_HREF } from '@/constants/routes';
 import { patientGet } from '@/lib/patient-api';
 import { API_BASE_KEY, EMAIL_KEY, SESSION_KEY } from '@/lib/patient-session';
 
-const WEB_SIGNUP_URL = 'https://myskinandcare.com/scan';
+function webSignupLabel(url: string): string {
+  try {
+    const host = new URL(url).host.replace(/^www\./, '');
+    const path = new URL(url).pathname.replace(/^\//, '');
+    return path ? `Open ${host}/${path}` : `Open ${host}`;
+  } catch {
+    return 'Open web signup';
+  }
+}
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -77,7 +85,7 @@ export default function SignInScreen() {
           New here? Start on the web — scan your skin age, then create an account to save your track.
         </Text>
         <Pressable onPress={() => void Linking.openURL(WEB_SIGNUP_URL)} style={styles.webLinkWrap}>
-          <Text style={styles.webLink}>Open myskinandcare.com/scan</Text>
+          <Text style={styles.webLink}>{webSignupLabel(WEB_SIGNUP_URL)}</Text>
         </Pressable>
         <OtpForm
           headline="Sign in"

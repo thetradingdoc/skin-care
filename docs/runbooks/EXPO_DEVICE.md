@@ -2,7 +2,9 @@
 
 Use this path first. You do **not** need Apple Developer, TestFlight, or EAS builds.
 
-The app runs inside **Expo Go** and talks to production API `https://api.callsomo.com`.
+**Last reviewed:** 2026-06-06
+
+The app runs inside **Expo Go** and talks to production API `https://api.myskinandcare.com`.
 
 ## 1. Install Expo Go on iPhone
 
@@ -20,7 +22,7 @@ cp .env.example .env
 Edit `.env` — for production API on your phone, use:
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com
+EXPO_PUBLIC_API_BASE_URL=https://api.myskinandcare.com
 ```
 
 Verify:

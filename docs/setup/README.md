@@ -1,6 +1,8 @@
 # setup — consolidated documentation
 
-**Single file:** All former `docs/setup/**/*.md` content is merged here. **Last updated:** 2026-04-20
+> **Read first (2026-06-06):** [`docs/LOCAL.md`](../LOCAL.md) · [`docs/CLOUD.md`](../CLOUD.md) · [`docs/Brand/SKIN_AND_CARE_REPO.md`](../Brand/SKIN_AND_CARE_REPO.md)
+
+**Single file:** All former `docs/setup/**/*.md` content is merged here. **Last updated:** 2026-04-20 (historical sections below)
 
 ## Table of contents
 

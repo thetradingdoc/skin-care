@@ -33,7 +33,7 @@
 
   const PROD_API =
     (typeof window.__SKIN_CARE_API_BASE__ === 'string' && window.__SKIN_CARE_API_BASE__.trim()) ||
-    'https://api.callsomo.com';
+    'https://api.myskinandcare.com';
   const host = hostname.toLowerCase();
   const isConsumerProdHost =
     host === 'myskinandcare.com' ||

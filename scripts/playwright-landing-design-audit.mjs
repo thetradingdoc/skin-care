@@ -24,11 +24,11 @@ const MOCKUP = {
   headlineLine2: 'Glow tomorrow.',
   subtitle:
     'Your personal skincare tracker to understand your skin, build better habits, and see real results over time.',
-  cta: 'Find your face age',
+  cta: 'Facial Age Checker',
   tagline: 'TRACK. CARE. GLOW.',
   brandName: 'Skin&Care',
-  navLinks: ['Features', 'How It Works', 'Insights', 'About', 'Blog', 'Contact'],
-  features: ['Track Your Skin', 'Smart Insights', 'Build Better Habits'],
+  navLinks: ['How It Works', 'About', 'Contact'],
+  features: ['Face scan → skin age', 'Tell us what to track', 'One photo a day'],
   footerLinks: ['Privacy', 'Terms', 'Sign in'],
   disclaimer: 'For wellness tracking only · Not a medical diagnosis',
 };
@@ -167,7 +167,7 @@ async function audit() {
         dovePaths: [...document.querySelectorAll('.sc-brand-dove path')].length,
         heroImgSrc: photo?.getAttribute('src'),
         heroImgNatural: photo ? { w: photo.naturalWidth, h: photo.naturalHeight } : null,
-        missingAnchors: ['#how', '#insights', '#blog'].filter((id) => !document.querySelector(id)),
+        missingAnchors: ['#how', '#blog'].filter((id) => !document.querySelector(id)),
       };
     });
 
@@ -221,7 +221,7 @@ async function audit() {
       issues.push({ area: 'Hero copy', issue: 'Subheadline text mismatch', mockup: MOCKUP.subtitle, actual: data.subText });
     }
 
-    if (!data.ctaText?.includes('Find your face age')) {
+    if (!data.ctaText?.includes('Facial Age Checker')) {
       issues.push({ area: 'CTA', issue: 'Primary CTA label mismatch', mockup: MOCKUP.cta, actual: data.ctaText });
     }
 

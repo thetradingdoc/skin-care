@@ -1,8 +1,13 @@
 # Skin & Care — daily skin tracking app
 
+**Last reviewed:** 2026-06-06
+
 **GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care)  
 **Consumer domain:** [myskinandcare.com](https://myskinandcare.com) (marketing + web funnel)  
-**API:** `https://api.callsomo.com` (shared Somo middleware — deploy from [somo-platform](https://github.com/richiejeremiah/somo-platform) only)
+**Consumer API:** `https://api.myskinandcare.com` (shared middleware on Cloud Run)  
+**Legacy API:** `https://api.callsomo.com` (same stack — shared infra identifier)
+
+**Architecture:** [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md)
 
 Skin & Care is a consumer iOS app for daily photo tracking, concern-based routines (acne, anti-aging, hyperpigmentation, barrier repair, rosacea), and optional `care_program` subscription.
 
@@ -60,7 +65,7 @@ npm start --prefix middleware-platform
 | Path | Purpose |
 |------|---------|
 | `patient-app/` | Expo React Native app (Skin & Care) |
-| `middleware-platform/` | Shared API (local dev; prod at api.callsomo.com) |
+| `middleware-platform/` | Shared API (local dev; prod at api.myskinandcare.com) |
 | `livekit-agents/` | Voice agents (platform) |
 | `unified-dashboard/` | Provider / business dashboards (Somo brand) |
 | `docs/Brand/` | Brand runbooks |

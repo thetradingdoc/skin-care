@@ -15,7 +15,12 @@
     "smoke:face-read": "node ./scripts/smoke-face-read.cjs",
     "start:device": "expo start --tunnel --clear",
     "verify:testflight": "node ./scripts/verify-testflight-prereqs.cjs",
+    "doctor:testflight": "node ./scripts/testflight-doctor.cjs",
     "build:testflight": "eas build --platform ios --profile testflight",
+    "build:testflight:submit": "eas build --platform ios --profile testflight --auto-submit",
+    "build:testflight:asc": "node ./scripts/run-testflight-with-asc.cjs",
+    "build:testflight:asc:ci": "node ./scripts/run-testflight-with-asc.cjs --non-interactive",
+    "submit:testflight:asc": "node ./scripts/run-submit-with-asc.cjs",
     "submit:testflight": "eas submit --platform ios --profile testflight --latest",
     "verify:agentic-checkout": "node ../scripts/verify-agentic-checkout.cjs"
   },

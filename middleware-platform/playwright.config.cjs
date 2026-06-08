@@ -1,8 +1,18 @@
+const fs = require('fs');
 const path = require('path');
 const { defineConfig } = require('@playwright/test');
 
 const landingBuild = path.join(__dirname, '..', 'unified-dashboard', 'skin-care-landing', 'build');
+const consumerDist = path.join(__dirname, '..', 'unified-dashboard', 'hosting-dist-consumer');
 const serveScript = path.join(__dirname, 'scripts', 'serve-cra-build.cjs');
+
+/** Prefer full consumer bundle (about/contact static pages) when built. */
+function landingServeRoot() {
+  if (fs.existsSync(path.join(consumerDist, 'about.html'))) {
+    return consumerDist;
+  }
+  return landingBuild;
+}
 
 const headed = process.env.HEADED === '1';
 
@@ -150,7 +160,7 @@ module.exports = defineConfig({
     },
   ],
   webServer: {
-    command: `node "${serveScript}" "${landingBuild}" ${landingPort}`,
+    command: `node "${serveScript}" "${landingServeRoot()}" ${landingPort}`,
     url: landingOrigin,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

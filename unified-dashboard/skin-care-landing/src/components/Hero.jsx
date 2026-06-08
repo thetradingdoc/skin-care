@@ -53,12 +53,12 @@ function StoreBadge({ href, label, sub, name, icon }) {
   );
 }
 
-function StoreBadges() {
+function StoreBadges({ className = '' }) {
   const ios = iosAppUrl();
   const android = androidAppUrl();
 
   return (
-    <div className="sc-badges">
+    <div className={className ? `sc-badges ${className}` : 'sc-badges'}>
       <StoreBadge
         href={ios}
         label="Download on the App Store"
@@ -87,7 +87,7 @@ export default function Hero() {
           className="sc-hero-photo"
           width={703}
           height={576}
-          fetchPriority="high"
+          fetchpriority="high"
         />
       </div>
       <SiteHeader overlay />
@@ -105,10 +105,11 @@ export default function Hero() {
               {HERO.ctaLabel}
               <CtaArrow />
             </Link>
-            <StoreBadges />
+            <StoreBadges className="sc-badges--desktop" />
           </div>
         </div>
         <HeroFeatures />
+        <StoreBadges className="sc-badges--mobile" />
       </div>
     </section>
   );

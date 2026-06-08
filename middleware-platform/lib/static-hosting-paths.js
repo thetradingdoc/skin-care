@@ -51,12 +51,21 @@ function shouldServeConsumerLanding(hostname) {
 /** @deprecated use shouldServeConsumerLanding */
 const shouldServeSomoLanding = shouldServeConsumerLanding;
 
+/** Marketing static HTML at unified-dashboard root (not SPA). */
+const MARKETING_STATIC_HTML = Object.freeze(['/about.html', '/contact.html']);
+
+function isMarketingStaticHtmlPath(p) {
+  const pathname = String(p || '').split('?')[0];
+  return MARKETING_STATIC_HTML.includes(pathname);
+}
+
 /** Unified-dashboard portal static prefixes (must not receive landing SPA index.html). */
 function isUnifiedDashboardAssetPath(p) {
   return (
     p.startsWith('/assets/js') ||
     p.startsWith('/assets/css') ||
     p.startsWith('/assets/images') ||
+    p.startsWith('/assets/brand') ||
     p.startsWith('/assets/data') ||
     p.startsWith('/business/assets')
   );
@@ -175,6 +184,8 @@ module.exports = {
   isLocalDevRootHost,
   shouldServeConsumerLanding,
   shouldServeSomoLanding,
+  isMarketingStaticHtmlPath,
+  MARKETING_STATIC_HTML,
   isUnifiedDashboardAssetPath,
   isConsumerLandingApiPath,
   isSomoLandingApiPath,

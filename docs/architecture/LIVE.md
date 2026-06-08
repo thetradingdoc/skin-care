@@ -1,6 +1,6 @@
 # LIVE
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-06
 
 
 ---
@@ -21,7 +21,7 @@
 
 ## 1) Executive Summary
 
-Skin & Care (myskinandcare.com target) and the shared Somo platform API (`api.callsomo.com`) run on a Node/Express middleware (`middleware-platform`) that orchestrates:
+Skin & Care (myskinandcare.com) uses the consumer API (`api.myskinandcare.com`, alias `api.callsomo.com`) on a Node/Express middleware (`middleware-platform`) that orchestrates:
 
 - Voice workflows (Retell + Twilio + booking/payment/insurance tools)
 - Patient web portal and native mobile app experiences

@@ -1,8 +1,8 @@
 # Skin & Care — standalone workspace
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-06
 
-Skin & Care is a **unified brand** (consumer + provider) on the shared platform API. This repo is the engineering home for Skin & Care product work.
+Skin & Care is a **unified brand** (consumer + provider) on the platform API. This repo is the engineering home for Skin & Care product work.
 
 ## Repos and domains
 
@@ -11,49 +11,68 @@ Skin & Care is a **unified brand** (consumer + provider) on the shared platform 
 | GitHub | [richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care) |
 | Branch | `main` only |
 | Consumer domain | **myskinandcare.com** — marketing site, web funnel, privacy/terms URLs |
-| Shared API | **api.callsomo.com** — production middleware (deployed from **somo-platform**) |
+| Consumer API | **api.myskinandcare.com** — middleware on Cloud Run |
+| GCP account (consumer) | **richard@callsomo.com** |
+| Firebase Hosting | **`somo-4ddf6`** — consumer site **`myskinandcare`** (default site keeps `callsomo.com`) |
+| Cloud Run API | **`somo-callsomo`** / service **`somo-middleware`** |
+| Legacy Somo URLs | `callsomo.com` / `api.callsomo.com` — same stack, shared API |
+| Future migration | **`skin-and-care-prod`** under `doctorjay254@gmail.com` — optional; URLs stay the same |
 | App brand | **Skin & Care** (UI copy; not "MySkinAndCare") |
 | Bundle ID | `com.skinandcare.app` |
 
 ```mermaid
 flowchart LR
-  skinWs[skin-and-care workspace]
-  skinRepo[skin-care GitHub main]
-  api[api.callsomo.com]
+  ionos[IONOS DNS]
+  fb[Firebase somo-4ddf6]
+  cr[CloudRun somo-callsomo]
   web[myskinandcare.com]
-  testflight[TestFlight]
+  api[api.myskinandcare.com]
+  app[TestFlight app]
 
-  skinWs --> skinRepo
-  skinRepo -->|EAS preview| testflight
-  testflight --> api
-  web -->|future consumer web| api
+  ionos --> fb
+  ionos --> cr
+  fb --> web
+  cr --> api
+  web -->|HTTPS| api
+  app --> api
 ```
+
+## Consumer deploy (myskinandcare.com)
+
+```bash
+# One-time: Cloud Run domain mapping + DNS cheat sheet
+npm run setup:myskinandcare:somo
+
+# Consumer landing bundle + Firebase (somo-4ddf6)
+npm run build:consumer-hosting
+npm run deploy:consumer-hosting
+
+# Live smoke (after IONOS DNS cutover)
+npm run gcp:skin-care:check
+node scripts/verify-consumer-hosting.cjs --live https://myskinandcare.com
+```
+
+IONOS DNS steps: **[docs/runbooks/MYSKINANDCARE_IONOS_DNS.md](../runbooks/MYSKINANDCARE_IONOS_DNS.md)**
+
+API deploy (shared Somo middleware): `npm run callsomo:deploy-api` or `./scripts/deploy-to-gcp.sh` with [`scripts/lib/cloudrun-deploy-env.sh`](../../scripts/lib/cloudrun-deploy-env.sh).
 
 ## Day-to-day workflow
 
 ```bash
 git checkout main
-# ... edit patient-app, commit ...
+# ... edit patient-app, landing, commit ...
 git push origin main
 ```
 
-No second remote, no brand branch, no push-to-mirror script.
-
 ## Porting platform fixes from somo
 
-This tree will drift from [somo-platform](https://github.com/richiejeremiah/somo-platform) over time. When you need a middleware or patient API change:
+When you need a middleware or patient API change from [somo-platform](https://github.com/richiejeremiah/somo-platform):
 
 ```bash
 git remote add somo-platform https://github.com/richiejeremiah/somo-platform.git  # one-time
 git fetch somo-platform
-git cherry-pick <sha>                    # single fix
-# or
-git merge somo-platform/main             # larger sync (resolve conflicts carefully)
+git cherry-pick <sha>
 ```
-
-**Recommended:** before each TestFlight or App Store release, review `somo-platform` `main` for patient-billing, auth, and routine API changes.
-
-**Do not** deploy Cloud Run / Firebase from this repo. `deploy-staging.yml` is manual-dispatch only.
 
 ## CI
 
@@ -61,9 +80,7 @@ git merge somo-platform/main             # larger sync (resolve conflicts carefu
 |----------|---------|---------|
 | `skin-care-mobile.yml` | push to `main` (patient-app paths) | Typecheck, care_program tests, EAS preview |
 | `ci.yml` | push/PR to `main` | Full platform CI (`BRAND_PROFILE=skin-and-care`) |
-| `deploy-staging.yml` | manual only | Not used for routine deploys |
-
-Add `EXPO_TOKEN` in repo Settings → Secrets for automated EAS builds.
+| `deploy-staging.yml` | manual only | Legacy Somo staging deploy |
 
 ## Local development
 
@@ -71,70 +88,77 @@ Add `EXPO_TOKEN` in repo Settings → Secrets for automated EAS builds.
 cd patient-app
 cp .env.example .env
 npx expo start
+
+# Landing (Vite, relative /api → middleware :4000)
+npm run dev:skin-care-landing
 ```
 
-## Domains (operator)
+## Domains
 
 | Host | Role |
 |------|------|
-| myskinandcare.com | Consumer marketing + web funnel (DNS cutover target) |
-| callsomo.com | Provider portal + shared web shell (Skin & Care UI) |
-| api.callsomo.com | Shared API — all app and web builds point here |
-
-Privacy policy and terms URLs for App Store should live on **myskinandcare.com**.
+| **myskinandcare.com** | Consumer marketing + web funnel (Firebase `hosting-dist-consumer` on `somo-4ddf6`) |
+| **api.myskinandcare.com** | Skin & Care API alias → same `somo-middleware` as `api.callsomo.com` |
+| callsomo.com | Provider portal (same Firebase project) |
+| api.callsomo.com | Shared middleware API |
 
 ## EAS / TestFlight
 
 Full runbook: **[docs/runbooks/TESTFLIGHT.md](../runbooks/TESTFLIGHT.md)**
 
-```bash
-cd patient-app
-npm ci
-npx eas login
-npx eas init          # one-time — links Expo project
-npm run verify:testflight
-npm run build:testflight
-npm run submit:testflight
-```
+Builds use `EXPO_PUBLIC_API_BASE_URL=https://api.myskinandcare.com`.
 
-Install via Apple **TestFlight** app after adding your Apple ID as an internal tester in App Store Connect.
+## Live domain status (2026-06-08)
+
+| Host | Brand | Notes |
+|------|-------|-------|
+| `myskinandcare.com` | Skin & Care | Firebase site `myskinandcare` |
+| `callsomo.com` | Skin & Care landing | Default Firebase site redeployed |
+| `www.myskinandcare.com` | Legacy Somo | Old Firebase binding — [fix runbook](../runbooks/WWW_MYSKINANDCARE_FIX.md) |
+| `api.myskinandcare.com` | Pending | Needs Google domain verify + Cloud Run mapping |
+
+```bash
+npm run check:live-consumer-hosts
+LIVE_BASE_URL=https://myskinandcare.com npm run test:e2e:live-consumer
+```
 
 ## DNS cutover checklist (myskinandcare.com)
 
-**Status:** Prep only — no DNS change until operator sign-off. Infra IDs (`somo-4ddf6`, `somo-callsomo`) stay as-is.
+**Status:** Repo ready — operator runs Firebase custom domains + IONOS (see runbook).
 
-### Preconditions
+### Repo preconditions
 
-- [x] `npm run build:skin-care-landing` + `node scripts/verify-hosting-dist-landing.cjs` (local bundle verifier)
-- [ ] `npm run build:staging-hosting` succeeds in CI (Node 20.x hosting-dist job)
-- [ ] `npm run test:e2e-skin-care-landing --prefix middleware-platform` green on `main`
-- [ ] App Store / TestFlight privacy and terms URLs updated to `https://myskinandcare.com/patients/legal/*` (after DNS live)
-- [x] `EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com` in EAS production profile (unchanged)
-
-### DNS (registrar / Firebase Hosting)
-
-- [ ] Add custom domain **myskinandcare.com** (+ `www`) to Firebase project `somo-4ddf6` (or successor hosting project)
-- [ ] Publish A/AAAA or CNAME records per Firebase console
-- [ ] Verify TLS certificate active for apex and `www`
-- [ ] Optional: 301 `callsomo.com/` → `myskinandcare.com/` only for consumer paths after launch (provider `/signup`, `/business/*` may stay on callsomo.com)
+- [x] `npm run build:consumer-hosting` + `npm run verify:consumer-hosting`
+- [x] Landing SPA uses `VITE_API_BASE=https://api.myskinandcare.com` in consumer build
+- [x] `api-base.js` / CORS / CSP updated for myskinandcare hosts
+- [x] EAS profiles point at `api.myskinandcare.com`
+- [x] `deploy:consumer-hosting` targets **`somo-4ddf6`**
+- [ ] Firebase: `myskinandcare.com` + `www` custom domains on `somo-4ddf6` (operator)
+- [ ] Cloud Run: `api.myskinandcare.com` domain mapping on `somo-callsomo` (operator: `npm run setup:myskinandcare:somo`)
+- [ ] IONOS DNS: apex A + TXT + www CNAME + api CNAME (operator)
 
 ### Post-cutover smoke
 
 ```bash
-curl -sS -I https://myskinandcare.com/
-curl -sS -I https://myskinandcare.com/patients/patient-login.html
-node scripts/verify-hosting-dist-landing.cjs --live https://myskinandcare.com
+npm run gcp:skin-care:check
+node scripts/verify-consumer-hosting.cjs --live https://myskinandcare.com
 ```
-
-- [ ] Landing hero shows Skin & Care copy (not Somo B2B)
-- [ ] Signup/login CTAs resolve on same host
-- [ ] Mobile app still reaches `api.callsomo.com/health/live`
 
 ### Rollback
 
-- [ ] Revert DNS to previous target; redeploy last known-good `hosting-dist` if needed
-- [ ] App builds unaffected (API host unchanged)
+Revert IONOS DNS; `callsomo.com` / `api.callsomo.com` remain available.
 
 ## Multi-brand note
 
-The shared API (`api.callsomo.com`) may serve other consumer brands from separate repos. Each brand gets its own GitHub repo, bundle ID, Stripe product, and domain — all sharing **one** middleware deployment.
+`api.callsomo.com` and `api.myskinandcare.com` map to the **same** Cloud Run service today. Consumer traffic should use **api.myskinandcare.com** for stable URLs through a future GCP account migration.
+
+## Alternate path: new GCP project
+
+Full account migration under `doctorjay254@gmail.com`:
+
+```bash
+export BILLING_ACCOUNT_ID=<from gcloud billing accounts list>
+./scripts/bootstrap-skin-care-gcp.sh
+```
+
+See [`scripts/lib/skin-care-deploy-env.sh`](../../scripts/lib/skin-care-deploy-env.sh) and `deploy:skin-care-api` — not required for Option B (Somo + IONOS).

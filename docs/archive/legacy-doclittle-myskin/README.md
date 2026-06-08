@@ -1,13 +1,14 @@
 # Legacy DocLittle / myskinandcare archive index
 
-Historical branding and hosting paths. **Active product: Somo** on `callsomo.com` / `api.callsomo.com`.
+**Last reviewed:** 2026-06-06
+
+> **Historical only.** Active consumer product is **Skin & Care** on **myskinandcare.com** / **api.myskinandcare.com**. See [`../../CLOUD.md`](../../CLOUD.md) and [`../../Brand/SKIN_AND_CARE_REPO.md`](../../Brand/SKIN_AND_CARE_REPO.md).
 
 | Retired | Replacement |
 |---------|-------------|
-| DocLittle consumer brand | Somo |
+| DocLittle consumer brand | Skin & Care |
 | DodgeCall demo product | Somo demo (`/api/public/somo-demo`) |
-| `myskinandcare.com` | `callsomo.com` (DNS 301 — operator) |
 | `doclittle.site` / Azure `doclittle` App Service | GCP Cloud Run `somo-middleware` |
 | `docs/agent/dodgecall/` | `docs/agent/somo-demo/` |
 
-See [`../../Brand/INFRA_BRAND_DEFERRAL.md`](../../Brand/INFRA_BRAND_DEFERRAL.md) and [`../../deployment/SOMO_CLOUD_RUN_DEPLOY.md`](../../deployment/SOMO_CLOUD_RUN_DEPLOY.md).
+See [`../../deployment/OPERATIONS.md`](../../deployment/OPERATIONS.md) for current Cloud Run deploy.

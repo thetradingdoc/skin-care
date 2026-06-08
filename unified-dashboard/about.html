@@ -3,117 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Skin &amp; Care</title>
+  <meta name="description" content="Skin &amp; Care is a consumer research lab studying skin changes on people of color—daily photo tracking, AI, and dermatology science for melanin-rich skin.">
+  <title>About — Skin &amp; Care</title>
   <link rel="icon" href="/assets/images/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&family=Gloock&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/css/skin-care-tokens.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: var(--font-ui, 'DM Sans', system-ui, sans-serif);
-      background: var(--sc-cream, #f8f3ea);
-      color: var(--sc-ink, #1f2937);
-      line-height: 1.6;
-    }
-    .wrap {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 2rem 1.25rem 4rem;
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: 2.5rem;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      text-decoration: none;
-      color: inherit;
-    }
-    .brand img { width: 40px; height: 40px; }
-    .brand span {
-      font-family: var(--font-display, Gloock, serif);
-      font-size: 1.35rem;
-      letter-spacing: -0.02em;
-    }
-    .back {
-      color: var(--sc-brand-blue, #314db6);
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-    h1 {
-      font-family: var(--font-display, Gloock, serif);
-      font-size: clamp(2rem, 5vw, 2.75rem);
-      line-height: 1.15;
-      margin: 0 0 1rem;
-      font-weight: 400;
-    }
-    .lead {
-      font-size: 1.125rem;
-      color: var(--sc-muted, #6b7280);
-      margin-bottom: 2rem;
-    }
-    .card {
-      background: var(--sc-card, #fffdf9);
-      border: 1px solid var(--sc-line, #e9e2d6);
-      border-radius: 16px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1rem;
-    }
-    .card h2 {
-      font-size: 1.05rem;
-      margin: 0 0 0.5rem;
-    }
-    .card p { margin: 0; color: var(--sc-muted); }
-    .cta {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 0.85rem 1.5rem;
-      background: var(--sc-brand-blue, #314db6);
-      color: #fff;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .cta:hover { background: var(--primary-hover, #283fa0); }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Gloock&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/sc-static-pages.css">
 </head>
-<body>
-  <div class="wrap">
-    <header>
-      <a class="brand" href="/">
-        <img src="/assets/images/logo-panda.svg" alt="" width="40" height="40" aria-hidden="true">
-        <span>Skin &amp; Care</span>
+<body class="sc-page sc-about-lux">
+  <header class="sc-static-header">
+    <div class="sc-static-header-inner">
+      <a class="sc-static-brand" href="/" aria-label="Skin &amp; Care home">
+        <span class="sc-logo-wordmark" role="img" aria-label="skin care">
+          <span class="sc-logo-skin" aria-hidden="true">skin</span>
+          <span class="sc-logo-mark-slot" aria-hidden="true">
+            <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215">
+          </span>
+          <span class="sc-logo-care" aria-hidden="true">care</span>
+        </span>
       </a>
-      <a class="back" href="/">Back home</a>
-    </header>
-
-    <h1>Your skin journal, simplified</h1>
-    <p class="lead">
-      Skin &amp; Care helps you log daily photos, follow concern-based routines, and see how your skin changes over time.
-    </p>
-
-    <div class="card">
-      <h2>Daily tracking</h2>
-      <p>Capture quick photos and notes so you can compare weeks and phases — not just guess what is working.</p>
+      <nav class="sc-static-nav" aria-label="Main">
+        <a href="/">Home</a>
+        <a href="/#how">How It Works</a>
+        <a href="/contact.html">Contact</a>
+      </nav>
+      <div class="sc-static-nav-spacer" aria-hidden="true"></div>
     </div>
-    <div class="card">
-      <h2>Guided routines</h2>
-      <p>Choose programs for acne, anti-aging, barrier repair, and more. Kelly helps you stay on track without clinical jargon.</p>
-    </div>
-    <div class="card">
-      <h2>Privacy first</h2>
-      <p>Your progress photos and journal entries are yours. Read our <a href="/patients/legal/privacy.html">privacy policy</a> for details.</p>
-    </div>
+  </header>
 
-    <a class="cta" href="/patients/patient-login.html?intent=signup">Get started</a>
-  </div>
+  <section class="sc-about-hero-split">
+    <div class="sc-about-hero-body">
+      <p class="sc-about-kicker">About Skin &amp; Care</p>
+      <h1 class="sc-about-headline">Research for skin that was left out of the research.</h1>
+      <p class="sc-about-lead">
+        Skin &amp; Care is a consumer research lab focused on how skin changes on people of color. We combine daily photo tracking with AI and dermatology science so progress is visible over weeks and months—not guessed from a mirror or a generic routine.
+      </p>
+      <p class="sc-about-body">
+        Most skincare tools were built on data that doesn't reflect melanin-rich skin. We study real faces over time—same light, same angle, same person—and turn those patterns into personal tracking: skin age trends, concern areas, and whether your routine is actually working.
+      </p>
+      <p class="sc-about-body">
+        Our work sits between dermatology and machine learning. We're not replacing a dermatologist; we're building better measurement for everyday care—structured logs, computer vision, and models trained with skin-of-color representation in mind.
+      </p>
+      <p class="sc-about-closing">
+        Daily photos. Real progress. Built for you—not a one-size-fits-all template.
+      </p>
+    </div>
+    <div class="sc-about-hero-media" aria-hidden="true">
+      <img
+        src="/assets/images/about-hero.png"
+        alt=""
+        class="sc-about-hero-photo"
+        width="800"
+        height="1200"
+        fetchpriority="high">
+    </div>
+  </section>
+
+  <footer class="sc-static-footer">
+    <div class="sc-static-footer-links">
+      <a href="/">Home</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/patients/legal/privacy.html">Privacy</a>
+      <a href="/patients/legal/terms.html">Terms</a>
+      <a href="/patients/patient-login.html">Sign in</a>
+    </div>
+    <p class="sc-static-footer-disclaimer">For wellness tracking only · Not a medical diagnosis</p>
+    <p class="sc-static-footer-copy">&copy; <span id="year"></span> Skin&amp;Care</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>

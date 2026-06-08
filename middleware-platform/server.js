@@ -1811,6 +1811,9 @@ app.use(['/business/calendar.html', '/unified-dashboard/business/calendar.html']
 // otherwise browser requests with `credentials: 'include'` will fail
 // with a generic "Failed to fetch" error (as seen on tenant login).
 const allowedOrigins = [
+  'https://myskinandcare.com',
+  'https://www.myskinandcare.com',
+  'https://api.myskinandcare.com',
   'https://callsomo.com',
   'https://www.callsomo.com',
   'https://api.callsomo.com',
@@ -1842,6 +1845,9 @@ const corsOptions = {
     }
 
     if (/^https?:\/\/([a-z0-9-]+\.)*callsomo\.com$/i.test(origin)) {
+      return callback(null, true);
+    }
+    if (/^https?:\/\/([a-z0-9-]+\.)*myskinandcare\.com$/i.test(origin)) {
       return callback(null, true);
     }
     // Allow ngrok domains (for HTTPS testing: https://xxxx.ngrok-free.app)
@@ -2243,7 +2249,6 @@ const LEGACY_LANDING_PATHS = [
   '/skin-care',
   '/start',
   '/find-provider',
-  '/about',
   '/shop',
   '/products',
   '/cart',
@@ -2385,12 +2390,39 @@ app.get('/login.html', (req, res) => {
   return res.redirect('/login');
 });
 
-app.get(['/about', '/about.html'], (req, res) => {
+app.get('/about', (req, res) => {
   const hostname = getHostname(req);
   if (isProductionApiHostname(hostname)) {
     return res.status(404).json({ error: 'Not found on API subdomain' });
   }
-  return redirectLegacyLandingPath(req, res);
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  return res.redirect(301, `/about.html${qs}`);
+});
+
+app.get('/about.html', (req, res) => {
+  const hostname = getHostname(req);
+  if (isProductionApiHostname(hostname)) {
+    return res.status(404).json({ error: 'Not found on API subdomain' });
+  }
+  const aboutPath = getUnifiedDashboardPath('about.html');
+  const fs = require('fs');
+  if (fs.existsSync(aboutPath)) {
+    return res.sendFile(aboutPath);
+  }
+  return res.status(404).type('html').send('About page not found');
+});
+
+app.get('/contact.html', (req, res) => {
+  const hostname = getHostname(req);
+  if (isProductionApiHostname(hostname)) {
+    return res.status(404).json({ error: 'Not found on API subdomain' });
+  }
+  const contactPath = getUnifiedDashboardPath('contact.html');
+  const fs = require('fs');
+  if (fs.existsSync(contactPath)) {
+    return res.sendFile(contactPath);
+  }
+  return res.status(404).type('html').send('Contact page not found');
 });
 
 // Reset password page

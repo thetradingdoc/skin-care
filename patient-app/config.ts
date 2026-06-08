@@ -19,6 +19,11 @@ const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:4000'
 
 export const API_BASE_URL = rawBase;
 
+/** Web funnel entry for new users (sign-in screen). Override when myskinandcare.com DNS is live. */
+export const WEB_SIGNUP_URL = (
+  process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://myskinandcare.com/scan'
+).replace(/\/$/, '') || 'https://myskinandcare.com/scan';
+
 /** Optional: pre-fill login email (e.g. same as appointment row in middleware). */
 export const DEMO_PATIENT_EMAIL =
   (process.env.EXPO_PUBLIC_DEMO_PATIENT_EMAIL || '').trim();

@@ -9,6 +9,7 @@ const path = require('path');
 
 const root = path.resolve(process.argv[2] || path.join(__dirname, '../../unified-dashboard/littlelab-landing/build'));
 const port = Number(process.argv[3] || process.env.PORT || 5199, 10);
+const overlayRoot = process.argv[4] ? path.resolve(process.argv[4]) : null;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -35,17 +36,34 @@ function safeJoin(base, rel) {
   return target;
 }
 
+function shouldOverlay(relPath) {
+  if (!overlayRoot) return false;
+  const clean = relPath.replace(/^\//, '');
+  if (/^[^/]+\.html$/.test(clean)) return true;
+  return clean.startsWith('assets/') || clean.startsWith('patients/');
+}
+
+function trySendFile(file, res) {
+  if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return false;
+  const ext = path.extname(file);
+  res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
+  fs.createReadStream(file).pipe(res);
+  return true;
+}
+
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   let rel = urlPath === '/' ? '/index.html' : urlPath;
-  let file = safeJoin(root, rel.slice(1));
+  const relPath = rel.slice(1);
 
-  if (file && fs.existsSync(file) && fs.statSync(file).isFile()) {
-    const ext = path.extname(file);
-    res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
-    fs.createReadStream(file).pipe(res);
-    return;
+  if (shouldOverlay(rel)) {
+    const overlayFile = safeJoin(overlayRoot, relPath);
+    if (trySendFile(overlayFile, res)) return;
   }
+
+  let file = safeJoin(root, relPath);
+
+  if (trySendFile(file, res)) return;
 
   const indexPath = path.join(root, 'index.html');
   if (fs.existsSync(indexPath)) {

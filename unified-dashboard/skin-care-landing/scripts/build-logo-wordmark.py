@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+DEPRECATED for production — design archive PNG compositor (monorepo paths).
+
+Production wordmark: DoveIcon.jsx LogoWordmark + tulip-mark.svg.
+Portable reference: unified-dashboard/assets/brand/scripts/build-logo-wordmark-portable.py
+Documentation: docs/Brand/BRAND_IP_AND_LICENSES.md
+
 Composites the Skin&Care logo wordmark:
   italic serif "skin" + dove icon (centred above gap) + bold sans "care"
 

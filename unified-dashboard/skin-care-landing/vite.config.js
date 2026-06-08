@@ -20,6 +20,8 @@ function contentTypeForExt(ext) {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.otf': 'font/otf',
     '.webmanifest': 'application/manifest+json',
   };
   return types[ext] || 'application/octet-stream';
@@ -43,21 +45,22 @@ function localStaticPlugin(basePath, urlPrefix, logLabel) {
   };
 }
 
-/** about.html lives at unified-dashboard/about.html */
-function aboutHtmlPlugin() {
-  const aboutPath = path.join(UD_ROOT, 'about.html');
+/** Static HTML pages at unified-dashboard root (about.html, contact.html, …) */
+function rootHtmlPlugin() {
   return {
-    name: 'local-ud-about',
+    name: 'local-ud-root-html',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (String(req.url || '').split('?')[0] !== '/about.html') {
+        const pathname = String(req.url || '').split('?')[0];
+        if (!pathname.endsWith('.html') || pathname.includes('..')) {
           return next();
         }
-        if (!fs.existsSync(aboutPath)) {
+        const filePath = path.join(UD_ROOT, pathname.replace(/^\//, ''));
+        if (!filePath.startsWith(UD_ROOT) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
           return next();
         }
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        fs.createReadStream(aboutPath).pipe(res);
+        fs.createReadStream(filePath).pipe(res);
       });
     },
   };
@@ -88,11 +91,14 @@ export default defineConfig({
     localStaticPlugin(UD_ASSETS, '/assets', 'assets'),
     localStaticPlugin(UD_PATIENTS, '/patients', 'patients'),
     localManifestPlugin(),
-    aboutHtmlPlugin(),
+    rootHtmlPlugin(),
   ],
   server: {
     port: 5180,
     strictPort: true,
+    fs: {
+      allow: [UD_ROOT, UD_ASSETS],
+    },
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY || 'http://127.0.0.1:4000',

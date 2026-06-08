@@ -64,9 +64,13 @@ See also: [Medical Coding OPERATIONS](../Medical%20Coding/OPERATIONS.md), [RENDE
 
 ## Production split-domain (reference)
 
-| Surface | Host |
-|---------|------|
-| Marketing SPA | `https://callsomo.com` (Firebase Hosting) |
-| API | `https://api.callsomo.com` (Cloud Run) |
+**Last reviewed:** 2026-06-06
 
-Details: [`EDGE_ROUTING_CONFIGS.md`](../deployment/EDGE_ROUTING_CONFIGS.md).
+| Surface | Host | Notes |
+|---------|------|-------|
+| Consumer marketing | `https://myskinandcare.com` | Firebase site `myskinandcare` on `somo-4ddf6` |
+| Consumer API | `https://api.myskinandcare.com` | Cloud Run `somo-middleware` |
+| Provider/staging web | `https://callsomo.com` | Default Firebase site (shared project) |
+| Legacy API | `https://api.callsomo.com` | Same middleware service |
+
+Details: [`docs/CLOUD.md`](../CLOUD.md), [`EDGE_ROUTING_CONFIGS.md`](../deployment/EDGE_ROUTING_CONFIGS.md).
