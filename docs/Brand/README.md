@@ -1,6 +1,6 @@
 # Brand documentation index
 
-> **Last reviewed:** 2026-06-07
+> **Last reviewed:** 2026-06-08
 
 ## Unified brand: Skin & Care
 
@@ -10,7 +10,7 @@ One user-facing brand for **consumer** (app, marketing, patient web) and **provi
 |-----|---------|
 | [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, journal palette, typography, tokens |
 | [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, **myskinandcare.com**, EAS/TestFlight, DNS cutover |
-| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Logo, icon, favicon paths |
+| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, favicon, panda mark — paths and code SSOT |
 
 **Product name:** Skin & Care (not "MySkinAndCare").
 
@@ -28,7 +28,9 @@ One user-facing brand for **consumer** (app, marketing, patient web) and **provi
 
 - **Tokens:** [`unified-dashboard/assets/css/skin-care-tokens.css`](../../unified-dashboard/assets/css/skin-care-tokens.css)
 - **Consumer landing:** [`unified-dashboard/skin-care-landing/`](../../unified-dashboard/skin-care-landing/)
-- **Logo:** [`unified-dashboard/assets/images/logo-panda.svg`](../../unified-dashboard/assets/images/logo-panda.svg)
+- **Landing wordmark + tulip:** [`unified-dashboard/assets/brand/tulip-mark.svg`](../../unified-dashboard/assets/brand/tulip-mark.svg) — [`LogoWordmark`](../../unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx)
+- **Landing favicon:** [`skin-care-landing/public/favicon.svg`](../../unified-dashboard/skin-care-landing/public/favicon.svg)
+- **Panda mark (checkout / provider):** [`unified-dashboard/assets/images/logo-panda.svg`](../../unified-dashboard/assets/images/logo-panda.svg)
 - **Email layout:** [`middleware-platform/lib/skin-care-email-layout.js`](../../middleware-platform/lib/skin-care-email-layout.js)
 
 ## Guardrails

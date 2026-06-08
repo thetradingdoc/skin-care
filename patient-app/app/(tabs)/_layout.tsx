@@ -1,13 +1,19 @@
 import { Tabs, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { JournalTokens } from '@/constants/journalTokens';
+import { getFirstPhotoLogged } from '@/lib/onboarding-storage';
 
 export default function TabLayout() {
   const router = useRouter();
+  const [showAccount, setShowAccount] = useState(false);
+
+  useEffect(() => {
+    void getFirstPhotoLogged().then(setShowAccount);
+  }, []);
 
   return (
     <View style={styles.root}>
@@ -40,6 +46,7 @@ export default function TabLayout() {
           name="account"
           options={{
             title: 'Account',
+            href: showAccount ? undefined : null,
             tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.fill" color={color} />,
           }}
         />

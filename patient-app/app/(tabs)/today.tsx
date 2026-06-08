@@ -1,7 +1,16 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoutineStepsHero } from '@/components/RoutineStepsHero';
@@ -17,6 +26,7 @@ import {
   todayScreenTitle,
 } from '@/lib/routine-copy';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { getNeedsFirstPhoto } from '@/lib/onboarding-storage';
 
 type PhaseItem = {
   product_name?: string;
@@ -51,6 +61,7 @@ export default function TodayScreen() {
   const [allowsPhoto, setAllowsPhoto] = useState(true);
   const [layeringWarning, setLayeringWarning] = useState<string | null>(null);
   const [showCelebrate, setShowCelebrate] = useState(params.celebrate === '1');
+  const [needsFirstPhoto, setNeedsFirstPhoto] = useState(false);
   const photoTriggeredRef = useRef(false);
 
   const clientDayMode = resolveRoutineDayMode(selectedDate);
@@ -170,6 +181,16 @@ export default function TodayScreen() {
     });
   }, [allowsPhoto, router, selectedDate]);
 
+  const loggedForDay = completionScore != null && completionScore >= 100;
+
+  useEffect(() => {
+    void getNeedsFirstPhoto().then(setNeedsFirstPhoto);
+  }, []);
+
+  useEffect(() => {
+    if (loggedForDay) setNeedsFirstPhoto(false);
+  }, [loggedForDay]);
+
   useEffect(() => {
     if (params.photo !== '1' || photoTriggeredRef.current || loading || !hasTemplate || !allowsPhoto) return;
     photoTriggeredRef.current = true;
@@ -184,8 +205,8 @@ export default function TodayScreen() {
     ? `Week ${programWeek} of ${totalWeeks}${phaseLabel ? ` · ${phaseLabel}` : ''}`
     : null;
   const phaseSnippet = phaseExpect || phaseFocus || null;
-  const loggedForDay = completionScore != null && completionScore >= 100;
   const showStepsHero = hasTemplate && phaseItems.length > 0 && dayMode !== 'historical';
+  const showDayOneEmpty = hasTemplate && dayMode === 'today' && !loggedForDay && programWeek <= 1;
 
   if (checking || !ready) {
     return (
@@ -197,6 +218,17 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
+      <Modal visible={needsFirstPhoto && hasTemplate && !loggedForDay} animationType="slide" transparent>
+        <View style={styles.overlayBackdrop}>
+          <View style={styles.overlayCard}>
+            <Text style={styles.overlayTitle}>Day 1 — log today&apos;s photo</Text>
+            <Text style={styles.overlayBody}>
+              Your daily check-in is one progress photo. Same time tomorrow keeps your track consistent.
+            </Text>
+            <PrimaryButton label="Take progress photo" onPress={openCapture} />
+          </View>
+        </View>
+      </Modal>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
@@ -255,7 +287,11 @@ export default function TodayScreen() {
               </Text>
             ) : (
               <>
-                <Text style={styles.photoHint}>Done with your routine? Snap your progress.</Text>
+                {showDayOneEmpty ? (
+                  <Text style={styles.dayOneHint}>Day 1 — same time tomorrow</Text>
+                ) : (
+                  <Text style={styles.photoHint}>Done with your routine? Snap your progress.</Text>
+                )}
                 <PrimaryButton
                   label={dayMode === 'today' ? "Log today's photo" : 'Log progress photo'}
                   onPress={openCapture}
@@ -349,6 +385,27 @@ const styles = StyleSheet.create({
   backfillBannerText: { color: TimelineTokens.backfillBannerFg, fontSize: 13, fontWeight: '600', lineHeight: 18 },
   photoActions: { marginTop: 4, marginBottom: 8, gap: 6 },
   photoHint: { color: JournalTokens.color.muted, fontSize: 14, textAlign: 'center', marginBottom: 4 },
+  dayOneHint: {
+    color: JournalTokens.color.terracotta,
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  overlayBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  overlayCard: {
+    backgroundColor: JournalTokens.color.card,
+    borderTopLeftRadius: JournalTokens.radius.lg,
+    borderTopRightRadius: JournalTokens.radius.lg,
+    padding: JournalTokens.spacing.lg,
+    gap: 12,
+  },
+  overlayTitle: { fontSize: 20, fontWeight: '700', color: JournalTokens.color.ink },
+  overlayBody: { color: JournalTokens.color.muted, lineHeight: 22, marginBottom: 4 },
   loggedDone: {
     color: JournalTokens.color.success,
     fontWeight: '700',

@@ -17,7 +17,7 @@ const HOSTING_DIST = path.join(ROOT, 'unified-dashboard', 'hosting-dist');
 const LIVE_ARG = process.argv.find((a) => a.startsWith('--live'));
 const LIVE_BASE = LIVE_ARG ? process.argv[process.argv.indexOf(LIVE_ARG) + 1] : null;
 
-const HERO_COPY = /Track your skin/i;
+const HERO_COPY = /Track today|Glow tomorrow|Find your face age/i;
 const BRAND_COPY = /Skin\s*&\s*Care/i;
 
 function fail(msg) {
@@ -37,7 +37,7 @@ function findLandingCss(dir) {
 }
 
 function cssHasSkinCareHero(cssText) {
-  return /\.sc-hero\b/i.test(cssText) && /\.sc-nav\b/i.test(cssText);
+  return /\.sc-hero-split\b/i.test(cssText) && /\.sc-site-header\b/i.test(cssText);
 }
 
 function htmlHasSkinCareCopy(html) {
@@ -45,11 +45,17 @@ function htmlHasSkinCareCopy(html) {
 }
 
 async function verifyLocalDist() {
-  const logo = path.join(HOSTING_DIST, 'assets', 'images', 'logo-panda.svg');
+  const logo = path.join(HOSTING_DIST, 'assets', 'images', 'logo-dove.svg');
   if (!fs.existsSync(logo)) {
     fail(`Missing ${logo}. Run: node scripts/build-staging-hosting.cjs`);
   }
-  ok('logo-panda.svg present in hosting-dist');
+  ok('logo-dove.svg present in hosting-dist');
+
+  const hero = path.join(HOSTING_DIST, 'assets', 'images', 'hero-glow.jpg');
+  if (!fs.existsSync(hero)) {
+    fail(`Missing ${hero}. Run: node scripts/build-staging-hosting.cjs`);
+  }
+  ok('hero-glow.jpg present in hosting-dist');
 
   const indexPath = path.join(HOSTING_DIST, 'index.html');
   if (!fs.existsSync(indexPath)) {
@@ -57,7 +63,7 @@ async function verifyLocalDist() {
   }
   const indexHtml = fs.readFileSync(indexPath, 'utf8');
   if (!htmlHasSkinCareCopy(indexHtml)) {
-    fail('index.html missing Skin & Care hero copy (expected "Track your skin" + brand name)');
+    fail('index.html missing Skin & Care hero copy (expected "Track today" / "Glow tomorrow" + brand name)');
   }
   ok('Skin & Care hero copy present in index.html');
 
@@ -68,7 +74,7 @@ async function verifyLocalDist() {
   const cssText = fs.readFileSync(cssPath, 'utf8');
   if (!cssHasSkinCareHero(cssText)) {
     fail(
-      `Skin & Care landing CSS not found in ${path.basename(cssPath)} (expected .sc-hero and .sc-nav)`
+      `Skin & Care landing CSS not found in ${path.basename(cssPath)} (expected .sc-hero-split and .sc-site-header)`
     );
   }
   ok(`Skin & Care landing CSS present in ${path.basename(cssPath)}`);
@@ -78,9 +84,9 @@ async function verifyLive(base) {
   const origin = String(base || '').replace(/\/$/, '');
   if (!origin) fail('--live requires a URL');
 
-  const logoRes = await fetch(`${origin}/assets/images/logo-panda.svg`, { method: 'HEAD' });
+  const logoRes = await fetch(`${origin}/assets/images/logo-dove.svg`, { method: 'HEAD' });
   if (!logoRes.ok) {
-    fail(`Live logo asset ${logoRes.status} ${origin}/assets/images/logo-panda.svg`);
+    fail(`Live logo asset ${logoRes.status} ${origin}/assets/images/logo-dove.svg`);
   }
   ok('Live logo asset 200');
 

@@ -1,19 +1,23 @@
 # Skin & Care brand guidelines
 
-> **Last reviewed:** 2026-06-06
+> **Last reviewed:** 2026-06-08
 
 Consumer-facing product name: **Skin & Care**. Use this guide for patient web, marketing landing, checkout, and shared consumer tokens.
 
 ## Logo
 
+Two marks — see [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) for full paths and implementation.
+
 | Asset | Path | Use |
 |-------|------|-----|
+| **Consumer landing wordmark** | `unified-dashboard/assets/brand/tulip-mark.svg` + `LogoWordmark` in `skin-care-landing` | Marketing landing header/footer: **skin** + tulip + **care** (Be Vietnam Pro) |
 | **Panda mark** | `unified-dashboard/assets/images/logo-panda.svg` | Nav, auth, checkout, provider sidebar icon, email header |
 | **Brand copy (SSOT)** | `unified-dashboard/assets/brand/logo-panda.svg` | Synced to middleware `public/assets/brand/` via `npm run brand:sync` |
 
-- Prefer **SVG** (`logo-panda.svg`) in HTML; scale with CSS height/width.
-- Pair the panda with the wordmark **Skin & Care** (Gloock for display, DM Sans for UI) when space allows.
-- **Do not** use legacy Somo gecko PNGs or deprecated wordmark SVGs.
+- **Landing:** live text wordmark (`skin` bold-italic + tulip + `care` bold). Do not use baked `logo-wordmark.png` or the old PNG compositor script.
+- **Checkout / provider:** prefer **SVG** panda (`logo-panda.svg`); pair with **Skin & Care** in Gloock + DM Sans when space allows.
+- **Landing hero copy** still uses Gloock (`--font-display`); logo text uses Be Vietnam Pro only.
+- **Do not** use legacy Somo gecko PNGs or deprecated bird-arc / dove wordmark assets on the landing.
 
 ## Color palette (consumer journal)
 
@@ -37,9 +41,10 @@ Matches `patient-app/constants/journalTokens.ts` and `unified-dashboard/assets/c
 | Role | Font | CSS variable |
 |------|------|--------------|
 | UI / body | DM Sans | `--font-ui` |
-| Display / wordmark | Gloock | `--font-display` |
+| Display / headlines | Gloock | `--font-display` |
+| Landing logo wordmark | Be Vietnam Pro (Bold Italic + Bold) | `@font-face` in `skin-care-landing/src/styles/landing.css` |
 
-Load via Google Fonts or existing patient/checkout `<link>` tags.
+Load Gloock and DM Sans via Google Fonts or existing patient/checkout `<link>` tags. Logo fonts are self-hosted under `assets/brand/fonts/` — see [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md).
 
 ## Design tokens file
 
@@ -49,14 +54,12 @@ Provider portal layout styles live in `provider-portal.css` (imports `skin-care-
 
 ## Favicons
 
-Regenerate from the panda mark:
+| Surface | Source | Paths |
+|---------|--------|-------|
+| **Consumer landing** | Tulip mark | `skin-care-landing/public/favicon.svg`, `favicon-32x32.png`, `apple-touch-icon.png` — see [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) |
+| **Checkout / provider / shared web** | Panda mark | Regenerate with `npm run brand:favicons` then `npm run brand:sync` from `assets/brand/logo-panda.svg` |
 
-```bash
-npm run brand:favicons
-npm run brand:sync
-```
-
-Source: `unified-dashboard/assets/brand/logo-panda.svg`.
+Do not overwrite landing tulip favicons when running panda favicon scripts.
 
 ## Related docs
 

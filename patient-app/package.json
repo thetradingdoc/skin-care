@@ -12,6 +12,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "verify:expo": "node ./scripts/verify-expo-device.cjs",
+    "smoke:face-read": "node ./scripts/smoke-face-read.cjs",
     "start:device": "expo start --tunnel --clear",
     "verify:testflight": "node ./scripts/verify-testflight-prereqs.cjs",
     "build:testflight": "eas build --platform ios --profile testflight",

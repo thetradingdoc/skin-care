@@ -1,7 +1,8 @@
-import { CTAS, iosAppUrl } from '../content/landingContent';
+import { CTAS, iosAppUrl, isExternalAppUrl } from '../content/landingContent';
 
 export default function CtaSection() {
   const appUrl = iosAppUrl();
+  const isExternal = isExternalAppUrl(appUrl);
 
   return (
     <section className="sc-section sc-cta" aria-labelledby="cta-title">
@@ -12,12 +13,14 @@ export default function CtaSection() {
           <a href={CTAS.signup} className="sc-btn sc-btn-primary">
             Get started free
           </a>
-          {appUrl ? (
-            <a href={appUrl} className="sc-btn sc-btn-secondary" rel="noopener noreferrer">
+          {isExternal ? (
+            <a href={appUrl} className="sc-btn sc-btn-secondary" target="_blank" rel="noopener noreferrer">
               Download on iOS
             </a>
           ) : (
-            <span className="sc-ios-soon">iOS app — coming to TestFlight soon</span>
+            <a href={appUrl} className="sc-btn sc-btn-secondary">
+              Join the waitlist
+            </a>
           )}
         </div>
       </div>

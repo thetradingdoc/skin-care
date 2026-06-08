@@ -2,28 +2,33 @@
 
 **Last updated:** 2026-06-07
 
+**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** (camera, no account) → **`/reveal`** (skin age estimate) → **`/concerns`** → **`patient-login.html?intent=signup&from=skin-age-landing`** → **`patient-dashboard.html`** (Today). Session data in `sessionStorage` until OTP; then template + funnel bridge. **Native app:** returning signed-in users only — new users start on the web.
 
----
-
-<a id="02-journey-now"></a>
-
-## 02-journey-now
-
-*Merged from `docs/user-journey/02-journey-now.md` on 2026-06-02.*
-
-# Journey — MVP (now)
-
-**Last updated:** 2026-05-21
-
-Frictionless path: **optional age hook → intent (why you’re here) → match (goal-aware inquiry + program, specialist, dual, or clarify) → week-1 preview, dual offer, or derm directory on `/start` → inline email + code → app with session + activated routine (program/dual only) → first progress photo on Today.**
+Frictionless path (legacy): **optional age hook → intent (why you’re here) → match …** (see below; `/start` BiologicalAge funnel archived).
 
 ## Principles
 
 - **One auth moment** — email and 6-digit code only (no password, no duplicate login on web then app).
 - **No profile gate** — do not block routine pick on demographics, insurance, or `onboarding.html`.
-- **Web discovers and verifies** — Skin & Care landing at `/`; account starts on `patient-login.html` (email + code).
-- **App and web share the routine** — picker, Today, Timeline, Money; see [06-mobile-and-web-parity.md](./06-mobile-and-web-parity.md).
-- **Age never blocks signup** — `/start` is optional; Signup from `/` skips the photo step.
+- **Web-first discovery** — New users scan on the landing SPA (`/scan`); account is only required to save progress.
+- **App for returning users** — Expo app opens to sign-in; no new-user onboarding scan in app.
+
+## Skin Age Journey (web-first)
+
+1. **Landing** — `/`: headline *Track today. Glow tomorrow.*; CTA *Find your face age* → `/scan`.
+2. **Scan** — `/scan`: camera or upload → `POST /api/public/face-read` (`VITE_FACE_READ_MOCK=1` when GPU down); data in `sessionStorage`.
+3. **Reveal** — `/reveal`: display `apparent_age_estimate`; optional real-age correction.
+4. **Concerns** — `/concerns`: chips from `GET /api/public/routines/concerns` (max 2) → `POST /api/public/funnel/match`.
+5. **Signup** — `patient-login.html?intent=signup&from=skin-age-landing`: OTP → [`skin-age-journey.js`](../unified-dashboard/assets/js/skin-age-journey.js) activates template + bridge → `patient-dashboard.html?celebrate=1`.
+6. **Today loop** — progress photo on web dashboard; native app for returning users with session.
+
+Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
+
+## Skin Age Journey (native app — returning users)
+
+- Cold start with no session → **sign-in** only (link to web `/scan` for new accounts).
+- Session + template → `/(tabs)/today`.
+- Legacy `app/onboarding/*` screens remain for dev/deeplink but are off the default path.
 
 ## Happy path (7 steps)
 

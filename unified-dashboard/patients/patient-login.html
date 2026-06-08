@@ -9,6 +9,7 @@
     <title>Skin &amp; Care — Sign in</title>
     <link rel="stylesheet" href="../assets/css/global.css">
     <script src="../assets/js/config.js" defer></script>
+    <script src="../assets/js/skin-age-journey.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Gloock&display=swap');
         :root {
@@ -647,8 +648,21 @@
 
                     showStep('stepLoading');
 
-                    // Product requirement: always land on Home after login.
-                    window.location.replace('patient-dashboard.html');
+                    let celebrate = false;
+                    try {
+                        if (window.SkinAgeJourney && window.SkinAgeJourney.hasJourneyData()) {
+                            await window.SkinAgeJourney.completeSkinAgeJourney(sessionId);
+                            celebrate = true;
+                        }
+                    } catch (journeyErr) {
+                        console.warn('[skin-age] journey complete failed', journeyErr);
+                    }
+
+                    if (celebrate) {
+                        window.location.replace('patient-dashboard.html?celebrate=1');
+                    } else {
+                        window.location.replace('patient-dashboard.html');
+                    }
                 } else {
                     showMessage('codeMessage', data.error || 'Invalid verification code', 'error');
                     // Clear code inputs
@@ -710,8 +724,23 @@
                     emailMsg.innerHTML = '<div class="alert alert-info" style="display:block;">Your session expired. Please sign in again to continue.</div>';
                 }
             }
-            // default intent
-            setAuthIntent('signin');
+            // default intent from URL
+            const intentParam = urlParams.get('intent');
+            const fromLanding = urlParams.get('from') === 'skin-age-landing';
+            if (intentParam === 'signup') {
+                setAuthIntent('signup');
+            } else {
+                setAuthIntent('signin');
+            }
+            if (fromLanding && window.__patientAuthIntent === 'signup') {
+                const title = document.getElementById('authTitle');
+                const desc = document.getElementById('authDescription');
+                if (title) title.textContent = 'Save your skin age estimate';
+                if (desc) {
+                    desc.textContent =
+                        'Create a free account to save your scan and start your daily track. We’ll send a secure 6-digit code.';
+                }
+            }
 
             document.querySelectorAll('.auth-mode-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
@@ -744,10 +773,14 @@
             const desc = document.getElementById('authDescription');
             const signInBtn = document.getElementById('intentSigninBtn');
             const signUpBtn = document.getElementById('intentSignupBtn');
+            const fromLanding =
+                new URLSearchParams(window.location.search).get('from') === 'skin-age-landing';
 
             if (window.__patientAuthIntent === 'signup') {
-                title.textContent = 'Create account';
-                desc.textContent = 'Enter your email to create your patient account. We’ll send a secure 6-digit code.';
+                title.textContent = fromLanding ? 'Save your skin age estimate' : 'Create account';
+                desc.textContent = fromLanding
+                    ? 'Create a free account to save your scan and start your daily track. We’ll send a secure 6-digit code.'
+                    : 'Enter your email to create your patient account. We’ll send a secure 6-digit code.';
                 signInBtn.classList.remove('active');
                 signInBtn.setAttribute('aria-selected', 'false');
                 signUpBtn.classList.add('active');

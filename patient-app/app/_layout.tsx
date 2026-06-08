@@ -13,7 +13,7 @@ import { SkinCareNavigationTheme } from '@/constants/navigationTheme';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
 import { patientGet } from '@/lib/patient-api';
-import { SIGN_IN_HREF } from '@/constants/routes';
+import { SIGN_IN_HREF, INDEX_HREF, TODAY_HREF } from '@/constants/routes';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,10 +38,10 @@ function useAppDeepLinks() {
           if (!sid) return;
           await setPatientSession(sid);
           const template = await patientGet('/api/patient/routine/template').catch(() => ({ has_template: false }));
-          if (!template?.has_template) {
-            router.replace('/routine/pick');
+          if (template?.has_template) {
+            router.replace(TODAY_HREF);
           } else {
-            router.replace('/(tabs)/today');
+            router.replace(INDEX_HREF);
           }
         } catch {
           router.replace(SIGN_IN_HREF);
@@ -80,7 +80,9 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : SkinCareNavigationTheme}>
       <BillingFeedbackProvider>
         <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="checkout-chat" options={{ presentation: 'modal', title: 'Checkout chat' }} />

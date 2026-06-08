@@ -47,7 +47,37 @@ npm run start:device
 
 1. Open **Camera** app → scan the QR code in the terminal (or Expo Dev Tools in browser).
 2. Tap the banner → opens **Expo Go** with Skin & Care.
-3. Sign in with email OTP.
+3. Fresh install → **onboarding** (scan → reveal → concerns → signup) → Today.
+
+## Onboarding test checklist
+
+| Step | Screen | Verify |
+|------|--------|--------|
+| 1 | `onboarding/scan` | Camera permission; capture or **Skip for now** |
+| 2 | `onboarding/reveal` | Skin age number shown (mock if `EXPO_PUBLIC_FACE_READ_MOCK=1`) |
+| 3 | `onboarding/concerns` | Chips load; pick 1–2; continue |
+| 4 | `onboarding/signup` | Email OTP → lands on Today with celebrate + photo prompt |
+| 5 | Today | Day 1 overlay; log photo dismisses overlay; Account tab appears after first photo |
+
+**Mock face-read (no GPU):** add to `patient-app/.env`:
+
+```bash
+EXPO_PUBLIC_FACE_READ_MOCK=1
+```
+
+Restart: `npx expo start --clear`.
+
+**Smoke test (middleware + optional teamkelly):**
+
+```bash
+node patient-app/scripts/smoke-face-read.cjs
+```
+
+Set `FACE_READ_INFERENCE_BASE_URL=http://127.0.0.1:8765` in middleware `.env` for real inference.
+
+## Returning user
+
+Sign in from Account or `sign-in` route — skips onboarding if session + template exist.
 
 ## Troubleshooting
 

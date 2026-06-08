@@ -1,35 +1,64 @@
 export const HERO = {
-  title: 'Track your skin, every day.',
+  titleLine1: 'Track today.',
+  titleLine2: 'Glow tomorrow.',
   subtitle:
-    'Skin & Care helps you log daily photos, follow concern-based routines, and see how your skin changes over time.',
+    'Your personal skincare tracker to understand your skin, build better habits, and see real results over time.',
+  ctaLabel: 'Find your face age',
 };
 
-export const VALUE_BULLETS = [
+export const NAV_LINKS = [
+  { label: 'Features', href: '#features' },
+  { label: 'How It Works', href: '#how' },
+  { label: 'Insights', href: '#insights' },
+  { label: 'About', href: '/about.html' },
+  { label: 'Contact', href: '#contact' },
+];
+
+export const FEATURES = [
   {
-    id: 'log',
-    title: 'Log today’s skin',
-    body: 'Capture a quick photo and note how your skin feels — build a timeline you can actually use.',
+    id: 'track',
+    title: 'Track Your Skin',
+    body: 'Log daily, see patterns, understand your skin.',
+    icon: 'track',
   },
   {
-    id: 'routine',
-    title: 'Follow your routine',
-    body: 'Pick a concern program — acne, anti-aging, barrier repair, and more — and get guided daily steps.',
+    id: 'insights',
+    title: 'Smart Insights',
+    body: 'Get personalized insights and progress over time.',
+    icon: 'insights',
   },
   {
-    id: 'progress',
-    title: 'See real progress',
-    body: 'Compare weeks and phases side by side so you know what’s working, not just what you hope is working.',
+    id: 'habits',
+    title: 'Build Better Habits',
+    body: 'Set routines, get reminders, and stay consistent.',
+    icon: 'habits',
   },
 ];
 
 export const CTAS = {
-  signup: '/patients/patient-login.html?intent=signup',
+  scan: '/scan',
+  signup: '/patients/patient-login.html?intent=signup&from=skin-age-landing',
   signin: '/patients/patient-login.html',
   privacy: '/patients/legal/privacy.html',
   terms: '/patients/legal/terms.html',
+  waitlist: '/waitlist',
 };
+
+export function webAppUrl() {
+  const url = (import.meta.env.VITE_WEB_APP_URL || '').trim();
+  return url || CTAS.signup;
+}
 
 export function iosAppUrl() {
   const url = (import.meta.env.VITE_IOS_APP_URL || '').trim();
-  return url || null;
+  return url || CTAS.waitlist;
+}
+
+export function androidAppUrl() {
+  const url = (import.meta.env.VITE_ANDROID_APP_URL || '').trim();
+  return url || CTAS.waitlist;
+}
+
+export function isExternalAppUrl(url) {
+  return Boolean(url && /^https?:\/\//i.test(url));
 }

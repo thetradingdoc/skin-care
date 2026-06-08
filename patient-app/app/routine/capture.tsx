@@ -18,6 +18,7 @@ import { PhotoAlignPreview } from '@/components/PhotoAlignPreview';
 import { JournalTokens } from '@/constants/journalTokens';
 import { fetchPriorProgressPhotoUrl } from '@/lib/routine-capture-overlay';
 import { uploadRoutineProgressPhoto } from '@/lib/routine-capture';
+import { setFirstPhotoLogged } from '@/lib/onboarding-storage';
 import { localTodayIso, resolveRoutineDayMode } from '@/lib/routine-day-mode';
 
 const SYMPTOM_OPTIONS = ['Redness', 'Stinging', 'New breakout', 'Dryness', 'Itching'] as const;
@@ -66,6 +67,7 @@ export default function RoutineCaptureScreen() {
 
   const finishSuccess = useCallback(() => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    void setFirstPhotoLogged();
     router.replace({
       pathname: '/(tabs)/today',
       params: { date: entryDate, celebrate: '1' },

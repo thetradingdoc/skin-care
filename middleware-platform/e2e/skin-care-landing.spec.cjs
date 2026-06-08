@@ -7,20 +7,20 @@ test.describe('Skin & Care consumer landing', () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
 
-    await expect(page.getByRole('link', { name: /Skin & Care home/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Track your skin, every day/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /skin care home/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Track today\./i })).toBeVisible();
+    await expect(page.getByText(/Glow tomorrow/i)).toBeVisible();
     await expect(page.getByText(/Somo/i)).toHaveCount(0);
 
-    const getStarted = page.getByRole('link', { name: /Get started/i }).first();
-    await expect(getStarted).toHaveAttribute('href', /patient-login\.html\?intent=signup/);
+    const faceAgeCta = page.getByRole('link', { name: /Find your face age/i });
+    await expect(faceAgeCta).toHaveAttribute('href', '/scan');
 
-    const signIn = page.locator('.sc-nav').getByRole('link', { name: /Sign in/i });
-    await expect(signIn).toHaveAttribute('href', /patient-login\.html/);
+    await expect(page.locator('.sc-hero-photo')).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: /Your skin journal, simplified/i })).toBeVisible();
-    await expect(page.getByText(/Log today/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Track Your Skin/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Smart Insights/i })).toBeVisible();
 
-    await expect(page.locator('.sc-footer')).toContainText('Skin & Care');
+    await expect(page.locator('.sc-footer')).toContainText('Skin&Care');
     await expect(page.locator('.sc-footer').getByRole('link', { name: /Privacy/i })).toHaveAttribute(
       'href',
       /legal\/privacy\.html/
@@ -30,6 +30,6 @@ test.describe('Skin & Care consumer landing', () => {
   test('mobile layout shows primary CTA', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    await expect(page.getByRole('link', { name: /Get started free/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Find your face age/i })).toBeVisible();
   });
 });
