@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/unified-dashboard/assets/css/skin-care-tokens.css" />
   <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-skin-care.css" />
   <link rel="stylesheet" href="/unified-dashboard/assets/css/voice-agent.css" />
+  <link rel="stylesheet" href="/assets/css/logo-wordmark.css" />
   <script src="/assets/js/config.js"></script>
   <script src="/unified-dashboard/assets/js/provider-session.js"></script>
   <script src="/unified-dashboard/assets/js/voice-hours-picker.js"></script>
@@ -15,8 +16,13 @@
 <body class="signup-wizard-body">
   <div class="activation-wrap" style="max-width:520px">
     <a href="/" class="signup-logo-link" aria-label="Skin &amp; Care home">
-      <img class="signup-logo-img signup-logo-panda" src="/assets/images/logo-panda.svg" alt="" aria-hidden="true" width="40" height="40" />
-      <span class="signup-logo-wordmark">Skin &amp; Care</span>
+      <span class="sc-logo-wordmark" style="--logo-height: 40px" role="img" aria-label="skin care">
+        <span class="sc-logo-skin" aria-hidden="true">skin</span>
+        <span class="sc-logo-mark-slot" aria-hidden="true">
+          <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+        </span>
+        <span class="sc-logo-care" aria-hidden="true">care</span>
+      </span>
     </a>
 
     <p class="signup-eyebrow" style="margin-top:20px" id="setupEyebrow">Step 1 of 3</p>

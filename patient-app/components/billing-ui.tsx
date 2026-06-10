@@ -4,12 +4,16 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { JournalTokens } from '@/constants/journalTokens';
 import { BillingTheme } from '@/constants/billingTheme';
 
-type BtnProps = { label: string; onPress?: () => void };
+type BtnProps = { label: string; onPress?: () => void; variant?: 'billing' | 'consumer' };
 
-export function PrimaryButton({ label, onPress }: BtnProps) {
+export function PrimaryButton({ label, onPress, variant = 'billing' }: BtnProps) {
+  const isConsumer = variant === 'consumer';
   return (
-    <Pressable style={styles.primary} onPress={onPress} accessibilityRole="button">
-      <Text style={styles.primaryText}>{label}</Text>
+    <Pressable
+      style={[styles.primary, isConsumer && styles.primaryConsumer]}
+      onPress={onPress}
+      accessibilityRole="button">
+      <Text style={[styles.primaryText, isConsumer && styles.primaryTextConsumer]}>{label}</Text>
     </Pressable>
   );
 }
@@ -46,7 +50,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
+  primaryConsumer: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: JournalTokens.radius.pill,
+  },
   primaryText: { color: BillingTheme.button.primaryText, fontWeight: '700', fontSize: 16 },
+  primaryTextConsumer: { color: '#ffffff' },
   secondary: {
     borderWidth: 1,
     borderColor: JournalTokens.color.line,

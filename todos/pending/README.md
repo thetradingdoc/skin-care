@@ -1,9 +1,9 @@
 # Pending todo lists
 
-**Last updated:** June 6, 2026  
+**Last updated:** June 9, 2026  
 **Start here** for active work. Completed checklists live in [`../archive/`](../archive/README.md).
 
-**Also done (code, not a todo file):** P0+P1 codebase hardening — [`docs/architecture/CODEBASE_REVIEW_ROADMAP.md`](../../docs/architecture/CODEBASE_REVIEW_ROADMAP.md) (commit `139f424`).
+**Also done (code, not a todo file):** P0+P1 codebase hardening — [`docs/development/CODE_REVIEW_2026-06.md`](../../docs/development/CODE_REVIEW_2026-06.md).
 
 ---
 
@@ -19,6 +19,8 @@
 | [`Step10-LangChain-LangGraph-LangSmith-todos.md`](Step10-LangChain-LangGraph-LangSmith-todos.md) | Step 10 LangGraph + guardrails (blocked on checkout payment-rail prereqs) |
 | [`DERM_PATIENT_QA_REDDIT_PIPELINE_TODOS.md`](DERM_PATIENT_QA_REDDIT_PIPELINE_TODOS.md) | Derm Q&A UI (Phase 8), eval/CI (Phase 6), ops (Phase 7) |
 | [`IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md`](IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md) | Skin & Care iOS TestFlight — auth, tracking, care_program subscription |
+| [`SKIN_AGE_JOURNEY_E2E_TODOS.md`](SKIN_AGE_JOURNEY_E2E_TODOS.md) | **P0** Web funnel → sign-in → Today/Progress; face scan, routines, consent, E2E |
+| [`CODE_REVIEW_REFACTOR_TODOS.md`](CODE_REVIEW_REFACTOR_TODOS.md) | **Done (2026-06-10)** — patient repo, server bootstrap, journal split, Vitest, docs |
 
 ---
 

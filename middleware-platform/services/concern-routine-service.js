@@ -7,6 +7,7 @@ const CONCERN_LABELS = {
   anti_aging: 'Anti-aging care plan',
   acne: 'Acne care plan',
   hyperpigmentation: 'Hyperpigmentation care plan',
+  hyperpigmentation_dark_skin: 'Dark spots (melanin-rich skin) plan',
   barrier_repair: 'Barrier repair care plan',
   rosacea: 'Rosacea care plan',
 };
@@ -17,7 +18,7 @@ let _catalog = null;
 
 function loadCatalog() {
   if (_catalog) return _catalog;
-  const filePath = path.join(__dirname, '../data/routines/concern-routines.json');
+  const filePath = path.join(__dirname, '../routines/concern-routines.json');
   const raw = fs.readFileSync(filePath, 'utf8');
   _catalog = JSON.parse(raw);
   return _catalog;
@@ -68,6 +69,34 @@ function listPhases(weeklySchedule) {
     })
     .filter(Boolean)
     .sort((a, b) => a.week_start - b.week_start);
+}
+
+/** Expand phase dict into per-week rows for lookup by program week number. */
+function expandWeeklySchedule(weeklySchedule) {
+  const phases = listPhases(weeklySchedule);
+  const weeks = [];
+  for (const phase of phases) {
+    for (let w = phase.week_start; w <= phase.week_end; w += 1) {
+      weeks.push({
+        week: w,
+        phase_key: phase.key,
+        phase_label: phase.label || null,
+        focus: phase.focus || null,
+        expect: phase.expect || null,
+        notes: phase.notes || null,
+        am_steps: Array.isArray(phase.am_steps) ? phase.am_steps : [],
+        pm_steps: Array.isArray(phase.pm_steps) ? phase.pm_steps : [],
+        photo_prompt: Boolean(phase.photo_prompt),
+      });
+    }
+  }
+  return weeks.sort((a, b) => a.week - b.week);
+}
+
+function resolveWeekSchedule(program, programWeek) {
+  const weeks = expandWeeklySchedule(program?.weekly_schedule);
+  const w = Math.max(1, Math.min(Number(programWeek) || 1, weeks.length ? weeks[weeks.length - 1].week : 1));
+  return weeks.find((row) => row.week === w) || weeks[weeks.length - 1] || null;
 }
 
 function programWeekForDate(startDateIso, targetDateIso) {
@@ -278,6 +307,8 @@ module.exports = {
   listConcerns,
   getConcernProgram,
   listPhases,
+  expandWeeklySchedule,
+  resolveWeekSchedule,
   parsePhaseKey,
   programWeekForDate,
   resolveCurrentPhase,

@@ -1,20 +1,12 @@
-import { Tabs, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { JournalTokens } from '@/constants/journalTokens';
-import { getFirstPhotoLogged } from '@/lib/onboarding-storage';
 
 export default function TabLayout() {
-  const router = useRouter();
-  const [showAccount, setShowAccount] = useState(false);
-
-  useEffect(() => {
-    void getFirstPhotoLogged().then(setShowAccount);
-  }, []);
-
   return (
     <View style={styles.root}>
       <Tabs
@@ -36,20 +28,27 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="timeline"
+          name="progress"
           options={{
-            title: 'Timeline',
+            title: 'Progress',
+            tabBarIcon: ({ color }) => <IconSymbol size={22} name="chart.line.uptrend.xyaxis" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="plan"
+          options={{
+            title: 'Plan',
             tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar" color={color} />,
           }}
         />
         <Tabs.Screen
           name="account"
           options={{
-            title: 'Account',
-            href: showAccount ? undefined : null,
+            title: 'Profile',
             tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.fill" color={color} />,
           }}
         />
+        <Tabs.Screen name="timeline" options={{ href: null }} />
         <Tabs.Screen name="money" options={{ href: null }} />
         <Tabs.Screen name="index" options={{ href: null }} />
         <Tabs.Screen name="home" options={{ href: null }} />
@@ -60,17 +59,9 @@ export default function TabLayout() {
         <Tabs.Screen name="shelf" options={{ href: null }} />
         <Tabs.Screen name="insights" options={{ href: null }} />
         <Tabs.Screen name="explore" options={{ href: null }} />
+        <Tabs.Screen name="calendar" options={{ href: null }} />
+        <Tabs.Screen name="journal" options={{ href: null }} />
       </Tabs>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Log progress photo"
-        onPress={() => router.push('/routine/capture')}
-        style={styles.fab}>
-        <Text allowFontScaling style={styles.fabText}>
-          Log photo
-        </Text>
-      </Pressable>
     </View>
   );
 }
@@ -90,24 +81,5 @@ const styles = StyleSheet.create({
     fontFamily: JournalTokens.font.body,
     fontSize: 12,
     marginBottom: 2,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 42,
-    alignSelf: 'center',
-    minWidth: 120,
-    minHeight: JournalTokens.minTap,
-    borderRadius: JournalTokens.radius.pill,
-    backgroundColor: JournalTokens.color.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: JournalTokens.spacing.lg,
-    ...JournalTokens.shadow.card,
-  },
-  fabText: {
-    fontFamily: JournalTokens.font.body,
-    fontWeight: '700',
-    color: '#fff',
-    fontSize: 15,
   },
 });

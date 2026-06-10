@@ -113,6 +113,7 @@
       </form>
     </section>
   </main>
+  <script src="/assets/js/api-base.js"></script>
   <script>
     const form = document.getElementById('waitlistForm');
     const statusMsg = document.getElementById('statusMsg');
@@ -123,15 +124,21 @@
       submitBtn.disabled = true;
       statusMsg.textContent = 'Submitting...';
 
+      const note = String(form.note.value || '').trim() || null;
       const payload = {
         name: String(form.name.value || '').trim(),
         email: String(form.email.value || '').trim(),
         source: 'web_waitlist_page',
-        notes: String(form.note.value || '').trim() || null
+        product: note
       };
 
+      function waitlistApiUrl() {
+        const base = (typeof resolveApiBase === 'function' ? resolveApiBase() : window.location.origin).replace(/\/$/, '');
+        return `${base}/api/public/waitlist`;
+      }
+
       try {
-        const res = await fetch('/api/public/waitlist', {
+        const res = await fetch(waitlistApiUrl(), {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(payload)

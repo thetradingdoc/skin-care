@@ -5,20 +5,34 @@ import FunnelShell from '../components/FunnelShell';
 import { CTAS } from '../content/landingContent';
 import { publicGet, publicPost } from '../lib/publicApi';
 import {
+  getConfirmedAge,
   getFaceRead,
+  getQuickCheck,
+  getSuggestedConcerns,
   setConcernId,
   setMatchJson,
+  setSuggestedConcerns,
 } from '../lib/skinAgeStorage';
 
-const MAX_SELECTED = 2;
 const DEFAULT_CONCERN = 'anti_aging';
+
+const CONCERN_ICONS = {
+  anti_aging: '✨',
+  acne: '◎',
+  hyperpigmentation: '☀️',
+  hyperpigmentation_dark_skin: '🌙',
+  barrier_repair: '🛡️',
+  rosacea: '🌸',
+};
 
 export default function ConcernsPage() {
   const [concerns, setConcerns] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const [selected, setSelected] = useState(DEFAULT_CONCERN);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [preselectNote, setPreselectNote] = useState('');
+  const [suggestedIds, setSuggestedIds] = useState([]);
 
   useEffect(() => {
     void (async () => {
@@ -26,7 +40,36 @@ export default function ConcernsPage() {
         const data = await publicGet('/api/public/routines/concerns');
         const list = Array.isArray(data?.concerns) ? data.concerns : [];
         setConcerns(list);
-        if (list.length) setSelected([list[0].id]);
+
+        const faceRead = getFaceRead();
+        const quickCheck = getQuickCheck();
+        const confirmedAge = getConfirmedAge();
+        let primary = DEFAULT_CONCERN;
+        let suggested = getSuggestedConcerns();
+
+        try {
+          const matchRes = await publicPost('/api/public/funnel/match', {
+            user_goal: 'track_program',
+            face_read: faceRead,
+            confirmed_age: confirmedAge,
+            quick_check_answers: quickCheck,
+          });
+          const match = matchRes?.match || matchRes || {};
+          suggested = Array.isArray(match.suggested_concern_ids) ? match.suggested_concern_ids : [];
+          if (match.primary_suggestion) primary = match.primary_suggestion;
+          else if (suggested[0]) primary = suggested[0];
+          setSuggestedConcerns(suggested);
+          setSuggestedIds(suggested);
+          setMatchJson(match);
+        } catch {
+          if (!suggested.length && list.length) primary = list[0].id;
+        }
+
+        if (list.some((c) => c.id === primary)) {
+          setSelected(primary);
+          const label = list.find((c) => c.id === primary)?.label || primary;
+          setPreselectNote(`${label} pre-selected based on your scan`);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load concerns.');
       } finally {
@@ -35,33 +78,26 @@ export default function ConcernsPage() {
     })();
   }, []);
 
-  const toggle = useCallback((id) => {
-    setSelected((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= MAX_SELECTED) return [...prev.slice(1), id];
-      return [...prev, id];
-    });
-  }, []);
-
-  const goSignup = useCallback(async (primary, chips) => {
+  const goSignup = useCallback(async (primary) => {
     setBusy(true);
     setError(null);
     try {
       setConcernId(primary);
       const faceRead = getFaceRead();
-      const confirmedAge = sessionStorage.getItem('sc_onboarding_confirmed_age');
+      const confirmedAge = getConfirmedAge();
+      const quickCheck = getQuickCheck();
       try {
         const match = await publicPost('/api/public/funnel/match', {
           user_goal: 'track_program',
           face_read: faceRead,
-          confirmed_age: confirmedAge ? Number(confirmedAge) : null,
+          confirmed_age: confirmedAge,
           concern_chip: primary,
-          concern_chips: chips,
-          secondary_concern_ids: chips.slice(1),
+          concern_chips: [primary],
+          quick_check_answers: quickCheck,
         });
         setMatchJson(match?.match || match || null);
       } catch {
-        setMatchJson(null);
+        /* keep prior match */
       }
       window.location.href = CTAS.signup;
     } catch (e) {
@@ -71,18 +107,14 @@ export default function ConcernsPage() {
   }, []);
 
   const continueNext = useCallback(() => {
-    const primary = selected[0] || DEFAULT_CONCERN;
-    const chips = selected.length ? selected : [DEFAULT_CONCERN];
-    void goSignup(primary, chips);
+    void goSignup(selected || DEFAULT_CONCERN);
   }, [goSignup, selected]);
 
-  const skip = useCallback(() => {
-    void goSignup(DEFAULT_CONCERN, [DEFAULT_CONCERN]);
-  }, [goSignup]);
+  const selectedRow = concerns.find((c) => c.id === selected);
 
   if (loading) {
     return (
-      <FunnelShell>
+      <FunnelShell step={4}>
         <div className="sc-funnel-inner">
           <p className="sc-funnel-sub">Loading…</p>
         </div>
@@ -91,36 +123,44 @@ export default function ConcernsPage() {
   }
 
   return (
-    <FunnelShell>
+    <FunnelShell step={4}>
       <div className="sc-funnel-inner">
-        <Link to={getFaceRead() ? '/reveal' : '/scan'} className="sc-funnel-back">
+        <Link to="/reveal" className="sc-funnel-back">
           ← Back
         </Link>
-        <h1 className="sc-funnel-title">What should we focus on?</h1>
-        <p className="sc-funnel-sub">Pick up to two. We&apos;ll personalize your 12-week track.</p>
+        <span className="sc-funnel-tag">Your plan</span>
+        <h1 className="sc-funnel-title" style={{ fontSize: '1.15rem' }}>
+          {suggestedIds.length >= 2 ? 'We spotted two things' : 'Choose your focus'}
+        </h1>
+        <p className="sc-funnel-sub">Pick your primary concern to focus on first</p>
 
         {error ? <p className="sc-funnel-error">{error}</p> : null}
 
-        <div className="sc-concern-chips">
+        <div className="sc-concern-grid">
           {concerns.map((c) => {
-            const active = selected.includes(c.id);
+            const active = selected === c.id;
             return (
               <button
                 key={c.id}
                 type="button"
-                className={`sc-concern-chip${active ? ' sc-concern-chip-active' : ''}`}
-                onClick={() => toggle(c.id)}>
-                {c.label}
+                className={`sc-concern-card${active ? ' sc-concern-card--pick' : ''}`}
+                onClick={() => setSelected(c.id)}>
+                <span className="sc-concern-card-icon" aria-hidden="true">
+                  {CONCERN_ICONS[c.id] || '•'}
+                </span>
+                <span className="sc-concern-card-name">{c.label}</span>
+                <span className="sc-concern-card-dur">{c.total_weeks || 12} weeks</span>
               </button>
             );
           })}
         </div>
 
+        {preselectNote ? <p className="sc-concern-hint">{preselectNote}</p> : null}
+
         <button type="button" className="sc-btn sc-btn-dark sc-btn-block" disabled={busy} onClick={continueNext}>
-          {busy ? 'Saving…' : 'Continue'}
-        </button>
-        <button type="button" className="sc-funnel-link" disabled={busy} onClick={skip}>
-          Not sure — skip
+          {busy
+            ? 'Saving…'
+            : `Start ${selectedRow?.label?.toLowerCase() || 'plan'} plan`}
         </button>
       </div>
     </FunnelShell>

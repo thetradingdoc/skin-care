@@ -22,11 +22,12 @@ HTTP (routes/*.js)
 
 - **Facade:** `require('./database')` or `require('../database')` — do not change import paths during phased refactor.
 - **Repositories:** [`database/repositories/`](database/repositories/) — new domain SQL lives here and is re-exported from `database.js`.
-- **Migrations:** [`database/migrations/run-startup-migrations.js`](database/migrations/run-startup-migrations.js) runs ordered startup migrations; individual `migrate*()` bodies still live in `database.js` until Phase 2.
+- **Migrations:** [`database/migrations/run-startup-migrations.js`](database/migrations/run-startup-migrations.js) runs ordered startup migrations. Domain extracts: [`database/migrations/patient-portal.js`](database/migrations/patient-portal.js) (sessions, documents). Remaining `migrate*()` bodies still live in `database.js` until Phase 2.
 
-### Phase 1 repository
+### Phase 1–2 repositories
 
 - [`database/repositories/medical-codes.js`](database/repositories/medical-codes.js) — ICD-10, CPT, HCPCS, `codeExists`, `code_embeddings`
+- [`database/repositories/patient-portal.js`](database/repositories/patient-portal.js) — `patient_portal_sessions` OTP, verification, session TTL
 
 ## Major domains
 

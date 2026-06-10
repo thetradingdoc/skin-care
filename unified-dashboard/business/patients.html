@@ -10,6 +10,7 @@
   <title>Skin & Care Provider — Patients</title>
   <link rel="stylesheet" href="/assets/css/skin-care-tokens.css">
   <link rel="stylesheet" href="/assets/css/provider-portal.css">
+  <link rel="stylesheet" href="/assets/css/logo-wordmark.css">
   <link rel="stylesheet" href="/assets/css/provider-patients.css?v=7">
   <script src="/assets/js/config.js"></script>
   <script src="/assets/js/auth-utils.js"></script>
@@ -26,8 +27,13 @@
     <aside class="pp-sidebar" id="ppSidebar">
       <div class="pp-clinic-header">
         <a class="pp-sb-brand" href="today.html">
-          <img src="/assets/images/logo-panda.svg" alt="" aria-hidden="true" class="pp-sb-logo-img" width="36" height="36" />
-          <span class="pp-sb-logo-text">Skin &amp; Care</span>
+          <span class="sc-logo-wordmark" style="--logo-height: 30px" role="img" aria-label="skin care">
+            <span class="sc-logo-skin" aria-hidden="true">skin</span>
+            <span class="sc-logo-mark-slot" aria-hidden="true">
+              <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+            </span>
+            <span class="sc-logo-care" aria-hidden="true">care</span>
+          </span>
         </a>
         <div class="pp-sb-clinic-meta">
           <div class="pp-sb-cn" id="ppClinicName">Clinic</div>

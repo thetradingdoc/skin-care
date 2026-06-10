@@ -27,6 +27,9 @@ import {
 } from '@/lib/routine-copy';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { getNeedsFirstPhoto } from '@/lib/onboarding-storage';
+import { PROGRESS_HREF } from '@/constants/routes';
+import { EMAIL_KEY } from '@/lib/patient-session';
+import * as SecureStore from 'expo-secure-store';
 
 type PhaseItem = {
   product_name?: string;
@@ -62,6 +65,9 @@ export default function TodayScreen() {
   const [layeringWarning, setLayeringWarning] = useState<string | null>(null);
   const [showCelebrate, setShowCelebrate] = useState(params.celebrate === '1');
   const [needsFirstPhoto, setNeedsFirstPhoto] = useState(false);
+  const [streakDays, setStreakDays] = useState(0);
+  const [greetingName, setGreetingName] = useState('there');
+  const [photoThumbs, setPhotoThumbs] = useState<{ date: string; logged: boolean }[]>([]);
   const photoTriggeredRef = useRef(false);
 
   const clientDayMode = resolveRoutineDayMode(selectedDate);
@@ -70,11 +76,31 @@ export default function TodayScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [templateRes, dailyRes, phaseRes] = await Promise.all([
+      const todayIso = localTodayIso();
+      const thumbStart = new Date(`${todayIso}T12:00:00.000Z`);
+      thumbStart.setUTCDate(thumbStart.getUTCDate() - 4);
+      const thumbStartIso = thumbStart.toISOString().slice(0, 10);
+
+      const [templateRes, dailyRes, phaseRes, progressRes, calRes] = await Promise.all([
         patientGet('/api/patient/routine/template'),
         patientGet(`/api/patient/routine/daily?date=${selectedDate}`),
         patientGet(`/api/patient/routine/phase?date=${selectedDate}`).catch(() => null),
+        patientGet('/api/patient/home/progress-summary').catch(() => null),
+        patientGet(
+          `/api/patient/journal/calendar-range?start=${thumbStartIso}&end=${todayIso}&include_empty_days=1`,
+        ).catch(() => ({ days: [] })),
       ]);
+      setStreakDays(Number(progressRes?.summary?.streak_days) || 0);
+      const email = (await SecureStore.getItemAsync(EMAIL_KEY)) || '';
+      const nick = email.split('@')[0]?.split(/[._]/)[0];
+      if (nick) setGreetingName(nick.charAt(0).toUpperCase() + nick.slice(1));
+      const calDays = Array.isArray(calRes?.days) ? calRes.days : [];
+      setPhotoThumbs(
+        calDays.slice(-5).map((d: { date: string; completion_score?: number; has_media?: boolean }) => ({
+          date: d.date,
+          logged: (d.completion_score || 0) >= 100 || Boolean(d.has_media),
+        })),
+      );
       setHasTemplate(Boolean(templateRes?.has_template));
       const score = dailyRes?.daily_entry?.completion_score;
       const scoreNum = Number.isFinite(Number(score)) ? Number(score) : null;
@@ -232,18 +258,38 @@ export default function TodayScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
-        <Text allowFontScaling style={styles.title}>
-          {todayScreenTitle(dayMode)}
-        </Text>
-        <Text allowFontScaling style={styles.subtitle}>
-          {selectedDate}
-        </Text>
+        {hasTemplate && dayMode === 'today' ? (
+          <View style={styles.todayHeader}>
+            <View>
+              <Text allowFontScaling style={styles.greeting}>
+                Good morning, {greetingName}
+              </Text>
+              <Text allowFontScaling style={styles.daySub}>
+                Day {Math.max(1, (programWeek - 1) * 7 + 1)} · Week {programWeek} of {totalWeeks}
+              </Text>
+            </View>
+            {streakDays > 0 ? (
+              <View style={styles.streakPill}>
+                <Text style={styles.streakText}>🔥 {streakDays} day streak</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <>
+            <Text allowFontScaling style={styles.title}>
+              {todayScreenTitle(dayMode)}
+            </Text>
+            <Text allowFontScaling style={styles.subtitle}>
+              {selectedDate}
+            </Text>
+          </>
+        )}
 
         {showCelebrate && loggedForDay ? (
           <View style={styles.celebrateBanner}>
             <Text style={styles.celebrateText}>{celebrateBannerCopy()}</Text>
-            <Pressable onPress={() => router.push('/(tabs)/timeline')}>
-              <Text style={styles.celebrateLink}>Open Timeline</Text>
+            <Pressable onPress={() => router.push(PROGRESS_HREF)}>
+              <Text style={styles.celebrateLink}>Open Progress</Text>
             </Pressable>
           </View>
         ) : null}
@@ -273,33 +319,87 @@ export default function TodayScreen() {
           </View>
         ) : null}
 
-        {hasTemplate && weekKicker ? (
+        {hasTemplate && weekKicker && dayMode !== 'today' ? (
           <Text style={styles.weekKicker}>{weekKicker}</Text>
+        ) : null}
+
+        {hasTemplate && allowsPhoto && dayMode === 'today' ? (
+          <Pressable
+            style={[styles.checkinCard, loggedForDay && styles.checkinCardDone]}
+            onPress={loggedForDay ? undefined : openCapture}
+            accessibilityRole="button">
+            <View style={styles.checkinCircle}>
+              <Text style={styles.checkinIcon}>📷</Text>
+            </View>
+            <View style={styles.checkinCopy}>
+              <Text style={styles.checkinTitle}>
+                {loggedForDay ? "Today's photo logged" : "Take today's photo"}
+              </Text>
+              <Text style={styles.checkinSub}>
+                {loggedForDay ? 'Streak saved for today' : '10 sec · keeps your streak alive'}
+              </Text>
+            </View>
+            {!loggedForDay ? <Text style={styles.checkinArrow}>›</Text> : null}
+          </Pressable>
+        ) : null}
+
+        {hasTemplate && dayMode === 'today' && phaseLabel ? (
+          <View style={styles.phaseProgressCard}>
+            <Text style={styles.phaseProgressTitle}>{phaseLabel}</Text>
+            <Text style={styles.phaseProgressSub}>
+              Week {programWeek} of {totalWeeks}
+            </Text>
+            <View style={styles.phaseProgressTrack}>
+              <View
+                style={[
+                  styles.phaseProgressFill,
+                  { width: `${Math.min(100, Math.round((programWeek / Math.max(totalWeeks, 1)) * 100))}%` },
+                ]}
+              />
+            </View>
+          </View>
         ) : null}
 
         {showStepsHero ? <RoutineStepsHero steps={phaseItems} alwaysExpanded /> : null}
 
-        {hasTemplate && allowsPhoto ? (
+        {hasTemplate && allowsPhoto && dayMode !== 'today' ? (
           <View style={styles.photoActions}>
             {loggedForDay ? (
-              <Text style={styles.loggedDone}>
-                {dayMode === 'today' ? 'Logged for today ✓' : `Logged for ${selectedDate} ✓`}
-              </Text>
+              <Text style={styles.loggedDone}>{`Logged for ${selectedDate} ✓`}</Text>
             ) : (
               <>
-                {showDayOneEmpty ? (
-                  <Text style={styles.dayOneHint}>Day 1 — same time tomorrow</Text>
-                ) : (
-                  <Text style={styles.photoHint}>Done with your routine? Snap your progress.</Text>
-                )}
                 <PrimaryButton
-                  label={dayMode === 'today' ? "Log today's photo" : 'Log progress photo'}
+                  label="Log progress photo"
                   onPress={openCapture}
                 />
                 <View style={{ height: 10 }} />
                 <SecondaryButton label="Upload from library" onPress={() => void pickFromLibrary()} />
               </>
             )}
+          </View>
+        ) : null}
+
+        {hasTemplate && photoThumbs.length > 0 && dayMode === 'today' ? (
+          <View style={styles.thumbSection}>
+            <View style={styles.thumbHeader}>
+              <Text style={styles.thumbLabel}>Photo history</Text>
+              <Pressable onPress={() => router.push(PROGRESS_HREF)}>
+                <Text style={styles.thumbLink}>See all</Text>
+              </Pressable>
+            </View>
+            <View style={styles.thumbRow}>
+              {photoThumbs.map((t) => {
+                const isToday = t.date === localTodayIso();
+                return (
+                  <View
+                    key={t.date}
+                    style={[styles.thumb, t.logged && styles.thumbLogged, isToday && styles.thumbToday]}>
+                    <Text style={styles.thumbEmoji}>{t.logged ? '📷' : isToday ? '📸' : '·'}</Text>
+                    <Text style={styles.thumbDay}>{isToday ? 'Today' : t.date.slice(8)}</Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ) : null}
 
@@ -361,6 +461,92 @@ const styles = StyleSheet.create({
   content: { padding: JournalTokens.spacing.lg, gap: JournalTokens.spacing.sm },
   title: { fontFamily: JournalTokens.font.display, fontSize: 30, color: JournalTokens.color.ink },
   subtitle: { fontFamily: JournalTokens.font.body, color: JournalTokens.color.muted, marginBottom: JournalTokens.spacing.sm },
+  todayHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: JournalTokens.spacing.sm,
+  },
+  greeting: { fontFamily: JournalTokens.font.display, fontSize: 22, color: JournalTokens.color.ink },
+  daySub: { color: JournalTokens.color.muted, fontSize: 12, marginTop: 2 },
+  streakPill: {
+    backgroundColor: '#faeeda',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  streakText: { fontSize: 12, fontWeight: '700', color: '#633806' },
+  phaseProgressCard: {
+    backgroundColor: JournalTokens.color.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.line,
+    padding: 14,
+    marginBottom: 8,
+    gap: 6,
+  },
+  phaseProgressTitle: {
+    fontFamily: JournalTokens.font.body,
+    fontWeight: '700',
+    fontSize: 15,
+    color: JournalTokens.color.ink,
+  },
+  phaseProgressSub: { fontSize: 12, color: JournalTokens.color.muted },
+  phaseProgressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: JournalTokens.color.line,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  phaseProgressFill: {
+    height: '100%',
+    backgroundColor: JournalTokens.color.brandAccent,
+    borderRadius: 3,
+  },
+  checkinCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: JournalTokens.color.brandAccent,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 8,
+  },
+  checkinCardDone: { opacity: 0.85 },
+  checkinCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#eef4ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkinIcon: { fontSize: 22 },
+  checkinCopy: { flex: 1 },
+  checkinTitle: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  checkinSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
+  checkinArrow: { color: 'rgba(255,255,255,0.75)', fontSize: 22 },
+  thumbSection: { marginTop: 4, marginBottom: 8 },
+  thumbHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  thumbLabel: { fontSize: 12, color: JournalTokens.color.muted },
+  thumbLink: { fontSize: 12, color: JournalTokens.color.brandAccent, fontWeight: '700' },
+  thumbRow: { flexDirection: 'row', gap: 6 },
+  thumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: JournalTokens.color.card,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.45,
+  },
+  thumbLogged: { backgroundColor: '#eef4ff', opacity: 1 },
+  thumbToday: { borderColor: JournalTokens.color.brandAccent, borderWidth: 2, opacity: 1 },
+  thumbEmoji: { fontSize: 18 },
+  thumbDay: { position: 'absolute', bottom: 3, fontSize: 9, color: JournalTokens.color.muted },
   weekKicker: { fontWeight: '700', color: JournalTokens.color.ink, fontSize: 15, marginBottom: 4 },
   celebrateBanner: {
     backgroundColor: TimelineTokens.badgeGreenBg,

@@ -60,13 +60,15 @@ export const HOW_IT_WORKS = {
   ],
 };
 
+export const FOOTER_TAGLINE = 'Track today. Glow tomorrow.';
+
 export const CTAS = {
   scan: '/scan',
-  signup: '/patients/patient-login.html?intent=signup&from=skin-age-landing',
-  signin: '/patients/patient-login.html',
+  signup: '/app/sign-in?intent=signup&from=skin-age-landing',
+  signin: '/app/sign-in',
   privacy: '/patients/legal/privacy.html',
   terms: '/patients/legal/terms.html',
-  waitlist: '/waitlist',
+  waitlist: '/waitlist.html',
 };
 
 export function webAppUrl() {

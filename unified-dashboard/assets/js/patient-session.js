@@ -13,7 +13,11 @@ export const patientSession = {
   requireSessionOrRedirect() {
     const sid = this.getSessionId();
     if (!sid) {
-      window.location.href = 'patient-login.html';
+      const signIn =
+        typeof globalThis.consumerSignInUrl === 'function'
+          ? globalThis.consumerSignInUrl()
+          : '/app/sign-in';
+      window.location.href = signIn;
       return '';
     }
     return sid;

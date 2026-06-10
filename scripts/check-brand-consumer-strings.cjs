@@ -134,6 +134,19 @@ if (strictLanding) {
   }
 }
 
+const brandWordmarkPath = path.join(ROOT, 'patient-app/components/BrandWordmark.tsx');
+if (fs.existsSync(brandWordmarkPath)) {
+  const bw = fs.readFileSync(brandWordmarkPath, 'utf8');
+  if (/fontWeight:\s*['"]400['"]/.test(bw) && /sc-logo-skin|skin/.test(bw)) {
+    violations.push({
+      file: brandWordmarkPath,
+      line: 0,
+      label: 'BrandWordmark skin must not use fontWeight 400 (use 700 bold italic)',
+      snippet: 'fontWeight: 400',
+    });
+  }
+}
+
 if (violations.length) {
   console.error(`check-brand-consumer-strings: ${violations.length} violation(s)\n`);
   for (const v of violations.slice(0, 50)) {

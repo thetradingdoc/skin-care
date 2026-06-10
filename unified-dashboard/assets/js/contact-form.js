@@ -3,6 +3,16 @@
   const status = document.getElementById('form-status');
   if (!form || !status) return;
 
+  function waitlistApiUrl() {
+    const baseOverride =
+      typeof window.__SKIN_CARE_API_BASE__ === 'string' ? window.__SKIN_CARE_API_BASE__.trim() : '';
+    const base = (
+      baseOverride ||
+      (typeof resolveApiBase === 'function' ? resolveApiBase() : window.location.origin)
+    ).replace(/\/$/, '');
+    return `${base}/api/public/waitlist`;
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     status.className = 'sc-form-status';
@@ -21,7 +31,7 @@
     }
 
     try {
-      const res = await fetch('/api/public/waitlist', {
+      const res = await fetch(waitlistApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

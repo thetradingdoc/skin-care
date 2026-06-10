@@ -30,7 +30,7 @@ const MOCKUP = {
   navLinks: ['How It Works', 'About', 'Contact'],
   features: ['Face scan → skin age', 'Tell us what to track', 'One photo a day'],
   footerLinks: ['Privacy', 'Terms', 'Sign in'],
-  disclaimer: 'For wellness tracking only · Not a medical diagnosis',
+  footerTagline: 'Track today. Glow tomorrow.',
 };
 
 function hex(rgb) {
@@ -302,8 +302,8 @@ async function audit() {
       issues.push({ area: 'Footer', issue: 'Footer alignment mismatch', mockup: 'center', actual: data.footerAlign });
     }
 
-    if (!data.footerText?.includes(MOCKUP.disclaimer)) {
-      issues.push({ area: 'Footer', issue: 'Disclaimer text mismatch', mockup: MOCKUP.disclaimer, actual: data.footerText });
+    if (!data.footerText?.includes(MOCKUP.footerTagline)) {
+      issues.push({ area: 'Footer', issue: 'Footer tagline mismatch', mockup: MOCKUP.footerTagline, actual: data.footerText });
     }
 
     if (!data.favicon || !data.favicon.includes('favicon')) {

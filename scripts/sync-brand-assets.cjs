@@ -21,10 +21,20 @@ const TARGETS = [
 /** Copied on every sync — panda logo, favicons */
 const SYNC_FILES = [
   'logo-panda.svg',
+  'tulip-mark.svg',
+  'email-wordmark.png',
+  'email-wordmark@2x.png',
   'favicon.ico',
   'favicon-16x16.png',
   'favicon-32x32.png',
   'apple-touch-icon.png',
+];
+
+const CSS_SYNC = [
+  {
+    src: path.join(ROOT, 'unified-dashboard', 'assets', 'css', 'logo-wordmark.css'),
+    dest: path.join(ROOT, 'middleware-platform', 'public', 'assets', 'css', 'logo-wordmark.css'),
+  },
 ];
 
 /** Not copied to API — deprecated Somo wordmarks */
@@ -74,6 +84,24 @@ if (fs.existsSync(signupDir)) {
       copyFile(path.join(signupDir, entry), path.join(destSignup, entry));
     }
   }
+}
+
+for (const { src, dest } of CSS_SYNC) {
+  if (fs.existsSync(src)) {
+    copyFile(src, dest);
+    console.log('copied', path.relative(ROOT, src), '->', path.relative(ROOT, dest));
+  }
+}
+
+const fontsSrc = path.join(SSOT, 'fonts');
+const fontsDest = path.join(ROOT, 'middleware-platform', 'public', 'assets', 'brand', 'fonts');
+if (fs.existsSync(fontsSrc)) {
+  fs.mkdirSync(fontsDest, { recursive: true });
+  for (const entry of fs.readdirSync(fontsSrc)) {
+    if (!/\.ttf$/i.test(entry)) continue;
+    copyFile(path.join(fontsSrc, entry), path.join(fontsDest, entry));
+  }
+  console.log('synced brand fonts -> middleware public');
 }
 
 console.log('brand:sync complete');

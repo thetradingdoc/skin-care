@@ -12,7 +12,7 @@ import Constants from 'expo-constants';
 // Demo patient (Jeremiah in local DB): set EXPO_PUBLIC_DEMO_PATIENT_EMAIL to the email
 // stored on `appointments.patient_email` for that patient (see your provider portal / DB).
 
-const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:4000').replace(
+const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.callsomo.com').replace(
   /\/$/,
   ''
 );

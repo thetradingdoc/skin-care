@@ -1,0 +1,71 @@
+/* Be Vietnam Pro — SIL OFL 1.1; see assets/brand/fonts/OFL-BeVietnamPro.txt */
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../brand/fonts/BeVietnamPro-Italic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../brand/fonts/BeVietnamPro-BoldItalic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  src: url('../brand/fonts/BeVietnamPro-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Consumer wordmark: skin (bold italic) + tulip + care (bold) */
+.sc-logo-wordmark {
+  --logo-height: 52px;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 0.03em;
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  font-size: calc(var(--logo-height) * 0.58);
+  line-height: 1;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.sc-logo-skin {
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-right: -0.02em;
+}
+
+.sc-logo-mark-slot {
+  position: relative;
+  flex-shrink: 0;
+  width: 0.62em;
+  height: 1em;
+  align-self: flex-start;
+  margin: -0.48em -0.05em 0;
+}
+
+.sc-logo-mark {
+  position: absolute;
+  left: 50%;
+  bottom: 0.02em;
+  width: 0.9em;
+  height: auto;
+  aspect-ratio: 600 / 215;
+  transform: translateX(-50%);
+  display: block;
+}
+
+.sc-logo-care {
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.03em;
+  margin-left: -0.02em;
+}

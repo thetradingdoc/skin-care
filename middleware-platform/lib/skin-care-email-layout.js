@@ -2,15 +2,26 @@
 
 /**
  * Skin & Care transactional email layout — see docs/Brand/SKIN_AND_CARE_GUIDELINES.md
+ * Consumer luxury theme: white header, wordmark, Gloock headlines (landing / sign-in parity).
  */
 
-const LOGO_URL =
-  process.env.SKIN_CARE_EMAIL_LOGO_URL ||
-  process.env.SOMO_EMAIL_LOGO_URL ||
-  process.env.SOMO_EMAIL_LOGO ||
-  'https://callsomo.com/assets/images/logo-panda.svg';
+const SITE_URL = (
+  process.env.SKIN_CARE_EMAIL_SITE_URL ||
+  process.env.SOMO_EMAIL_SITE_URL ||
+  'https://www.myskinandcare.com'
+).replace(/\/$/, '');
 
-const SITE_URL = (process.env.SKIN_CARE_EMAIL_SITE_URL || process.env.SOMO_EMAIL_SITE_URL || 'https://callsomo.com').replace(/\/$/, '');
+const EMAIL_WORDMARK_URL = `${SITE_URL}/assets/brand/email-wordmark.png`;
+const EMAIL_WORDMARK_URL_2X = `${SITE_URL}/assets/brand/email-wordmark@2x.png`;
+
+function getCustomLogoUrl() {
+  return (
+    process.env.SKIN_CARE_EMAIL_LOGO_URL ||
+    process.env.SOMO_EMAIL_LOGO_URL ||
+    process.env.SOMO_EMAIL_LOGO ||
+    ''
+  );
+}
 
 const SUPPORT_EMAIL =
   process.env.SKIN_CARE_EMAIL_SUPPORT ||
@@ -18,22 +29,26 @@ const SUPPORT_EMAIL =
   process.env.SMTP_FROM_EMAIL ||
   'info@callsomo.com';
 
+const FOOTER_TAGLINE = 'Track today. Glow tomorrow.';
+
 const TOKENS = {
   brandBlue: '#314db6',
   brandBlueDark: '#283fa0',
-  brandSoft: '#eef4ff',
-  cream: '#f8f3ea',
-  ink: '#1f2937',
+  card: '#fffdf9',
+  ink: '#1a1a1a',
   text: '#1f2937',
-  muted: '#64748b',
+  muted: '#6b7280',
   faint: '#94a3b8',
   border: '#e9e2d6',
-  pageBg: '#f8f3ea',
+  pageBg: '#ffffff',
   white: '#ffffff',
   warning: '#d97706',
   warningSoft: '#fffbeb',
   danger: '#dc2626'
 };
+
+const FONT_LINK =
+  '<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,700;1,700&family=DM+Sans:wght@400;600;700&family=Gloock&display=swap" rel="stylesheet" />';
 
 function escapeHtml(s) {
   return String(s ?? '')
@@ -41,6 +56,10 @@ function escapeHtml(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function footerSupportEmail() {
+  return process.env.SKIN_CARE_EMAIL_SUPPORT || process.env.SOMO_EMAIL_SUPPORT || '';
 }
 
 function baseCss() {
@@ -57,54 +76,59 @@ function baseCss() {
     .sc-wrap { max-width: 600px; margin: 0 auto; padding: 24px 16px; box-sizing: border-box; }
     .sc-card {
       background: ${TOKENS.white};
-      border-radius: 12px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 24px rgba(31, 41, 55, 0.08);
+      border: 1px solid ${TOKENS.border};
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
     .sc-header {
-      background: linear-gradient(135deg, ${TOKENS.brandBlue} 0%, ${TOKENS.brandBlueDark} 100%);
-      color: ${TOKENS.white};
-      padding: 32px 28px 28px;
+      background: ${TOKENS.white};
+      color: ${TOKENS.ink};
+      padding: 32px 28px 24px;
       text-align: center;
+      border-bottom: 1px solid ${TOKENS.border};
     }
     .sc-header h1 {
-      margin: 12px 0 0;
-      font-size: 22px;
-      font-weight: 700;
+      margin: 20px 0 0;
+      font-family: 'Gloock', Georgia, 'Times New Roman', serif;
+      font-size: 26px;
+      font-weight: 400;
       letter-spacing: -0.02em;
+      color: ${TOKENS.ink};
     }
     .sc-header p {
       margin: 8px 0 0;
       font-size: 15px;
-      opacity: 0.92;
+      color: ${TOKENS.muted};
     }
     .sc-logo {
       display: block;
-      margin: 0 auto 8px;
-      max-width: 180px;
+      margin: 0 auto;
+      max-width: 240px;
+      width: 240px;
       height: auto;
       border: 0;
     }
     .sc-body { padding: 32px 28px; color: ${TOKENS.muted}; font-size: 16px; }
     .sc-body h2 {
-      color: ${TOKENS.text};
+      font-family: 'Gloock', Georgia, 'Times New Roman', serif;
+      color: ${TOKENS.ink};
       font-size: 20px;
-      font-weight: 700;
+      font-weight: 400;
       margin: 0 0 12px;
     }
     .sc-body p { margin: 0 0 16px; }
     .sc-body a { color: ${TOKENS.brandBlue}; font-weight: 600; }
     .sc-panel {
-      background: ${TOKENS.brandSoft};
+      background: ${TOKENS.card};
       border: 1px solid ${TOKENS.border};
-      border-left: 4px solid ${TOKENS.brandBlue};
-      border-radius: 8px;
+      border-radius: 14px;
       padding: 20px;
       margin: 20px 0;
     }
     .sc-panel--warning {
       background: ${TOKENS.warningSoft};
-      border-left-color: ${TOKENS.warning};
+      border-color: #fcd34d;
     }
     .sc-row { padding: 10px 0; border-bottom: 1px solid ${TOKENS.border}; }
     .sc-row:last-child { border-bottom: none; }
@@ -115,15 +139,15 @@ function baseCss() {
       font-size: 32px;
       font-weight: 700;
       letter-spacing: 10px;
-      color: ${TOKENS.brandBlue};
-      font-family: 'Courier New', Courier, monospace;
+      color: ${TOKENS.ink};
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       margin: 0;
     }
     .sc-code-box {
-      background: ${TOKENS.white};
-      border: 2px solid ${TOKENS.brandBlue};
-      border-radius: 8px;
-      padding: 28px 20px;
+      background: ${TOKENS.card};
+      border: 1px solid ${TOKENS.border};
+      border-radius: 999px;
+      padding: 28px 24px;
       text-align: center;
       margin: 24px 0;
     }
@@ -133,7 +157,7 @@ function baseCss() {
       color: ${TOKENS.white} !important;
       padding: 14px 28px;
       text-decoration: none;
-      border-radius: 8px;
+      border-radius: 999px;
       font-weight: 700;
       font-size: 16px;
       margin: 8px 4px;
@@ -142,7 +166,7 @@ function baseCss() {
     .sc-btn--secondary {
       background: ${TOKENS.white};
       color: ${TOKENS.brandBlue} !important;
-      border: 2px solid ${TOKENS.brandBlue};
+      border: 2px solid ${TOKENS.border};
     }
     .sc-btn--danger { background: ${TOKENS.danger}; }
     .sc-btn--warning { background: ${TOKENS.warning}; }
@@ -155,16 +179,38 @@ function baseCss() {
       font-size: 13px;
     }
     .sc-footer a { color: ${TOKENS.brandBlue}; text-decoration: none; font-weight: 600; }
+    .sc-footer-tagline {
+      font-family: 'Gloock', Georgia, 'Times New Roman', serif;
+      font-size: 15px;
+      color: ${TOKENS.ink};
+      margin: 0 0 12px;
+    }
     .sc-tagline { font-size: 12px; color: ${TOKENS.faint}; margin-top: 16px; }
     @media (max-width: 480px) {
       .sc-body, .sc-header, .sc-footer { padding-left: 20px; padding-right: 20px; }
       .sc-code { font-size: 26px; letter-spacing: 6px; }
+      .sc-logo { max-width: 200px; width: 200px; }
     }
   `;
 }
 
-function logoImg() {
-  return `<img class="sc-logo" src="${escapeHtml(LOGO_URL)}" alt="Skin &amp; Care" width="180" />`;
+function hasCustomLogoUrl() {
+  return !!getCustomLogoUrl();
+}
+
+function logoImg(url) {
+  const src = url || getCustomLogoUrl();
+  return `<img class="sc-logo" src="${escapeHtml(src)}" alt="skin care" width="240" />`;
+}
+
+/** Solid black composite — see docs/Brand/WORDMARK_BY_SURFACE.md */
+function emailWordmarkImg() {
+  return `<img class="sc-logo" src="${escapeHtml(EMAIL_WORDMARK_URL)}" srcset="${escapeHtml(EMAIL_WORDMARK_URL)} 1x, ${escapeHtml(EMAIL_WORDMARK_URL_2X)} 2x" alt="skin care" width="240" height="52" />`;
+}
+
+function headerLogo() {
+  if (hasCustomLogoUrl()) return logoImg();
+  return emailWordmarkImg();
 }
 
 /**
@@ -178,6 +224,10 @@ function layout(opts) {
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.preheader)}</div>`
     : '';
   const footerExtra = opts.footerExtra || '';
+  const footerSupport = footerSupportEmail();
+  const footerSupportHtml = footerSupport
+    ? `<p><a href="mailto:${escapeHtml(footerSupport)}">${escapeHtml(footerSupport)}</a></p>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -186,6 +236,7 @@ function layout(opts) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light" />
   <title>${title}</title>
+  ${FONT_LINK}
   <style>${baseCss()}</style>
 </head>
 <body>
@@ -193,7 +244,7 @@ function layout(opts) {
   <div class="sc-wrap">
     <div class="sc-card">
       <div class="sc-header">
-        ${logoImg()}
+        ${headerLogo()}
         <h1>${title}</h1>
         ${subtitle}
       </div>
@@ -201,12 +252,11 @@ function layout(opts) {
         ${opts.bodyHtml}
       </div>
       <div class="sc-footer">
-        <p>Skin &amp; Care — your skin journal and care companion.</p>
+        <p class="sc-footer-tagline">${escapeHtml(FOOTER_TAGLINE)}</p>
         <p>
           <a href="${escapeHtml(SITE_URL)}">myskinandcare.com</a>
-          &nbsp;·&nbsp;
-          <a href="mailto:${escapeHtml(SUPPORT_EMAIL)}">${escapeHtml(SUPPORT_EMAIL)}</a>
         </p>
+        ${footerSupportHtml}
         ${footerExtra}
         <p class="sc-tagline">Please do not reply to this automated message.</p>
       </div>
@@ -249,14 +299,22 @@ function infoRows(rows) {
 
 module.exports = {
   TOKENS,
-  LOGO_URL,
+  get LOGO_URL() {
+    return getCustomLogoUrl();
+  },
+  getCustomLogoUrl,
+  EMAIL_WORDMARK_URL,
+  EMAIL_WORDMARK_URL_2X,
   SITE_URL,
   SUPPORT_EMAIL,
+  FOOTER_TAGLINE,
   escapeHtml,
   layout,
   codeBox,
   button,
   panel,
   infoRows,
-  logoImg
+  logoImg,
+  emailWordmarkImg,
+  headerLogo
 };

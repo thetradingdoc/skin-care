@@ -45,11 +45,17 @@ function htmlHasSkinCareCopy(html) {
 }
 
 async function verifyLocalDist() {
-  const logo = path.join(HOSTING_DIST, 'assets', 'images', 'logo-dove.svg');
-  if (!fs.existsSync(logo)) {
-    fail(`Missing ${logo}. Run: node scripts/build-staging-hosting.cjs`);
+  const emailWordmark = path.join(HOSTING_DIST, 'assets', 'brand', 'email-wordmark.png');
+  if (!fs.existsSync(emailWordmark)) {
+    fail(`Missing ${emailWordmark}. Run: npm run brand:email-wordmark && node scripts/build-staging-hosting.cjs`);
   }
-  ok('logo-dove.svg present in hosting-dist');
+  ok('email-wordmark.png present in hosting-dist');
+
+  const tulipSvg = path.join(HOSTING_DIST, 'assets', 'brand', 'tulip-mark.svg');
+  if (!fs.existsSync(tulipSvg)) {
+    fail(`Missing ${tulipSvg}. Run: node scripts/build-staging-hosting.cjs`);
+  }
+  ok('tulip-mark.svg present in hosting-dist');
 
   const hero = path.join(HOSTING_DIST, 'assets', 'images', 'hero-glow.jpg');
   if (!fs.existsSync(hero)) {
@@ -84,11 +90,17 @@ async function verifyLive(base) {
   const origin = String(base || '').replace(/\/$/, '');
   if (!origin) fail('--live requires a URL');
 
-  const logoRes = await fetch(`${origin}/assets/images/logo-dove.svg`, { method: 'HEAD' });
-  if (!logoRes.ok) {
-    fail(`Live logo asset ${logoRes.status} ${origin}/assets/images/logo-dove.svg`);
+  const wordmarkRes = await fetch(`${origin}/assets/brand/email-wordmark.png`, { method: 'HEAD' });
+  if (!wordmarkRes.ok) {
+    fail(`Live email wordmark ${wordmarkRes.status} ${origin}/assets/brand/email-wordmark.png`);
   }
-  ok('Live logo asset 200');
+  ok('Live email wordmark asset 200');
+
+  const tulipRes = await fetch(`${origin}/assets/brand/tulip-mark.svg`, { method: 'HEAD' });
+  if (!tulipRes.ok) {
+    fail(`Live tulip mark ${tulipRes.status} ${origin}/assets/brand/tulip-mark.svg`);
+  }
+  ok('Live tulip-mark.svg 200');
 
   const indexRes = await fetch(`${origin}/`);
   if (!indexRes.ok) fail(`Live index ${indexRes.status}`);

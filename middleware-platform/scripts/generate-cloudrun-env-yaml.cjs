@@ -124,6 +124,7 @@ const merged = {
   TRIAL_SIM_FLOW_ENABLED: parsed.TRIAL_SIM_FLOW_ENABLED || (isStaging ? '1' : parsed.TRIAL_SIM_FLOW_ENABLED || '0'),
   SAAS_VOICE_FAIL_CLOSED: parsed.SAAS_VOICE_FAIL_CLOSED || (isStaging ? '1' : parsed.SAAS_VOICE_FAIL_CLOSED || '1'),
   SOMO_OWNER_EMAIL: parsed.SOMO_OWNER_EMAIL || 'richard@callsomo.com',
+  EMAIL_PROVIDER: parsed.EMAIL_PROVIDER || 'smtp',
   STAGING: isStaging ? '1' : '0',
   ALLOW_STRIPE_TEST_IN_PRODUCTION: isStaging ? '1' : '0'
 };

@@ -26,6 +26,23 @@ try {
 
 const SkinCareEmail = require('../lib/skin-care-email-layout');
 
+const EMAIL_SUBJECT_VERIFICATION = 'Email verification';
+
+/** @param {string} [raw] SMTP_FROM or SMTP_USER value */
+function formatSmtpFrom(raw) {
+  const addr = String(raw || '').trim();
+  if (!addr) return 'Skin & Care <info@callsomo.com>';
+  if (/<[^>]+>/.test(addr)) return addr;
+  return `Skin & Care <${addr}>`;
+}
+
+/** Bare address for providers that do not accept "Name <email>" (e.g. Azure). */
+function smtpFromAddress(raw) {
+  const formatted = formatSmtpFrom(raw);
+  const match = formatted.match(/<([^>]+)>/);
+  return match ? match[1].trim() : formatted;
+}
+
 class EmailService {
   /** @private Skin & Care-branded HTML wrapper — see lib/skin-care-email-layout.js */
   static _skinCareLayout(title, subtitle, bodyHtml, opts = {}) {
@@ -36,6 +53,16 @@ class EmailService {
    */
   static isAzureConfigured() {
     return !!(process.env.AZURE_COMMUNICATION_CONNECTION_STRING && azureEmailClient);
+  }
+
+  /** True when a real outbound path (Azure or SMTP) is available — not console-only. */
+  static isDeliveryConfigured() {
+    return this.isAzureConfigured() || !!this.getTransporter();
+  }
+
+  static _isProductionEnv() {
+    const env = String(process.env.NODE_ENV || '').toLowerCase();
+    return env === 'production' || env === 'prod';
   }
 
   /**
@@ -131,7 +158,9 @@ class EmailService {
         return null; // Fall back to SMTP for attachments
       }
 
-      const senderAddress = process.env.AZURE_EMAIL_SENDER || process.env.SMTP_FROM || 'DoNotReply@azurecomm.net';
+      const senderAddress = smtpFromAddress(
+        process.env.AZURE_EMAIL_SENDER || process.env.SMTP_FROM || process.env.SMTP_USER
+      ) || 'DoNotReply@azurecomm.net';
 
       const message = {
         content: {
@@ -210,10 +239,16 @@ class EmailService {
     }
   }
 
+  /** GCP production uses SMTP (Gmail / SendGrid). Azure is legacy — skip unless EMAIL_PROVIDER=azure. */
+  static _preferSmtp() {
+    const p = String(process.env.EMAIL_PROVIDER || 'smtp').toLowerCase();
+    return p === 'smtp' || p === 'gmail' || p === 'sendgrid';
+  }
+
   static async sendEmail({ to, subject, html, text, attachments }) {
     try {
-      // Try Azure first if configured
-      if (this.isAzureConfigured()) {
+      // Legacy Azure path — opt-in only (EMAIL_PROVIDER=azure)
+      if (!this._preferSmtp() && this.isAzureConfigured()) {
         const azureResult = await this._sendViaAzure({ to, subject, html, text, attachments });
         if (azureResult && azureResult.success) {
           this._recordRcmE2eEmail({
@@ -231,7 +266,9 @@ class EmailService {
 
       // Try SMTP
       const transporter = this.getTransporter();
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER || process.env.AZURE_EMAIL_SENDER || 'Skin & Care <info@callsomo.com>';
+      const from = formatSmtpFrom(
+        process.env.SMTP_FROM || process.env.SMTP_USER || process.env.AZURE_EMAIL_SENDER
+      );
 
       if (transporter) {
         const mailOptions = {
@@ -284,10 +321,12 @@ class EmailService {
         provider: 'console',
         success: false
       });
-      if (process.env.RCM_E2E_RECORD_EMAIL === '1') {
+      if (process.env.RCM_E2E_RECORD_EMAIL === '1' || this._isProductionEnv()) {
         return {
           success: false,
-          error: 'SMTP not configured — set SMTP_USER/SMTP_PASS for real email (RCM_E2E_RECORD_EMAIL=1)',
+          error: this._isProductionEnv()
+            ? 'email_delivery_not_configured'
+            : 'SMTP not configured — set SMTP_USER/SMTP_PASS for real email (RCM_E2E_RECORD_EMAIL=1)',
           provider: 'console'
         };
       }
@@ -448,14 +487,14 @@ class EmailService {
    * Send checkout verification code to email
    */
   static async sendCheckoutVerificationCode(email, code) {
-    const html = this._skinCareLayout('Verification code', 'Checkout', `
+    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Checkout', `
       <p>Enter this code to continue checkout:</p>
       ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 15 minutes.</strong></p>
-    `, { preheader: `Code: ${code}` });
+    `, { preheader: 'Enter this code to continue checkout.' });
     return await this.sendEmail({
       to: email,
-      subject: 'Your Verification Code',
+      subject: EMAIL_SUBJECT_VERIFICATION,
       html
     });
   }
@@ -464,18 +503,22 @@ class EmailService {
    * Send patient portal verification code
    */
   static async sendPatientVerificationCode(email, code) {
-    const html = this._skinCareLayout('Patient portal sign-in', 'Verification code', `
-      <p>Use this code to sign in to your Skin & Care patient portal:</p>
+    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, '', `
+      <p>Use this code to sign in and save your skin journey:</p>
       ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 10 minutes.</strong></p>
       <p>If you did not request this code, you can ignore this email.</p>
-    `, { preheader: `Code: ${code}` });
+    `, { preheader: 'Your one-time sign-in code is inside this email.' });
 
-    return await this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
-      subject: 'Skin & Care — Patient portal verification code',
+      subject: EMAIL_SUBJECT_VERIFICATION,
       html
     });
+    if (!result?.success && process.env.NODE_ENV === 'production') {
+      console.error('❌ Patient verification email not delivered:', result?.error || result?.provider);
+    }
+    return result;
   }
 
   /**
@@ -524,20 +567,13 @@ class EmailService {
    * @param {Object} appointment - Optional { date, time, appointment_type }
    */
   static async sendPaymentReceipt(checkout, amount, paymentRef, appointment) {
-    const escapeHtml = (value) =>
-      String(value == null ? '' : value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-
-    const name = escapeHtml(checkout.customer_name || 'Patient');
-    const product = escapeHtml(checkout.product_name || 'Appointment');
+    const esc = SkinCareEmail.escapeHtml;
+    const name = esc(checkout.customer_name || 'Patient');
+    const product = esc(checkout.product_name || 'Appointment');
     const amountPaid = Number(amount || 0).toFixed(2);
-    const orderId = escapeHtml(checkout.id || 'N/A');
-    const txRef = escapeHtml(paymentRef || 'N/A');
-    const email = escapeHtml(checkout.customer_email || '');
+    const orderId = esc(checkout.id || 'N/A');
+    const txRef = esc(paymentRef || 'N/A');
+    const email = esc(checkout.customer_email || '');
     const baseUrl = String(process.env.BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
 
     let productImageUrl = '';
@@ -554,170 +590,35 @@ class EmailService {
       }
     } catch (_) {}
 
-    const aptLine = (appointment?.date || appointment?.appointment_type)
-      ? `
-        <tr>
-          <td style="padding: 6px 0; color: #6b7280;">Appointment</td>
-          <td style="padding: 6px 0; color: #111827; font-weight: 600; text-align: right;">
-            ${escapeHtml(appointment.appointment_type || checkout.product_name || 'Visit')}
-            ${appointment.date ? ` - ${escapeHtml(appointment.date)}${appointment.time ? ` at ${escapeHtml(appointment.time)}` : ''}` : ''}
-          </td>
-        </tr>`
-      : '';
+    const aptValue = (appointment?.date || appointment?.appointment_type)
+      ? `${appointment.appointment_type || checkout.product_name || 'Visit'}${appointment.date ? ` — ${appointment.date}${appointment.time ? ` at ${appointment.time}` : ''}` : ''}`
+      : null;
+
+    const rows = [
+      { label: 'Product', value: checkout.product_name || 'Appointment' },
+      { label: 'Quantity', value: String(Number(checkout.quantity || 1)) },
+      ...(aptValue ? [{ label: 'Appointment', value: aptValue }] : []),
+      { label: 'Order ID', value: checkout.id || 'N/A' },
+      { label: 'Transaction', value: paymentRef || 'N/A' },
+      { label: 'Amount paid', value: `$${amountPaid}` }
+    ];
 
     const productImageBlock = productImageUrl
-      ? `
-        <tr>
-          <td colspan="2" style="padding: 0 0 12px 0;">
-            <img
-              src="${escapeHtml(productImageUrl)}"
-              alt="${product}"
-              style="display:block;width:100%;max-width:220px;height:auto;border-radius:14px;border:1px solid #ece8df;"
-            />
-          </td>
-        </tr>`
+      ? `<p><img src="${esc(productImageUrl)}" alt="${product}" style="display:block;max-width:220px;height:auto;border-radius:14px;border:1px solid #ece8df;" /></p>`
       : '';
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <style>
-          body {
-            margin: 0;
-            padding: 0;
-            background: #f7f6f3;
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #1f2937;
-          }
-          .wrapper { width: 100%; padding: 28px 12px; box-sizing: border-box; }
-          .container {
-            max-width: 640px;
-            margin: 0 auto;
-            background: #ffffff;
-            border: 1px solid #e9e4db;
-            border-radius: 18px;
-            overflow: hidden;
-          }
-          .header {
-            background: linear-gradient(180deg, #ffffff 0%, #fcfaf6 100%);
-            border-bottom: 1px solid #efe9dc;
-            padding: 22px 24px 18px;
-          }
-          .brand {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1;
-            letter-spacing: -0.02em;
-            color: #111827;
-            font-weight: 700;
-          }
-          .header-subtitle {
-            margin: 8px 0 0;
-            color: #6b7280;
-            font-size: 14px;
-          }
-          .content { padding: 24px; }
-          .lead {
-            margin: 0 0 16px;
-            color: #374151;
-            font-size: 16px;
-            line-height: 1.55;
-          }
-          .receipt-card {
-            background: #ffffff;
-            border: 1px solid #ece8df;
-            border-radius: 14px;
-            padding: 16px;
-          }
-          .chip {
-            display: inline-block;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            color: #065f46;
-            background: #ecfdf5;
-            border: 1px solid #bbf7d0;
-            border-radius: 999px;
-            padding: 5px 10px;
-            margin-bottom: 12px;
-          }
-          .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-          }
-          .total-row td {
-            border-top: 1px dashed #e5e7eb;
-            padding-top: 10px !important;
-            font-size: 16px;
-            font-weight: 700;
-            color: #111827 !important;
-          }
-          .footer {
-            padding: 18px 24px 24px;
-            color: #6b7280;
-            font-size: 12px;
-            border-top: 1px solid #f0ece2;
-            background: #fffdfa;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="wrapper">
-        <div class="container">
-          <div class="header">
-            <h1 class="brand">Skin & Care</h1>
-            <p class="header-subtitle">Payment receipt</p>
-          </div>
-          <div class="content">
-            <p class="lead">Hi ${name}, thanks for your order. Your payment was successful and your receipt is below.</p>
-            <div class="receipt-card">
-              <span class="chip">Paid</span>
-              <table class="summary-table" role="presentation">
-                ${productImageBlock}
-                <tr>
-                  <td style="padding: 6px 0; color: #6b7280;">Product</td>
-                  <td style="padding: 6px 0; color: #111827; font-weight: 600; text-align: right;">${product}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #6b7280;">Quantity</td>
-                  <td style="padding: 6px 0; color: #111827; font-weight: 600; text-align: right;">${Number(checkout.quantity || 1)}</td>
-                </tr>
-                ${aptLine}
-                <tr>
-                  <td style="padding: 6px 0; color: #6b7280;">Order ID</td>
-                  <td style="padding: 6px 0; color: #111827; font-weight: 600; text-align: right;">${orderId}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #6b7280;">Transaction</td>
-                  <td style="padding: 6px 0; color: #111827; font-weight: 600; text-align: right; word-break: break-all;">${txRef}</td>
-                </tr>
-                <tr class="total-row">
-                  <td style="padding: 6px 0;">Amount paid</td>
-                  <td style="padding: 6px 0; text-align: right;">$${amountPaid}</td>
-                </tr>
-              </table>
-            </div>
-            <p class="lead" style="margin-top: 16px; font-size: 14px;">
-              Receipt sent to: <strong>${email || 'your email'}</strong><br/>
-              Need help? Reply to this email and our team will assist.
-            </p>
-          </div>
-          <div class="footer">
-            <p>This is your payment receipt. Please keep for your records.</p>
-          </div>
-        </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = this._skinCareLayout('Payment receipt', 'Thank you for your order', `
+      <h2>Hi ${name},</h2>
+      <p>Thanks for your order. Your payment was successful and your receipt is below.</p>
+      ${productImageBlock}
+      ${SkinCareEmail.infoRows(rows)}
+      <p>Receipt sent to: <strong>${email || 'your email'}</strong></p>
+      <p>Please keep this email for your records.</p>
+    `, { preheader: `Paid $${amountPaid}` });
+
     return await this.sendEmail({
       to: checkout.customer_email,
-      subject: `Payment Receipt - $${Number(amount || 0).toFixed(2)}`,
+      subject: `Payment Receipt - $${amountPaid}`,
       html
     });
   }
@@ -728,23 +629,15 @@ class EmailService {
   static async sendEscrowTimeoutNotification(providerEmail, attempt) {
     const claimId = attempt.claim_id || 'N/A';
     const amount = attempt.provider_amount ?? attempt.total_approved ?? 0;
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head><style>body{font-family:Arial,sans-serif;line-height:1.6}.container{max-width:600px;margin:0 auto;padding:20px}.header{background:#dc2626;color:white;padding:20px;text-align:center}.content{background:#f9f9f9;padding:20px}</style></head>
-      <body>
-        <div class="container">
-          <div class="header"><h1>⚠️ Escrow Timeout</h1></div>
-          <div class="content">
-            <p>An escrow settlement has exceeded the timeout threshold and requires attention.</p>
-            <p><strong>Claim ID:</strong> ${claimId}<br><strong>Provider amount:</strong> $${Number(amount).toFixed(2)}</p>
-            <p>Please review and retry settlement via the admin recovery endpoint if needed.</p>
-            <p>Skin & Care Finance Team</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = this._skinCareLayout('Escrow timeout', 'Action required', `
+      <p>An escrow settlement has exceeded the timeout threshold and requires attention.</p>
+      ${SkinCareEmail.infoRows([
+        { label: 'Claim ID', value: claimId },
+        { label: 'Provider amount', value: `$${Number(amount).toFixed(2)}` }
+      ])}
+      <p>Please review and retry settlement via the admin recovery endpoint if needed.</p>
+      <p>Best regards,<br>The Skin & Care finance team</p>
+    `, { preheader: 'Escrow settlement timeout' });
     return await this.sendEmail({ to: providerEmail, subject: 'Escrow Timeout – Action Required', html });
   }
 
@@ -752,76 +645,31 @@ class EmailService {
    * Send insurance billing email
    */
   static async sendInsuranceBillingEmail(insurerEmail, claimData) {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #16a637; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .claim-details { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #16a637; }
-          .detail-row { margin: 10px 0; }
-          .label { font-weight: bold; color: #666; }
-          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>📋 Insurance Claim Submitted</h1>
-          </div>
-          <div class="content">
-            <p>Dear Insurance Provider,</p>
-            <p>A new insurance claim has been submitted for processing:</p>
-            
-            <div class="claim-details">
-              <div class="detail-row">
-                <span class="label">Claim ID:</span> ${claimData.claimId || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">X12 Claim ID:</span> ${claimData.x12ClaimId || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Member ID:</span> ${claimData.memberId || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Patient Name:</span> ${claimData.patientName || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Service Code:</span> ${claimData.serviceCode || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Total Amount:</span> $${(claimData.totalAmount || 0).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="label">Copay Paid:</span> $${(claimData.copayPaid || 0).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="label">Insurance Amount:</span> $${((claimData.totalAmount || 0) - (claimData.copayPaid || 0)).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="label">Date of Service:</span> ${claimData.dateOfService || 'N/A'}
-              </div>
-            </div>
-
-            <p>Please process this claim according to your standard procedures.</p>
-            
-            <p>Best regards,<br>Skin & Care Healthcare Platform</p>
-          </div>
-          <div class="footer">
-            <p>This is an automated billing notification. Please do not reply to this email.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = this._skinCareLayout('Insurance claim submitted', 'For your review', `
+      <p>Dear Insurance Provider,</p>
+      <p>A new insurance claim has been submitted for processing:</p>
+      ${SkinCareEmail.infoRows([
+        { label: 'Claim ID', value: claimData.claimId || 'N/A' },
+        { label: 'X12 Claim ID', value: claimData.x12ClaimId || 'N/A' },
+        { label: 'Member ID', value: claimData.memberId || 'N/A' },
+        { label: 'Patient name', value: claimData.patientName || 'N/A' },
+        { label: 'Service code', value: claimData.serviceCode || 'N/A' },
+        { label: 'Total amount', value: `$${(claimData.totalAmount || 0).toFixed(2)}` },
+        { label: 'Copay paid', value: `$${(claimData.copayPaid || 0).toFixed(2)}` },
+        {
+          label: 'Insurance amount',
+          value: `$${((claimData.totalAmount || 0) - (claimData.copayPaid || 0)).toFixed(2)}`
+        },
+        { label: 'Date of service', value: claimData.dateOfService || 'N/A' }
+      ])}
+      <p>Please process this claim according to your standard procedures.</p>
+      <p>Best regards,<br>The Skin & Care team</p>
+    `);
 
     return await this.sendEmail({
       to: insurerEmail,
       subject: `Insurance Claim Submitted - ${claimData.claimId || 'New Claim'}`,
-      html: html
+      html
     });
   }
 
@@ -829,78 +677,33 @@ class EmailService {
    * Send patient billing email
    */
   static async sendPatientBillingEmail(patientEmail, billingData) {
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
-          .billing-details { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc2626; }
-          .detail-row { margin: 10px 0; }
-          .label { font-weight: bold; color: #666; }
-          .amount { font-size: 24px; font-weight: bold; color: #dc2626; }
-          .button { display: inline-block; padding: 12px 24px; background: #dc2626; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
-          .button:hover { background: #b91c1c; }
-          .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>💳 Billing Statement</h1>
-          </div>
-          <div class="content">
-            <p>Dear ${billingData.patientName || 'Patient'},</p>
-            <p>You have a balance due for your recent appointment:</p>
-            
-            <div class="billing-details">
-              <div class="detail-row">
-                <span class="label">Appointment Date:</span> ${billingData.appointmentDate || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Service:</span> ${billingData.serviceName || 'N/A'}
-              </div>
-              <div class="detail-row">
-                <span class="label">Total Amount:</span> $${(billingData.totalAmount || 0).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="label">Insurance Coverage:</span> $${(billingData.insuranceAmount || 0).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="label">Copay:</span> $${(billingData.copayAmount || 0).toFixed(2)}
-              </div>
-              <div class="detail-row">
-                <span class="amount">Amount Due: $${(billingData.amountDue || 0).toFixed(2)}</span>
-              </div>
-            </div>
-
-            <p>Please pay your balance at your earliest convenience.</p>
-            
-            ${billingData.paymentLink ? `
-            <p>
-              <a class="button" href="${billingData.paymentLink}">Pay Now</a>
-            </p>
-            ` : ''}
-            
-            <p>If you have any questions about this bill, please contact us.</p>
-            
-            <p>Best regards,<br>Skin & Care Billing Department</p>
-          </div>
-          <div class="footer">
-            <p>This is an automated billing statement. Please do not reply to this email.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const payBtn = billingData.paymentLink
+      ? `<p style="text-align:center;">${SkinCareEmail.button(billingData.paymentLink, 'Pay now')}</p>`
+      : '';
+    const html = this._skinCareLayout(
+      'Billing statement',
+      `$${(billingData.amountDue || 0).toFixed(2)} due`,
+      `
+      <h2>Hi ${SkinCareEmail.escapeHtml(billingData.patientName || 'there')},</h2>
+      <p>You have a balance due for your recent appointment.</p>
+      ${SkinCareEmail.infoRows([
+        { label: 'Appointment date', value: billingData.appointmentDate || 'N/A' },
+        { label: 'Service', value: billingData.serviceName || 'N/A' },
+        { label: 'Total amount', value: `$${(billingData.totalAmount || 0).toFixed(2)}` },
+        { label: 'Insurance coverage', value: `$${(billingData.insuranceAmount || 0).toFixed(2)}` },
+        { label: 'Copay', value: `$${(billingData.copayAmount || 0).toFixed(2)}` },
+        { label: 'Amount due', value: `$${(billingData.amountDue || 0).toFixed(2)}` }
+      ])}
+      ${payBtn}
+      <p>If you have questions about this bill, please contact us.</p>
+      <p>Best regards,<br>The Skin & Care team</p>
+    `
+    );
 
     return await this.sendEmail({
       to: patientEmail,
       subject: `Billing Statement - $${(billingData.amountDue || 0).toFixed(2)} Due`,
-      html: html
+      html
     });
   }
 
@@ -926,17 +729,17 @@ class EmailService {
    * Send email verification code
    */
   static async sendVerificationCode(email, code, name) {
-    const html = this._skinCareLayout('Verify your email', 'Skin & Care API', `
+    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Skin & Care API', `
       <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>Thanks for signing up. Use this code to verify your email:</p>
       ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 15 minutes.</strong></p>
       <p>If you did not request this, you can ignore this email.</p>
-    `, { preheader: `Verification code: ${code}` });
+    `, { preheader: 'Confirm your email to continue.' });
 
     return await this.sendEmail({
       to: email,
-      subject: 'Skin & Care — Verify your email',
+      subject: EMAIL_SUBJECT_VERIFICATION,
       html
     });
   }
@@ -1097,7 +900,7 @@ class EmailService {
    * Send password reset email
    */
   static async sendPasswordResetEmail(email, name, resetUrl) {
-    const html = this._skinCareLayout('Reset your password', 'Skin & Care account', `
+    const html = this._skinCareLayout('Reset your password', 'Account security', `
       <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>We received a request to reset your password.</p>
       <p style="text-align:center;">${SkinCareEmail.button(resetUrl, 'Reset password')}</p>
@@ -1126,174 +929,59 @@ class EmailService {
       'ehr_integration': 'EHR Integration'
     };
 
-    const featuresList = requestedFeatures.map(f => `• ${featureNames[f] || f}`).join('<br>');
+    const featuresList = requestedFeatures
+      .map((f) => `<li>${SkinCareEmail.escapeHtml(featureNames[f] || f)}</li>`)
+      .join('');
+    const esc = SkinCareEmail.escapeHtml;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Helvetica Neue', sans-serif; 
-            line-height: 1.6; 
-            color: #1e293b;
-            background: #f8fafc;
-            margin: 0;
-            padding: 20px;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-          }
-          .header {
-            background: linear-gradient(135deg, #16a637 0%, #3b82f6 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-          }
-          .logo {
-            font-size: 28px;
-            font-weight: 300;
-            margin-bottom: 10px;
-          }
-          .logo .doc {
-            font-family: 'Times New Roman', Times, serif;
-            font-style: italic;
-            font-weight: 400;
-          }
-          .logo .little {
-            font-family: 'Verdana', Geneva, sans-serif;
-            font-weight: 700;
-          }
-          .content {
-            padding: 30px;
-          }
-          .alert-box {
-            background: #eff6ff;
-            border-left: 4px solid #2563eb;
-            padding: 16px;
-            border-radius: 6px;
-            margin: 20px 0;
-          }
-          .features-list {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            font-size: 15px;
-            line-height: 1.8;
-          }
-          .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #f1f5f9;
-          }
-          .info-row:last-child {
-            border-bottom: none;
-          }
-          .info-label {
-            color: #64748b;
-            font-weight: 500;
-          }
-          .info-value {
-            color: #1e293b;
-            font-weight: 600;
-          }
-          .button {
-            display: inline-block;
-            background: #2563eb;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 20px;
-          }
-          .footer {
-            background: #f8fafc;
-            padding: 20px;
-            text-align: center;
-            color: #64748b;
-            font-size: 0.9rem;
-            border-top: 1px solid #e2e8f0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">
-              .
-            </div>
-            <h2 style="margin: 0; font-size: 20px; font-weight: 400;">New Feature Request</h2>
-          </div>
-          
-          <div class="content">
-            <div class="alert-box">
-              <strong>📋 New Feature Request Received</strong>
-            </div>
-            
-            <p>A customer has requested access to new API features:</p>
-            
-            <div class="features-list">
-              ${featuresList}
-            </div>
-            
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
-              <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Customer Information</h3>
-              <div class="info-row">
-                <span class="info-label">Customer Name:</span>
-                <span class="info-value">${customerName}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Email:</span>
-                <span class="info-value">${customerEmail}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Company:</span>
-                <span class="info-value">${companyName}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Requested Features:</span>
-                <span class="info-value">${requestedFeatures.length}</span>
-              </div>
-            </div>
-            
-            <p style="margin-top: 24px;">
-              <a href="https://callsomo.com/admin" class="button">View in Admin Portal</a>
-            </p>
-            
-            <p style="color: #64748b; font-size: 0.9rem; margin-top: 24px;">
-              Please review and approve or reject these feature requests in the admin portal.
-            </p>
-          </div>
-          
-          <div class="footer">
-            <p style="margin: 0;">This is an automated notification from Skin & Care API</p>
-            <p style="margin: 8px 0 0 0; font-size: 0.85rem;">
-              <a href="https://api.callsomo.com" style="color: #2563eb;">API Documentation</a> | 
-              <a href="https://callsomo.com" style="color: #2563eb;">Website</a>
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = this._skinCareLayout('New feature request', 'Admin notification', `
+      <p>A customer has requested access to new API features:</p>
+      ${SkinCareEmail.panel(`<ul style="margin:0;padding-left:20px;">${featuresList}</ul>`)}
+      ${SkinCareEmail.infoRows([
+        { label: 'Customer name', value: customerName },
+        { label: 'Email', value: customerEmail },
+        { label: 'Company', value: companyName },
+        { label: 'Features requested', value: String(requestedFeatures.length) }
+      ])}
+      <p style="text-align:center;">${SkinCareEmail.button('https://callsomo.com/admin', 'View in admin portal')}</p>
+      <p>Please review and approve or reject these feature requests in the admin portal.</p>
+    `);
 
     const adminEmail = process.env.ADMIN_EMAIL || 'richard@callsomo.com';
 
     return await this.sendEmail({
       to: adminEmail,
-      subject: `New Feature Request from ${customerName} - ${requestedFeatures.length} feature(s)`,
-      html: html
+      subject: `Notification — New feature request from ${esc(customerName)} (${requestedFeatures.length} feature(s))`,
+      html
+    });
+  }
+
+  /**
+   * Notify admin when a waitlist / contact form submission is received.
+   */
+  static async sendWaitlistAdminNotification({ name, email, source, product }) {
+    const adminEmail = process.env.ADMIN_EMAIL || 'richard@callsomo.com';
+    const esc = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    const sourceLabel = esc(source || 'unknown');
+    const bodyHtml = `
+      <p>A new Skin &amp; Care inquiry was submitted via <strong>${sourceLabel}</strong>.</p>
+      <table style="border-collapse:collapse;width:100%;max-width:560px;">
+        <tr><td style="padding:8px 0;font-weight:600;">Name</td><td>${esc(name)}</td></tr>
+        <tr><td style="padding:8px 0;font-weight:600;">Email</td><td><a href="mailto:${esc(email)}">${esc(email)}</a></td></tr>
+        <tr><td style="padding:8px 0;font-weight:600;vertical-align:top;">Message</td><td style="white-space:pre-wrap;">${esc(product || '(none)')}</td></tr>
+      </table>
+    `;
+    const html = this._skinCareLayout('New inquiry', sourceLabel, bodyHtml);
+    return await this.sendEmail({
+      to: adminEmail,
+      subject: `Notification — Inquiry (${sourceLabel}) from ${name}`,
+      html,
+      text: `Source: ${source || 'unknown'}\nName: ${name}\nEmail: ${email}\n\n${product || ''}`,
     });
   }
 
@@ -1308,138 +996,40 @@ class EmailService {
 
     const isCritical = creditBalance < 25;
     const alertLevel = isCritical ? 'Critical' : 'Low';
-    const alertColor = isCritical ? '#dc2626' : '#f59e0b';
+    const variant = isCritical ? 'warning' : undefined;
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; 
-            line-height: 1.6; 
-            color: #1e293b; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #f8fafc;
-          }
-          .container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-          }
-          .email-wrapper {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header { 
-            background: linear-gradient(135deg, ${alertColor} 0%, ${isCritical ? '#991b1b' : '#d97706'} 100%); 
-            color: white; 
-            padding: 40px 30px; 
-            text-align: center; 
-          }
-          .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
-          .content { padding: 40px 30px; }
-          .alert-box {
-            background: ${isCritical ? '#fef2f2' : '#fffbeb'};
-            border-left: 4px solid ${alertColor};
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-          }
-          .credit-display {
-            font-size: 48px;
-            font-weight: 900;
-            color: ${alertColor};
-            text-align: center;
-            margin: 20px 0;
-          }
-          .button { 
-            display: inline-block; 
-            padding: 16px 32px; 
-            background: linear-gradient(135deg, #16a637 0%, #3b82f6 100%); 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            margin: 20px 0;
-            font-weight: 600;
-            text-align: center;
-          }
-          .button:hover { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); }
-          .footer { 
-            text-align: center; 
-            margin-top: 30px; 
-            color: #64748b; 
-            font-size: 14px; 
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="email-wrapper">
-            <div class="header">
-              <h1>⚠️ ${alertLevel} Credit Alert</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${customerName},</p>
-              
-              <div class="alert-box">
-                <p style="margin: 0; font-weight: 600; color: ${alertColor};">
-                  ${isCritical
-        ? 'Your credits are running critically low!'
-        : 'Your credits are running low.'}
-                </p>
-              </div>
-
-              <div class="credit-display">
-                ${creditBalance} min
-              </div>
-              
-              <p style="text-align: center; color: #64748b; margin-bottom: 30px;">
-                ${isCritical
-        ? 'You have less than 25 minutes remaining. Add credits now to avoid service interruption.'
-        : 'You have less than 50 minutes remaining. Consider adding credits to continue uninterrupted service.'}
-              </p>
-
-              <div style="text-align: center;">
-                <a href="${dashboardUrl}" class="button">Buy More Credits →</a>
-              </div>
-
-              <p style="margin-top: 30px; color: #64748b; font-size: 14px;">
-                <strong>What happens when credits run out?</strong><br>
-                If your credits reach zero and you don't have a payment method on file, 
-                your AI assistant will pause until you add credits or a payment method.
-              </p>
-
-              <p style="margin-top: 20px; color: #64748b; font-size: 14px;">
-                <strong>Need help?</strong><br>
-                Contact us at <a href="mailto:support@callsomo.com" style="color: #16a637;">support@callsomo.com</a> 
-                or visit your dashboard to manage your account.
-              </p>
-            </div>
-            <div class="footer">
-              <p>This is an automated alert from Skin & Care.</p>
-              <p style="margin-top: 10px;">
-                <a href="${dashboardUrl}" style="color: #16a637; text-decoration: none;">Manage Credits</a> | 
-                <a href="https://callsomo.com" style="color: #16a637; text-decoration: none;">Visit Website</a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const html = this._skinCareLayout(
+      `${alertLevel} credit alert`,
+      `${creditBalance} minutes remaining`,
+      `
+      <h2>Hi ${SkinCareEmail.escapeHtml(customerName)},</h2>
+      ${SkinCareEmail.panel(
+        `<p style="margin:0;font-weight:600;">${
+          isCritical
+            ? 'Your credits are running critically low.'
+            : 'Your credits are running low.'
+        }</p>`,
+        variant
+      )}
+      <p style="text-align:center;font-size:32px;font-weight:700;margin:20px 0;">${creditBalance} min</p>
+      <p style="text-align:center;">
+        ${
+          isCritical
+            ? 'You have less than 25 minutes remaining. Add credits now to avoid service interruption.'
+            : 'You have less than 50 minutes remaining. Consider adding credits to continue uninterrupted service.'
+        }
+      </p>
+      <p style="text-align:center;">${SkinCareEmail.button(dashboardUrl, 'Buy more credits')}</p>
+      <p><strong>What happens when credits run out?</strong> If your credits reach zero and you do not have a payment method on file, your AI assistant will pause until you add credits.</p>
+      <p><strong>Need help?</strong> Contact <a href="mailto:support@callsomo.com">support@callsomo.com</a> or visit your dashboard.</p>
+    `,
+      { preheader: `${creditBalance} minutes remaining` }
+    );
 
     return await this.sendEmail({
       to: customerEmail,
-      subject: `⚠️ ${alertLevel} Credit Alert: ${creditBalance} minutes remaining`,
-      html: html
+      subject: `Notification — ${alertLevel} credit alert (${creditBalance} minutes remaining)`,
+      html
     });
   }
 
@@ -1448,62 +1038,67 @@ class EmailService {
   // ============================================
   static async sendAppointmentRescheduled(appointment, details = {}) {
     if (!appointment || !appointment.patient_email) return { success: false, error: 'Missing patient email' };
-    const prev = details.previous_datetime || details.previous || '';
-    const next = details.new_datetime || details.next || '';
-    const subject = 'Consult Patient Portal — Appointment Rescheduled';
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:16px;">
-        <div style="font-size:28px;font-weight:800;letter-spacing:-1px;">Consʌlt</div>
-        <div style="color:#6b7280;margin-top:4px;">Healthcare at your home</div>
-        <h2 style="margin-top:18px;">Your appointment was rescheduled</h2>
-        <p style="color:#374151;">Previous: <strong>${prev || '—'}</strong><br/>New: <strong>${next || '—'}</strong></p>
-        <p style="color:#374151;">You can review or manage your visit in your portal.</p>
-      </div>
-    `;
+    const prev = details.previous_datetime || details.previous || '—';
+    const next = details.new_datetime || details.next || '—';
+    const subject = 'Skin & Care — Appointment rescheduled';
+    const html = this._skinCareLayout('Appointment rescheduled', '', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
+      <p>Your appointment was rescheduled.</p>
+      ${SkinCareEmail.infoRows([
+        { label: 'Previous', value: prev },
+        { label: 'New', value: next }
+      ])}
+      <p>You can review or manage your visit in your portal.</p>
+    `);
     return this.sendEmail({ to: appointment.patient_email, subject, html });
   }
 
   static async sendAppointmentCanceled(appointment) {
     if (!appointment || !appointment.patient_email) return { success: false, error: 'Missing patient email' };
-    const subject = 'Consult Patient Portal — Appointment Canceled';
-    const dt = (appointment.start_time ? new Date(appointment.start_time).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: appointment.timezone || 'America/New_York' }) : `${appointment.date || ''} ${appointment.time || ''}`);
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:16px;">
-        <div style="font-size:28px;font-weight:800;letter-spacing:-1px;">Consʌlt</div>
-        <div style="color:#6b7280;margin-top:4px;">Healthcare at your home</div>
-        <h2 style="margin-top:18px;">Your appointment was canceled</h2>
-        <p style="color:#374151;">Canceled visit time: <strong>${dt}</strong></p>
-        <p style="color:#374151;">If this was a mistake, please schedule a new visit or contact your clinic.</p>
-      </div>
-    `;
+    const subject = 'Skin & Care — Appointment canceled';
+    const dt = appointment.start_time
+      ? new Date(appointment.start_time).toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: appointment.timezone || 'America/New_York'
+      })
+      : `${appointment.date || ''} ${appointment.time || ''}`;
+    const html = this._skinCareLayout('Appointment canceled', '', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
+      <p>Your appointment was canceled.</p>
+      ${SkinCareEmail.infoRows([{ label: 'Canceled visit', value: dt }])}
+      <p>If this was a mistake, please schedule a new visit or contact your clinic.</p>
+    `);
     return this.sendEmail({ to: appointment.patient_email, subject, html });
   }
 
   static async sendPostVisitSummaryReady(appointment) {
     if (!appointment || !appointment.patient_email) return { success: false, error: 'Missing patient email' };
     const baseUrl = (process.env.DASHBOARD_BASE_URL || process.env.BASE_URL || process.env.API_BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
-    const feedbackExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
+    const feedbackExpiry = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
     const { createFeedbackToken } = require('../utils/upload-token');
     const feedbackToken = createFeedbackToken(appointment.id, feedbackExpiry);
     const feedbackUrl = `${baseUrl}/patients/feedback.html?appointment_id=${encodeURIComponent(appointment.id)}&token=${encodeURIComponent(feedbackToken)}`;
-    const subject = 'Consult Patient Portal — Your Visit Summary Is Ready';
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:16px;">
-        <div style="font-size:28px;font-weight:800;letter-spacing:-1px;">Consʌlt</div>
-        <div style="color:#6b7280;margin-top:4px;">Healthcare at your home</div>
-        <h2 style="margin-top:18px;">Your visit summary is ready</h2>
-        <p style="color:#374151;">You can view your records and documents in the patient portal.</p>
-        <p style="margin-top:20px;color:#374151;font-weight:600;">Was this visit helpful?</p>
-        <p style="margin-top:8px;">
-          <a href="${feedbackUrl + '&helpful=1'}" style="display:inline-block;padding:10px 16px;margin-right:8px;background:#16a34a;color:white!important;text-decoration:none;border-radius:8px;font-weight:600;">👍 Yes</a>
-          <a href="${feedbackUrl + '&helpful=0'}" style="display:inline-block;padding:10px 16px;background:#dc2626;color:white!important;text-decoration:none;border-radius:8px;font-weight:600;">👎 No</a>
-        </p>
-        <p style="margin-top:12px;font-size:13px;color:#6b7280;">Or leave detailed feedback: <a href="${feedbackUrl}" style="color:#16a637;">${feedbackUrl}</a></p>
-      </div>
-    `;
+    const subject = 'Skin & Care — Your visit summary is ready';
+    const html = this._skinCareLayout('Visit summary ready', '', `
+      <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
+      <p>Your visit summary is ready. You can view your records and documents in the patient portal.</p>
+      <p><strong>Was this visit helpful?</strong></p>
+      <p>
+        ${SkinCareEmail.button(`${feedbackUrl}&helpful=1`, 'Yes')}
+        ${SkinCareEmail.button(`${feedbackUrl}&helpful=0`, 'No', 'secondary')}
+      </p>
+      <p>Or leave detailed feedback: <a href="${SkinCareEmail.escapeHtml(feedbackUrl)}">${SkinCareEmail.escapeHtml(feedbackUrl)}</a></p>
+    `);
     return this.sendEmail({ to: appointment.patient_email, subject, html });
   }
 }
 
 module.exports = EmailService;
+module.exports.formatSmtpFrom = formatSmtpFrom;
+module.exports.smtpFromAddress = smtpFromAddress;
+module.exports.EMAIL_SUBJECT_VERIFICATION = EMAIL_SUBJECT_VERIFICATION;
 

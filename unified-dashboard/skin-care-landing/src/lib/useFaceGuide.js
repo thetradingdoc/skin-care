@@ -15,11 +15,41 @@ let detectorPromise = null;
 async function loadDetector() {
   if (!detectorPromise) {
     detectorPromise = (async () => {
+      // #region agent log
+      const t0 = performance.now();
+      fetch('http://127.0.0.1:7305/ingest/f9cb3960-7315-4ebc-b907-ebcee7ad8a07', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f7004c' },
+        body: JSON.stringify({
+          sessionId: 'f7004c',
+          hypothesisId: 'H1',
+          location: 'useFaceGuide.js:loadDetector',
+          message: 'mediapipe_load_start',
+          data: { perfMs: Math.round(t0) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       const vision = await FilesetResolver.forVisionTasks(WASM_BASE);
-      return FaceDetector.createFromOptions(vision, {
+      const detector = await FaceDetector.createFromOptions(vision, {
         baseOptions: { modelAssetPath: MODEL_URL },
         runningMode: 'VIDEO',
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7305/ingest/f9cb3960-7315-4ebc-b907-ebcee7ad8a07', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f7004c' },
+        body: JSON.stringify({
+          sessionId: 'f7004c',
+          hypothesisId: 'H1',
+          location: 'useFaceGuide.js:loadDetector',
+          message: 'mediapipe_load_done',
+          data: { ms: Math.round(performance.now() - t0) },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
+      return detector;
     })();
   }
   return detectorPromise;
@@ -140,6 +170,20 @@ export function useFaceGuide(videoRef, ready) {
       try {
         detector = await loadDetector();
         if (cancelled) return;
+        // #region agent log
+        fetch('http://127.0.0.1:7305/ingest/f9cb3960-7315-4ebc-b907-ebcee7ad8a07', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f7004c' },
+          body: JSON.stringify({
+            sessionId: 'f7004c',
+            hypothesisId: 'H1',
+            location: 'useFaceGuide.js:effect',
+            message: 'guide_searching',
+            data: { perfMs: Math.round(performance.now()) },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         setState({ status: 'searching', hint: 'Position your face in the oval', canScan: false });
         rafRef.current = requestAnimationFrame(tick);
       } catch {

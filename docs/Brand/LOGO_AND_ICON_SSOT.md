@@ -1,13 +1,13 @@
 # Logo, icon, and favicon — single source of truth
 
-> **Last reviewed:** 2026-06-08
+> **Last reviewed:** 2026-06-10
 
-Skin & Care uses **two valid brand marks** depending on surface. Do not mix them.
+The **landing page wordmark** is the single source of truth for all header logos and email branding.
 
 | Mark | Surface | Doc section |
 |------|---------|-------------|
-| **Tulip wordmark** | Consumer marketing landing (`skin-care-landing`) | [Consumer wordmark](#consumer-wordmark-lockup) |
-| **Panda mark** | Checkout, patient auth, provider shell, transactional email | [Panda mark](#panda-mark) |
+| **Tulip wordmark** | Landing, funnel, sign-in, static pages, B2B auth, provider sidebar, all emails | [Consumer wordmark](#consumer-wordmark-lockup) |
+| **Panda mark** | Checkout chat assistant avatar only | [Panda mark](#panda-mark) |
 
 ---
 
@@ -18,8 +18,9 @@ Live React wordmark: **skin** + **tulip** + **care** (lowercase, no ampersand in
 | Property | Spec |
 |----------|------|
 | Text | `skin` + `care` (lowercase) |
-| `skin` font | Be Vietnam Pro **Bold Italic** (700 italic) |
-| `care` font | Be Vietnam Pro **Bold** (700 normal) |
+| `skin` font | Be Vietnam Pro **Bold Italic** — **font-weight 700** + italic |
+| `care` font | Be Vietnam Pro **Bold** — **font-weight 700** upright |
+| Both words | **700 weight** (skin is bold-italic, care is bold upright — never 400 on `skin`) |
 | Mark color | `#000000` |
 | Background | `#ffffff` (landing hero/header) |
 | Tulip position | Centered in the gap between words, elevated above the baseline |
@@ -29,7 +30,7 @@ Live React wordmark: **skin** + **tulip** + **care** (lowercase, no ampersand in
 
 ### Layout (CSS)
 
-Defined in `unified-dashboard/skin-care-landing/src/styles/landing.css`:
+**SSOT stylesheet:** [`unified-dashboard/assets/css/logo-wordmark.css`](../../unified-dashboard/assets/css/logo-wordmark.css) — import this file; do not duplicate wordmark rules.
 
 | Token | Value | Role |
 |-------|-------|------|
@@ -42,18 +43,41 @@ Defined in `unified-dashboard/skin-care-landing/src/styles/landing.css`:
 
 ### Code integration
 
+| Surface | Implementation |
+|---------|----------------|
+| Landing + funnel header/footer | `DoveIcon.jsx` → `LogoWordmark` + `logo-wordmark.css` via `landing.css` |
+| About / Contact static pages | Same HTML structure + `sc-static-pages.css` → `@import logo-wordmark.css` |
+| Expo web sign-in | `patient-app/components/BrandWordmark.tsx` — web: same CSS classes; native: `expo-font` + em-slot layout |
+| Consumer `/app` production | `app/index.html` links `/assets/css/logo-wordmark.css` |
+
 | Item | Path |
 |------|------|
-| Components | `unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx` — `LogoWordmark`, `LogoMark`, `DoveIcon` |
-| Header | `src/components/SiteHeader.jsx` |
-| Footer | `src/components/Footer.jsx` |
-| Styles + `@font-face` | `src/styles/landing.css` |
+| Shared CSS | `unified-dashboard/assets/css/logo-wordmark.css` |
+| React (web landing) | `unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx` |
+| React (Expo web) | `patient-app/components/BrandWordmark.web.tsx` — plain HTML + `logo-wordmark.css` |
+| React (Expo native) | `patient-app/components/BrandWordmark.tsx` — `expo-font` + em-slot layout |
+| Tulip SVG | `unified-dashboard/assets/brand/tulip-mark.svg` |
 
 **Implementation notes:**
 
-- Wordmark is **live text + inline SVG**, not a baked PNG.
-- Tulip path is the `TULIP_PATH` constant in `DoveIcon.jsx` (must stay in sync with `tulip-mark.svg`).
-- Hero headlines and body copy on the landing page still use **Gloock** via `--font-display`; only the header/footer logo uses Be Vietnam Pro.
+- Wordmark is **live text + inline SVG** (or `img` of tulip on static HTML), not a baked PNG.
+- Tulip path is exported from [`tulip-path.js`](../../unified-dashboard/assets/brand/tulip-path.js) (must stay in sync with `tulip-mark.svg`).
+- Hero headlines and body copy on the landing page still use **Gloock** via `--font-display`; only the wordmark uses Be Vietnam Pro.
+
+### Parity checklist (new consumer pages)
+
+- [ ] Import `logo-wordmark.css` (or use `LogoWordmark` / `BrandWordmark` component)
+- [ ] `skin` renders at **700 italic**; `care` at **700** upright
+- [ ] Tulip in `.sc-logo-mark-slot` with **negative top margin** (elevated), not vertically centered in a flex row
+- [ ] Header `--logo-height: 52px` unless footer context (`28px`)
+- [ ] Do not use system UI fonts, `font-weight: 400` on `skin`, or duplicate `@font-face` without BoldItalic
+
+### Anti-patterns
+
+- Thin italic `skin` (400) — wrong on sign-in before parity fix
+- Missing `BeVietnamPro-BoldItalic.ttf` `@font-face` — breaks About/Contact
+- Copy-pasting wordmark CSS into new files instead of importing `logo-wordmark.css`
+- Flexbox `align-items: center` on the wordmark row (flattens tulip elevation)
 
 ---
 
@@ -86,7 +110,7 @@ Hosted under `unified-dashboard/assets/brand/fonts/`:
 | `BeVietnamPro-Bold.ttf` | 700 normal | `care` |
 | `BeVietnamPro-Italic.ttf` | 400 italic | Loaded; not used in current wordmark |
 
-`@font-face` declarations: `skin-care-landing/src/styles/landing.css` (bundled by Vite in production). Be Vietnam Pro is licensed under **SIL OFL 1.1** — see [`OFL-BeVietnamPro.txt`](../../unified-dashboard/assets/brand/fonts/OFL-BeVietnamPro.txt) and [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md). Skin & Care does **not** own the typeface; we bundle it for the wordmark only.
+`@font-face` declarations: `unified-dashboard/assets/css/logo-wordmark.css` (imported by landing, static pages, and consumer `/app`). Be Vietnam Pro is licensed under **SIL OFL 1.1** — see [`OFL-BeVietnamPro.txt`](../../unified-dashboard/assets/brand/fonts/OFL-BeVietnamPro.txt) and [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md). Skin & Care does **not** own the typeface; we bundle it for the wordmark only.
 
 Upstream: [Be Vietnam Pro](https://github.com/bettergui/BeVietnamPro).
 
@@ -122,16 +146,27 @@ PNG fallbacks are generated from `tulip-mark.png` composited on a white canvas.
 
 ---
 
+## Transactional email wordmark
+
+Consumer OTP and other Skin & Care emails use a **solid black raster composite** (not live HTML, not deprecated `logo-wordmark.png`).
+
+| Asset | Path | Regenerate |
+|-------|------|------------|
+| Email wordmark 1× | `unified-dashboard/assets/brand/email-wordmark.png` | `npm run brand:email-wordmark` |
+| Email wordmark 2× | `unified-dashboard/assets/brand/email-wordmark@2x.png` | same |
+
+Script: [`build-email-wordmark.py`](../../unified-dashboard/assets/brand/scripts/build-email-wordmark.py). Layout: [`skin-care-email-layout.js`](../../middleware-platform/lib/skin-care-email-layout.js). See [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md).
+
+---
+
 ## Panda mark
 
-Used on **non-landing** consumer and provider surfaces.
+Used only as the **checkout chat assistant** illustration — not in headers or emails.
 
 | Asset | Path | Use |
 |-------|------|-----|
-| Panda SVG | `unified-dashboard/assets/images/logo-panda.svg` | Nav, auth, checkout, provider sidebar, email header |
+| Panda SVG | `unified-dashboard/assets/images/logo-panda.svg` | Checkout chat widget avatar |
 | Brand copy (SSOT) | `unified-dashboard/assets/brand/logo-panda.svg` | Synced via `npm run brand:sync` |
-
-Pair with **Skin & Care** in Gloock + DM Sans where space allows. See [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md).
 
 ### Panda favicons (checkout / provider / shared web)
 
@@ -150,8 +185,8 @@ Do **not** overwrite landing tulip favicons with panda output without updating t
 
 | Item | Reason |
 |------|--------|
-| `skin-care-landing/scripts/build-logo-wordmark.py` | Deprecated PNG compositor — see [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) and `assets/brand/scripts/build-logo-wordmark-portable.py` |
-| `logo-wordmark.png`, `logo-wordmark@2x.png` | Baked PNG compositor output |
+| `build-logo-wordmark.py` / `build-logo-wordmark-portable.py` | **Removed** — use landing SSOT + `npm run brand:email-wordmark` |
+| `logo-wordmark.png`, `logo-wordmark@2x.png` | **Removed** — deprecated serif + dove compositor |
 | Old bird-arc `DoveIcon` stroke paths | Wrong mark shape |
 | `dove-mark.png`, `logo-dove.svg` for header | Superseded by `tulip-mark.svg` |
 | Crimson Pro for logo `skin` | Replaced by Be Vietnam Pro Bold Italic |
@@ -164,4 +199,5 @@ Do **not** overwrite landing tulip favicons with panda output without updating t
 - [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) — trademarks, OFL, build-script archive
 - [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) — palette, typography, tokens
 - [README.md](./README.md) — brand doc index
-- [Transactional email layout](../../middleware-platform/lib/skin-care-email-layout.js) — panda mark in email
+- [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) — which wordmark asset per surface (web vs email)
+- [Transactional email layout](../../middleware-platform/lib/skin-care-email-layout.js) — `email-wordmark.png` (solid black composite)

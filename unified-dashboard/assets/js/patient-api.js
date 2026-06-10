@@ -51,7 +51,11 @@ export const patientApi = {
 
     if (res.status === 401) {
       patientSession.clear();
-      window.location.href = 'patient-login.html';
+      const signIn =
+        typeof globalThis.consumerSignInUrl === 'function'
+          ? globalThis.consumerSignInUrl()
+          : '/app/sign-in';
+      window.location.href = signIn;
       return { success: false, error: 'Session expired' };
     }
 

@@ -71,7 +71,7 @@ const apiOk = process.env.SKIP_API_CHECK === '1';
 if (apiOk) {
   pass('API_HEALTH', 'skipped (SKIP_API_CHECK=1)');
 } else {
-  const apiHealthUrl = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.myskinandcare.com').replace(
+  const apiHealthUrl = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.callsomo.com').replace(
     /\/$/,
     ''
   );

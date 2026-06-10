@@ -26,6 +26,24 @@ function registerPublicRoutineRoutes(app, { apiLimiter }) {
       return res.status(500).json({ success: false, error: e.message });
     }
   });
+
+  app.get('/api/public/routines/:concernId/week/:weekNum', apiLimiter, (req, res) => {
+    try {
+      const concernId = String(req.params?.concernId || '').trim();
+      const weekNum = Math.max(1, Number(req.params?.weekNum) || 1);
+      const program = concernRoutineService.getConcernProgram(concernId);
+      if (!program) {
+        return res.status(404).json({ success: false, error: 'Unknown concern program.' });
+      }
+      const week = concernRoutineService.resolveWeekSchedule(program, weekNum);
+      if (!week) {
+        return res.status(404).json({ success: false, error: 'Week not found for program.' });
+      }
+      return res.json({ success: true, concern_id: concernId, week });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: e.message });
+    }
+  });
 }
 
 module.exports = { registerPublicRoutineRoutes };

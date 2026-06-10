@@ -26,12 +26,20 @@
 
   window.ppSidebarHeaderHtml = function ppSidebarHeaderHtml() {
     const todayHref = resolveHref('today.html');
-    const logoSrc = '/assets/images/logo-panda.svg';
+    const wordmark =
+      typeof window.scWordmarkHtml === 'function'
+        ? window.scWordmarkHtml(30)
+        : `<span class="sc-logo-wordmark" style="--logo-height: 30px" role="img" aria-label="skin care">
+  <span class="sc-logo-skin" aria-hidden="true">skin</span>
+  <span class="sc-logo-mark-slot" aria-hidden="true">
+    <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+  </span>
+  <span class="sc-logo-care" aria-hidden="true">care</span>
+</span>`;
     return `
       <div class="pp-clinic-header">
         <a class="pp-sb-brand" href="${todayHref}">
-          <img src="${logoSrc}" alt="" aria-hidden="true" class="pp-sb-logo-img" width="36" height="36" />
-          <span class="pp-sb-logo-text">Skin &amp; Care</span>
+          ${wordmark}
         </a>
         <div class="pp-sb-clinic-meta">
           <div class="pp-sb-cn" id="ppClinicName">Clinic</div>

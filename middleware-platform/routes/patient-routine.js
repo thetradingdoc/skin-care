@@ -321,6 +321,7 @@ app.get('/api/patient/routine/phase', (req, res, next) => apiLimiter(req, res, n
     }
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
     const dayMode = resolveRoutineDayMode(targetDate);
+    const weekSchedule = concernRoutineService.resolveWeekSchedule(program, phase?.program_week);
     return res.json({
       success: true,
       has_template: true,
@@ -341,6 +342,7 @@ app.get('/api/patient/routine/phase', (req, res, next) => apiLimiter(req, res, n
         key_rules: program.key_rules || [],
         red_flags: program.red_flags || []
       },
+      week_schedule: weekSchedule,
       items
     });
   } catch (e) {
@@ -749,6 +751,33 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       logged_via: 'photo',
       day_mode: completion.dayMode,
     });
+
+    const photoDaysRow = db.db.prepare(`
+      SELECT COUNT(DISTINCT entry_date) AS n
+      FROM patient_routine_daily_entries
+      WHERE template_id = ? AND completion_score >= 100
+    `).get(entry.template_id);
+    const photoDays = Number(photoDaysRow?.n) || 0;
+    if (photoDays > 0 && photoDays % 7 === 0) {
+      try {
+        const { analyzeWithVision } = require('../services/face-read-vision');
+        const { insertSkinAgeReading } = require('../services/skin-age-readings');
+        const vision = await analyzeWithVision(uploadFile.buffer, uploadFile.mimetype || 'image/jpeg');
+        if (vision?.apparent_age_estimate != null) {
+          insertSkinAgeReading(db.db, {
+            patient_id: patientId,
+            session_id: sessionId,
+            source: 'weekly_rescore',
+            apparent_age_estimate: Number(vision.apparent_age_estimate),
+            model_id: vision.model_id,
+            model_version: vision.model_version,
+            media_id: mediaId,
+            payload_json: vision,
+          });
+        }
+      } catch (_) {}
+    }
+
     return res.json({
       success: true,
       media_id: mediaId,
@@ -1117,10 +1146,74 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
           })),
         ]
       : [];
+    const KellyToolExecutor = require('../services/kelly-tool-executor');
+    let funnelMeta = null;
+    try {
+      const rawMeta = KellyToolExecutor._getSessionMeta(sessionId, 'funnel_match_json');
+      if (rawMeta) funnelMeta = JSON.parse(String(rawMeta));
+    } catch (_) {
+      funnelMeta = null;
+    }
+    const bridgedFace = funnelMeta?.face_read && typeof funnelMeta.face_read === 'object'
+      ? funnelMeta.face_read
+      : null;
+    const baselineSkinAge = bridgedFace?.apparent_age_estimate != null
+      ? Number(bridgedFace.apparent_age_estimate)
+      : null;
+    const confirmedAgeMeta = funnelMeta?.confirmed_age != null
+      ? Number(funnelMeta.confirmed_age)
+      : null;
+    const goalSkinAge =
+      Number.isFinite(baselineSkinAge) && Number.isFinite(confirmedAgeMeta) && baselineSkinAge > confirmedAgeMeta
+        ? confirmedAgeMeta
+        : Number.isFinite(confirmedAgeMeta)
+          ? confirmedAgeMeta
+          : Number.isFinite(baselineSkinAge)
+            ? baselineSkinAge
+            : null;
+
+    const streakRows = db.db.prepare(`
+      SELECT entry_date, completion_score
+      FROM patient_routine_daily_entries
+      WHERE template_id = ?
+      ORDER BY entry_date DESC
+      LIMIT 120
+    `).all(template.id);
+    const loggedDates = new Set(
+      streakRows
+        .filter((r) => Math.max(0, Math.min(100, Number(r.completion_score) || 0)) >= 100)
+        .map((r) => r.entry_date),
+    );
+    let streakDays = 0;
+    let streakCursor = new Date(`${todayIsoProgress}T12:00:00.000Z`);
+    if (!loggedDates.has(todayIsoProgress)) {
+      streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+    }
+    for (let i = 0; i < 120; i += 1) {
+      const iso = streakCursor.toISOString().slice(0, 10);
+      if (!loggedDates.has(iso)) break;
+      streakDays += 1;
+      streakCursor.setUTCDate(streakCursor.getUTCDate() - 1);
+    }
+
+    const { latestReadingForSession, listReadingsForSession } = require('../services/skin-age-readings');
+    const latestReading = latestReadingForSession(db.db, sessionId, patientId);
+    const latestSkinAge =
+      latestReading?.apparent_age_estimate != null
+        ? Number(latestReading.apparent_age_estimate)
+        : Number.isFinite(baselineSkinAge)
+          ? baselineSkinAge
+          : null;
+    const skinAgeTrend = listReadingsForSession(db.db, sessionId, patientId, 12).map((row) => ({
+      estimate: Number(row.apparent_age_estimate),
+      created_at: row.created_at,
+      source: row.source,
+    }));
+
     return res.json({
       success: true,
       has_template: true,
-      template: { id: template.id, name: template.name },
+      template: { id: template.id, name: template.name, concern_id: template.concern_id },
       summary: {
         adherence_pct: adherencePct,
         upcoming_checkins: upcomingCheckins,
@@ -1128,9 +1221,72 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
         in_progress: inProgress,
         today_logged: todayLogged,
         upcoming,
-        total_tasks: displayItems.length
+        total_tasks: displayItems.length,
+        streak_days: streakDays,
+        baseline_skin_age: Number.isFinite(baselineSkinAge) ? Math.round(baselineSkinAge) : null,
+        latest_skin_age: Number.isFinite(latestSkinAge) ? Math.round(latestSkinAge) : null,
+        confirmed_age: Number.isFinite(confirmedAgeMeta) ? Math.round(confirmedAgeMeta) : null,
+        goal_skin_age: Number.isFinite(goalSkinAge) ? Math.round(goalSkinAge) : null,
+        skin_age_trend: skinAgeTrend,
+        program_week: phaseNow?.program_week || null,
+        total_weeks: program?.total_weeks || 12,
+        phase_label: phaseLabelNow,
       },
       cards
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/patient/home/weekly-insight', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, async (req, res) => {
+  try {
+    ensureRoutineTables();
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const whereSql = patientId
+      ? `WHERE (patient_id = ? OR session_id = ?) AND is_active = 1`
+      : `WHERE session_id = ? AND is_active = 1`;
+    const params = patientId ? [patientId, sessionId] : [sessionId];
+    const template = db.db.prepare(`
+      SELECT id, start_date, concern_id, metadata_json
+      FROM patient_routine_templates
+      ${whereSql}
+      ORDER BY datetime(updated_at) DESC
+      LIMIT 1
+    `).get(...params);
+    if (!template) {
+      return res.json({ success: true, has_template: false, insight: null });
+    }
+    const concernRoutineService = require('../services/concern-routine-service');
+    let program = null;
+    if (template.metadata_json) {
+      try { program = JSON.parse(String(template.metadata_json)); } catch (_) { program = null; }
+    }
+    if (!program && template.concern_id) program = concernRoutineService.getConcernProgram(template.concern_id);
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const phaseNow = program
+      ? concernRoutineService.resolveCurrentPhase(program, template.start_date, todayIso)
+      : null;
+    const photoDaysRow = db.db.prepare(`
+      SELECT COUNT(DISTINCT entry_date) AS n
+      FROM patient_routine_daily_entries
+      WHERE template_id = ? AND completion_score >= 100
+    `).get(template.id);
+    const photoDays = Number(photoDaysRow?.n) || 0;
+    const focus = phaseNow?.focus || phaseNow?.expect || 'your routine';
+    const insight =
+      photoDays >= 7
+        ? `You're on day ${photoDays} of tracking. ${focus} Consistency with your daily photo is what drives visible change — keep SPF up on sunny days.`
+        : photoDays >= 1
+          ? `Day ${photoDays} logged. ${focus} Check back after a week of photos for richer insights.`
+          : `Log your first progress photo on Today to start your timeline. ${focus}`;
+    return res.json({
+      success: true,
+      has_template: true,
+      insight,
+      photo_days: photoDays,
+      phase_label: phaseNow?.label || null,
     });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });

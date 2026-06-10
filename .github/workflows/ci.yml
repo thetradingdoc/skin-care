@@ -187,6 +187,10 @@ jobs:
         working-directory: ./patient-app
         run: npx tsc --noEmit
 
+      - name: Vitest patient-app
+        working-directory: ./patient-app
+        run: npm test
+
       - name: Start API server (for Cypress)
         working-directory: ./middleware-platform
         env:

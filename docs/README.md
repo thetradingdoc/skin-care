@@ -1,7 +1,7 @@
 # Skin & Care Platform Documentation
-> Last reviewed: 2026-06-06
+> Last reviewed: 2026-06-10
 
-**Last Updated:** 2026-06-06
+**Last Updated:** 2026-06-10
 
 
 > **📌 Source of Truth**: This `docs/` folder is the canonical documentation for the platform. All `.md` files belong in `docs/` (or `todos/` for active/archive task tracking).  

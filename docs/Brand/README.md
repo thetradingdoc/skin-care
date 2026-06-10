@@ -11,6 +11,7 @@ One user-facing brand for **consumer** (app, marketing, patient web) and **provi
 | [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, journal palette, typography, tokens |
 | [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, **myskinandcare.com**, EAS/TestFlight, DNS cutover |
 | [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, favicon, panda mark — paths and code SSOT |
+| [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) | Web vs email wordmark — what to use and what to avoid |
 | [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) | Trademarks, Be Vietnam Pro OFL, logo build-script archive |
 
 **Product name:** Skin & Care (not "MySkinAndCare").
@@ -32,6 +33,7 @@ One user-facing brand for **consumer** (app, marketing, patient web) and **provi
 - **Landing wordmark + tulip:** [`unified-dashboard/assets/brand/tulip-mark.svg`](../../unified-dashboard/assets/brand/tulip-mark.svg) — [`LogoWordmark`](../../unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx)
 - **Landing favicon:** [`skin-care-landing/public/favicon.svg`](../../unified-dashboard/skin-care-landing/public/favicon.svg)
 - **Panda mark (checkout / provider):** [`unified-dashboard/assets/images/logo-panda.svg`](../../unified-dashboard/assets/images/logo-panda.svg)
+- **Email wordmark PNG:** [`unified-dashboard/assets/brand/email-wordmark.png`](../../unified-dashboard/assets/brand/email-wordmark.png) — `npm run brand:email-wordmark`
 - **Email layout:** [`middleware-platform/lib/skin-care-email-layout.js`](../../middleware-platform/lib/skin-care-email-layout.js)
 
 ## Guardrails

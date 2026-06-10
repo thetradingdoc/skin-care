@@ -4,15 +4,28 @@ const {
   buildPreview,
   resolveCurrentPhase,
   getConcernProgram,
+  expandWeeklySchedule,
+  resolveWeekSchedule,
 } = require('../services/concern-routine-service');
 
 describe('concern-routine-service', () => {
-  test('lists five concerns', () => {
+  test('lists six concerns including hyperpigmentation_dark_skin', () => {
     const concerns = listConcerns();
-    expect(concerns.length).toBe(5);
+    expect(concerns.length).toBe(6);
     const ids = concerns.map((c) => c.id);
     expect(ids).toContain('hyperpigmentation');
+    expect(ids).toContain('hyperpigmentation_dark_skin');
     expect(ids).toContain('rosacea');
+  });
+
+  test('expandWeeklySchedule produces per-week rows', () => {
+    const program = getConcernProgram('acne');
+    const weeks = expandWeeklySchedule(program.weekly_schedule);
+    expect(weeks.length).toBeGreaterThan(0);
+    expect(weeks[0]).toMatchObject({ week: 1 });
+    expect(Array.isArray(weeks[0].am_steps)).toBe(true);
+    const w3 = resolveWeekSchedule(program, 3);
+    expect(w3?.week).toBe(3);
   });
 
   test('hyperpigmentation is 24 weeks', () => {

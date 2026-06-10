@@ -8,6 +8,7 @@
     <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
     <title>My Profile - Skin & Care API</title>
     <link rel="stylesheet" href="/assets/css/api-skin-care-brand.css" />
+    <link rel="stylesheet" href="/assets/css/logo-wordmark.css" />
     <style>
         * {
             margin: 0;
@@ -359,8 +360,15 @@
     <div class="header">
         <div class="header-content">
             <div class="logo-brand logo-brand--on-dark">
-                <img src="/assets/images/logo-panda.svg" alt="" width="40" height="40" aria-hidden="true" />
-                <span class="logo-brand-text">Skin & Care</span>
+                <span style="display:inline-block;background:#fff;padding:6px 10px;border-radius:8px;">
+                  <span class="sc-logo-wordmark" style="--logo-height: 32px" role="img" aria-label="skin care">
+                    <span class="sc-logo-skin" aria-hidden="true">skin</span>
+                    <span class="sc-logo-mark-slot" aria-hidden="true">
+                      <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+                    </span>
+                    <span class="sc-logo-care" aria-hidden="true">care</span>
+                  </span>
+                </span>
             </div>
             <div class="nav-links">
                 <a href="/docs">Documentation</a>

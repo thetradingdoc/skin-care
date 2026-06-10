@@ -23,17 +23,30 @@
     return;
   }
 
-  // Check localStorage override
+  // Check localStorage override (ignore stale localhost on consumer prod hosts)
   const storedApi = localStorage.getItem('api_base');
+  const hostForStorage = hostname.toLowerCase();
+  const isConsumerProdHostForStorage =
+    hostForStorage === 'myskinandcare.com' ||
+    hostForStorage === 'www.myskinandcare.com' ||
+    hostForStorage === 'skinandcare.com' ||
+    hostForStorage === 'www.skinandcare.com';
   if (storedApi) {
-    window.API_BASE = storedApi;
-    console.log('🌐 API Base URL (from localStorage):', window.API_BASE);
-    return;
+    const isStaleLocalhost =
+      isConsumerProdHostForStorage && /localhost|127\.0\.0\.1/i.test(storedApi);
+    if (!isStaleLocalhost) {
+      window.API_BASE = storedApi;
+      console.log('🌐 API Base URL (from localStorage):', window.API_BASE);
+      return;
+    }
+    try {
+      localStorage.removeItem('api_base');
+    } catch (_) {}
   }
 
   const PROD_API =
     (typeof window.__SKIN_CARE_API_BASE__ === 'string' && window.__SKIN_CARE_API_BASE__.trim()) ||
-    'https://api.myskinandcare.com';
+    'https://api.callsomo.com';
   const host = hostname.toLowerCase();
   const isConsumerProdHost =
     host === 'myskinandcare.com' ||
@@ -324,19 +337,26 @@
   };
 })();
 
-// Register service worker for PWA (installability + basic offline shell)
+// Register service worker for PWA (provider portal paths only — not consumer myskinandcare.com)
 (function () {
-  if ('serviceWorker' in navigator) {
-    const swUrl = '/unified-dashboard/sw.js?v=12';
-    navigator.serviceWorker
-      .register(swUrl)
-      .then(() => {
-        console.log('✅ Service worker registered:', swUrl);
-      })
-      .catch((err) => {
-        console.warn('⚠️  Service worker registration failed:', err.message);
-      });
-  }
+  if (!('serviceWorker' in navigator)) return;
+  const host = (window.location.hostname || '').toLowerCase();
+  const isConsumerProdHost =
+    host === 'myskinandcare.com' ||
+    host === 'www.myskinandcare.com' ||
+    host === 'skinandcare.com' ||
+    host === 'www.skinandcare.com';
+  if (isConsumerProdHost) return;
+
+  const swUrl = '/unified-dashboard/sw.js?v=12';
+  navigator.serviceWorker
+    .register(swUrl)
+    .then(() => {
+      console.log('✅ Service worker registered:', swUrl);
+    })
+    .catch((err) => {
+      console.warn('⚠️  Service worker registration failed:', err.message);
+    });
 })();
 
 /**

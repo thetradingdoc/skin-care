@@ -1,9 +1,9 @@
 # Middleware platform documentation (consolidated)
-> Last reviewed: 2026-05-30
+> Last reviewed: 2026-06-10
 
-**Last Updated:** 2026-05-30
+**Last Updated:** 2026-06-10
 
-**Skin & Care consumer landing** at `/` is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/). Kelly/LiveKit CRA client paths below refer to [`_archive/littlelab-landing`](../../unified-dashboard/_archive/littlelab-landing/) unless noted.
+**Skin & Care consumer landing** at `/` is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/) (active). Legacy **littlelab** CRA funnel was removed from this repo; historical references below describe archived behavior (see git history).
 
 **Voice runtime (2026):** [`services/voice-agent-runtime.js`](../../middleware-platform/services/voice-agent-runtime.js), migrations `053`/`054`, [VOICE_PROMPT_SSOT.md](../architecture/VOICE_PROMPT_SSOT.md), [voice-inbound troubleshooting](../runbooks/voice-inbound-troubleshooting.md).
 
@@ -3168,7 +3168,7 @@ Implementation: `extractKellyFlowFromRetellCall` in `kelly-orchestrator-phase.js
 - Body: `kelly_flow` (string), or `routine_intake_active` (`1` / `true`)
 - Or `meta.kelly_flow` / `meta.routine_intake_active` inside the JSON body
 
-The littlelab client sends **`kelly_flow: 'skincare'`** by default from `sendLandingAssistantTurn` (`unified-dashboard/_archive/littlelab-landing/src/landingAssistantApi.js`).
+The archived littlelab client sent **`kelly_flow: 'skincare'`** by default from `sendLandingAssistantTurn` (`unified-dashboard/_archive/littlelab-landing/src/landingAssistantApi.js`). Active consumer landing is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/).
 
 ## Narrow system prompt (ROUTINE_INTAKE)
 

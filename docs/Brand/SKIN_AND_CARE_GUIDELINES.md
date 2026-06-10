@@ -1,6 +1,6 @@
 # Skin & Care brand guidelines
 
-> **Last reviewed:** 2026-06-08
+> **Last reviewed:** 2026-06-09
 
 Consumer-facing product name: **Skin & Care**. Use this guide for patient web, marketing landing, checkout, and shared consumer tokens.
 
@@ -10,12 +10,15 @@ Two marks — see [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) for full path
 
 | Asset | Path | Use |
 |-------|------|-----|
-| **Consumer landing wordmark** | `unified-dashboard/assets/brand/tulip-mark.svg` + `LogoWordmark` in `skin-care-landing` | Marketing landing header/footer: **skin** + tulip + **care** (Be Vietnam Pro) |
-| **Panda mark** | `unified-dashboard/assets/images/logo-panda.svg` | Nav, auth, checkout, provider sidebar icon, email header |
+| **Consumer tulip wordmark (SSOT)** | [`logo-wordmark.css`](../../unified-dashboard/assets/css/logo-wordmark.css) + [`LogoWordmark`](../../unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx) | **All** consumer and B2B headers — landing, funnel, sign-in, About, Contact, provider sidebar, auth pages, emails (via `email-wordmark.png`) |
+| **Panda mark** | `unified-dashboard/assets/images/logo-panda.svg` | Checkout **chat assistant avatar only** — not header wordmark |
 | **Brand copy (SSOT)** | `unified-dashboard/assets/brand/logo-panda.svg` | Synced to middleware `public/assets/brand/` via `npm run brand:sync` |
 
-- **Landing:** live text wordmark (`skin` bold-italic + tulip + `care` bold). Do not use baked `logo-wordmark.png` or the old PNG compositor script.
-- **Checkout / provider:** prefer **SVG** panda (`logo-panda.svg`); pair with **Skin & Care** in Gloock + DM Sans when space allows.
+- **Wordmark typography:** both words at **weight 700** — `skin` = Be Vietnam Pro **Bold Italic**, `care` = **Bold** upright. Tulip sits **between** the words, elevated above the baseline.
+- **SSOT CSS:** [`unified-dashboard/assets/css/logo-wordmark.css`](../../unified-dashboard/assets/css/logo-wordmark.css) — all consumer web surfaces must import it (or use components that do).
+- **Landing / About / Contact / Sign-in** must match visually. Do not use baked `logo-wordmark.png` or the old PNG compositor script.
+- **Headers everywhere:** use the **skin + tulip + care** wordmark — never plain "Skin & Care" or panda + text in nav/auth headers.
+- **Checkout chat:** panda may appear as the **assistant avatar** only.
 - **Landing hero copy** still uses Gloock (`--font-display`); logo text uses Be Vietnam Pro only.
 - **Do not** use legacy Somo gecko PNGs or deprecated bird-arc / dove wordmark assets on the landing.
 

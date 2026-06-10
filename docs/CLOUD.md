@@ -43,6 +43,7 @@ Full SSOT: [docs/Brand/SKIN_AND_CARE_REPO.md](Brand/SKIN_AND_CARE_REPO.md).
 | **Consumer web** | `npm run deploy:consumer-hosting` | myskinandcare.com |
 | Provider/staging web | `npm run deploy:staging-hosting` | callsomo.com |
 | API (shared) | `npm run callsomo:deploy-api` | api.myskinandcare.com / api.callsomo.com |
+| Face-read GPU | `npm run deploy:face-read-inference` + `configure:face-read-inference` | Cloud Run `face-read-inference` → `somo-middleware` |
 
 **Do not** use `deploy:staging-hosting` for myskinandcare.com — it deploys the default Firebase site.
 
@@ -54,7 +55,8 @@ npm run setup:myskinandcare:somo
 
 Creates Firebase site `myskinandcare`, prints Cloud Run domain mapping steps, and IONOS DNS cheat sheet.
 
-DNS runbook: [docs/runbooks/MYSKINANDCARE_IONOS_DNS.md](runbooks/MYSKINANDCARE_IONOS_DNS.md).
+DNS runbook: [docs/runbooks/MYSKINANDCARE_IONOS_DNS.md](runbooks/MYSKINANDCARE_IONOS_DNS.md).  
+Face-read GPU: [docs/runbooks/FACE_READ_INFERENCE.md](runbooks/FACE_READ_INFERENCE.md).
 
 ## Consumer deploy flow
 

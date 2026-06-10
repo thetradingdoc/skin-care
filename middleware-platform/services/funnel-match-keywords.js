@@ -316,6 +316,128 @@ function evaluateL2FaceRead(faceRead, confirmedAge) {
   return { face_read_note: note, confidence_adjustment: adjustment };
 }
 
+function evaluateQuickCheck(quickCheck) {
+  const out = [];
+  if (!quickCheck || typeof quickCheck !== 'object') {
+    return { suggested_concern_ids: [], primary_suggestion: null };
+  }
+  const feel = String(quickCheck.skin_feel || quickCheck.skinFeel || '').toLowerCase();
+  const habit = String(quickCheck.routine_habit || quickCheck.routineHabit || '').toLowerCase();
+  const times = Array.isArray(quickCheck.routine_times)
+    ? quickCheck.routine_times.map((t) => String(t).toLowerCase())
+    : Array.isArray(quickCheck.routineTimes)
+      ? quickCheck.routineTimes.map((t) => String(t).toLowerCase())
+      : [];
+  const pm = String(quickCheck.pm_routine || quickCheck.pmRoutine || '').toLowerCase();
+
+  if (/\b(tight|dry)\b/.test(feel)) out.push('barrier_repair');
+  if (/\boily\b/.test(feel)) out.push('acne');
+  if (/\b(irritat|red)\b/.test(feel)) out.push('rosacea');
+  if (/\b(normal)\b/.test(feel) && !out.length) out.push('anti_aging');
+
+  if (habit === 'not_really' || habit === 'starting_fresh') {
+    if (!out.includes('barrier_repair')) out.push('barrier_repair');
+  } else if (habit === 'sometimes' && !out.length) {
+    out.push('barrier_repair');
+  } else if (habit === 'yes_regularly') {
+    if (times.includes('spf') && !out.includes('hyperpigmentation') && !out.includes('acne')) {
+      if (/\b(normal|tight|dry)\b/.test(feel)) out.push('anti_aging');
+      else if (!out.length) out.push('hyperpigmentation');
+    }
+  }
+
+  if (!habit && pm) {
+    if (/\bskip/.test(pm) && !out.includes('barrier_repair')) out.push('barrier_repair');
+    if (/\bpartial\b/.test(pm) && !out.includes('barrier_repair')) out.push('barrier_repair');
+  }
+
+  const unique = [...new Set(out.filter(Boolean))];
+  return {
+    suggested_concern_ids: unique,
+    primary_suggestion: unique[0] || null,
+  };
+}
+
+function suggestConcernsFromFaceRead(faceRead, confirmedAge) {
+  const out = [];
+  if (!faceRead || typeof faceRead !== 'object') return out;
+
+  const scores = faceRead.concern_scores;
+  if (scores && typeof scores === 'object') {
+    const texture = Number(scores.texture);
+    const pores = Number(scores.pores);
+    const oiliness = Number(scores.oiliness);
+    const darkCircles = Number(scores.dark_circles ?? scores.darkCircles);
+    const acneBoost = Math.max(Number(scores.acne) || 0, texture >= 2 ? 2 : 0, pores >= 2 ? 2 : 0, oiliness >= 2 ? 2 : 0);
+
+    const entries = [
+      ['hyperpigmentation', Number(scores.hyperpigmentation)],
+      ['acne', acneBoost],
+      ['rosacea', Number(scores.redness ?? scores.rosacea)],
+      ['barrier_repair', Number(scores.dryness ?? scores.barrier_repair)],
+      ['anti_aging', Math.max(Number(scores.aging ?? scores.anti_aging) || 0, darkCircles >= 2 ? 2 : 0, texture >= 2 ? 1 : 0)],
+    ].filter(([, v]) => Number.isFinite(v));
+    entries.sort((a, b) => b[1] - a[1]);
+    for (const [id, score] of entries) {
+      if (score >= 2 && !out.includes(id)) out.push(id);
+    }
+    if (Number(scores.hyperpigmentation) >= 2 && faceRead.fit_skin_tone === 'dark') {
+      const idx = out.indexOf('hyperpigmentation');
+      if (idx >= 0) out.splice(idx, 1);
+      if (!out.includes('hyperpigmentation_dark_skin')) out.unshift('hyperpigmentation_dark_skin');
+    }
+  }
+
+  const findings = Array.isArray(faceRead.findings) ? faceRead.findings : [];
+  for (const finding of findings) {
+    if ((finding.severity || 0) < 2) continue;
+    const zones = Array.isArray(finding.zones) ? finding.zones : [];
+    const id = String(finding.id || '').toLowerCase();
+    if (/acne|bump|breakout|pore|oil/.test(id) && !out.includes('acne')) out.push('acne');
+    if (/hyperpigment|dark.?mark|tone|spot/.test(id) && !out.includes('hyperpigmentation')) {
+      out.push(faceRead.fit_skin_tone === 'dark' ? 'hyperpigmentation_dark_skin' : 'hyperpigmentation');
+    }
+    if (/red|rosacea|flush/.test(id) && !out.includes('rosacea')) out.push('rosacea');
+    if (/dry|barrier|flak|crust/.test(id) && !out.includes('barrier_repair')) out.push('barrier_repair');
+    if (/wrinkle|aging|line|circle/.test(id) && !out.includes('anti_aging')) out.push('anti_aging');
+    if (zones.some((z) => /t_zone|forehead|chin|perioral/.test(String(z))) && !out.includes('acne')) {
+      if (/acne|bump|pore|oil/.test(id)) out.push('acne');
+    }
+  }
+
+  const apparent = Number(faceRead.apparent_age_estimate);
+  const confirmed = Number(confirmedAge);
+  if (Number.isFinite(apparent) && Number.isFinite(confirmed) && apparent - confirmed >= 3) {
+    if (!out.includes('anti_aging')) out.push('anti_aging');
+  }
+  if (Number.isFinite(apparent) && apparent >= 38 && !out.includes('anti_aging')) {
+    out.push('anti_aging');
+  }
+  const zones = faceRead.zone_ages;
+  if (zones && typeof zones === 'object' && faceRead.zone_ages_estimated !== true) {
+    const tZone = Number(zones.t_zone ?? zones.tzone);
+    const cheeks = Number(zones.cheeks);
+    if (Number.isFinite(tZone) && Number.isFinite(cheeks) && tZone - cheeks >= 3) {
+      if (!out.includes('acne')) out.push('acne');
+    }
+  }
+  return [...new Set(out)];
+}
+
+function buildConcernSuggestions(input = {}) {
+  const quick = evaluateQuickCheck(input.quick_check_answers || input.quickCheckAnswers);
+  const fromFace = suggestConcernsFromFaceRead(input.face_read, input.confirmed_age);
+  const merged = [...new Set([...quick.suggested_concern_ids, ...fromFace])];
+  const primary =
+    quick.primary_suggestion ||
+    fromFace[0] ||
+    (merged[0] || null);
+  return {
+    suggested_concern_ids: merged.slice(0, 3),
+    primary_suggestion: primary,
+  };
+}
+
 module.exports = {
   CONCERN_KEYWORDS,
   CONFIDENCE_THRESHOLD_PROGRAM,
@@ -326,6 +448,9 @@ module.exports = {
   evaluateL1,
   evaluateL4,
   evaluateL2FaceRead,
+  evaluateQuickCheck,
+  suggestConcernsFromFaceRead,
+  buildConcernSuggestions,
   matchCatalogRedFlags,
   scoreConcernFromText,
 };

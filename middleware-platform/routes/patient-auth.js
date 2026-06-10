@@ -27,6 +27,9 @@ function registerPatientAuthRoutes(app, deps) {
     isPatientWalletEnabled,
     isPatientChatEnabled,
     parseBooleanFlag,
+    issueCsrfCookie,
+    getPatientStep3Status,
+    PatientIntakeService,
   } = deps;
 
 app.post('/api/patient/verify/send', botGuard, authLimiter, otpSendLimiter, async (req, res) => {
@@ -66,14 +69,27 @@ app.post('/api/patient/verify/send', botGuard, authLimiter, otpSendLimiter, asyn
       });
     } else {
       try { db.incrementOpsCounter && db.incrementOpsCounter('otp_send_failed'); } catch (_) {}
-      res.status(400).json(result);
+      const err = String(result.error || '');
+      const friendly =
+        err === 'email_delivery_not_configured'
+          ? 'We could not send email right now. Please try again in a few minutes.'
+          : result.error;
+      res.status(err === 'email_delivery_not_configured' ? 503 : 400).json({
+        ...result,
+        error: friendly
+      });
     }
   } catch (error) {
     try { db.incrementOpsCounter && db.incrementOpsCounter('otp_send_error'); } catch (_) {}
     console.error('❌ Error sending verification code:', error);
-    res.status(500).json({
+    const err = String(error.message || '');
+    const friendly =
+      err === 'email_delivery_not_configured'
+        ? 'We could not send email right now. Please try again in a few minutes.'
+        : error.message;
+    res.status(err === 'email_delivery_not_configured' ? 503 : 500).json({
       success: false,
-      error: error.message
+      error: friendly
     });
   }
 });

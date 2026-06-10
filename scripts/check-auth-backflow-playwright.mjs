@@ -1,33 +1,44 @@
+/**
+ * @deprecated Middleware-only appointments backflow check (localhost:4000).
+ * Consumer auth now lives at /app/sign-in; patient-login.html is a redirect stub on myskinandcare.com.
+ * For consumer sign-in E2E, run: npm run test:e2e-consumer-sign-in --prefix middleware-platform
+ */
 import { chromium } from 'playwright';
 
-const base = 'http://localhost:4000/patients';
+console.warn(
+  '[deprecated] check-auth-backflow-playwright.mjs targets legacy middleware patient portal only.'
+);
+
+const base = process.env.MIDDLEWARE_BASE || 'http://localhost:4000/patients';
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext();
 const page = await context.newPage();
 
-// Mock session validation endpoint as authenticated.
 await page.route('**/api/patient/appointments', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({ success: true, appointments: [] })
+    body: JSON.stringify({ success: true, appointments: [] }),
   });
 });
 
 try {
-  // Seed a session before first page load.
   await page.addInitScript(() => {
     localStorage.setItem('patient_session_id', 'pw-session-e2e');
   });
 
-  // Scenario A: direct open login (no prior page in history).
   await page.goto(`${base}/patient-login.html`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  const loginUrl = page.url();
+  if (loginUrl.includes('/app/sign-in')) {
+    console.log(JSON.stringify({ skipped: true, reason: 'patient-login redirects to consumer sign-in', loginUrl }));
+    process.exit(0);
+  }
+
   await page.waitForURL('**/patients/appointments.html', { timeout: 15000 });
   await page.goBack({ waitUntil: 'domcontentloaded', timeout: 30000 });
   const directBackUrl = page.url();
 
-  // Scenario B (realistic): landing -> login -> appointments -> browser back.
   await page.goto('http://localhost:4000/', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.evaluate(() => {
     window.location.href = '/patients/patient-login.html';

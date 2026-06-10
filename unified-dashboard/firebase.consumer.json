@@ -2,11 +2,16 @@
   "hosting": {
     "site": "myskinandcare",
     "public": "hosting-dist-consumer",
-    "ignore": ["firebase.json", "firebase.consumer.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "ignore": ["firebase.json", "firebase.consumer.json", "**/.*"],
     "headers": [
       {
         "source": "/assets/**",
         "headers": [{ "key": "Cache-Control", "value": "public,max-age=86400" }]
+      },
+      {
+        "source": "/app/**/*.@(ttf|woff|woff2)",
+        "headers": [{ "key": "Cache-Control", "value": "public,max-age=31536000,immutable" }]
       },
       {
         "source": "/assets/index-*.js",
@@ -27,8 +32,15 @@
       {
         "source": "/patients/**",
         "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/app/**",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       }
     ],
-    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+    "rewrites": [
+      { "source": "/app/**", "destination": "/app/index.html" },
+      { "source": "**", "destination": "/index.html" }
+    ]
   }
 }

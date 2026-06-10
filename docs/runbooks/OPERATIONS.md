@@ -2,8 +2,16 @@
 
 > **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-10
 
+### Kelly Rails vs legacy agent
+
+| `KELLY_RAILS_V2` | Turn path |
+|------------------|-----------|
+| `1` (recommended) | `kelly-rails/orchestrator.js` — LangGraph + lane steps |
+| `0` | Legacy `kelly-agent-service.js` `processTurn` |
+
+Set on Cloud Run `somo-middleware`. See [`docs/architecture/LIVE.md`](../architecture/LIVE.md) for full routing diagram.
 
 ---
 

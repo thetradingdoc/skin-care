@@ -1,4 +1,4 @@
-import { CTAS } from '../content/landingContent';
+import { CTAS, FOOTER_TAGLINE } from '../content/landingContent';
 import { LogoWordmark } from './DoveIcon';
 
 export default function Footer() {
@@ -15,7 +15,7 @@ export default function Footer() {
           <a href={CTAS.terms}>Terms</a>
           <a href={CTAS.signin}>Sign in</a>
         </div>
-        <p className="sc-footer-disclaimer">For wellness tracking only · Not a medical diagnosis</p>
+        <p className="sc-footer-tagline">{FOOTER_TAGLINE}</p>
         <p className="sc-footer-copy">&copy; {new Date().getFullYear()} Skin&amp;Care</p>
       </div>
     </footer>

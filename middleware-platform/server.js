@@ -156,6 +156,7 @@ const { adaptIncomingEvent } = require('./services/channel-adapter');
 const ProviderService = require('./services/provider-service');
 const PatientPortalService = require('./services/patient-portal-service');
 const PatientIntakeService = require('./services/patient-intake-service');
+const { isValidIanaTimezone } = require('./bootstrap/build-patient-route-deps');
 const IngredientEnrichmentService = require('./services/ingredient-enrichment-service');
 const {
   upsertCustomerProductScan
@@ -2264,7 +2265,7 @@ function redirectToPatientAuth(req, res, defaultIntent = 'signup') {
   const params = new URLSearchParams(req.query);
   if (!params.get('intent')) params.set('intent', defaultIntent);
   const qs = params.toString();
-  return res.redirect(302, `/patients/patient-login.html${qs ? `?${qs}` : ''}`);
+  return res.redirect(302, `/app/sign-in${qs ? `?${qs}` : ''}`);
 }
 app.get(['/app', '/join'], (req, res) => redirectToPatientAuth(req, res, 'signup'));
 
@@ -2291,7 +2292,7 @@ app.get('/waitlist', (req, res) => {
   }
   // Local dev bridge: landing "Get The App" should continue into patient auth.
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return res.redirect(302, '/patients/patient-login.html');
+    return res.redirect(302, '/app/sign-in');
   }
   return res.sendFile(getUnifiedDashboardPath('waitlist.html'));
 });
@@ -2595,163 +2596,32 @@ app.use('/admin', (req, res, next) => {
 });
 
 // ============================================
-// Signup Routes (Customer Registration)
-// API routes for signup (POST /api/signup, etc.)
+// Core API routes (signup, credits, admin, RAG, video-consult)
 // ============================================
-const signupRoutes = require('./routes/signup');
-// Only register API routes, not root (root is handled above)
-app.use('/api', signupRoutes);
-
-// ============================================
-// Credits Routes (Credits Purchase & Balance)
-// ============================================
-const creditsRoutes = require('./routes/credits');
-app.use('/api/credits', creditsRoutes);
-
-// ============================================
-// Invoice Routes (Admin & Customer)
-// ============================================
-const invoiceRoutes = require('./routes/invoices');
-app.use('/api', invoiceRoutes);
-
-// Merchant settings/profile routes
-const merchantRoutes = require('./routes/merchant');
-app.use('/api/merchant', merchantRoutes);
-const providerRoutes = require('./routes/providers');
-app.use('/api/providers', providerRoutes);
-
-// Clinic Invoice Routes (Patient Billing)
-// ============================================
-const clinicInvoiceRoutes = require('./routes/invoices-clinic');
-app.use('/api/invoices', clinicInvoiceRoutes);
-
-// Products and Orders routes (merged from merchant-shop)
-const productRoutes = require('./routes/products');
-const orderRoutes = require('./routes/orders');
-app.use('/api/products', productRoutes);
-const prescriptionRoutes = require('./routes/prescriptions');
-app.use('/api/prescriptions', prescriptionRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/prescription-orders', orderRoutes);
-
-// Onboarding routes
-const onboardingRoutes = require('./routes/onboarding');
-app.use('/api/onboarding', onboardingRoutes);
-
-// Admin job search (scraped jobs for agent outreach)
-const adminLeadsRoutes = require('./routes/admin-leads');
-app.use('/api/admin/leads', adminLeadsRoutes);
-
-// Sequences (Phase 2)
-const sequencesRoutes = require('./routes/sequences');
-app.use('/api/sequences', sequencesRoutes);
-
-// Workflows (Enhanced workflow builder with AI actions)
-const workflowsRoutes = require('./routes/workflows');
-app.use('/api/admin/workflows', workflowsRoutes);
-
-// AI Template Generator (Phase 2)
-const aiTemplatesRoutes = require('./routes/ai-templates');
-app.use('/api/ai/templates', aiTemplatesRoutes);
-
-// Qualification Rules (Phase 2)
-const qualificationRulesRoutes = require('./routes/qualification-rules');
-app.use('/api/qualification-rules', qualificationRulesRoutes);
-
-// Admin AI Assistant
-const adminAIAssistantRoutes = require('./routes/admin-ai-assistant');
-app.use('/api/admin/ai', adminAIAssistantRoutes);
-
-// Admin tenant monitoring routes
-const adminTenantsRoutes = require('./routes/admin-tenants');
-app.use('/api/admin/tenants', adminTenantsRoutes);
-
-// Tenant config routes
-const tenantConfigRoutes = require('./routes/tenant-config');
-app.use('/api/tenant', tenantConfigRoutes);
-
-// LiveKit video conferencing (token endpoint)
-// (mounted above) app.use('/api/livekit', livekitTokenRoutes);
-
-// RAG proxy (Colab RAG via main tunnel)
-const ragProxyRoutes = require('./routes/rag-proxy');
-// RAG search (LittleLab landing search -> code candidates)
-const ragSearchRoutes = require('./routes/rag-search');
-app.use('/api/rag', ragProxyRoutes);
-app.use('/api/rag', ragSearchRoutes);
-
-const videoConsultRoutes = require('./routes/video-consult');
-app.use('/api/video-consult', videoConsultRoutes);
-
-const { registerFaceReadPublicRoute } = require('./routes/public-face-read');
-registerFaceReadPublicRoute(app, { apiLimiter });
-
-const { registerPublicRoutineRoutes } = require('./routes/public-routines');
-registerPublicRoutineRoutes(app, { apiLimiter });
-
-const { registerPublicFunnelMatchRoutes } = require('./routes/public-funnel-match');
-registerPublicFunnelMatchRoutes(app, { apiLimiter });
-const { registerPublicFunnelIntakeRoutes } = require('./routes/public-funnel-intake');
-registerPublicFunnelIntakeRoutes(app, { apiLimiter });
-
-const { registerPublicFunnelSpecialistRoutes } = require('./routes/public-funnel-specialists');
-registerPublicFunnelSpecialistRoutes(app, { apiLimiter });
-
-const { registerPatientFunnelBridgeRoutes } = require('./routes/patient-funnel-bridge');
-registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSession, recordPatientPortalEvent });
-
-// Legacy consumer static paths → littlelab funnel
-app.get(/^\/consumer(\/.*)?$/, (req, res) => {
-  const sub = String(req.path || '').replace(/^\/consumer\/?/, '');
-  if (sub.includes('get-app') || sub.includes('join')) {
-    return res.redirect(302, '/patients/patient-login.html?intent=signup');
-  }
-  return res.redirect(302, '/start');
-});
-
-const { registerPatientCareProgramBillingRoutes } = require('./routes/patient-care-program-billing');
-registerPatientCareProgramBillingRoutes(app, {
-  apiLimiter,
-  express,
-  requirePatientSession,
-  ensureBillingTables,
-  resolvePatientIdFromSession,
-  resolveBillingSubscription,
-  billingOk,
-  billingErr,
-  db,
-});
+const { registerCoreApiRoutes } = require('./bootstrap/register-api-routes');
+registerCoreApiRoutes(app);
 
 const shelfApi = require('./lib/patient-shelf-api');
-const { registerPatientRoutineRoutes } = require('./routes/patient-routine');
-const { registerPatientShelfRoutes } = require('./routes/patient-shelf');
-const { registerPatientProductsRoutes } = require('./routes/patient-products');
-const { registerPatientBillingPortalRoutes } = require('./routes/patient-billing-portal');
-const { registerPatientBookingRoutes } = require('./routes/patient-booking');
-const { registerPublicLandingAssistantRoutes } = require('./routes/public-landing-assistant');
-const { registerPublicProductScanRoutes } = require('./routes/public-product-scan');
-const { registerPatientCheckoutChatRoutes } = require('./routes/patient-checkout-chat');
-const { registerPatientProfileRoutes } = require('./routes/patient-profile');
-const { registerPatientAuthRoutes } = require('./routes/patient-auth');
-const { registerPatientDocumentsRoutes } = require('./routes/patient-documents');
-const { registerPatientWalletRoutes } = require('./routes/patient-wallet');
-const { registerPatientRcmRoutes } = require('./routes/patient-rcm');
-const { registerPatientInsuranceRoutes } = require('./routes/patient-insurance');
-const { registerPriorAuthRoutes } = require('./routes/prior-auth');
 const { FALLBACK_CLINIC_ID, resolveClinicIdFromRequest } = require('./lib/resolve-clinic-id');
+const {
+  createPatientValidators,
+  createBasePatientRouteDeps,
+  enrichPatientRouteDeps,
+  createPatientPortalDeps,
+} = require('./bootstrap/build-patient-route-deps');
+const { registerConsumerFunnelRoutes } = require('./bootstrap/register-patient-routes');
 
-const patientRouteDeps = {
+const patientValidators = createPatientValidators(db);
+const patientRouteDeps = createBasePatientRouteDeps({
   apiLimiter,
   express,
   db,
+  shelfApi,
   requirePatientSession,
   resolvePatientIdFromSession,
   recordPatientPortalEvent,
   ensureRoutineTables,
   ensureBillingTables,
-  ensurePatientShelfInventoryColumns: shelfApi.ensurePatientShelfInventoryColumns,
-  loadPatientShelfProductRows: shelfApi.loadPatientShelfProductRows,
-  formatShelfProductApiRow: shelfApi.formatShelfProductApiRow,
   parseBillingDocumentUpload,
   safeParseJsonArray,
   isIsoDateOnly,
@@ -2768,6 +2638,8 @@ const patientRouteDeps = {
   resolveBillingSubscription,
   requirePlusForBillingFeature,
   getPatientStep3Status,
+  issueCsrfCookie,
+  PatientIntakeService,
   ensureProductsPhase2Tables,
   blockWalletWhenDisabled,
   blockChatWhenDisabled,
@@ -2784,17 +2656,23 @@ const patientRouteDeps = {
   authLimiter,
   listCatalogFromIndex,
   parseProductRef,
-};
-registerPublicProductScanRoutes(app, { apiLimiter });
-registerPatientCheckoutChatRoutes(app, {
+});
+
+registerConsumerFunnelRoutes(app, {
   apiLimiter,
+  db,
   express,
   requirePatientSession,
+  recordPatientPortalEvent,
+  resolvePatientIdFromSession,
+  ensureBillingTables,
+  resolveBillingSubscription,
+  billingOk,
+  billingErr,
+  validatePatientCheckoutChatBody: patientValidators.validatePatientCheckoutChatBody,
   requireCsrfForCookieAuth,
-  validatePatientCheckoutChatBody,
   rotatePatientSessionIfNeeded,
   blockChatWhenDisabled,
-  db,
 });
 // Retell custom function endpoints
 const retellFunctionsRoutes = require('./routes/retell-functions');
@@ -2830,37 +2708,8 @@ app.use('/api/pricing', pricingRoutes);
 const customerWalletRoutes = require('./routes/customer-wallet');
 app.use('/api/customer/wallet', customerWalletRoutes);
 
-// Public products (read-only) — dedicated rate bucket + legacy /public/* aliases (same handler, one catalog limiter)
-const publicProductsRoutes = require('./routes/public-products');
-app.use('/api/public/products', publicCatalogReadLimiter, publicProductsRoutes);
-app.use('/api/public/prescriptions', publicCatalogReadLimiter, publicProductsRoutes);
-app.use('/public/products', publicCatalogReadLimiter, publicProductsRoutes);
-app.use('/public/prescriptions', publicCatalogReadLimiter, publicProductsRoutes);
-
-// Public plans search (consumer MA lookup)
-const publicPlanSearchRoutes = require('./routes/public-plan-search');
-app.use('/api/public/plans', publicCatalogReadLimiter, publicPlanSearchRoutes);
-const publicGeoRoutes = require('./routes/public-geo');
-app.use('/api/public/geo', publicCatalogReadLimiter, publicGeoRoutes);
-const publicProviderSearchRoutes = require('./routes/public-provider-search');
-app.use('/api/public/providers', publicCatalogReadLimiter, publicProviderSearchRoutes);
-
-// Public checkout (unauthenticated ensure customer)
-const publicCheckoutRoutes = require('./routes/public-checkout');
-app.use('/api/public/checkout', publicCheckoutRoutes);
-
-// Commerce quote + cart — separate rate bucket from global /api limiter so bursts do not starve catalog reads
-const publicCommerceQuoteRoutes = require('./routes/public-commerce-quote');
-const publicCommerceCartRoutes = require('./routes/public-commerce-cart');
-app.use('/api/public/commerce', publicCommerceLimiter);
-app.use('/api/public/commerce', publicCommerceQuoteRoutes);
-app.use('/api/public/commerce', publicCommerceCartRoutes);
-app.use('/public/commerce', publicCommerceLimiter);
-app.use('/public/commerce', publicCommerceQuoteRoutes);
-app.use('/public/commerce', publicCommerceCartRoutes);
-
-const publicCheckoutChatRoutes = require('./routes/public-checkout-chat');
-app.use('/api/public/checkout-chat', publicCheckoutChatRoutes);
+const { registerPublicCommerceRoutes } = require('./bootstrap/register-api-routes');
+registerPublicCommerceRoutes(app, { publicCatalogReadLimiter, publicCommerceLimiter });
 
 // ============================================
 // Customer Agent Routes (Prompt Management)
@@ -7731,135 +7580,33 @@ app.use('/api/livekit', livekitTokenRoutes);
 // ============================================================
 // Patient booking (chat-led) + triage (Phase 1 web)
 // ============================================================
-function parseIsoDateFromText(text) {
-  const t = (text || '').toString();
-  const m = t.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
-  if (m) return m[0];
-  const lower = t.toLowerCase();
-  if (lower.includes('tomorrow')) {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  }
-  if (lower.includes('today')) return new Date().toISOString().slice(0, 10);
-  return null;
-}
+const { registerPatientPortalRoutes } = require('./bootstrap/register-patient-routes');
 
-function parseTimeFromText(text) {
-  const t = (text || '').toString().toLowerCase();
-  // "14:30"
-  const m24 = t.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-  if (m24) return `${m24[1].padStart(2, '0')}:${m24[2]}`;
-  // "2pm", "2:30 pm"
-  const m12 = t.match(/\b(1[0-2]|0?[1-9])(?::([0-5]\d))?\s*(am|pm)\b/);
-  if (m12) {
-    let h = parseInt(m12[1], 10);
-    const min = m12[2] ? parseInt(m12[2], 10) : 0;
-    const ampm = m12[3];
-    if (ampm === 'pm' && h !== 12) h += 12;
-    if (ampm === 'am' && h === 12) h = 0;
-    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-  }
-  return null;
-}
-
-function isValidIanaTimezone(value) {
-  const tz = (value || '').toString().trim();
-  if (!tz) return false;
-  try {
-    Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date());
-    return true;
-  } catch (_) {
-    return false;
-  }
-}
-
-const { validateRequired, validateDate, combineValidators } = require('./middleware/input-validator');
-const validatePatientBookingScheduleBody = combineValidators(
-  validateRequired(['date', 'time']),
-  validateDate('date')
-);
-const validatePatientTriageBody = validateRequired(['message']);
-
-function validatePatientCheckoutChatBody(req, res, next) {
-  const b = req.body || {};
-  const msg = (b.message || '').toString().trim();
-  if (!msg) {
-    return res.status(400).json({ success: false, error: 'message is required', request_id: req.id });
-  }
-  if (msg.length > 4000) {
-    return res.status(400).json({ success: false, error: 'message too long (max 4000 characters)', request_id: req.id });
-  }
-  const pid = (b.product_id || '').toString().trim();
-  const provid = (b.provider_id || '').toString().trim();
-  if (!pid) {
-    return res.status(400).json({ success: false, error: 'product_id is required', request_id: req.id });
-  }
-  if (!provid) {
-    return res.status(400).json({ success: false, error: 'provider_id is required', request_id: req.id });
-  }
-  return next();
-}
-
-function validatePatientAvailableSlotsQuery(req, res, next) {
-  const date = (req.query?.date || '').toString().trim();
-  if (!date) {
-    return res.status(400).json({ success: false, error: 'date query parameter is required', request_id: req.id });
-  }
-  const parsed = new Date(date);
-  if (Number.isNaN(parsed.getTime())) {
-    return res.status(400).json({ success: false, error: 'Invalid date format. Use YYYY-MM-DD.', request_id: req.id });
-  }
-  return next();
-}
-
-function auditBookingEvent(req, action, resourceType, resourceId, result = 'success') {
-  try {
-    if (db.auditLog) {
-      db.auditLog('patient', req?.patientSession?.patient_id || req?.patientSessionId || 'unknown', action, resourceType, resourceId, req.ip, req.get('User-Agent') || '', result);
-    }
-  } catch (_) {}
-}
-
-Object.assign(patientRouteDeps, {
-  validatePatientAvailableSlotsQuery,
-  validatePatientBookingScheduleBody,
-  validatePatientTriageBody,
-  auditBookingEvent,
+enrichPatientRouteDeps(patientRouteDeps, patientValidators, {
   otpSendLimiter,
   otpConfirmLimiter,
 });
-registerPatientRoutineRoutes(app, patientRouteDeps);
-registerPatientShelfRoutes(app, patientRouteDeps);
-registerPatientProductsRoutes(app, patientRouteDeps);
-registerPatientBillingPortalRoutes(app, patientRouteDeps);
-registerPatientBookingRoutes(app, patientRouteDeps);
-registerPublicLandingAssistantRoutes(app, {
-  apiLimiter,
-  express,
-  validatePatientTriageBody,
-  db,
-  upsertCustomerProductScan,
-  antiSybilGuard,
-  requireAdminAuth,
-});
 
-const patientPortalDeps = {
-  ...patientRouteDeps,
+const patientPortalDeps = createPatientPortalDeps(patientRouteDeps, {
   requireAdminAuth,
   sendUploadLinkHandler,
   botGuard,
   authLimiter,
   otpSendLimiter,
   otpConfirmLimiter,
-};
-registerPatientProfileRoutes(app, patientPortalDeps);
-registerPatientAuthRoutes(app, patientPortalDeps);
-registerPatientDocumentsRoutes(app, patientPortalDeps);
-registerPatientWalletRoutes(app, patientPortalDeps);
-registerPatientRcmRoutes(app, patientPortalDeps);
-registerPatientInsuranceRoutes(app, patientPortalDeps);
-registerPriorAuthRoutes(app, { apiLimiter, express, db });
+});
+
+registerPatientPortalRoutes(app, {
+  patientRouteDeps,
+  patientPortalDeps,
+  apiLimiter,
+  express,
+  db,
+  validatePatientTriageBody: patientValidators.validatePatientTriageBody,
+  upsertCustomerProductScan,
+  antiSybilGuard,
+  requireAdminAuth,
+});
 
 // GET /api/patient/triage/history — Fetch conversation history for resume (orch-5)
 
@@ -9192,44 +8939,8 @@ app.get('/api/ehr/epic/status', async (req, res) => {
   }
 });
 
-// Health check endpoints (comprehensive)
-app.get('/health', healthCheckHandler);
-app.get('/health/ready', readinessCheck);
-app.get('/health/live', livenessCheck);
-app.get('/health/voice-deps', async (req, res) => {
-  try {
-    const twilioPhone = process.env.TWILIO_PHONE_NUMBER || null;
-    const retellAgentId = process.env.RETELL_AGENT_ID || null;
-    const defaultSubdomain = constants.TENANTS?.DEFAULT_SUBDOMAIN || 'akin-dunbar';
-
-    const clinicPhone = twilioPhone ? db.getClinicPhoneNumber(twilioPhone) : null;
-    const defaultMerchant = db.getMerchantBySubdomain ? db.getMerchantBySubdomain(defaultSubdomain) : null;
-
-    const checks = {
-      retell_api_key_present: !!process.env.RETELL_API_KEY,
-      retell_agent_id_present: !!retellAgentId,
-      twilio_phone_present: !!twilioPhone,
-      twilio_phone_mapped_to_clinic: !!clinicPhone?.clinic_id,
-      default_tenant_exists: !!defaultMerchant?.id
-    };
-
-    const ok = Object.values(checks).every(Boolean);
-    return res.status(ok ? 200 : 503).json({
-      success: ok,
-      checks,
-      details: {
-        twilio_phone_number: twilioPhone,
-        mapped_clinic_id: clinicPhone?.clinic_id || null,
-        mapped_clinic_name: clinicPhone?.clinic_name || null,
-        default_subdomain: defaultSubdomain,
-        default_merchant_id: defaultMerchant?.id || null
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, error: error.message });
-  }
-});
+const { registerHealthRoutes } = require('./routes/health');
+registerHealthRoutes(app, { db, healthCheckHandler, readinessCheck, livenessCheck });
 
 // Root endpoint - API information (moved to /api for API status)
 app.get('/api', (req, res) => {

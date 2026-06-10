@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/billing-ui';
 import { JournalTokens } from '@/constants/journalTokens';
 import { postFaceRead } from '@/lib/face-read-api';
-import { setFaceRead } from '@/lib/onboarding-storage';
+import { setFacePhotoUri, setFaceRead } from '@/lib/onboarding-storage';
 import {
   ONBOARDING_CONCERNS_HREF,
   ONBOARDING_REVEAL_HREF,
@@ -34,6 +34,7 @@ export default function OnboardingScanScreen() {
       const photo = await camRef.current.takePictureAsync({ quality: 0.85, skipProcessing: false });
       if (!photo?.uri) throw new Error('Could not capture photo.');
       const result = await postFaceRead(photo.uri);
+      await setFacePhotoUri(photo.uri);
       await setFaceRead(result);
       router.push(ONBOARDING_REVEAL_HREF);
     } catch (e: unknown) {
@@ -61,7 +62,8 @@ export default function OnboardingScanScreen() {
         <View style={styles.center}>
           <Text style={styles.title}>Camera access</Text>
           <Text style={styles.subtitle}>
-            We need your front camera for a quick skin age estimate. Nothing is saved until you create an account.
+            We need your front camera for a wellness skin-age estimate. Your photo is analyzed securely and
+            stays on this device until you create an account.
           </Text>
           <PrimaryButton label="Allow camera" onPress={() => void requestPermission()} />
           <Pressable onPress={skip} style={styles.skipBtn}>

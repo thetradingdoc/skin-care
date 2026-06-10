@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/unified-dashboard/assets/css/skin-care-tokens.css" />
   <link rel="stylesheet" href="/unified-dashboard/assets/css/signup-skin-care.css" />
   <link rel="stylesheet" href="/unified-dashboard/assets/css/auth-skin-care.css" />
+  <link rel="stylesheet" href="/assets/css/logo-wordmark.css" />
   <style>
     /* Critical: readable even if external stylesheets fail */
     [data-login-panel].hidden { display: none !important; }
@@ -49,16 +50,13 @@
   <div class="login-shell">
     <div class="login-main">
       <a href="/" class="signup-logo-link" aria-label="Skin &amp; Care home">
-        <img
-          class="signup-logo-img signup-logo-panda"
-          src="/assets/images/logo-panda.svg"
-          alt=""
-          aria-hidden="true"
-          width="40"
-          height="40"
-          fetchpriority="high"
-        />
-        <span class="signup-logo-wordmark">Skin &amp; Care</span>
+        <span class="sc-logo-wordmark" style="--logo-height: 40px" role="img" aria-label="skin care">
+          <span class="sc-logo-skin" aria-hidden="true">skin</span>
+          <span class="sc-logo-mark-slot" aria-hidden="true">
+            <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+          </span>
+          <span class="sc-logo-care" aria-hidden="true">care</span>
+        </span>
       </a>
 
       <div id="loginPanel" data-login-panel="login">

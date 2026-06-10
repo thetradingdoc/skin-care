@@ -83,7 +83,8 @@ function ensureHelpModal() {
   document.getElementById('patientHelpCloseBtn').addEventListener('click', hideHelp);
   document.getElementById('patientHelpSignOutBtn').addEventListener('click', () => {
     patientSession.clear();
-    window.location.href = 'patient-login.html';
+    window.location.href =
+      typeof globalThis.consumerSignInUrl === 'function' ? globalThis.consumerSignInUrl() : '/app/sign-in';
   });
 
   // Keyboard: ESC closes (mvp-57)

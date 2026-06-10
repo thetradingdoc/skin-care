@@ -11,6 +11,8 @@ cypress
 e2e
 __tests__
 test-results
-data
+data/nppes
+data/nyc-health-dept
+data/payor-sources
 *.md
 !README.md

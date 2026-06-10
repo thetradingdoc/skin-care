@@ -8,7 +8,8 @@ Minimal consumer marketing SPA for **Skin & Care** — served at `http://localho
 |-------|------|
 | `/` | Landing — split hero, brand nav, three feature columns |
 | `/scan` | Camera / upload → face-read (no account) |
-| `/reveal` | Skin age estimate |
+| `/quick-check` | Skin feel + routine habit (2 taps) |
+| `/reveal` | Findings + score row, or retry tips if vision empty |
 | `/concerns` | Pick concerns → funnel match |
 | `/patients/patient-login.html?intent=signup&from=skin-age-landing` | OTP signup → dashboard |
 
@@ -47,7 +48,7 @@ npm run build:skin-care-landing
 cd unified-dashboard/skin-care-landing && npm run dev
 ```
 
-Copy `.env.example` to `.env.local` and set `VITE_FACE_READ_MOCK=1` when GPU inference is down.
+Copy `.env.example` to `.env.local`. Face-read needs middleware + teamkelly — see [docs/runbooks/FACE_READ_INFERENCE.md](../../docs/runbooks/FACE_READ_INFERENCE.md).
 
 Landing-only dev serves static files locally — **no middleware required** for funnel navigation through signup HTML:
 
@@ -62,10 +63,10 @@ Only `/api` is proxied to `VITE_API_PROXY` (default `http://127.0.0.1:4000`).
 
 **If the browser shows `504 Outdated Optimize Dep` for react.js:** a stale Vite process is still on port 5180. Stop it, then run `npm run dev:clean` (clears `.vite` cache and restarts with `--force`). The dev script uses `--strictPort` so a second server cannot silently move to another port.
 
-**OTP / face-read** need an API unless mocked:
+**OTP / face-read** need middleware with `FACE_READ_INFERENCE_BASE_URL` (teamkelly):
 
-- Run middleware on `:4000`, or
-- `VITE_FACE_READ_MOCK=1` for scan, and login with `&api=https://api.myskinandcare.com` (or `http://127.0.0.1:4000` locally)
+- Run middleware on `:4000` with inference configured, or
+- Point login at prod API: `&api=https://api.myskinandcare.com`
 
 ## Full stack on :4000
 
@@ -77,7 +78,6 @@ cd middleware-platform && npm run start:landing
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `VITE_FACE_READ_MOCK` | off | Return mock skin age when inference unavailable |
 | `VITE_IOS_APP_URL` | empty | TestFlight or App Store link when available |
 | `VITE_ANDROID_APP_URL` | empty | Google Play link when available |
 | `VITE_API_PROXY` | `http://127.0.0.1:4000` | Vite dev proxy target for `/api` only |

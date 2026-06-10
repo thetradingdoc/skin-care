@@ -52,6 +52,7 @@ Browse by anchor above. Each section notes the former file path.
 
 ## Code Review and Cleanup Summary
 
+> **Current (2026-06):** See **[CODE_REVIEW_2026-06.md](./CODE_REVIEW_2026-06.md)** for god-file map, patient journey status, and refactor phases. Below is historical (December 2024).
 
 ## Date: December 2024
 

@@ -164,16 +164,8 @@ body.signup-wizard-body {
   object-fit: contain;
 }
 
-.signup-logo-img.signup-logo-panda {
-  height: 40px;
-  width: 40px;
-  max-width: none;
-}
-
-.signup-logo-wordmark {
-  font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
+.signup-logo-link .sc-logo-wordmark {
+  display: inline-flex;
 }
 
 .signup-step-panel > .signup-eyebrow:first-child {

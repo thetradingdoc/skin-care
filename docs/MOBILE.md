@@ -1,6 +1,6 @@
 # Mobile app architecture
 
-**Last reviewed:** 2026-06-06
+**Last reviewed:** 2026-06-10
 
 Skin & Care iOS app (`com.skinandcare.app`) is an Expo/React Native app in [patient-app/](../patient-app/).
 

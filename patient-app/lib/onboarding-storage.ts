@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 export const ONBOARDING_FACE_READ_KEY = 'onboarding_face_read';
+export const ONBOARDING_FACE_PHOTO_URI_KEY = 'onboarding_face_photo_uri';
 export const ONBOARDING_CONFIRMED_AGE_KEY = 'onboarding_confirmed_age';
 export const ONBOARDING_CONCERN_ID_KEY = 'onboarding_concern_id';
 export const ONBOARDING_MATCH_JSON_KEY = 'onboarding_match_json';
@@ -8,11 +9,32 @@ export const ONBOARDING_DONE_KEY = 'onboarding_done';
 export const ONBOARDING_NEEDS_FIRST_PHOTO_KEY = 'onboarding_needs_first_photo';
 export const FIRST_PHOTO_LOGGED_KEY = 'first_photo_logged';
 
+export type FaceFinding = {
+  id?: string;
+  label?: string;
+  plain_language?: string;
+  detail?: string;
+  severity?: number;
+  zones?: string[];
+  confidence?: number;
+};
+
 export type FaceReadPayload = {
   apparent_age_estimate?: number;
   quality?: string;
   model_id?: string;
   model_version?: string;
+  vision_enabled?: boolean;
+  vision_error?: string | null;
+  findings?: FaceFinding[];
+  concern_scores?: Record<string, number>;
+  scan_summary?: string;
+  positive_observations?: string[];
+  fit_skin_tone?: string;
+  fitzpatrick_estimate?: string;
+  zone_polygons?: Record<string, number[][]>;
+  reject_reason?: string;
+  user_message?: string;
 };
 
 export async function getOnboardingDone(): Promise<boolean> {
@@ -43,6 +65,22 @@ export async function setFaceRead(payload: FaceReadPayload | null): Promise<void
     return;
   }
   await SecureStore.setItemAsync(ONBOARDING_FACE_READ_KEY, JSON.stringify(payload));
+}
+
+export async function getFacePhotoUri(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function setFacePhotoUri(uri: string | null): Promise<void> {
+  if (!uri) {
+    await SecureStore.deleteItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY);
+    return;
+  }
+  await SecureStore.setItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY, uri);
 }
 
 export async function getConfirmedAge(): Promise<number | null> {

@@ -83,7 +83,10 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="sign-in"
+            options={{ headerShown: false, contentStyle: { backgroundColor: '#FFFFFF' } }}
+          />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="checkout-chat" options={{ presentation: 'modal', title: 'Checkout chat' }} />
           <Stack.Screen name="scan-entry" options={{ presentation: 'modal', title: 'Quick capture' }} />

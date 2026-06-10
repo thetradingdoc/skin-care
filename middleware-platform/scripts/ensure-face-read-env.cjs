@@ -22,6 +22,15 @@ if (!base) {
   );
 } else {
   console.log(`[ensure-face-read-env] FACE_READ_INFERENCE_BASE_URL=${base}`);
+  if (
+    process.env.K_SERVICE &&
+    /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/i.test(base)
+  ) {
+    console.warn(
+      '[ensure-face-read-env] WARN: localhost inference URL on Cloud Run will fail (502). ' +
+        'Set a reachable GPU host via npm run configure:face-read-inference'
+    );
+  }
 }
 
 process.exit(0);

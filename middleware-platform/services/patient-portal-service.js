@@ -43,20 +43,16 @@ class PatientPortalService {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     try {
-      // Check if session exists for this email
-      const existing = db.db.prepare(`
-        SELECT id FROM patient_portal_sessions 
-        WHERE email = ? AND verified = 0 AND datetime(expires_at) > datetime('now')
-      `).get(normalizedEmail);
+      const existing = db.findActiveUnverifiedSessionByEmail(normalizedEmail);
 
       if (existing) {
-        // Update existing session
-        db.db.prepare(`
-          UPDATE patient_portal_sessions 
-          SET verification_code = ?, expires_at = ?, created_at = datetime('now'),
-              ip_address = ?, user_agent = ?, failed_attempts = 0, locked_until = NULL
-          WHERE id = ?
-        `).run(verificationCode, expiresAt.toISOString(), ip || null, ua || null, existing.id);
+        db.updateVerificationSession({
+          id: existing.id,
+          code: verificationCode,
+          expiresAt: expiresAt.toISOString(),
+          ip,
+          userAgent: ua,
+        });
 
         // Send email
         await this._sendEmail(normalizedEmail, verificationCode);
@@ -68,12 +64,14 @@ class PatientPortalService {
           existing_patient: !!existingPatient
         };
       } else {
-        // Create new session
-        db.db.prepare(`
-          INSERT INTO patient_portal_sessions 
-          (id, email, verification_code, expires_at, verified, ip_address, user_agent, failed_attempts, locked_until)
-          VALUES (?, ?, ?, ?, 0, ?, ?, 0, NULL)
-        `).run(sessionId, normalizedEmail, verificationCode, expiresAt.toISOString(), ip || null, ua || null);
+        db.insertVerificationSession({
+          sessionId,
+          email: normalizedEmail,
+          code: verificationCode,
+          expiresAt: expiresAt.toISOString(),
+          ip,
+          userAgent: ua,
+        });
 
         // Send email
         await this._sendEmail(normalizedEmail, verificationCode);
@@ -112,42 +110,22 @@ class PatientPortalService {
     }
 
     try {
-      // Soft lock: check for locked sessions for this email
-      const lockRow = db.db.prepare(`
-        SELECT locked_until FROM patient_portal_sessions
-        WHERE email = ?
-        ORDER BY created_at DESC
-        LIMIT 1
-      `).get(normalizedEmail);
+      const lockRow = db.getLatestLockForEmail(normalizedEmail);
       if (lockRow && lockRow.locked_until && new Date(lockRow.locked_until) > new Date()) {
         console.log('[PatientPortal] 🔒 Soft lock active for email', { email: normalizedEmail });
         return { success: false, error: 'Too many invalid codes. Please wait a few minutes before trying again.' };
       }
 
-      // Find valid session for this email + code
-      const session = db.db.prepare(`
-        SELECT * FROM patient_portal_sessions 
-        WHERE email = ? 
-          AND verified = 0 
-          AND datetime(expires_at) > datetime('now')
-        ORDER BY created_at DESC
-        LIMIT 1
-      `).get(normalizedEmail);
+      const session = db.findLatestUnverifiedSessionByEmail(normalizedEmail);
 
       if (!session || session.verification_code !== code) {
-        // Increment failed_attempts and possibly set locked_until
         if (session) {
           const now = new Date();
           const tooMany = (session.failed_attempts || 0) + 1 >= 5;
           const lockedUntil = tooMany
-            ? new Date(now.getTime() + 5 * 60 * 1000).toISOString() // 5 minutes lock
+            ? new Date(now.getTime() + 5 * 60 * 1000).toISOString()
             : session.locked_until;
-          db.db.prepare(`
-            UPDATE patient_portal_sessions
-            SET failed_attempts = failed_attempts + 1,
-                locked_until = COALESCE(?, locked_until)
-            WHERE id = ?
-          `).run(lockedUntil || null, session.id);
+          db.incrementFailedAttempts(session.id, lockedUntil);
         }
         console.log('[PatientPortal] ❌ Invalid or expired verification code', {
           email: normalizedEmail,
@@ -156,12 +134,7 @@ class PatientPortalService {
         return { success: false, error: 'Invalid or expired verification code' };
       }
 
-      // Mark session as verified
-      db.db.prepare(`
-        UPDATE patient_portal_sessions 
-        SET verified = 1, verified_at = datetime('now')
-        WHERE id = ?
-      `).run(session.id);
+      db.markSessionVerified(session.id);
 
       // Find patient by email (filter by merchant_id if provided)
       let patient = db.getFHIRPatientByEmail(normalizedEmail);
@@ -207,11 +180,7 @@ class PatientPortalService {
       // Canonical identity mapping (mvp-49): persist resolved patient_id onto the session row.
       try {
         if (patientId) {
-          db.db.prepare(`
-            UPDATE patient_portal_sessions
-            SET patient_id = COALESCE(patient_id, ?)
-            WHERE id = ?
-          `).run(patientId, session.id);
+          db.setSessionPatientId(session.id, patientId);
         }
       } catch (_) {}
 
@@ -265,10 +234,7 @@ class PatientPortalService {
    */
   getPatientAppointments(sessionId) {
     try {
-      const session = db.db.prepare(`
-        SELECT * FROM patient_portal_sessions 
-        WHERE id = ? AND verified = 1
-      `).get(sessionId);
+      const session = db.getVerifiedSession(sessionId);
 
       if (!session) {
         return { success: false, error: 'Invalid or expired session' };
@@ -380,10 +346,7 @@ class PatientPortalService {
    */
   validateSession(sessionId) {
     try {
-      const session = db.db.prepare(`
-        SELECT * FROM patient_portal_sessions 
-        WHERE id = ? AND verified = 1
-      `).get(sessionId);
+      const session = db.getVerifiedSession(sessionId);
 
       if (!session) {
         return { success: false, valid: false, error: 'Invalid session' };
@@ -398,11 +361,7 @@ class PatientPortalService {
           const flagMs = new Date(session.emergency_flag_at).getTime();
           const ttlMs = 24 * 60 * 60 * 1000;
           if (Number.isFinite(flagMs) && Date.now() - flagMs > ttlMs) {
-            db.db.prepare(`
-              UPDATE patient_portal_sessions
-              SET emergency_flag = 0, emergency_flag_at = NULL
-              WHERE id = ?
-            `).run(sessionId);
+            db.clearExpiredEmergencyFlag(sessionId);
             session.emergency_flag = 0;
             session.emergency_flag_at = null;
           }
@@ -434,11 +393,7 @@ class PatientPortalService {
 
       // Update activity timestamp (inactivity TTL)
       try {
-        db.db.prepare(`
-          UPDATE patient_portal_sessions
-          SET last_seen_at = datetime('now')
-          WHERE id = ?
-        `).run(sessionId);
+        db.touchLastSeen(sessionId);
       } catch (_) {}
 
       // Cross-channel emergency flag (voice/web) - read-through
@@ -555,13 +510,34 @@ class PatientPortalService {
    * @private
    */
   async _sendEmail(email, code) {
-    try {
-      await EmailService.sendPatientVerificationCode(email, code);
-      console.log(`📧 Verification code sent to ${email}: ${code}`);
-    } catch (error) {
-      console.warn('⚠️  Could not send email, code is:', code);
-      // Still return success - code is logged in console for development
+    const result = await EmailService.sendPatientVerificationCode(email, code);
+    const provider = result?.provider || 'unknown';
+    const isProd =
+      process.env.NODE_ENV === 'production' || String(process.env.NODE_ENV || '').toLowerCase() === 'prod';
+
+    if (result?.success && provider !== 'console') {
+      console.log(`📧 Verification code sent to ${email} via ${provider}`);
+      return result;
     }
+
+    const errMsg = result?.error || 'email_send_failed';
+    console.error(`❌ Patient verification email failed (${provider}): ${errMsg}`);
+
+    if (isProd) {
+      throw new Error(
+        provider === 'console' || errMsg === 'email_delivery_not_configured'
+          ? 'email_delivery_not_configured'
+          : errMsg
+      );
+    }
+
+    if (result?.success && provider === 'console') {
+      console.warn(`⚠️  Dev fallback — verification code for ${email}: ${code}`);
+      return result;
+    }
+
+    console.warn(`⚠️  Dev fallback — verification code for ${email}: ${code}`);
+    return result;
   }
 
   /**

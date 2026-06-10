@@ -29,7 +29,8 @@ function waitlistRoute(db) {
   `);
 
   return async function handler(req, res) {
-    const { name, email, source, product } = req.body || {};
+    const { name, email, source } = req.body || {};
+    const productRaw = req.body?.product ?? req.body?.notes ?? null;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ success: false, error: 'name is required' });
@@ -38,18 +39,28 @@ function waitlistRoute(db) {
       return res.status(400).json({ success: false, error: 'valid email is required' });
     }
 
+    const row = {
+      name: name.trim().slice(0, 120),
+      email: email.trim().toLowerCase().slice(0, 254),
+      source: source ? String(source).trim().slice(0, 80) : 'routine_builder',
+      product: productRaw ? String(productRaw).trim().slice(0, 8000) : null,
+    };
+
     try {
-      insertStmt.run({
-        name: name.trim().slice(0, 120),
-        email: email.trim().toLowerCase().slice(0, 254),
-        source: source ? String(source).trim().slice(0, 80) : 'routine_builder',
-        product: product ? String(product).trim().slice(0, 200) : null
-      });
-      return res.json({ success: true });
+      insertStmt.run(row);
     } catch (err) {
       console.error('[waitlist] insert error:', err.message);
       return res.status(500).json({ success: false, error: 'server error' });
     }
+
+    try {
+      const EmailService = require('../services/email-service');
+      await EmailService.sendWaitlistAdminNotification(row);
+    } catch (emailErr) {
+      console.error('[waitlist] admin notify error:', emailErr.message);
+    }
+
+    return res.json({ success: true });
   };
 }
 

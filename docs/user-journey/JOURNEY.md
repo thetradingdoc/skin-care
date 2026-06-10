@@ -1,8 +1,10 @@
 # JOURNEY
 
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-10
 
-**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** (camera, no account) → **`/reveal`** (skin age estimate) → **`/concerns`** → **`patient-login.html?intent=signup&from=skin-age-landing`** → **`patient-dashboard.html`** (Today). Session data in `sessionStorage` until OTP; then template + funnel bridge. **Native app:** returning signed-in users only — new users start on the web.
+**Status:** Patient signup → mobile app journey is **complete** (2026-06). See also [`docs/development/CODE_REVIEW_2026-06.md`](../development/CODE_REVIEW_2026-06.md).
+
+**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** → **`/quick-check`** (tap) → **`/reveal`** (findings + score row, or retry tips if vision empty) → **`/concerns`** (pre-selected primary) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/today`**. Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) activates template + funnel bridge on web. **Native app:** returning signed-in users sign in at `/app/sign-in`; new users complete the web funnel first.
 
 Frictionless path (legacy): **optional age hook → intent (why you’re here) → match …** (see below; `/start` BiologicalAge funnel archived).
 
@@ -15,12 +17,13 @@ Frictionless path (legacy): **optional age hook → intent (why you’re here) �
 
 ## Skin Age Journey (web-first)
 
-1. **Landing** — `/`: headline *Track today. Glow tomorrow.*; CTA *Find your face age* → `/scan`.
-2. **Scan** — `/scan`: camera or upload → `POST /api/public/face-read` (`VITE_FACE_READ_MOCK=1` when GPU down); data in `sessionStorage`.
-3. **Reveal** — `/reveal`: display `apparent_age_estimate`; optional real-age correction.
-4. **Concerns** — `/concerns`: chips from `GET /api/public/routines/concerns` (max 2) → `POST /api/public/funnel/match`.
-5. **Signup** — `patient-login.html?intent=signup&from=skin-age-landing`: OTP → [`skin-age-journey.js`](../unified-dashboard/assets/js/skin-age-journey.js) activates template + bridge → `patient-dashboard.html?celebrate=1`.
-6. **Today loop** — progress photo on web dashboard; native app for returning users with session.
+1. **Landing** — `/`: headline *Track today. Glow tomorrow.*; CTA *Facial Age Checker* → `/scan`.
+2. **Scan** — `/scan`: camera shutter or upload → client MediaPipe gate on upload → `POST /api/public/face-read`; full `face_read` (age, findings, concern_scores, zone_polygons) in `sessionStorage`.
+3. **Quick check** — `/quick-check`: skin feel + routine habit (yes/sometimes/not really/starting fresh); if yes/sometimes, multi-select morning/evening/SPF/actives; stored as `sc_onboarding_quick_check` (`skin_feel`, `routine_habit`, `routine_times`).
+4. **Reveal** — `/reveal`: **State A** — score cards (face age, skin age gap, Fitzpatrick), finding cards with zone dots, positive observations → **Build my routine**; **State B** — dimmed photo + lighting retry tips (no age) when vision returns nothing.
+5. **Concerns** — `/concerns`: single primary concern pre-selected via `POST /api/public/funnel/match` (`suggested_concern_ids`) → **Start {plan} plan**.
+6. **Signup** — `/app/sign-in?intent=signup&from=skin-age-landing`: OTP → template + funnel bridge (skips `/routine/pick` when concern chosen).
+7. **Today loop** — `/(tabs)/today` with check-in hero, streak, photo history; **Progress** tab for skin-age goal and AI insight.
 
 Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
 
@@ -36,7 +39,7 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
 2. **Optional hook + value** — **Guess my age** → `/start` (`BiologicalAgePage.jsx`): selfie → face-read estimate → confirm or correct age → **intent** (two routes: track routine or find dermatologist) → **match** (`POST /api/public/funnel/match` with `user_goal`, optional `clarify_answers`) → **program**, **specialist**, **clarify**, or **dual** (dual only after specialist upsell). Session stores `sc_user_goal`, `sc_match_json`, `sc_concern_id`, `sc_preview_json`, `sc_zip`, `sc_clarify_answers`.
 3. **Account on funnel** — **Save** on `/start`: email → verify → `POST /api/patient/routine/template` only when `route` is `program` or `dual`. Specialist-only saves email + bridge meta without template. **Done** primary CTA: log today’s photo → `patient-dashboard.html`.
 4. **Handoff** — **Get the app** (`POST /api/patient/auth/handoff/create` → `patientapp://auth?ticket=…`) or **Continue on web** (`patient-routine-pick.html` or dashboard if template exists).
-5. **Alternate account** — **Signup** from `/` still goes to `/patients/patient-login.html?intent=signup` (same verify APIs).
+5. **Alternate account** — **Sign in** / **Signup** from `/` go to **`/app/sign-in`** (signup adds `?intent=signup&from=skin-age-landing` after funnel, or `?intent=signup` from header).
 6. **Land on Today** — `/(tabs)/today` as the first meaningful screen (default tab).
 7. **Daily loop** — progress photo on Today; history on Timeline; bills via Money tab (optional).
 
@@ -44,12 +47,12 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
 
 | Entry | Path |
 |-------|------|
-| **Signup from landing** | `/` → `patient-login?intent=signup` → (steps 4–7) |
+| **Signup from landing** | `/` → `/app/sign-in?intent=signup&from=skin-age-landing` (after funnel) or `/scan` first |
 | **After age + preview** | `/start` save step → inline OTP → done handoff (app or web) |
-| **Skip save on funnel** | `/start` → **Continue without saving** → done → web login |
-| **Returning user (web)** | `patient-login.html` Login → template check → `patient-routine-pick.html` or `patient-dashboard.html` (Today) |
-| **Returning user (app)** | App session in SecureStore → Home / routine tab; Login tab only if session expired |
-| **Legacy URLs** | `/app`, `/join` → **302** → `patient-login.html` (preserves query e.g. `intent=signup`) |
+| **Skip save on funnel** | `/start` → **Continue without saving** → done → `/app/sign-in` |
+| **Returning user (web)** | `/app/sign-in` → template check → `/(tabs)/today` or `/routine/pick` (Expo web) |
+| **Returning user (app)** | App session in SecureStore → Today; sign-in only if session expired |
+| **Legacy URLs** | `/app`, `/join`, `/patients/patient-login.html` → **`/app/sign-in`** (query preserved) |
 
 ## What we ask — now vs later
 
@@ -70,10 +73,10 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
 / ── Guess my age ──► /start: photo → age → intent → match → preview OR specialist OR dual → save (OTP)
  │                         │                              │
  │                         └── Continue without saving ───┼──► done (handoff)
- └── Signup ──► patient-login?intent=signup               │
+ └── Signup ──► /app/sign-in?intent=signup                │
                         email → code → confirm ──────────┤
                                                         ▼
-                                              patient app (session) or web Today
+                                              /(tabs)/today (Expo web + native)
                                                         │
                                                         ▼
                                               /(tabs)/today  (daily)
@@ -85,8 +88,8 @@ Docs describe **target** behavior. Gaps below are intentional follow-up work (no
 
 | Step | Target | Status |
 |------|--------|--------|
-| Post-verify redirect (signup) | App handoff → app `/routine/pick` | Done: `patient-login.html` handoff step |
-| Post-verify redirect (login web) | Template check → pick or Today | Done: `finishAuthRedirect` + `redirectWebAfterAuth` |
+| Post-verify redirect (signup) | Funnel bridge → Today (skip pick when concern chosen) | Done: `sign-in.tsx` + `skin-age-journey.ts` |
+| Post-verify redirect (login web) | Template check → pick or Today | Done: `sign-in.tsx` `finishWithSession` |
 | Session web → app | `patientapp://auth?ticket=…` | Done: handoff create/exchange; Expo `useAppDeepLinks` |
 | Web parity nav | Today / Timeline / Money / Profile + FAB | Done: `patient-shell.js` + sidebar IA |
 | Web Today / pick / Timeline copy | Routine-first, brand tokens | Done: see [06-mobile-and-web-parity.md](./06-mobile-and-web-parity.md) |
@@ -142,9 +145,10 @@ Open `http://127.0.0.1:4000/`
 |-----|---------|---------|
 | `/` | skin-care-landing | Skin & Care consumer marketing (hero, app/sign-in CTAs) |
 | `/start` | redirect → `/` | Legacy funnel path (archived littlelab) |
-| `/patients/patient-login.html` | unified-dashboard (static on middleware) | **Consumer signup/login** — email + 6-digit code (`?intent=signup` opens Sign Up tab) |
-| `/app` | middleware redirect | **302** → `patient-login.html` (legacy; not a bridge page) |
-| `/join` | middleware redirect | **302** → `patient-login.html` (legacy alias) |
+| `/app/sign-in` | Expo web (consumer `/app`) | **Consumer signup/login** — email + 6-digit code; copy varies by `intent` / `from` |
+| `/patients/patient-login.html` | redirect stub (consumer bundle) | **302/replace** → `/app/sign-in` (preserves query) |
+| `/app` | middleware / hosting redirect | **302** → `/app/sign-in` |
+| `/join` | middleware / hosting redirect | **302** → `/app/sign-in` (legacy alias) |
 | `/api/public/face-read` | middleware | Photo estimate (proxies teamkelly) |
 | `/api/public/routines/concerns` | middleware | List concern programs for funnel chips |
 | `/api/public/routines/:concernId/preview` | middleware | Week-1 preview (`week_one`, red flags) for funnel |
@@ -158,11 +162,12 @@ Open `http://127.0.0.1:4000/`
 | `/api/patient/routine/phase` | middleware | Week/phase copy for Today |
 | `/api/patient/routine/daily/:id/photo` | middleware | Progress photo → day logged |
 | `/api/patient/home/progress-summary` | middleware | Portfolio cards + `today_logged` |
-| `/patients/patient-dashboard.html` | unified-dashboard | **Web Today** (phase card + photo CTA) |
-| `/patients/patient-routine-pick.html` | unified-dashboard | Web routine pick |
-| `/patients/schedule.html` | unified-dashboard | Web Timeline |
+| `/(tabs)/today` | Expo web `/app` | **Consumer Today** (primary post-auth home on myskinandcare.com) |
+| `/patients/patient-dashboard.html` | middleware only | Legacy web Today (not in consumer Firebase bundle) |
+| `/patients/patient-routine-pick.html` | middleware only | Legacy web routine pick |
+| `/patients/schedule.html` | middleware only | Legacy web Timeline |
 
-**Legacy redirects:** `/consumer/*join*` → patient login; other `/consumer/*` → `/start` where applicable.
+**Legacy redirects:** `/consumer/*join*` → `/app/sign-in`; `/patients/patient-login.html` → `/app/sign-in`.
 
 **Not primary path:** `onboarding.html`, `appointments.html` journal-only photo (`media-link`); use Today `/photo` for logging.
 
@@ -199,7 +204,7 @@ After `verify/confirm` in the app, if the patient has no template, navigation go
 | `patientapp://auth?ticket=…` | One-time web → app session handoff after signup |
 | `patientapp://` + routine paths | Existing routine deep links |
 
-Primary **new-user** path: web OTP on `patient-login.html` → handoff into app (not `patientapp://login` as a second signup).
+Primary **new-user** path: web funnel → OTP on **`/app/sign-in`** → Today (optional `patientapp://auth?ticket=…` handoff into native app).
 
 ## Env
 
@@ -226,9 +231,9 @@ One routine-tracker journey on **Expo** and **web patient portal**. Same APIs, s
 | Step | User action | Expo route | Web URL |
 |------|-------------|------------|---------|
 | 1 | Discover (optional age) | — | `/`, `/start` |
-| 2 | Email + 6-digit code | `/(tabs)/index` (Account) or web handoff | `/patients/patient-login.html` |
-| 3 | Pick one of five routines | `/routine/pick` | `/patients/patient-routine-pick.html` |
-| 4 | Land on Today | `/(tabs)/today` | `/patients/patient-dashboard.html` |
+| 2 | Email + 6-digit code | `/sign-in` or Account tab | `/app/sign-in` |
+| 3 | Pick one of five routines | `/routine/pick` | `/app/routine/pick` (when no template) |
+| 4 | Land on Today | `/(tabs)/today` | `/app/(tabs)/today` |
 | 5 | Log progress photo | Today CTA or FAB → `/routine/capture` (front camera + live ghost) | Today **Log today's photo** |
 | 6 | Review history | `/(tabs)/timeline` — **Photos** filmstrip default | `/patients/schedule.html` |
 | 7 | Bills (optional) | `/(tabs)/money` via Account → Bills & receipts | `/patients/wallet.html` (secondary; Profile submenu intent) |
@@ -315,7 +320,7 @@ Verifies all five concerns: every program phase has `expect` or `focus`, photo s
 
 ## Manual verification (web + Expo)
 
-1. **Web login** — `patient-login.html` → no template → `patient-routine-pick.html`; with template → `patient-dashboard.html`.
+1. **Web login** — `/app/sign-in` → no template → `/routine/pick`; with template → `/(tabs)/today`.
 2. **Pick** — select template → lands on Today with `?started=1` toast; bottom nav shows Today / Timeline / Money / Profile.
 3. **Today** — black primary CTA; center FAB is blue; brown active sidebar tab.
 4. **Photo** — Today CTA uploads via `/routine/daily/:id/photo`; progress cards not 0%; stat “Logged today” = Yes; Timeline calendar shows logged/media.

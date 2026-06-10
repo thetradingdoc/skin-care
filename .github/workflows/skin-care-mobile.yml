@@ -43,6 +43,10 @@ jobs:
         working-directory: ./patient-app
         run: npx tsc --noEmit
 
+      - name: Unit tests (patient-session)
+        working-directory: ./patient-app
+        run: npm test
+
   care-program-api:
     name: care_program billing tests
     runs-on: ubuntu-latest

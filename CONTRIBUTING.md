@@ -1,6 +1,6 @@
 # Contributing to Skin & Care
 
-**Last reviewed:** 2026-06-06
+**Last reviewed:** 2026-06-10
 
 ## Architecture
 
@@ -27,6 +27,8 @@
 ## Architecture overview
 
 - **High-level map:** [`docs/middleware-platform/README.md#architecture`](docs/middleware-platform/README.md#architecture) (middleware vs `unified-dashboard`, checkout flow, CI pointers; consolidated middleware docs).
+- **Senior code review (2026-06):** [`docs/development/CODE_REVIEW_2026-06.md`](docs/development/CODE_REVIEW_2026-06.md) — god files, patient journey status, refactor phases.
+- **server.js decomposition:** [`docs/architecture/SERVER_DECOMPOSITION.md`](docs/architecture/SERVER_DECOMPOSITION.md)
 
 ## Commands to run before opening a PR
 

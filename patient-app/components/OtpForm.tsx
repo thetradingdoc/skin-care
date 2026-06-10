@@ -27,16 +27,19 @@ function formatFetchError(e: unknown): string {
 type Props = {
   headline: string;
   subtitle: string;
+  variant?: 'billing' | 'consumer';
   onSuccess: (sessionId: string, email: string) => void | Promise<void>;
 };
 
-export function OtpForm({ headline, subtitle, onSuccess }: Props) {
+export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: Props) {
   const apiIssue = getApiReachabilityIssue();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState(DEMO_PATIENT_EMAIL || '');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isConsumer = variant === 'consumer';
+  const btnVariant = isConsumer ? 'consumer' : 'billing';
 
   async function sendCode() {
     if (apiIssue) {
@@ -89,7 +92,9 @@ export function OtpForm({ headline, subtitle, onSuccess }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
       <View style={styles.content}>
-        <Text style={styles.title}>{step === 'email' ? headline : 'Enter code'}</Text>
+        <Text style={[styles.title, isConsumer && styles.titleConsumer]}>
+          {step === 'email' ? headline : 'Enter code'}
+        </Text>
         <Text style={styles.subtitle}>
           {step === 'email' ? subtitle : `We sent a 6-digit code to ${email.trim()}.`}
         </Text>
@@ -107,9 +112,13 @@ export function OtpForm({ headline, subtitle, onSuccess }: Props) {
               keyboardType="email-address"
               autoComplete="email"
               placeholder="you@example.com"
-              style={styles.input}
+              style={[styles.input, isConsumer && styles.inputConsumer]}
             />
-            <PrimaryButton label={loading ? 'Sending…' : 'Send code'} onPress={() => void sendCode()} />
+            <PrimaryButton
+              variant={btnVariant}
+              label={loading ? 'Sending…' : 'Send code'}
+              onPress={() => void sendCode()}
+            />
           </>
         ) : (
           <>
@@ -120,17 +129,17 @@ export function OtpForm({ headline, subtitle, onSuccess }: Props) {
               keyboardType="number-pad"
               autoComplete="one-time-code"
               placeholder="123456"
-              style={styles.input}
+              style={[styles.input, isConsumer && styles.inputConsumer]}
             />
-            <PrimaryButton label={loading ? 'Verifying…' : 'Continue'} onPress={() => void confirmCode()} />
+            <PrimaryButton
+              variant={btnVariant}
+              label={loading ? 'Verifying…' : 'Continue'}
+              onPress={() => void confirmCode()}
+            />
             <View style={{ height: 12 }} />
             <SecondaryButton label="Use a different email" onPress={() => setStep('email')} />
           </>
         )}
-
-        <Text style={styles.disclaimer}>
-          For wellness tracking only · Not a medical diagnosis
-        </Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -140,6 +149,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flex: 1, gap: 10, justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: '700', color: JournalTokens.color.ink },
+  titleConsumer: {
+    fontFamily: JournalTokens.font.display,
+    fontSize: 26,
+    fontWeight: '400',
+    color: JournalTokens.color.ink,
+  },
   subtitle: { color: JournalTokens.color.muted, lineHeight: 22, marginBottom: 8 },
   label: { fontWeight: '600', color: JournalTokens.color.ink, marginTop: 4 },
   input: {
@@ -150,8 +165,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: JournalTokens.color.card,
     marginBottom: 8,
+    color: JournalTokens.color.ink,
+  },
+  inputConsumer: {
+    borderRadius: JournalTokens.radius.pill,
+    backgroundColor: '#ffffff',
+    borderColor: JournalTokens.color.line,
   },
   error: { color: JournalTokens.color.danger, fontSize: 14 },
   warn: { color: '#92400e', fontSize: 13, backgroundColor: '#fef3c7', padding: 10, borderRadius: 8 },
-  disclaimer: { color: JournalTokens.color.muted, fontSize: 12, lineHeight: 18, marginTop: 20, textAlign: 'center' },
 });

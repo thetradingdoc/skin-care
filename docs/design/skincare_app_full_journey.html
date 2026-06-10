@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Skin & Care — full journey (brand tokens)</title>
+  <link rel="stylesheet" href="../../unified-dashboard/assets/css/skin-care-tokens.css" />
+  <style>
+    body { font-family: var(--font-ui); background: var(--sc-cream); color: var(--sc-ink); padding: 2rem; }
+    h1 { font-family: var(--font-display); }
+    .flow-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--sc-muted); text-align: center; }
+    .phone { max-width: 340px; margin: 1rem auto; border: 1px solid var(--sc-line); border-radius: 24px; padding: 1.25rem; background: #fff; }
+    .btn-main { width: 100%; padding: 14px; border-radius: 999px; background: var(--sc-ink); color: #fff; border: none; font-weight: 700; margin-top: 8px; }
+    .tag { display: inline-block; font-size: 10px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; background: #eef4ff; color: var(--sc-brand-blue); margin-bottom: 12px; }
+    .hero { font-family: var(--font-display); font-size: 1.6rem; line-height: 1.25; }
+    .sub { color: var(--sc-muted); font-size: 14px; line-height: 1.5; }
+    .zone { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 12px 0; }
+    .zone div { background: #eef4ff; border-radius: 10px; padding: 8px; text-align: center; font-size: 12px; }
+    ol { max-width: 640px; margin: 2rem auto; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>Skin & Care — 7-step journey (production tokens)</h1>
+  <p class="sub">Reference for funnel + app parity. Purple mock palette replaced with <code>skin-care-tokens.css</code>.</p>
+  <ol>
+    <li><strong>Landing</strong> — <code>/</code> marketing hero (unchanged)</li>
+    <li><strong>Scan</strong> — <code>/scan</code> dark camera + shutter</li>
+    <li><strong>Quick check</strong> — <code>/quick-check</code> tap + voice</li>
+    <li><strong>Reveal</strong> — <code>/reveal</code> zones + Build my plan</li>
+    <li><strong>Concerns</strong> — <code>/concerns</code> pre-selected primary</li>
+    <li><strong>Signup</strong> — <code>/app/sign-in?intent=signup&amp;from=skin-age-landing</code></li>
+    <li><strong>Today + Progress</strong> — Expo tabs</li>
+  </ol>
+  <p class="flow-label">Reveal (step 4)</p>
+  <div class="phone">
+    <span class="tag">Your scan</span>
+    <p class="hero">34</p>
+    <p class="sub">Your skin age · you are 31</p>
+    <div class="zone">
+      <div>Forehead<br><strong>33</strong></div>
+      <div>T-zone<br><strong>36</strong></div>
+      <div>Cheeks<br><strong>31</strong></div>
+    </div>
+    <button class="btn-main" type="button">Build my plan →</button>
+  </div>
+</body>
+</html>

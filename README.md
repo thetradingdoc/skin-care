@@ -1,6 +1,6 @@
 # Skin & Care — daily skin tracking app
 
-**Last reviewed:** 2026-06-06
+**Last reviewed:** 2026-06-10
 
 **GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care)  
 **Consumer domain:** [myskinandcare.com](https://myskinandcare.com) (marketing + web funnel)  
@@ -67,8 +67,13 @@ npm start --prefix middleware-platform
 | `patient-app/` | Expo React Native app (Skin & Care) |
 | `middleware-platform/` | Shared API (local dev; prod at api.myskinandcare.com) |
 | `livekit-agents/` | Voice agents (platform) |
-| `unified-dashboard/` | Provider / business dashboards (Somo brand) |
+| `unified-dashboard/` | Consumer landing (`skin-care-landing/`), patient/business/admin web portals, Firebase hosting |
 | `docs/Brand/` | Brand runbooks |
+| `docs/development/CODE_REVIEW_2026-06.md` | Senior code review, god-file map, refactor phases |
+
+## Code review & monolith refactor
+
+Patient signup → mobile app is **complete**. Platform monolith (`database.js`, `server.js`) is refactored incrementally — see **[docs/development/CODE_REVIEW_2026-06.md](docs/development/CODE_REVIEW_2026-06.md)** and **[docs/architecture/SERVER_DECOMPOSITION.md](docs/architecture/SERVER_DECOMPOSITION.md)**.
 
 ## Platform upstream
 

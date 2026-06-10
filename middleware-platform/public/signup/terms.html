@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/css/logo-wordmark.css" />
     <style>
         * {
             margin: 0;
@@ -238,7 +239,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <p class="logo-wordmark">Skin & Care</p>
+            <span class="sc-logo-wordmark" style="--logo-height: 40px" role="img" aria-label="skin care">
+              <span class="sc-logo-skin" aria-hidden="true">skin</span>
+              <span class="sc-logo-mark-slot" aria-hidden="true">
+                <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+              </span>
+              <span class="sc-logo-care" aria-hidden="true">care</span>
+            </span>
             <h1>Terms of Service</h1>
             <p>Accept to start your free trial</p>
         </div>

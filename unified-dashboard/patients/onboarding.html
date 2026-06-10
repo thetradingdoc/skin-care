@@ -7,6 +7,7 @@
   <link rel="manifest" href="../manifest.webmanifest" />
   <title>Onboarding - Skin &amp; Care Patient Portal</title>
   <link rel="stylesheet" href="../assets/css/global.css" />
+  <link rel="stylesheet" href="/assets/css/logo-wordmark.css" />
   <script src="../assets/js/config.js" defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Gloock&display=swap');
@@ -206,8 +207,13 @@
         Back
       </button>
       <div class="brand-row">
-        <img class="brand-logo" src="/assets/images/logo-panda.svg" alt="Skin &amp; Care" />
-        <h1 class="brand-wordmark">Skin &amp; Care</h1>
+        <span class="sc-logo-wordmark" style="--logo-height: 40px" role="img" aria-label="skin care">
+          <span class="sc-logo-skin" aria-hidden="true">skin</span>
+          <span class="sc-logo-mark-slot" aria-hidden="true">
+            <img class="sc-logo-mark" src="/assets/brand/tulip-mark.svg" alt="" width="600" height="215" />
+          </span>
+          <span class="sc-logo-care" aria-hidden="true">care</span>
+        </span>
       </div>
     </div>
     <div class="steps">

@@ -9,7 +9,23 @@ const ALLOWED_FUNNEL_EVENTS = new Set([
   'auth_handoff_app_link_failed',
 ]);
 
-function registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSession, recordPatientPortalEvent }) {
+function linkFunnelJourney(db, journeyId, sessionId, patientId) {
+  if (!db?.db || !journeyId) return;
+  const migration = require('../migrations/029_skin_age_journey');
+  if (migration?.up) migration.up(db.db);
+  db.db
+    .prepare(`
+    UPDATE funnel_journeys
+    SET linked_session_id = ?, linked_patient_id = ?, status = 'linked', updated_at = datetime('now')
+    WHERE id = ?
+  `)
+    .run(sessionId, patientId || null, journeyId);
+}
+
+function registerPatientFunnelBridgeRoutes(
+  app,
+  { apiLimiter, requirePatientSession, recordPatientPortalEvent, db, resolvePatientIdFromSession },
+) {
   app.post(
     '/api/patient/funnel/bridge',
     (req, res, next) => apiLimiter(req, res, next),
@@ -28,6 +44,12 @@ function registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSess
         const inquiry = String(body.inquiry || '').trim();
         const zip = String(body.zip || '').replace(/\D/g, '').slice(0, 5) || null;
         const faceRead = body.face_read && typeof body.face_read === 'object' ? body.face_read : null;
+        const confirmedAge =
+          body.confirmed_age != null
+            ? Number(body.confirmed_age)
+            : matchResult?.confirmed_age != null
+              ? Number(matchResult.confirmed_age)
+              : null;
         const userGoal = String(body.user_goal || matchResult?.user_goal || '').trim() || null;
         const route = matchResult?.route || body.route || null;
         const companionConcernId =
@@ -36,6 +58,12 @@ function registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSess
           body.clarify_answers && typeof body.clarify_answers === 'object'
             ? body.clarify_answers
             : null;
+        const quickCheckAnswers =
+          body.quick_check_answers && typeof body.quick_check_answers === 'object'
+            ? body.quick_check_answers
+            : matchResult?.quick_check_answers && typeof matchResult.quick_check_answers === 'object'
+              ? matchResult.quick_check_answers
+              : null;
         const secondaryConcernIds = Array.isArray(body.secondary_concern_ids)
           ? body.secondary_concern_ids
           : Array.isArray(matchResult?.secondary_concern_ids)
@@ -58,10 +86,12 @@ function registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSess
           inquiry: inquiry || null,
           zip,
           face_read: faceRead,
+          confirmed_age: Number.isFinite(confirmedAge) ? confirmedAge : null,
           user_goal: userGoal,
           route,
           companion_concern_id: companionConcernId,
           clarify_answers: clarifyAnswers,
+          quick_check_answers: quickCheckAnswers,
           secondary_concern_ids: secondaryConcernIds,
           kelly_session_id: kellySessionId,
           intake_proposal: intakeProposal,
@@ -107,6 +137,28 @@ function registerPatientFunnelBridgeRoutes(app, { apiLimiter, requirePatientSess
             'funnel_intake_proposal_json',
             JSON.stringify(intakeProposal),
           );
+        }
+
+        const journeyId = String(body.journey_id || '').trim();
+        const { patientId } =
+          typeof resolvePatientIdFromSession === 'function'
+            ? resolvePatientIdFromSession(req.patientSession || {})
+            : { patientId: null };
+        if (journeyId) {
+          linkFunnelJourney(db, journeyId, sessionId, patientId);
+        }
+        if (faceRead?.apparent_age_estimate != null && db?.db) {
+          const { insertSkinAgeReading } = require('../services/skin-age-readings');
+          insertSkinAgeReading(db.db, {
+            patient_id: patientId,
+            session_id: sessionId,
+            journey_id: journeyId || null,
+            source: 'onboarding_scan',
+            apparent_age_estimate: Number(faceRead.apparent_age_estimate),
+            model_id: faceRead.model_id,
+            model_version: faceRead.model_version,
+            payload_json: faceRead,
+          });
         }
 
         return res.json({ success: true, session_id: sessionId });

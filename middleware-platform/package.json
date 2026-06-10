@@ -162,6 +162,8 @@
         "dev:skin-care-landing": "cd ../unified-dashboard/skin-care-landing && npm run dev",
         "build:skin-care-landing": "cd ../unified-dashboard/skin-care-landing && npm ci && npm run build",
         "test:e2e-skin-care-landing": "(cd ../unified-dashboard/skin-care-landing && npm run build) && PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test -c playwright.skin-care-landing.config.cjs",
+        "test:e2e-consumer-sign-in": "(cd .. && npm run build:consumer-hosting) && PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test -c playwright.consumer-sign-in.config.cjs",
+        "test:e2e-skin-age-journey": "(cd .. && npm run build:consumer-hosting) && PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test -c playwright.skin-age-journey.config.cjs",
         "test:e2e-landing": "(cd ../unified-dashboard/skin-care-landing && npm run build) && playwright test --project landing",
         "test:e2e-landing:quick": "playwright test --project landing",
         "test:e2e-landing:report": "npx playwright show-report playwright-report",

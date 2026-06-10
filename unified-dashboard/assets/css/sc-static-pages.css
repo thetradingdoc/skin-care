@@ -1,20 +1,5 @@
 @import './skin-care-tokens.css';
-
-@font-face {
-  font-family: 'Be Vietnam Pro';
-  src: url('../brand/fonts/BeVietnamPro-Italic.ttf') format('truetype');
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Be Vietnam Pro';
-  src: url('../brand/fonts/BeVietnamPro-Bold.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
+@import './logo-wordmark.css';
 
 /* ——— Shared static shell (about + contact) ——— */
 
@@ -55,47 +40,8 @@
   justify-self: start;
 }
 
-.sc-logo-wordmark {
-  --logo-height: 44px;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 0.03em;
-  font-family: 'Be Vietnam Pro', system-ui, sans-serif;
-  font-size: calc(var(--logo-height) * 0.58);
-  line-height: 1;
-  color: #000000;
-  white-space: nowrap;
-}
-
-.sc-logo-skin {
-  font-style: italic;
-  font-weight: 700;
-  margin-right: -0.02em;
-}
-
-.sc-logo-mark-slot {
-  position: relative;
-  flex-shrink: 0;
-  width: 0.62em;
-  height: 1em;
-  align-self: flex-start;
-  margin: -0.48em -0.05em 0;
-}
-
-.sc-logo-mark {
-  position: absolute;
-  left: 50%;
-  bottom: 0.02em;
-  width: 0.9em;
-  height: auto;
-  aspect-ratio: 600 / 215;
-  transform: translateX(-50%);
-  display: block;
-}
-
-.sc-logo-care {
-  font-weight: 700;
-  margin-left: -0.02em;
+.sc-static-brand .sc-logo-wordmark {
+  --logo-height: 52px;
 }
 
 .sc-static-nav {
@@ -179,10 +125,11 @@ button.sc-btn-dark {
   color: var(--sc-ink);
 }
 
-.sc-static-footer-disclaimer {
+.sc-static-footer-tagline {
   margin: 0 0 0.5rem;
-  font-size: 0.75rem;
-  color: var(--sc-muted);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--sc-ink);
 }
 
 .sc-static-footer-copy {

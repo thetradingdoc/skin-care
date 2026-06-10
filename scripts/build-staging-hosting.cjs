@@ -100,7 +100,7 @@ function main() {
     if (fs.existsSync(src)) copyFile(src, path.join(OUT, page));
   }
 
-  for (const page of ['about.html', 'contact.html']) {
+  for (const page of ['about.html', 'contact.html', 'waitlist.html']) {
     const src = path.join(UD, page);
     if (fs.existsSync(src)) copyFile(src, path.join(OUT, page));
   }

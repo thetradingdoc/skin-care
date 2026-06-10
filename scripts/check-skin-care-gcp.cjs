@@ -2,14 +2,14 @@
 'use strict';
 
 /**
- * Verify Skin & Care consumer stack (myskinandcare.com + api.myskinandcare.com).
+ * Verify Skin & Care consumer stack (myskinandcare.com UI + api.callsomo.com API).
  * Usage:
  *   npm run gcp:skin-care:check
- *   UI_BASE_URL=https://myskinandcare.com MIDDLEWARE_API_BASE=https://api.myskinandcare.com npm run gcp:skin-care:check
+ *   UI_BASE_URL=https://myskinandcare.com MIDDLEWARE_API_BASE=https://api.callsomo.com npm run gcp:skin-care:check
  */
 
 const UI = (process.env.UI_BASE_URL || 'https://myskinandcare.com').replace(/\/$/, '');
-const API = (process.env.MIDDLEWARE_API_BASE || 'https://api.myskinandcare.com').replace(/\/$/, '');
+const API = (process.env.MIDDLEWARE_API_BASE || 'https://api.callsomo.com').replace(/\/$/, '');
 
 async function fetchPage(url) {
   try {
@@ -68,11 +68,11 @@ async function main() {
   const apiBaseOk =
     apiBase.status >= 200 &&
     apiBase.status < 400 &&
-    apiBase.text.includes('api.myskinandcare.com');
+    apiBase.text.includes('api.callsomo.com');
   all =
     (apiBaseOk ? ok : fail)(
       'UI_API_BASE_JS',
-      apiBaseOk ? 'api-base.js → api.myskinandcare.com' : `status=${apiBase.status}`
+      apiBaseOk ? 'api-base.js → api.callsomo.com' : `status=${apiBase.status}`
     ) && all;
 
   console.log('');
