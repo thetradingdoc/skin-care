@@ -1,3 +1,4 @@
+import { saveBioProfile } from '@/lib/conflict-api';
 import { patientPost } from '@/lib/patient-api';
 import {
   getFaceRead,
@@ -6,6 +7,15 @@ import {
   setNeedsFirstPhoto,
   setOnboardingDone,
 } from '@/lib/onboarding-storage';
+
+const CONCERN_TO_CONDITION: Record<string, string> = {
+  acne: 'acne',
+  rosacea: 'rosacea',
+  hyperpigmentation: 'hyperpigmentation',
+  hyperpigmentation_dark_skin: 'dark_marks',
+  barrier_repair: 'barrier_compromised',
+  anti_aging: 'none',
+};
 
 export async function completeOnboardingAfterSignup(): Promise<void> {
   const concernId = (await getOnboardingConcernId()) || 'anti_aging';
@@ -24,6 +34,19 @@ export async function completeOnboardingAfterSignup(): Promise<void> {
       });
     } catch {
       // bridge is optional for v1
+    }
+  }
+
+  const mappedCondition = CONCERN_TO_CONDITION[concernId];
+  if (mappedCondition && mappedCondition !== 'none') {
+    try {
+      await saveBioProfile({
+        conditions: [mappedCondition],
+        prescriptions: [],
+        profile_complete: true,
+      });
+    } catch {
+      // native path still works if bridge populated bio
     }
   }
 

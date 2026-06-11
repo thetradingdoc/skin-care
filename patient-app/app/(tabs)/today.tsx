@@ -14,22 +14,26 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RoutineStepsHero } from '@/components/RoutineStepsHero';
+import { BarrierScoreRing, GraphUnavailableBanner, RoutineStepRow } from '@/components/conflict';
+import { SessionImage } from '@/components/SessionImage';
 import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
+import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { TimelineTokens } from '@/constants/timelineTokens';
+import { SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
+import { fetchBioProfile, fetchEvaluateLineup } from '@/lib/conflict-api';
+import type { BioProfile, EvaluateResult } from '@/lib/conflict-types';
+import { verdictTagColor, overallColor } from '@/lib/conflict-helpers';
 import { patientGet } from '@/lib/patient-api';
 import type { SkinReportPayload } from '@/lib/routine-capture';
 import { localTodayIso, resolveRoutineDayMode, weekdayLabel, type RoutineDayMode } from '@/lib/routine-day-mode';
 import {
   celebrateBannerCopy,
-  layeringUnavailableCopy,
   todayScreenTitle,
 } from '@/lib/routine-copy';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { getNeedsFirstPhoto } from '@/lib/onboarding-storage';
-import { PROGRESS_HREF } from '@/constants/routes';
-import { EMAIL_KEY } from '@/lib/patient-session';
-import * as SecureStore from 'expo-secure-store';
+import { getStoredEmail } from '@/lib/patient-session';
 
 type PhaseItem = {
   product_name?: string;
@@ -63,11 +67,16 @@ export default function TodayScreen() {
   const [dayMode, setDayMode] = useState<RoutineDayMode>('today');
   const [allowsPhoto, setAllowsPhoto] = useState(true);
   const [layeringWarning, setLayeringWarning] = useState<string | null>(null);
+  const [evaluate, setEvaluate] = useState<EvaluateResult | null>(null);
+  const [bioProfile, setBioProfile] = useState<BioProfile | null>(null);
+  const [skinAgeDelta, setSkinAgeDelta] = useState<number | null>(null);
+  const [yesterdayVerdict, setYesterdayVerdict] = useState<string | null>(null);
   const [showCelebrate, setShowCelebrate] = useState(params.celebrate === '1');
   const [needsFirstPhoto, setNeedsFirstPhoto] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
   const [greetingName, setGreetingName] = useState('there');
   const [photoThumbs, setPhotoThumbs] = useState<{ date: string; logged: boolean }[]>([]);
+  const [todayThumbnailUrl, setTodayThumbnailUrl] = useState<string | null>(null);
   const photoTriggeredRef = useRef(false);
 
   const clientDayMode = resolveRoutineDayMode(selectedDate);
@@ -91,10 +100,22 @@ export default function TodayScreen() {
         ).catch(() => ({ days: [] })),
       ]);
       setStreakDays(Number(progressRes?.summary?.streak_days) || 0);
-      const email = (await SecureStore.getItemAsync(EMAIL_KEY)) || '';
+      const metrics = progressRes?.improvement_metrics;
+      if (metrics?.skin_age_delta != null) {
+        setSkinAgeDelta(Number(metrics.skin_age_delta));
+      } else if (metrics?.skin_age_years != null) {
+        setSkinAgeDelta(Number(metrics.skin_age_years));
+      } else {
+        setSkinAgeDelta(null);
+      }
+      const email = (await getStoredEmail()) || '';
       const nick = email.split('@')[0]?.split(/[._]/)[0];
       if (nick) setGreetingName(nick.charAt(0).toUpperCase() + nick.slice(1));
       const calDays = Array.isArray(calRes?.days) ? calRes.days : [];
+      const todayCal = calDays.find((d: { date: string }) => d.date === todayIso);
+      setTodayThumbnailUrl(
+        todayCal?.thumbnail_url && typeof todayCal.thumbnail_url === 'string' ? todayCal.thumbnail_url : null,
+      );
       setPhotoThumbs(
         calDays.slice(-5).map((d: { date: string; completion_score?: number; has_media?: boolean }) => ({
           date: d.date,
@@ -155,14 +176,19 @@ export default function TodayScreen() {
       }
       if (templateRes?.has_template) {
         try {
-          const layer = await patientGet('/api/patient/routine/layering-check');
-          if (layer?.graph_unavailable || layer?.overall === 'unknown') {
-            setLayeringWarning(layeringUnavailableCopy());
+          const [evalRes, bio] = await Promise.all([
+            fetchEvaluateLineup(),
+            fetchBioProfile().catch(() => null),
+          ]);
+          setEvaluate(evalRes);
+          setBioProfile(bio);
+          if (evalRes?.graph_unavailable) {
+            setLayeringWarning(null);
           } else {
-            const conflicts = Array.isArray(layer?.conflicts) ? layer.conflicts : [];
+            const conflicts = Array.isArray(evalRes?.conflicts) ? evalRes.conflicts : [];
             if (conflicts.length) {
               setLayeringWarning(conflicts[0]?.notes || 'Check layering before combining actives.');
-            } else if (layer?.overall && layer.overall !== 'safe') {
+            } else if (evalRes?.overall && evalRes.overall !== 'safe') {
               setLayeringWarning('Your routine may need spacing between actives.');
             } else {
               setLayeringWarning(null);
@@ -171,6 +197,12 @@ export default function TodayScreen() {
         } catch {
           setLayeringWarning(null);
         }
+      }
+      const calYesterday = calDays.length >= 2 ? calDays[calDays.length - 2] : null;
+      if (calYesterday?.verdict_overall) {
+        setYesterdayVerdict(String(calYesterday.verdict_overall));
+      } else {
+        setYesterdayVerdict(null);
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unable to load today.');
@@ -309,6 +341,72 @@ export default function TodayScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
+        {hasTemplate && bioProfile && !bioProfile.profile_complete && dayMode === 'today' ? (
+          <Pressable
+            style={styles.bioBanner}
+            onPress={() => router.push(BIO_CALIBRATION_HREF)}
+            accessibilityRole="button">
+            <Text style={styles.bioBannerTitle}>Complete your skin profile</Text>
+            <Text style={styles.bioBannerBody}>
+              Partial verdict only until you add conditions and prescriptions.
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {hasTemplate && evaluate && dayMode === 'today' ? (
+          <>
+            <BarrierScoreRing
+              bfi={evaluate.barrier_friction_index ?? 0}
+              subtitle={evaluate.barrier_label ? `Barrier: ${evaluate.barrier_label}` : undefined}
+            />
+            {evaluate.hero_title ? (
+              <Text style={styles.heroTitle}>{evaluate.hero_title}</Text>
+            ) : null}
+            {evaluate.hero_subtitle ? (
+              <Text style={styles.heroSubtitle}>{evaluate.hero_subtitle}</Text>
+            ) : null}
+            <View style={styles.metricRow}>
+              <Pressable
+                style={[
+                  styles.metricChip,
+                  { borderColor: overallColor(evaluate.overall) },
+                ]}
+                onPress={() => router.push(SCAN_HREF)}
+                accessibilityRole="button"
+                accessibilityLabel="Conflicts">
+                <Text style={[styles.metricChipValue, { color: overallColor(evaluate.overall) }]}>
+                  {evaluate.conflicts?.length ?? 0}
+                </Text>
+                <Text style={styles.metricChipLabel}>Conflicts</Text>
+              </Pressable>
+              <View style={[styles.metricChip, streakDays > 0 && { borderColor: ConflictTokens.barrierOk }]}>
+                <Text style={[styles.metricChipValue, streakDays > 0 && { color: ConflictTokens.barrierOk }]}>
+                  {streakDays}
+                </Text>
+                <Text style={styles.metricChipLabel}>Day streak</Text>
+              </View>
+              <View
+                style={[
+                  styles.metricChip,
+                  skinAgeDelta != null && {
+                    borderColor: skinAgeDelta <= 0 ? ConflictTokens.barrierGreat : ConflictTokens.barrierWarn,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.metricChipValue,
+                    skinAgeDelta != null && {
+                      color: skinAgeDelta <= 0 ? ConflictTokens.barrierGreat : ConflictTokens.barrierWarn,
+                    },
+                  ]}>
+                  {skinAgeDelta != null ? `${skinAgeDelta > 0 ? '+' : ''}${skinAgeDelta}` : '—'}
+                </Text>
+                <Text style={styles.metricChipLabel}>Skin age Δ</Text>
+              </View>
+            </View>
+          </>
+        ) : null}
+
         {!hasTemplate && !error ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Choose your routine</Text>
@@ -323,25 +421,65 @@ export default function TodayScreen() {
           <Text style={styles.weekKicker}>{weekKicker}</Text>
         ) : null}
 
-        {hasTemplate && allowsPhoto && dayMode === 'today' ? (
-          <Pressable
-            style={[styles.checkinCard, loggedForDay && styles.checkinCardDone]}
-            onPress={loggedForDay ? undefined : openCapture}
-            accessibilityRole="button">
-            <View style={styles.checkinCircle}>
-              <Text style={styles.checkinIcon}>📷</Text>
-            </View>
-            <View style={styles.checkinCopy}>
-              <Text style={styles.checkinTitle}>
-                {loggedForDay ? "Today's photo logged" : "Take today's photo"}
-              </Text>
-              <Text style={styles.checkinSub}>
-                {loggedForDay ? 'Streak saved for today' : '10 sec · keeps your streak alive'}
-              </Text>
-            </View>
-            {!loggedForDay ? <Text style={styles.checkinArrow}>›</Text> : null}
-          </Pressable>
+        {hasTemplate && evaluate?.graph_unavailable && dayMode === 'today' ? (
+          <GraphUnavailableBanner />
         ) : null}
+
+        {hasTemplate && allowsPhoto && dayMode === 'today' ? (
+          <View style={styles.photoCard}>
+            {todayThumbnailUrl ? (
+              <SessionImage
+                uri={todayThumbnailUrl}
+                style={styles.photoCardImage}
+                contentFit="cover"
+                fallback={<Text style={styles.photoCardIcon}>{loggedForDay ? '✓' : '📷'}</Text>}
+              />
+            ) : null}
+            {yesterdayVerdict && !loggedForDay ? (
+              <View
+                style={[
+                  styles.verdictTag,
+                  { backgroundColor: verdictTagColor(yesterdayVerdict as 'safe' | 'caution' | 'avoid') },
+                ]}>
+                <Text style={styles.verdictTagText}>Yesterday: {yesterdayVerdict}</Text>
+              </View>
+            ) : null}
+            {streakDays > 0 ? (
+              <View style={styles.photoStreakPill}>
+                <Text style={styles.photoStreakText}>🔥 {streakDays} day streak</Text>
+              </View>
+            ) : null}
+            {!todayThumbnailUrl ? (
+              <Text style={styles.photoCardIcon}>{loggedForDay ? '✓' : '📷'}</Text>
+            ) : null}
+            <Text style={styles.photoCardTitle}>
+              {loggedForDay ? "Today's photo logged" : 'Progress photo preview'}
+            </Text>
+            <Text style={styles.photoCardSub}>
+              {loggedForDay ? 'Streak saved for today' : 'Same angle daily · tracks barrier + skin age'}
+            </Text>
+          </View>
+        ) : null}
+
+        {showStepsHero && evaluate ? (
+          <View style={styles.stepsSection}>
+            <Text style={styles.stepsLabel}>Today&apos;s routine</Text>
+            {(evaluate.routine_step_states?.length ? evaluate.routine_step_states : phaseItems.map((item, i) => ({
+              label: item.product_name || item.usage_time || `Step ${i + 1}`,
+              sub: item.usage_time ? String(item.usage_time).toUpperCase() : item.goal,
+              state: 'todo' as const,
+            }))).map((step, i) => (
+              <RoutineStepRow
+                key={`${step.label}-${i}`}
+                label={step.label}
+                sub={step.sub}
+                state={step.state === 'warn' || step.state === 'skip' ? 'warn' : step.state === 'done' ? 'done' : 'todo'}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {showStepsHero && !evaluate ? <RoutineStepsHero steps={phaseItems} alwaysExpanded /> : null}
 
         {hasTemplate && dayMode === 'today' && phaseLabel ? (
           <View style={styles.phaseProgressCard}>
@@ -359,8 +497,6 @@ export default function TodayScreen() {
             </View>
           </View>
         ) : null}
-
-        {showStepsHero ? <RoutineStepsHero steps={phaseItems} alwaysExpanded /> : null}
 
         {hasTemplate && allowsPhoto && dayMode !== 'today' ? (
           <View style={styles.photoActions}>
@@ -383,7 +519,10 @@ export default function TodayScreen() {
           <View style={styles.thumbSection}>
             <View style={styles.thumbHeader}>
               <Text style={styles.thumbLabel}>Photo history</Text>
-              <Pressable onPress={() => router.push(PROGRESS_HREF)}>
+              <Pressable
+                onPress={() => router.push(PROGRESS_HREF)}
+                accessibilityRole="button"
+                accessibilityLabel="See all photo history">
                 <Text style={styles.thumbLink}>See all</Text>
               </Pressable>
             </View>
@@ -410,7 +549,7 @@ export default function TodayScreen() {
           </View>
         ) : null}
 
-        {layeringWarning && showStepsHero ? (
+        {layeringWarning && showStepsHero && !evaluate?.graph_unavailable ? (
           <View style={styles.layerCard}>
             <Text style={styles.layerTitle}>Layering note</Text>
             <Text style={styles.layerBody}>{layeringWarning}</Text>
@@ -428,6 +567,7 @@ export default function TodayScreen() {
             <Pressable
               onPress={() => setPhaseNotesOpen((v) => !v)}
               accessibilityRole="button"
+              accessibilityLabel={phaseNotesOpen ? 'Hide phase details' : 'More about this phase'}
               accessibilityState={{ expanded: phaseNotesOpen }}>
               <Text style={styles.phaseExpand}>
                 {phaseNotesOpen ? 'Hide phase details' : 'More about this phase'}
@@ -452,13 +592,22 @@ export default function TodayScreen() {
           Not a diagnosis. See a dermatologist if your symptoms worsen or you are unsure.
         </Text>
       </ScrollView>
+      {hasTemplate && allowsPhoto && dayMode === 'today' && !loggedForDay ? (
+        <Pressable
+          style={styles.bottomFab}
+          onPress={openCapture}
+          accessibilityRole="button"
+          accessibilityLabel="Take today's photo">
+          <Text style={styles.bottomFabText}>Take today&apos;s photo</Text>
+        </Pressable>
+      ) : null}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: JournalTokens.color.cream },
-  content: { padding: JournalTokens.spacing.lg, gap: JournalTokens.spacing.sm },
+  content: { padding: JournalTokens.spacing.lg, gap: JournalTokens.spacing.sm, paddingBottom: 100 },
   title: { fontFamily: JournalTokens.font.display, fontSize: 30, color: JournalTokens.color.ink },
   subtitle: { fontFamily: JournalTokens.font.body, color: JournalTokens.color.muted, marginBottom: JournalTokens.spacing.sm },
   todayHeader: {
@@ -476,6 +625,91 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   streakText: { fontSize: 12, fontWeight: '700', color: '#633806' },
+  bioBanner: {
+    backgroundColor: ConflictTokens.cardAmber,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
+  },
+  bioBannerTitle: { fontWeight: '700', color: ConflictTokens.cardAmberText, marginBottom: 4 },
+  bioBannerBody: { fontSize: 13, color: '#4B5563', lineHeight: 18 },
+  metricRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  metricChip: {
+    flex: 1,
+    backgroundColor: JournalTokens.color.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.line,
+    padding: 12,
+    alignItems: 'center',
+  },
+  metricChipValue: { fontSize: 20, fontWeight: '800', color: JournalTokens.color.ink },
+  metricChipLabel: { fontSize: 11, color: JournalTokens.color.muted, marginTop: 2 },
+  stepsSection: { marginTop: 8, marginBottom: 8 },
+  stepsLabel: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginBottom: 8 },
+  heroTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: JournalTokens.color.ink,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: JournalTokens.color.muted,
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  photoCard: {
+    backgroundColor: ConflictTokens.photoBg,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 8,
+    minHeight: 140,
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  photoCardImage: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    opacity: 0.35,
+  },
+  photoStreakPill: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  photoStreakText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  photoCardIcon: { fontSize: 32, marginBottom: 8 },
+  photoCardTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  photoCardSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4, textAlign: 'center' },
+  bottomFab: {
+    position: 'absolute',
+    bottom: 24,
+    left: JournalTokens.spacing.lg,
+    right: JournalTokens.spacing.lg,
+    backgroundColor: ConflictTokens.fabBg,
+    borderRadius: 999,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  bottomFabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  verdictTag: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  verdictTagText: { color: '#fff', fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   phaseProgressCard: {
     backgroundColor: JournalTokens.color.card,
     borderRadius: 14,

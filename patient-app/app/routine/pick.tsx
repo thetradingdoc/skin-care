@@ -87,7 +87,11 @@ export default function RoutinePickScreen() {
         return;
       }
       await patientPost('/api/patient/routine/template', { concern_id: selected });
-      await SecureStore.deleteItemAsync(PENDING_ROUTINE_CONCERN_KEY);
+      try {
+        await SecureStore.deleteItemAsync(PENDING_ROUTINE_CONCERN_KEY);
+      } catch {
+        /* web static export may not expose SecureStore delete */
+      }
       router.replace('/(tabs)/today');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not start routine.');

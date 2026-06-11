@@ -9,8 +9,8 @@ import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
 import { PENDING_ROUTINE_CONCERN_KEY } from '@/constants/routineSession';
-import { ROUTINE_PICK_HREF, TODAY_HREF } from '@/constants/routes';
-import { patientGet } from '@/lib/patient-api';
+import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
+import { ROUTINE_PICK_HREF } from '@/constants/routes';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
 import { completeSkinAgeJourney, hasSkinAgeJourneyData } from '@/lib/skin-age-journey';
 
@@ -96,14 +96,7 @@ export default function SignInScreen() {
         }
         const sid = await getPatientSessionId();
         if (!sid) return;
-        const template = await patientGet('/api/patient/routine/template').catch(() => ({
-          has_template: false,
-        }));
-        if (template?.has_template) {
-          router.replace(TODAY_HREF);
-          return;
-        }
-        router.replace(ROUTINE_PICK_HREF);
+        router.replace(await resolvePostAuthRoute());
       } catch {
         // stay on sign-in
       } finally {
@@ -125,20 +118,18 @@ export default function SignInScreen() {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
       pendingConcern = localStorage.getItem(PENDING_ROUTINE_CONCERN_KEY);
     }
-    const template = await patientGet('/api/patient/routine/template').catch(() => ({
-      has_template: false,
-    }));
-    if (template?.has_template) {
-      if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-        localStorage.removeItem(PENDING_ROUTINE_CONCERN_KEY);
-      }
-      router.replace(TODAY_HREF);
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      localStorage.removeItem(PENDING_ROUTINE_CONCERN_KEY);
+    }
+    const route = await resolvePostAuthRoute();
+    if (route === ROUTINE_PICK_HREF && pendingConcern) {
+      router.replace({
+        pathname: '/routine/pick',
+        params: { concern: pendingConcern },
+      } as Href);
       return;
     }
-    router.replace({
-      pathname: '/routine/pick',
-      params: pendingConcern ? { concern: pendingConcern } : {},
-    } as Href);
+    router.replace(route);
   }
 
   if (checkingSession) {

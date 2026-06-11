@@ -67,13 +67,17 @@ async function verifyLocalDist() {
     'patients/legal/privacy.html',
     'patients/patient-login.html',
     'app/index.html',
+    'app/(tabs)/scan.html',
+    'app/verdict/[productId].html',
     'assets/js/api-base.js',
     'assets/js/contact-form.js',
     'assets/css/logo-wordmark.css',
     'assets/brand/fonts/BeVietnamPro-BoldItalic.ttf',
   ]) {
     const p = path.join(HOSTING_DIST, rel);
-    if (!fs.existsSync(p)) fail(`Missing ${rel}`);
+    if (!fs.existsSync(p)) {
+      fail(`Missing ${rel}. Run: node scripts/build-consumer-hosting.cjs (or middleware-platform/scripts/ensure-conflict-engine-hosting.cjs)`);
+    }
     ok(rel);
   }
 

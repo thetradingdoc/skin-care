@@ -70,13 +70,13 @@ function normalizeFrozenSteps(frozenSteps) {
   }));
 }
 
-function buildPhotoSkinReport({ entryDate, phase, storageRef, frozenSteps, dayMode, symptomTags }) {
+function buildPhotoSkinReport({ entryDate, phase, storageRef, frozenSteps, dayMode, symptomTags, evaluateResult }) {
   const assistantSummary = buildPhotoAssistantSummary({ entryDate, phase });
   const programWeek = Number(phase?.program_week) || 1;
   const totalWeeks = Number(phase?.total_weeks) || 12;
   const phaseLabel = phase?.label ? String(phase.label).trim() : null;
 
-  return {
+  const report = {
     source: 'patient_photo',
     entry_date: String(entryDate || '').trim(),
     program_week: programWeek,
@@ -93,6 +93,20 @@ function buildPhotoSkinReport({ entryDate, phase, storageRef, frozenSteps, dayMo
       ? symptomTags.map((t) => String(t).trim()).filter(Boolean).slice(0, 8)
       : [],
   };
+
+  if (evaluateResult?.success) {
+    report.lineup_hash = evaluateResult.lineup_hash;
+    report.verdict_snapshot = {
+      overall: evaluateResult.overall,
+      compatibility_score: evaluateResult.compatibility_score,
+      barrier_friction_index: evaluateResult.barrier_friction_index,
+      conflict_count: (evaluateResult.conflicts || []).length,
+    };
+    report.barrier_friction_index = evaluateResult.barrier_friction_index;
+    report.verdict_overall = evaluateResult.overall;
+  }
+
+  return report;
 }
 
 /**
@@ -119,6 +133,7 @@ function applyPhotoDayCompletion(opts) {
     storageRef,
     todayIso,
     symptomTags,
+    evaluateResult,
   } = opts;
 
   const dayMode = resolveRoutineDayMode(entryDate, todayIso);
@@ -130,6 +145,7 @@ function applyPhotoDayCompletion(opts) {
     frozenSteps,
     dayMode: dayMode.mode,
     symptomTags: symptomTags || [],
+    evaluateResult,
   });
   const skinReport = JSON.stringify(skinReportObj);
 

@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhotoAlignPreview } from '@/components/PhotoAlignPreview';
+import { useToast } from '@/components/billing-feedback';
 import { JournalTokens } from '@/constants/journalTokens';
+import { fetchLineupPreview } from '@/lib/conflict-api';
 import { fetchPriorProgressPhotoUrl } from '@/lib/routine-capture-overlay';
 import { uploadRoutineProgressPhoto } from '@/lib/routine-capture';
 import { setFirstPhotoLogged } from '@/lib/onboarding-storage';
@@ -25,6 +27,7 @@ const SYMPTOM_OPTIONS = ['Redness', 'Stinging', 'New breakout', 'Dryness', 'Itch
 
 export default function RoutineCaptureScreen() {
   const router = useRouter();
+  const { showToast } = useToast();
   const params = useLocalSearchParams<{ date?: string; libraryUri?: string }>();
   const entryDate =
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
@@ -42,6 +45,7 @@ export default function RoutineCaptureScreen() {
   const [symptomsOpen, setSymptomsOpen] = useState(false);
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [alignOpen, setAlignOpen] = useState(false);
+  const [preflight, setPreflight] = useState<string | null>(null);
 
   const dayMode = resolveRoutineDayMode(entryDate);
   const allowsPhoto = dayMode.allows_photo;
@@ -65,14 +69,41 @@ export default function RoutineCaptureScreen() {
     })();
   }, [entryDate]);
 
-  const finishSuccess = useCallback(() => {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    void setFirstPhotoLogged();
-    router.replace({
-      pathname: '/(tabs)/today',
-      params: { date: entryDate, celebrate: '1' },
-    });
-  }, [entryDate, router]);
+  useEffect(() => {
+    void (async () => {
+      try {
+        const preview = await fetchLineupPreview(entryDate);
+        const block = preview?.preview || preview?.verdict || preview;
+        const overall = block?.overall;
+        const conflictCount = Number(block?.conflict_count) || 0;
+        if (overall && overall !== 'safe') {
+          setPreflight(`Today's stack: ${overall}${conflictCount ? ` — ${conflictCount} conflict${conflictCount === 1 ? '' : 's'}` : ''}`);
+        } else if (conflictCount > 0) {
+          setPreflight(`Today's stack: caution — ${conflictCount} conflict${conflictCount === 1 ? '' : 's'}`);
+        } else {
+          const bfi = block?.barrier_friction_index;
+          if (bfi != null && bfi < 80) {
+            setPreflight(`Barrier under mild stress (BFI ${Math.round(bfi)}) — we'll track how today compares.`);
+          }
+        }
+      } catch {
+        setPreflight(null);
+      }
+    })();
+  }, [entryDate]);
+
+  const finishSuccess = useCallback(
+    (verdictLine?: string) => {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      void setFirstPhotoLogged();
+      if (verdictLine) showToast(verdictLine, 'success');
+      router.replace({
+        pathname: '/(tabs)/today',
+        params: { date: entryDate, celebrate: '1' },
+      });
+    },
+    [entryDate, router, showToast],
+  );
 
   const uploadPhoto = useCallback(
     async (uri: string) => {
@@ -85,14 +116,14 @@ export default function RoutineCaptureScreen() {
           uri,
           symptomTags: symptoms,
         });
-        finishSuccess();
+        finishSuccess(preflight ? `Photo saved · ${preflight.split('—')[0].trim()}` : 'Photo saved with today\'s verdict');
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : 'Could not save photo.');
       } finally {
         setBusy(false);
       }
     },
-    [allowsPhoto, entryDate, finishSuccess, symptoms]
+    [allowsPhoto, entryDate, finishSuccess, preflight, symptoms]
   );
 
   const renderSymptoms = () => (
@@ -212,6 +243,7 @@ export default function RoutineCaptureScreen() {
         ) : null}
         <View style={styles.guideFrame} pointerEvents="none" />
         <SafeAreaView edges={['top']} style={styles.hintBar}>
+          {preflight ? <Text style={styles.preflightBanner}>{preflight}</Text> : null}
           <Text style={styles.hintText}>
             {ghostUrl && ghostPriorDate
               ? `Line up with your photo from ${ghostPriorDate}`
@@ -267,7 +299,16 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     margin: 24,
   },
-  hintBar: { position: 'absolute', top: 0, left: 0, right: 0, padding: 16 },
+  hintBar: { position: 'absolute', top: 0, left: 0, right: 0, padding: 16, gap: 8 },
+  preflightBanner: {
+    backgroundColor: 'rgba(239,159,39,0.9)',
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    padding: 8,
+    borderRadius: 8,
+  },
   hintText: { color: '#fff', fontSize: 14, textAlign: 'center', fontWeight: '600' },
   controls: {
     backgroundColor: 'rgba(15,23,42,0.92)',

@@ -36,9 +36,9 @@ import {
   fetchWith429Retry,
   resolveProductImageForCheckout,
 } from '@/lib/checkoutCatalogHelpers';
+import { getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
 
 const API_BASE = API_BASE_URL;
-const SESSION_KEY = 'patient_session_id';
 const API_BASE_KEY = 'patient_api_base_url';
 
 const KELLY_QUOTE_KEY = 'somo_kelly_commerce_quote_v1';
@@ -159,13 +159,13 @@ export default function CheckoutChatScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const storedBase = await SecureStore.getItemAsync(API_BASE_KEY);
+        const storedBase = await getStoredApiBase();
         if (storedBase && storedBase !== API_BASE) {
           setError('Sign in again on the Home tab after changing API URL.');
           setSessionLoading(false);
           return;
         }
-        const sid = await SecureStore.getItemAsync(SESSION_KEY);
+        const sid = await getPatientSessionId();
         setSessionId(sid);
         const qid = await loadPersistedQuoteId();
         if (qid) setCommerceQuoteId(qid);
@@ -610,7 +610,7 @@ export default function CheckoutChatScreen() {
         </Text>
         <Pressable
           style={styles.btn}
-          onPress={() => router.replace('/(tabs)' as never)}
+          onPress={() => router.replace('/(tabs)/home' as never)}
           accessibilityRole="button"
           accessibilityLabel="Go to Home">
           <Text style={styles.btnText}>Go to Home</Text>

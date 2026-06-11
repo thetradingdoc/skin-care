@@ -35,6 +35,8 @@ function buildGateRejectFaceRead(cvResult) {
     user_message: cvResult.user_message || 'We could not analyze this photo. Try again.',
     findings: [],
     concern_scores: {},
+    health_scores: {},
+    age_unreliable: false,
     scan_summary: '',
     positive_observations: [],
     model_id: cvResult.model_id,
@@ -53,12 +55,42 @@ function buildWrongSubjectFaceRead(vision) {
       'This looks like a body part — we need your face for this scan.',
     findings: [],
     concern_scores: {},
+    health_scores: {},
+    age_unreliable: false,
     scan_summary: '',
     positive_observations: [],
     model_id: vision.model_id || VISION_MODEL_ID,
     model_version: vision.model_version,
     not_diagnosis: true,
   };
+}
+
+function isDeepSkinTone(visionResult) {
+  const tone = String(visionResult?.fit_skin_tone || '').toLowerCase();
+  if (tone === 'dark' || tone === 'deep') return true;
+  const fitz = String(visionResult?.fitzpatrick_estimate || '');
+  return /\bV\b|VI/i.test(fitz);
+}
+
+function concernScoresEmpty(scores) {
+  if (!scores || typeof scores !== 'object') return true;
+  return Object.values(scores).every((v) => (Number(v) || 0) === 0);
+}
+
+function computeAgeUnreliable(cvResult, visionResult, { visionError = null } = {}) {
+  const age = Number(cvResult?.apparent_age_estimate);
+  if (!Number.isFinite(age)) return false;
+  if (!isDeepSkinTone(visionResult)) return false;
+
+  const findings = visionResult?.findings ?? [];
+  const quality = visionResult?.quality || cvResult?.quality || 'ok';
+  const scoresEmpty = concernScoresEmpty(visionResult?.concern_scores);
+
+  return Boolean(
+    visionError ||
+      quality === 'low' ||
+      (findings.length === 0 && scoresEmpty),
+  );
 }
 
 /**
@@ -97,12 +129,14 @@ function mergeFaceReadResults(cvResult, visionResult, { visionError = null } = {
     fit_skin_tone: visionResult?.fit_skin_tone ?? null,
     fitzpatrick_estimate: visionResult?.fitzpatrick_estimate ?? null,
     concern_scores: visionResult?.concern_scores ?? {},
+    health_scores: visionResult?.health_scores ?? {},
     findings: visionResult?.findings ?? [],
     scan_summary: visionResult?.scan_summary ?? '',
     positive_observations: visionResult?.positive_observations ?? [],
     not_diagnosis: true,
     vision_enabled: process.env.FACE_READ_VISION_ENABLED === '1',
     vision_error: visionError || null,
+    age_unreliable: computeAgeUnreliable(cvResult, visionResult, { visionError }),
     model_id: visionResult?.model_id || cvResult?.model_id,
     model_version: visionResult?.model_version || cvResult?.model_version,
     zone_ages_estimated: false,
@@ -121,5 +155,7 @@ module.exports = {
   isGateReject,
   buildGateRejectFaceRead,
   buildWrongSubjectFaceRead,
+  computeAgeUnreliable,
+  isDeepSkinTone,
   GATE_REJECT_REASONS,
 };

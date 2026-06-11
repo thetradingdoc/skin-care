@@ -66,7 +66,11 @@ export default function OnboardingScanScreen() {
             stays on this device until you create an account.
           </Text>
           <PrimaryButton label="Allow camera" onPress={() => void requestPermission()} />
-          <Pressable onPress={skip} style={styles.skipBtn}>
+          <Pressable
+            onPress={skip}
+            style={styles.skipBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Skip for now">
             <Text style={styles.skipText}>Skip for now</Text>
           </Pressable>
         </View>
@@ -89,7 +93,12 @@ export default function OnboardingScanScreen() {
           label={busy ? 'Analyzing…' : 'Scan now'}
           onPress={() => void capture()}
         />
-        <Pressable onPress={skip} style={styles.skipBtn} disabled={busy}>
+        <Pressable
+          onPress={skip}
+          style={styles.skipBtn}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Skip for now">
           <Text style={styles.skipText}>Skip for now</Text>
         </Pressable>
         <Text style={styles.disclaimer}>Skin age estimate · Not a medical diagnosis</Text>

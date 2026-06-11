@@ -74,6 +74,10 @@ export async function getStoredApiBase(): Promise<string | null> {
   return secureGet(API_BASE_KEY);
 }
 
+export async function getStoredEmail(): Promise<string | null> {
+  return secureGet(EMAIL_KEY);
+}
+
 export async function setPatientSession(sessionId: string, email?: string): Promise<void> {
   await secureSet(SESSION_KEY, sessionId);
   await secureSet(API_BASE_KEY, API_BASE_URL);

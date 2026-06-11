@@ -171,6 +171,156 @@ app.post('/api/patient/shelf/products/:productId/link-routine-item', (req, res, 
     return res.status(500).json({ success: false, error: e.message });
   }
 });
+
+app.post('/api/patient/shelf/products', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, async (req, res) => {
+  try {
+    ensurePatientShelfInventoryColumns();
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const name = String(body.product_name || body.name || '').trim();
+    if (!name) return res.status(400).json({ success: false, error: 'product_name required' });
+    const usageTime = String(body.usage_time || 'pm').trim();
+    const category = String(body.category || 'treatment').trim();
+    const ingredientsText = body.ingredients_text ? String(body.ingredients_text) : null;
+    const { extractActivesFromText, persistCanonicalIds } = require('../services/patient-lineup-resolver-service');
+    const ids = extractActivesFromText(`${name} ${ingredientsText || ''} ${body.key_ingredients || ''}`);
+    const id = `shelf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    db.db.prepare(`
+      INSERT INTO patient_onboarding_step3_products (
+        id, session_id, patient_id, selection_mode, custom_product_name, custom_brand,
+        category, usage_time, goal, key_ingredients, ingredients_text, ingredient_canonical_ids_json
+      ) VALUES (?, ?, ?, 'custom', ?, ?, ?, ?, 'conflict_track', ?, ?, ?)
+    `).run(
+      id,
+      sessionId,
+      patientId || null,
+      name,
+      body.brand ? String(body.brand) : null,
+      category,
+      usageTime,
+      body.key_ingredients ? String(body.key_ingredients).slice(0, 2000) : null,
+      ingredientsText,
+      JSON.stringify(ids)
+    );
+    persistCanonicalIds(db.db, id, ids);
+    const row = loadPatientShelfProductRows(sessionId).find((r) => r.id === id);
+    return res.json({ success: true, product: formatShelfProductApiRow(row) });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/patient/shelf/products/scan', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, async (req, res) => {
+  try {
+    ensurePatientShelfInventoryColumns();
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const barcode = String(req.body?.barcode || '').trim();
+    if (!barcode) return res.status(400).json({ success: false, error: 'barcode required' });
+    const { resolveProductIdentityFromBarcode } = require('../services/product-identity-resolver');
+    const resolved = await resolveProductIdentityFromBarcode(barcode);
+    if (!resolved.success) {
+      return res.status(404).json({ success: false, error: 'product_not_found', barcode });
+    }
+    const n = resolved.normalized;
+    const productName = n.product_name || `Product ${barcode}`;
+    const { extractActivesFromText, persistCanonicalIds } = require('../services/patient-lineup-resolver-service');
+    const ids = extractActivesFromText(n.ingredients_text || productName);
+    const id = `shelf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    db.db.prepare(`
+      INSERT INTO patient_onboarding_step3_products (
+        id, session_id, patient_id, selection_mode, catalog_product_id, custom_product_name,
+        category, usage_time, goal, ingredients_text, barcode, ingredient_canonical_ids_json, key_ingredients
+      ) VALUES (?, ?, ?, 'catalog', ?, ?, 'treatment', ?, 'conflict_track', ?, ?, ?, ?)
+    `).run(
+      id,
+      sessionId,
+      patientId || null,
+      `obf:${barcode}`,
+      productName,
+      String(req.body?.usage_time || 'pm'),
+      n.ingredients_text || null,
+      barcode,
+      JSON.stringify(ids),
+      (n.ingredients_text || '').slice(0, 200)
+    );
+    persistCanonicalIds(db.db, id, ids);
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const evaluate = evaluatePatientLineup(db.db, { sessionId, patientId, highlightProductId: id });
+    if (typeof recordPatientPortalEvent === 'function') {
+      recordPatientPortalEvent(req, 'shelf.scan', { barcode, product_id: id });
+    }
+    const row = loadPatientShelfProductRows(sessionId).find((r) => r.id === id);
+    return res.json({
+      success: true,
+      product: formatShelfProductApiRow(row),
+      evaluate,
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/patient/shelf/evaluate-pair', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, (req, res) => {
+  try {
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const ids = Array.isArray(req.body?.product_ids) ? req.body.product_ids.map(String).slice(0, 2) : [];
+    if (ids.length < 1) return res.status(400).json({ success: false, error: 'product_ids required' });
+    const highlightId = String(req.body?.highlight_product_id || ids[0] || '').trim();
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const result = evaluatePatientLineup(db.db, {
+      sessionId,
+      patientId,
+      highlightProductId: highlightId || null,
+    });
+    if (typeof recordPatientPortalEvent === 'function' && result.success) {
+      recordPatientPortalEvent(req, 'conflict.evaluate.request', {
+        overall: result.overall,
+        compatibility_score: result.compatibility_score,
+        conflict_count: (result.conflicts || []).length,
+        highlight_product_id: highlightId,
+        source: 'evaluate_pair',
+      });
+      const bfi = Number(result.barrier_friction_index);
+      if (Number.isFinite(bfi)) {
+        if (bfi < 60) recordPatientPortalEvent(req, 'bfi.critical', { barrier_friction_index: bfi });
+        else if (bfi < 80) recordPatientPortalEvent(req, 'bfi.elevated', { barrier_friction_index: bfi });
+      }
+    }
+    return res.json({ success: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/patient/shelf/products/:productId/verdict-action', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, (req, res) => {
+  try {
+    ensurePatientShelfInventoryColumns();
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const productId = String(req.params.productId || '').trim();
+    const action = String(req.body?.action || '').trim().toLowerCase();
+    const row = db.db.prepare(`SELECT id FROM patient_onboarding_step3_products WHERE id = ? AND session_id = ?`).get(productId, sessionId);
+    if (!row) return res.status(404).json({ success: false, error: 'Product not found' });
+    if (action === 'remove') {
+      db.db.prepare(`UPDATE patient_onboarding_step3_products SET inventory_status = 'finished', updated_at = datetime('now') WHERE id = ?`).run(productId);
+    } else if (action === 'keep') {
+      db.db.prepare(`UPDATE patient_onboarding_step3_products SET kept_despite_conflict = 1, verdict_status = 'kept', updated_at = datetime('now') WHERE id = ?`).run(productId);
+    } else {
+      return res.status(400).json({ success: false, error: 'action must be remove or keep' });
+    }
+    if (typeof recordPatientPortalEvent === 'function') {
+      recordPatientPortalEvent(req, 'shelf.verdict_action', { product_id: productId, action });
+    }
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const evaluate = evaluatePatientLineup(db.db, { sessionId, patientId });
+    return res.json({ success: true, action, evaluate });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
 }
 
 module.exports = { registerPatientShelfRoutes };

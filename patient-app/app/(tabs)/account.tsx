@@ -3,14 +3,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
-
 import { useToast } from '@/components/billing-feedback';
 import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
 import { JournalTokens } from '@/constants/journalTokens';
+import { fetchBioProfile } from '@/lib/conflict-api';
+import type { BioProfile } from '@/lib/conflict-types';
 import { patientGet, patientPost } from '@/lib/patient-api';
-import { clearPatientSession, EMAIL_KEY } from '@/lib/patient-session';
-import { SIGN_IN_HREF } from '@/constants/routes';
+import { clearPatientSession, getStoredEmail } from '@/lib/patient-session';
+import { SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
 
 type PlanTier = 'free' | 'care_program' | 'plus';
 
@@ -32,11 +32,12 @@ export default function AccountScreen() {
   const [carePricing, setCarePricing] = useState<CareProgramPricing | null>(null);
   const [walletEnabled, setWalletEnabled] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [bioProfile, setBioProfile] = useState<BioProfile | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const storedEmail = await SecureStore.getItemAsync(EMAIL_KEY);
+      const storedEmail = await getStoredEmail();
       if (!storedEmail) {
         setSignedIn(false);
         setEmail(null);
@@ -47,11 +48,13 @@ export default function AccountScreen() {
       setSignedIn(true);
       setEmail(storedEmail);
 
-      const [template, sub, features] = await Promise.all([
+      const [template, sub, features, bio] = await Promise.all([
         patientGet('/api/patient/routine/template').catch(() => null),
         patientGet('/api/patient/billing/subscription').catch(() => null),
         patientGet('/api/patient/features').catch(() => null),
+        fetchBioProfile().catch(() => null),
       ]);
+      setBioProfile(bio);
 
       if (template?.has_template && template?.template?.name) {
         setProgramName(String(template.template.name));
@@ -140,6 +143,22 @@ export default function AccountScreen() {
               ) : (
                 <Text style={styles.programMuted}>No active routine program</Text>
               )}
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Skin profile</Text>
+              <Text style={styles.cardBody}>
+                {bioProfile?.conditions?.length
+                  ? `Conditions: ${bioProfile.conditions.join(', ').replace(/_/g, ' ')}`
+                  : 'No conditions saved yet.'}
+                {bioProfile?.prescriptions?.length
+                  ? `\nPrescriptions: ${bioProfile.prescriptions.join(', ')}`
+                  : ''}
+              </Text>
+              <PrimaryButton
+                label="Edit skin profile"
+                onPress={() => router.push(BIO_CALIBRATION_HREF)}
+              />
             </View>
 
             <View style={styles.card}>

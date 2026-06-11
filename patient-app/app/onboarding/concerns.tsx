@@ -112,7 +112,9 @@ export default function OnboardingConcernsScreen() {
               <Pressable
                 key={c.id}
                 onPress={() => toggle(c.id)}
-                style={[styles.chip, active && styles.chipActive]}>
+                style={[styles.chip, active && styles.chipActive]}
+                accessibilityRole="button"
+                accessibilityLabel={c.label}>
                 <Text style={[styles.chipText, active && styles.chipTextActive]}>{c.label}</Text>
               </Pressable>
             );
@@ -123,7 +125,11 @@ export default function OnboardingConcernsScreen() {
           label={busy ? 'Saving…' : 'Continue'}
           onPress={() => void continueNext()}
         />
-        <Pressable onPress={() => void skip()} style={styles.skipBtn}>
+        <Pressable
+          onPress={() => void skip()}
+          style={styles.skipBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Not sure — skip">
           <Text style={styles.skipText}>Not sure — skip</Text>
         </Pressable>
       </ScrollView>

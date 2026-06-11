@@ -115,7 +115,11 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>{BillingV1.copy.emptyHomeTitle}</Text>
             <Text style={styles.cardBody}>{BillingV1.copy.emptyHomeBody}</Text>
-            <Pressable style={styles.cta} onPress={() => router.push('/scan-entry')}>
+            <Pressable
+              style={styles.cta}
+              onPress={() => router.push('/scan-entry')}
+              accessibilityRole="button"
+              accessibilityLabel="First capture">
               <Text style={styles.ctaText}>First capture</Text>
             </Pressable>
           </View>

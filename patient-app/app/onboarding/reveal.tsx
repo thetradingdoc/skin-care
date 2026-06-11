@@ -10,12 +10,20 @@ import {
   Text,
   TextInput,
   View,
+  type DimensionValue,
+  type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/billing-ui';
+import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
 import { JournalTokens } from '@/constants/journalTokens';
 import { ONBOARDING_CONCERNS_HREF, ONBOARDING_SCAN_HREF } from '@/constants/routes';
+import {
+  HEALTH_SCORE_KEYS,
+  HEALTH_SCORE_LABELS,
+  meterColor,
+  resolveHealthScores,
+} from '@/lib/computeHealthScores';
 import { computeSkinAge } from '@/lib/computeSkinAge';
 import { isLiveFaceRead } from '@/lib/face-read-api';
 import type { FaceReadPayload } from '@/lib/onboarding-storage';
@@ -28,12 +36,13 @@ import {
   setFaceRead,
 } from '@/lib/onboarding-storage';
 import {
-  concernFallbackChips,
+  buildZoneOverlays,
+  concernScoresToFindingCards,
   findingIcon,
-  fitzpatrickToneLabel,
+  fitzDisplay,
   isVisionFailed,
+  scanInsightText,
   severityLabel,
-  SEV_COLORS,
   zoneCentroids,
 } from '@/lib/revealHelpers';
 
@@ -69,18 +78,32 @@ export default function OnboardingRevealScreen() {
   const faceAge = faceRead?.apparent_age_estimate;
   const concernScores = faceRead?.concern_scores ?? {};
   const findings = Array.isArray(faceRead?.findings) ? faceRead.findings : [];
-  const fallbackChips = useMemo(
-    () => (findings.length ? [] : concernFallbackChips(concernScores)),
-    [findings.length, concernScores],
-  );
   const visionFailed = isVisionFailed(faceRead);
   const skinAge = useMemo(
     () => (faceAge != null && !visionFailed ? computeSkinAge(faceAge, concernScores) : null),
     [faceAge, concernScores, visionFailed],
   );
-  const centroids = useMemo(
-    () => zoneCentroids(faceRead?.zone_polygons),
-    [faceRead?.zone_polygons],
+  const healthScores = useMemo(
+    () => (!visionFailed ? resolveHealthScores(faceRead) : null),
+    [faceRead, visionFailed],
+  );
+  const displayFindings = useMemo(() => {
+    if (visionFailed) return [];
+    if (findings.length > 0) return findings;
+    return concernScoresToFindingCards(concernScores);
+  }, [findings, concernScores, visionFailed]);
+  const zoneOverlays = useMemo(
+    () => (visionFailed ? [] : buildZoneOverlays(findings, zoneCentroids(faceRead?.zone_polygons))),
+    [findings, faceRead?.zone_polygons, visionFailed],
+  );
+  const fitz = useMemo(
+    () => fitzDisplay(faceRead?.fitzpatrick_estimate, faceRead?.fit_skin_tone),
+    [faceRead?.fitzpatrick_estimate, faceRead?.fit_skin_tone],
+  );
+  const insight = useMemo(
+    () =>
+      !visionFailed ? scanInsightText(faceRead?.scan_summary, faceRead?.positive_observations) : null,
+    [faceRead, visionFailed],
   );
 
   const retake = useCallback(async () => {
@@ -109,10 +132,14 @@ export default function OnboardingRevealScreen() {
     );
   }
 
+  const skinDelta = skinAge != null && faceAge != null ? skinAge - faceAge : 0;
+
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={styles.tag}>Your scan</Text>
+        <View style={styles.topbar}>
+          <Text style={styles.tag}>Your scan</Text>
+        </View>
 
         <View style={[styles.photoFrame, visionFailed && styles.photoDim]}>
           {photoUri ? (
@@ -122,32 +149,35 @@ export default function OnboardingRevealScreen() {
               <Ionicons name="person" size={48} color={JournalTokens.color.muted} />
             </View>
           )}
-          {!visionFailed &&
-            findings.flatMap((f) =>
-              (f.zones || []).map((zone) => {
-                const c = centroids[zone];
-                if (!c) return null;
-                return (
-                  <View
-                    key={`${f.id}-${zone}`}
-                    style={[
-                      styles.zoneDot,
-                      {
-                        left: `${c.x * 100}%`,
-                        top: `${c.y * 100}%`,
-                        backgroundColor: SEV_COLORS[f.severity ?? 1] || '#888780',
-                      },
-                    ]}
-                  />
-                );
-              }),
-            )}
+          {zoneOverlays.map((o) => {
+            const dotStyle: ViewStyle = {
+              left: o.dot.left as DimensionValue,
+              top: o.dot.top as DimensionValue,
+              backgroundColor: o.dot.color,
+            };
+            const lineStyle: ViewStyle = {
+              left: o.line.left as DimensionValue,
+              top: o.line.top as DimensionValue,
+              width: o.line.width,
+              transform: [{ rotate: `${o.line.rotate}deg` }],
+            };
+            const labelStyle: ViewStyle = {
+              top: o.label.top as DimensionValue,
+              ...(o.label.left ? { left: o.label.left as DimensionValue } : {}),
+              ...(o.label.right ? { right: o.label.right as DimensionValue } : {}),
+            };
+            return (
+            <View key={o.key} pointerEvents="none">
+              <View style={[styles.zoneDot, dotStyle]} />
+              <View style={[styles.zoneLine, lineStyle]} />
+              <View style={[styles.zoneLabel, labelStyle]}>
+                <Text style={styles.zoneLabelText}>{o.label.text}</Text>
+              </View>
+            </View>
+            );
+          })}
           <View style={[styles.badge, visionFailed && styles.badgeWarn]}>
-            <Ionicons
-              name={visionFailed ? 'warning' : 'checkmark-circle'}
-              size={14}
-              color="#fff"
-            />
+            <Ionicons name={visionFailed ? 'warning' : 'checkmark-circle'} size={14} color="#fff" />
             <Text style={styles.badgeText}>
               {visionFailed ? 'Needs better lighting' : 'Scan complete'}
             </Text>
@@ -159,29 +189,32 @@ export default function OnboardingRevealScreen() {
             <View style={styles.scoreCard}>
               <Text style={styles.scoreN}>{faceAge}</Text>
               <Text style={styles.scoreL}>Face age</Text>
+              {faceRead?.age_unreliable ? (
+                <Text style={styles.scoreNote}>
+                  Estimate may vary on deep skin tones — retake in good light for best results.
+                </Text>
+              ) : null}
             </View>
-            {skinAge != null && skinAge !== faceAge ? (
+            {skinAge != null ? (
               <View style={styles.scoreCard}>
-                <Text style={[styles.scoreN, styles.scoreWarn]}>{skinAge}</Text>
+                <Text style={[styles.scoreN, skinDelta > 0 && styles.scoreWarn]}>{skinAge}</Text>
                 <Text style={styles.scoreL}>Skin age</Text>
-                <Text style={styles.scoreDelta}>+{skinAge - faceAge} yrs gap</Text>
+                <Text style={[styles.scoreDelta, skinDelta <= 0 && styles.scoreDeltaOk]}>
+                  {skinDelta > 0 ? `+${skinDelta} yrs` : skinDelta < 0 ? `${skinDelta} yrs` : 'Aligned'}
+                </Text>
               </View>
             ) : null}
             {faceRead?.fitzpatrick_estimate ? (
               <View style={styles.scoreCard}>
-                <Text style={[styles.scoreN, styles.scoreSm]}>{faceRead.fitzpatrick_estimate}</Text>
-                <Text style={styles.scoreL}>Fitzpatrick</Text>
-                <Text style={styles.scoreDeltaMuted}>
-                  {fitzpatrickToneLabel(faceRead.fit_skin_tone, faceRead.fitzpatrick_estimate)}
-                </Text>
+                <Text style={[styles.scoreN, styles.scoreSm]}>{fitz.short}</Text>
+                <Text style={styles.scoreL}>{fitz.toneLine || 'tone'}</Text>
+                {fitz.skinLine ? <Text style={styles.scoreDeltaMuted}>{fitz.skinLine}</Text> : null}
               </View>
             ) : null}
           </View>
         ) : null}
 
-        {!visionFailed && faceRead?.scan_summary ? (
-          <Text style={styles.summary}>{faceRead.scan_summary}</Text>
-        ) : null}
+        {!visionFailed && insight ? <Text style={styles.insight}>{insight}</Text> : null}
 
         {visionFailed ? (
           <View style={styles.retryBlock}>
@@ -209,12 +242,12 @@ export default function OnboardingRevealScreen() {
           </View>
         ) : null}
 
-        {!visionFailed && findings.length > 0 ? (
+        {!visionFailed && displayFindings.length > 0 ? (
           <>
             <Text style={styles.sectionLabel}>What we found</Text>
-            {findings.map((f, i) => {
+            {displayFindings.map((f, i) => {
               const { icon, bg, color } = findingIcon(f.id);
-              const description = f.plain_language || f.detail || '';
+              const description = f.plain_language || ('detail' in f ? f.detail : '') || '';
               return (
                 <View key={f.id || i} style={styles.findingCard}>
                   <View style={[styles.findingIcon, { backgroundColor: bg }]}>
@@ -225,8 +258,16 @@ export default function OnboardingRevealScreen() {
                     {description ? <Text style={styles.findingDesc}>{description}</Text> : null}
                   </View>
                   {f.severity ? (
-                    <View style={[styles.sevChip, styles[`sev${f.severity}` as 'sev1' | 'sev2' | 'sev3']]}>
-                      <Text style={[styles.sevText, styles[`sevText${f.severity}` as 'sevText1' | 'sevText2' | 'sevText3']]}>
+                    <View
+                      style={[
+                        styles.sevChip,
+                        styles[`sev${f.severity}` as 'sev1' | 'sev2' | 'sev3'],
+                      ]}>
+                      <Text
+                        style={[
+                          styles.sevText,
+                          styles[`sevText${f.severity}` as 'sevText1' | 'sevText2' | 'sevText3'],
+                        ]}>
                         {severityLabel(f.severity)}
                       </Text>
                     </View>
@@ -237,17 +278,22 @@ export default function OnboardingRevealScreen() {
           </>
         ) : null}
 
-        {!visionFailed && !findings.length && fallbackChips.length > 0 ? (
+        {!visionFailed && healthScores ? (
           <>
-            <Text style={styles.sectionLabel}>What we found</Text>
-            <View style={styles.chipRow}>
-              {fallbackChips.map((chip) => (
-                <View key={chip.id} style={styles.chip}>
-                  <Text style={styles.chipLabel}>{chip.label}</Text>
-                  <Text style={styles.chipScore}>{chip.severity}/3</Text>
+            <Text style={styles.sectionLabel}>Skin health score</Text>
+            {HEALTH_SCORE_KEYS.map((key) => {
+              const value = healthScores[key];
+              const color = meterColor(value);
+              return (
+                <View key={key} style={styles.meterRow}>
+                  <Text style={styles.meterLabel}>{HEALTH_SCORE_LABELS[key]}</Text>
+                  <View style={styles.meterBar}>
+                    <View style={[styles.meterFill, { width: `${value}%`, backgroundColor: color }]} />
+                  </View>
+                  <Text style={[styles.meterVal, { color }]}>{value}</Text>
                 </View>
-              ))}
-            </View>
+              );
+            })}
           </>
         ) : null}
 
@@ -275,24 +321,24 @@ export default function OnboardingRevealScreen() {
                 <PrimaryButton label="Save" onPress={() => void saveAge()} variant="consumer" />
               </View>
             ) : (
-              <Pressable onPress={() => setEditingAge(true)} style={styles.linkBtn}>
-                <Text style={styles.link}>
-                  {confirmedAge
-                    ? `Real age: ${confirmedAge} · Edit`
-                    : 'Add your real age for comparison'}
+              <Pressable onPress={() => setEditingAge(true)} style={styles.realAgeRow}>
+                <Ionicons name="calendar-outline" size={18} color={JournalTokens.color.muted} />
+                <Text style={styles.realAgeLabel}>Add your real age for comparison</Text>
+                <Text style={styles.realAgeAction}>
+                  {confirmedAge ? `Age ${confirmedAge} · Edit` : 'Enter age →'}
                 </Text>
               </Pressable>
             )}
 
-            <Text style={styles.body}>
-              Wellness estimate from your photo — not a diagnosis.
-              {findings.length ? ' Findings guide your personalized plan.' : ''}
-            </Text>
-
             <PrimaryButton label="Build my routine →" onPress={continueNext} variant="consumer" />
-            <Pressable onPress={() => void retake()} style={styles.linkBtn}>
-              <Text style={styles.link}>That doesn&apos;t look right — scan again</Text>
-            </Pressable>
+            <SecondaryButton
+              label="That doesn't look right — scan again"
+              onPress={() => void retake()}
+              variant="consumer"
+            />
+            <Text style={styles.disclaimer}>
+              Wellness estimate from your photo — not a medical diagnosis.
+            </Text>
           </>
         ) : null}
 
@@ -304,7 +350,7 @@ export default function OnboardingRevealScreen() {
                 <Text style={styles.skipLink}>Continue with quick-check →</Text>
               </Text>
             </Pressable>
-            <Text style={styles.body}>Wellness estimate from your photo — not a diagnosis.</Text>
+            <Text style={styles.disclaimer}>Wellness estimate from your photo — not a diagnosis.</Text>
           </>
         ) : null}
       </ScrollView>
@@ -315,18 +361,21 @@ export default function OnboardingRevealScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: JournalTokens.color.cream },
   scroll: { padding: JournalTokens.spacing.lg, paddingBottom: 32, gap: 10 },
+  topbar: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
   tag: {
-    alignSelf: 'flex-start',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: JournalTokens.color.terracotta,
-    marginBottom: 4,
+    backgroundColor: '#FAECE7',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   photoFrame: {
-    aspectRatio: 3 / 4,
-    borderRadius: JournalTokens.radius.lg,
+    aspectRatio: 3 / 4.2,
+    borderRadius: 18,
     overflow: 'hidden',
     backgroundColor: '#111',
     position: 'relative',
@@ -349,23 +398,35 @@ const styles = StyleSheet.create({
     marginLeft: -5.5,
     marginTop: -5.5,
   },
+  zoneLine: {
+    position: 'absolute',
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  zoneLabel: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  zoneLabelText: { color: '#fff', fontSize: 9, fontWeight: '600' },
   badge: {
     position: 'absolute',
     bottom: 12,
     alignSelf: 'center',
-    left: '15%',
-    right: '15%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: JournalTokens.color.brandBlue,
-    borderRadius: JournalTokens.radius.pill,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(15,110,86,0.85)',
+    borderRadius: 20,
+    paddingVertical: 5,
     paddingHorizontal: 14,
+    zIndex: 3,
   },
   badgeWarn: { backgroundColor: 'rgba(120, 20, 20, 0.75)' },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
   scoreRow: { flexDirection: 'row', gap: 8 },
   scoreCard: {
     flex: 1,
@@ -391,13 +452,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   scoreDelta: { fontSize: 10, fontWeight: '600', color: '#854F0B', marginTop: 2 },
+  scoreDeltaOk: { color: '#3B6D11' },
   scoreDeltaMuted: { fontSize: 10, color: JournalTokens.color.muted, marginTop: 2 },
-  summary: {
-    fontSize: 13,
-    lineHeight: 20,
+  scoreNote: {
+    fontSize: 8,
     color: JournalTokens.color.muted,
+    lineHeight: 12,
+    marginTop: 4,
     textAlign: 'center',
   },
+  insight: { fontSize: 12, lineHeight: 18, color: JournalTokens.color.muted },
   sectionLabel: {
     fontSize: 10,
     fontWeight: '600',
@@ -434,18 +498,17 @@ const styles = StyleSheet.create({
   sevText1: { color: '#27500A' },
   sevText2: { color: '#633806' },
   sevText3: { color: '#791F1F' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: JournalTokens.radius.pill,
-    backgroundColor: '#eef4ff',
+  meterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  meterLabel: { fontSize: 10, color: JournalTokens.color.muted, width: 72 },
+  meterBar: {
+    flex: 1,
+    height: 5,
+    backgroundColor: '#f0f1f3',
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  chipLabel: { fontSize: 12, fontWeight: '600', color: JournalTokens.color.brandBlue },
-  chipScore: { fontSize: 12, color: JournalTokens.color.brandBlue, opacity: 0.75 },
+  meterFill: { height: '100%', borderRadius: 3 },
+  meterVal: { fontSize: 11, fontWeight: '600', width: 28, textAlign: 'right' },
   positiveRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -484,6 +547,18 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   tipRow: { fontSize: 11, color: JournalTokens.color.muted, lineHeight: 17 },
+  realAgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderWidth: 0.5,
+    borderColor: JournalTokens.color.line,
+    borderRadius: 12,
+    backgroundColor: JournalTokens.color.card,
+  },
+  realAgeLabel: { flex: 1, fontSize: 12, fontWeight: '600', color: JournalTokens.color.ink },
+  realAgeAction: { fontSize: 13, fontWeight: '600', color: '#185FA5' },
   label: { fontWeight: '600', color: JournalTokens.color.ink, alignSelf: 'flex-start' },
   input: {
     borderWidth: 1,
@@ -495,15 +570,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   ageEdit: { width: '100%', gap: 10 },
-  body: {
+  disclaimer: {
     color: JournalTokens.color.muted,
     textAlign: 'center',
-    lineHeight: 20,
-    fontSize: 12,
-    marginVertical: 4,
+    lineHeight: 18,
+    fontSize: 10,
+    marginTop: 8,
   },
-  linkBtn: { paddingVertical: 8, alignItems: 'center' },
-  link: { color: JournalTokens.color.brandBlue, fontWeight: '600', fontSize: 14 },
   skipRow: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: JournalTokens.color.line },
   skipText: { textAlign: 'center', fontSize: 12, color: JournalTokens.color.muted },
   skipLink: { color: '#185FA5', fontWeight: '600' },

@@ -85,9 +85,52 @@ function listReadingsForSession(db, sessionId, patientId, limit = 12) {
     .all(sessionId, cap);
 }
 
+function parsePayload(raw) {
+  if (!raw) return null;
+  try {
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch (_) {
+    return null;
+  }
+}
+
+function firstAndLatestPayloadForSession(db, sessionId, patientId) {
+  ensureSkinAgeTables(db);
+  if (!sessionId && !patientId) return null;
+  const rows = patientId
+    ? db
+        .prepare(`
+        SELECT payload_json, created_at
+        FROM skin_age_readings
+        WHERE patient_id = ? OR session_id = ?
+        ORDER BY datetime(created_at) ASC
+      `)
+        .all(patientId, sessionId || '')
+    : db
+        .prepare(`
+        SELECT payload_json, created_at
+        FROM skin_age_readings
+        WHERE session_id = ?
+        ORDER BY datetime(created_at) ASC
+      `)
+        .all(sessionId);
+  if (!rows.length) return null;
+  const firstPayload = parsePayload(rows[0].payload_json);
+  if (rows.length < 2) {
+    return { first: firstPayload, latest: null, reading_count: rows.length };
+  }
+  const latestPayload = parsePayload(rows[rows.length - 1].payload_json);
+  return {
+    first: firstPayload,
+    latest: latestPayload,
+    reading_count: rows.length,
+  };
+}
+
 module.exports = {
   ensureSkinAgeTables,
   insertSkinAgeReading,
   latestReadingForSession,
   listReadingsForSession,
+  firstAndLatestPayloadForSession,
 };

@@ -7,9 +7,13 @@ export function todayScreenTitle(dayMode: RoutineDayMode): string {
 }
 
 export function layeringUnavailableCopy(): string {
-  return "We'll check product pairing when you're back online.";
+  return graphUnavailableCopy();
+}
+
+export function graphUnavailableCopy(): string {
+  return 'Ingredient compatibility data is temporarily unavailable.';
 }
 
 export function celebrateBannerCopy(): string {
-  return 'Day logged — see your progress on Timeline.';
+  return 'Day logged — see your progress on Progress.';
 }

@@ -1076,6 +1076,11 @@ function ensurePatientShelfInventoryColumns() {
   addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN price_usd REAL');
   addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN key_ingredients TEXT');
   addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN display_color TEXT');
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN ingredient_canonical_ids_json TEXT');
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN barcode TEXT');
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN ingredients_text TEXT');
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN verdict_status TEXT DEFAULT \'unknown\'');
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN kept_despite_conflict INTEGER DEFAULT 0');
 }
 
 function computeProductInitials(productName) {
@@ -1121,6 +1126,11 @@ function formatShelfProductApiRow(r) {
     inventory_status: String(r.inventory_status || 'stock').toLowerCase(),
     price_usd: r.price_usd != null && r.price_usd !== '' ? Number(r.price_usd) : null,
     key_ingredients: r.key_ingredients || null,
+    ingredients_text: r.ingredients_text || null,
+    barcode: r.barcode || null,
+    ingredient_canonical_ids: safeParseJsonArray(r.ingredient_canonical_ids_json),
+    verdict_status: r.verdict_status || 'unknown',
+    kept_despite_conflict: Boolean(r.kept_despite_conflict),
     display_color: dc || null,
     badge_initials: computeProductInitials(product_name),
     badge_color
@@ -1131,7 +1141,8 @@ function loadPatientShelfProductRows(sessionId) {
   return db.db.prepare(`
       SELECT id, selection_mode, catalog_product_id, custom_product_name, custom_brand, category, usage_time,
         frequency_rule, days_of_week_json, goal, opened_date, expiry_date, pao_months, inventory_status,
-        price_usd, key_ingredients, display_color, updated_at
+        price_usd, key_ingredients, ingredients_text, barcode, ingredient_canonical_ids_json,
+        verdict_status, kept_despite_conflict, display_color, updated_at
       FROM patient_onboarding_step3_products
       WHERE session_id = ?
       ORDER BY datetime(updated_at) DESC
@@ -2673,6 +2684,7 @@ registerConsumerFunnelRoutes(app, {
   requireCsrfForCookieAuth,
   rotatePatientSessionIfNeeded,
   blockChatWhenDisabled,
+  botGuard,
 });
 // Retell custom function endpoints
 const retellFunctionsRoutes = require('./routes/retell-functions');

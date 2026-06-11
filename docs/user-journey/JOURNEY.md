@@ -23,7 +23,19 @@ Frictionless path (legacy): **optional age hook → intent (why you’re here) �
 4. **Reveal** — `/reveal`: **State A** — score cards (face age, skin age gap, Fitzpatrick), finding cards with zone dots, positive observations → **Build my routine**; **State B** — dimmed photo + lighting retry tips (no age) when vision returns nothing.
 5. **Concerns** — `/concerns`: single primary concern pre-selected via `POST /api/public/funnel/match` (`suggested_concern_ids`) → **Start {plan} plan**.
 6. **Signup** — `/app/sign-in?intent=signup&from=skin-age-landing`: OTP → template + funnel bridge (skips `/routine/pick` when concern chosen).
-7. **Today loop** — `/(tabs)/today` with check-in hero, streak, photo history; **Progress** tab for skin-age goal and AI insight.
+7. **Today loop** — `/(tabs)/today` with BFI ring, conflict metrics, check-in photo; **Scan** tab (center) for barcode shelf + verdict; **Progress** for 8-day BFI grid and improvement bars.
+
+## Conflict Engine wedge (primary retention loop)
+
+After signup, the app centers on **ingredient conflict detection**:
+
+1. **Scan** (center tab) — barcode or manual add → OBF INCI resolution → instant verdict screen.
+2. **Today** — Whoop-style **Barrier Friction Index (BFI)** ring, conflict count (tap → Scan), routine step warnings, daily photo with yesterday's verdict tag.
+3. **Progress** — 8-day BFI grid, "what caused the dip" insight, clarity/redness/skin-age improvement bars, photo timeline with verdict color tags.
+4. **Bio profile** — conditions + prescriptions (`PUT /api/patient/bio-profile`); incomplete profile shows partial verdict banner; bootstrap routes to bio-calibration or Scan when shelf empty / conflicts present.
+5. **Public funnel** — `POST /api/public/routine/evaluate` (max 2 products, rate-limited); full detail gated on bio profile.
+
+Tab bar: **Today | Progress | Scan | Plan | Profile**.
 
 Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
 

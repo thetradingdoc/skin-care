@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 export const ONBOARDING_FACE_READ_KEY = 'onboarding_face_read';
 export const ONBOARDING_FACE_PHOTO_URI_KEY = 'onboarding_face_photo_uri';
@@ -28,6 +29,8 @@ export type FaceReadPayload = {
   vision_error?: string | null;
   findings?: FaceFinding[];
   concern_scores?: Record<string, number>;
+  health_scores?: Record<string, number | null>;
+  age_unreliable?: boolean;
   scan_summary?: string;
   positive_observations?: string[];
   fit_skin_tone?: string;
@@ -36,6 +39,21 @@ export type FaceReadPayload = {
   reject_reason?: string;
   user_message?: string;
 };
+
+async function secureSet(key: string, value: string): Promise<void> {
+  if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* private mode / quota */
+    }
+  }
+  try {
+    await SecureStore.setItemAsync(key, value);
+  } catch {
+    /* web static export may not expose SecureStore writes */
+  }
+}
 
 export async function getOnboardingDone(): Promise<boolean> {
   try {
@@ -111,7 +129,7 @@ export async function getOnboardingConcernId(): Promise<string | null> {
 }
 
 export async function setOnboardingConcernId(concernId: string): Promise<void> {
-  await SecureStore.setItemAsync(ONBOARDING_CONCERN_ID_KEY, concernId);
+  await secureSet(ONBOARDING_CONCERN_ID_KEY, concernId);
 }
 
 export async function getMatchJson(): Promise<Record<string, unknown> | null> {
@@ -129,7 +147,7 @@ export async function setMatchJson(match: Record<string, unknown> | null): Promi
     await SecureStore.deleteItemAsync(ONBOARDING_MATCH_JSON_KEY);
     return;
   }
-  await SecureStore.setItemAsync(ONBOARDING_MATCH_JSON_KEY, JSON.stringify(match));
+  await secureSet(ONBOARDING_MATCH_JSON_KEY, JSON.stringify(match));
 }
 
 export async function setNeedsFirstPhoto(): Promise<void> {

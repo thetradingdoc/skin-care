@@ -18,10 +18,14 @@ export function PrimaryButton({ label, onPress, variant = 'billing' }: BtnProps)
   );
 }
 
-export function SecondaryButton({ label, onPress }: BtnProps) {
+export function SecondaryButton({ label, onPress, variant = 'billing' }: BtnProps) {
+  const isConsumer = variant === 'consumer';
   return (
-    <Pressable style={styles.secondary} onPress={onPress} accessibilityRole="button">
-      <Text style={styles.secondaryText}>{label}</Text>
+    <Pressable
+      style={[styles.secondary, isConsumer && styles.secondaryConsumer]}
+      onPress={onPress}
+      accessibilityRole="button">
+      <Text style={[styles.secondaryText, isConsumer && styles.secondaryTextConsumer]}>{label}</Text>
     </Pressable>
   );
 }
@@ -51,8 +55,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryConsumer: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: JournalTokens.radius.pill,
+    backgroundColor: '#111',
+    borderRadius: 16,
+    width: '100%',
   },
   primaryText: { color: BillingTheme.button.primaryText, fontWeight: '700', fontSize: 16 },
   primaryTextConsumer: { color: '#ffffff' },
@@ -64,7 +69,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: JournalTokens.color.card,
   },
+  secondaryConsumer: {
+    width: '100%',
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+  },
   secondaryText: { color: JournalTokens.color.ink, fontWeight: '600' },
+  secondaryTextConsumer: { color: JournalTokens.color.muted, fontSize: 12 },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 11, fontWeight: '600', color: JournalTokens.color.ink },
   dot: { width: 8, height: 8, borderRadius: 4 },

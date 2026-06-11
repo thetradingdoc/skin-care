@@ -90,5 +90,40 @@ describe('face-read-merge', () => {
   test('buildWrongSubjectFaceRead helper', () => {
     const out = buildWrongSubjectFaceRead({ user_message: 'Need your face.' });
     expect(out.reject_reason).toBe('wrong_subject');
+    expect(out.health_scores).toEqual({});
+    expect(out.age_unreliable).toBe(false);
+  });
+
+  test('merge passes health_scores from vision', () => {
+    const merged = mergeFaceReadResults(cvPass, {
+      ...visionOk,
+      health_scores: { hydration: 72, clarity: 44, evenness: 38, barrier: 61 },
+    });
+    expect(merged.health_scores.hydration).toBe(72);
+    expect(merged.health_scores.clarity).toBe(44);
+    expect(merged.age_unreliable).toBe(false);
+  });
+
+  test('age_unreliable for deep skin with vision failure', () => {
+    const merged = mergeFaceReadResults(cvPass, {
+      fit_skin_tone: 'dark',
+      fitzpatrick_estimate: 'VI',
+      concern_scores: {},
+      findings: [],
+      quality: 'ok',
+    }, { visionError: 'timeout' });
+    expect(merged.age_unreliable).toBe(true);
+    expect(merged.apparent_age_estimate).toBe(32);
+  });
+
+  test('age_unreliable for Fitz VI low quality empty findings', () => {
+    const merged = mergeFaceReadResults(cvPass, {
+      fitzpatrick_estimate: 'VI',
+      fit_skin_tone: 'dark',
+      concern_scores: {},
+      findings: [],
+      quality: 'low',
+    });
+    expect(merged.age_unreliable).toBe(true);
   });
 });

@@ -184,6 +184,7 @@ test.describe('Skin age journey (consumer hosting)', () => {
           model_id: 'e2e-fixture-v1',
           vision_enabled: true,
           concern_scores: { hyperpigmentation: 3, texture: 2, acne: 0, dryness: 0, redness: 0, pores: 0, dark_circles: 0, oiliness: 0 },
+          health_scores: { hydration: 72, clarity: 44, evenness: 38, barrier: 61 },
           findings: [
             {
               id: 'hyperpigmentation',
@@ -210,9 +211,15 @@ test.describe('Skin age journey (consumer hosting)', () => {
     await expect(page.locator('.sc-score-row')).toBeVisible();
     await expect(page.getByText('Face age')).toBeVisible();
     await expect(page.getByText('Skin age')).toBeVisible();
+    await expect(page.getByText('Skin health score')).toBeVisible();
+    await expect(page.locator('.sc-score-meter')).toHaveCount(4);
+    await expect(page.locator('.sc-meter-label').filter({ hasText: 'Hydration' })).toBeVisible();
+    await expect(page.locator('.sc-meter-val').filter({ hasText: '72' })).toBeVisible();
     await expect(page.locator('.sc-finding-card')).toHaveCount(1);
     await expect(page.getByText(/uneven tone on cheeks/i)).toBeVisible();
+    await expect(page.locator('.sc-real-age-row')).toBeVisible();
     await expect(page.getByRole('button', { name: /build my routine/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /scan again/i })).toBeVisible();
   });
 
   test('E2E-06 Reveal no longer shows legacy zone age row', async ({ page }) => {
@@ -374,11 +381,11 @@ test.describe('Skin age journey (consumer hosting)', () => {
   });
 
   test('E2E-11 Today tab (patient app — documented skip)', async () => {
-    test.skip(true, 'Today tab lives in patient-app; covered by unit/API tests');
+    test.skip(true, 'Conflict wedge: middleware-platform/e2e/conflict-engine-mobile.spec.cjs');
   });
 
   test('E2E-12 Progress tab (patient app — documented skip)', async () => {
-    test.skip(true, 'Progress tab lives in patient-app; progress-summary API tested in middleware');
+    test.skip(true, 'Conflict wedge: playwright.conflict-engine.config.cjs + progress-summary API tests');
   });
 
   test('E2E-13 Live smoke CORS + favicon (optional)', async ({ request }) => {

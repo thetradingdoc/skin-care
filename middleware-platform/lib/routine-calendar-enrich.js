@@ -74,6 +74,17 @@ function enrichRoutineCalendarDay(base, { careProgram, tplStartIso, concernId, e
 
   const symptomInfo = parseSymptomsFromSkinReport(entryRow?.skin_report);
 
+  let verdictOverall = null;
+  let bfi = null;
+  try {
+    const parsed =
+      typeof entryRow?.skin_report === 'string'
+        ? JSON.parse(entryRow.skin_report)
+        : entryRow?.skin_report;
+    verdictOverall = parsed?.verdict_overall || parsed?.verdict_snapshot?.overall || null;
+    bfi = parsed?.barrier_friction_index ?? parsed?.verdict_snapshot?.barrier_friction_index ?? null;
+  } catch (_) {}
+
   return {
     ...base,
     photo_prompt: photoPrompt,
@@ -87,6 +98,8 @@ function enrichRoutineCalendarDay(base, { careProgram, tplStartIso, concernId, e
     has_symptoms: symptomInfo.has_symptoms,
     symptom_tags: symptomInfo.tags,
     top_symptom: symptomInfo.top_symptom,
+    verdict_overall: verdictOverall,
+    barrier_friction_index: bfi,
   };
 }
 

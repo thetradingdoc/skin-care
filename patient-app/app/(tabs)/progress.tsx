@@ -11,8 +11,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BarrierGrid8, ImprovementBar } from '@/components/conflict';
+import { SessionImage } from '@/components/SessionImage';
 import { JournalTokens } from '@/constants/journalTokens';
+import { TIMELINE_HREF } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import {
+  fetchBarrierInsight,
+  fetchStreakPercentile,
+  fetchVerdictHistory,
+} from '@/lib/conflict-api';
+import type { BarrierInsight, VerdictHistoryDay } from '@/lib/conflict-types';
+import { verdictTagColor } from '@/lib/conflict-helpers';
 import { patientGet } from '@/lib/patient-api';
 import { localTodayIso } from '@/lib/routine-day-mode';
 
@@ -20,17 +30,20 @@ type Summary = {
   streak_days?: number;
   baseline_skin_age?: number | null;
   latest_skin_age?: number | null;
-  goal_skin_age?: number | null;
-  skin_age_trend?: { estimate: number; created_at: string; source: string }[];
-  program_week?: number | null;
-  total_weeks?: number | null;
-  phase_label?: string | null;
+  improvement_metrics?: {
+    clarity_pct?: number;
+    redness_pct?: number;
+    skin_age_delta?: number;
+  };
 };
 
 type CalendarDay = {
   date: string;
   has_media?: boolean;
   completion_score?: number;
+  verdict_overall?: string | null;
+  barrier_friction_index?: number | null;
+  thumbnail_url?: string | null;
 };
 
 export default function ProgressScreen() {
@@ -38,8 +51,10 @@ export default function ProgressScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [concernLabel, setConcernLabel] = useState<string | null>(null);
-  const [insight, setInsight] = useState<string | null>(null);
+  const [improvementMetrics, setImprovementMetrics] = useState<Summary['improvement_metrics'] | null>(null);
+  const [percentileCopy, setPercentileCopy] = useState<string | null>(null);
+  const [insight, setInsight] = useState<BarrierInsight>(null);
+  const [history, setHistory] = useState<VerdictHistoryDay[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
 
   const load = useCallback(async () => {
@@ -50,19 +65,27 @@ export default function ProgressScreen() {
       start.setUTCDate(start.getUTCDate() - 7);
       const startIso = start.toISOString().slice(0, 10);
 
-      const [progRes, insightRes, calRes] = await Promise.all([
+      const [progRes, insightRes, calRes, histRes] = await Promise.all([
         patientGet('/api/patient/home/progress-summary'),
-        patientGet('/api/patient/home/weekly-insight').catch(() => ({ insight: null })),
+        fetchBarrierInsight().catch(() => null),
         patientGet(
           `/api/patient/journal/calendar-range?start=${startIso}&end=${today}&include_empty_days=1`,
         ).catch(() => ({ days: [] })),
+        fetchVerdictHistory(8).catch(() => []),
       ]);
 
       setSummary(progRes?.summary || null);
-      setConcernLabel(progRes?.template?.concern_id?.replace(/_/g, ' ') || null);
-      setInsight(insightRes?.insight || null);
+      setImprovementMetrics(progRes?.improvement_metrics || null);
+      setInsight(insightRes);
+      setHistory(histRes);
       const calDays: CalendarDay[] = Array.isArray(calRes?.days) ? calRes.days : [];
       setDays(calDays.slice(-8));
+
+      const streak = Number(progRes?.summary?.streak_days) || 0;
+      if (streak > 0) {
+        const pct = await fetchStreakPercentile(streak).catch(() => null);
+        if (pct?.copy) setPercentileCopy(pct.copy);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,14 +103,8 @@ export default function ProgressScreen() {
     );
   }
 
-  const week = summary?.program_week || 1;
-  const total = summary?.total_weeks || 12;
-  const baseline = summary?.baseline_skin_age;
-  const latest = summary?.latest_skin_age ?? baseline;
-  const goal = summary?.goal_skin_age;
-  const trend = summary?.skin_age_trend || [];
-  const ageDelta =
-    baseline != null && latest != null && latest !== baseline ? latest - baseline : null;
+  const metrics = improvementMetrics;
+  const streak = summary?.streak_days ?? 0;
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -95,72 +112,77 @@ export default function ProgressScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
         <Text style={styles.title}>Your progress</Text>
-        <Text style={styles.subtitle}>
-          Week {week} of {total}
-          {concernLabel ? ` · ${concernLabel}` : ''}
-        </Text>
 
-        <View style={styles.metricRow}>
-          <View style={[styles.metricCard, styles.metricCardBlue]}>
-            <Text style={styles.metricLabel}>Skin age</Text>
-            <Text style={styles.metricValue}>
-              {baseline != null ? baseline : '—'}
-              {latest != null && baseline != null && latest !== baseline ? (
-                <Text style={styles.metricGoal}> → {latest}</Text>
-              ) : goal != null && baseline != null && goal !== baseline ? (
-                <Text style={styles.metricGoal}> → {goal}</Text>
-              ) : null}
-            </Text>
-            <Text style={styles.metricHint}>
-              {ageDelta != null
-                ? `${ageDelta > 0 ? '+' : ''}${ageDelta} since baseline`
-                : 'Goal'}
-            </Text>
+        {streak > 0 ? (
+          <View style={styles.streakBanner}>
+            <Text style={styles.streakValue}>🔥 {streak} day streak</Text>
+            {percentileCopy ? <Text style={styles.streakSub}>{percentileCopy}</Text> : null}
           </View>
-          <View style={[styles.metricCard, styles.metricCardGreen]}>
-            <Text style={[styles.metricLabel, styles.metricLabelGreen]}>Streak</Text>
-            <Text style={[styles.metricValue, styles.metricValueGreen]}>
-              {summary?.streak_days ?? 0}
-              <Text style={styles.metricUnit}> days</Text>
-            </Text>
-            <Text style={[styles.metricHint, styles.metricLabelGreen]}>Keep it up</Text>
-          </View>
-        </View>
+        ) : null}
 
-        {trend.length > 1 ? (
-          <View style={styles.trendCard}>
-            <Text style={styles.trendTitle}>Skin age trend</Text>
-            <Text style={styles.trendBody}>
-              {trend.map((t) => Math.round(t.estimate)).join(' → ')}
-            </Text>
+        <BarrierGrid8 days={history} />
+
+        {insight?.message ? (
+          <View style={styles.dipCard}>
+            <Text style={styles.dipTitle}>{insight.title || 'What caused the dip'}</Text>
+            <Text style={styles.dipBody}>{insight.message}</Text>
           </View>
+        ) : null}
+
+        <Text style={styles.sectionLabel}>Improvement metrics</Text>
+        {metrics?.clarity_pct != null ? (
+          <ImprovementBar label="Clarity" value={metrics.clarity_pct} positiveIsGood />
+        ) : null}
+        {metrics?.redness_pct != null ? (
+          <ImprovementBar label="Redness" value={metrics.redness_pct} positiveIsGood={false} />
+        ) : null}
+        {metrics?.skin_age_delta != null ? (
+          <ImprovementBar
+            label="Skin age"
+            value={metrics.skin_age_delta}
+            unit=" yrs"
+            max={5}
+            positiveIsGood={false}
+          />
+        ) : null}
+        {metrics?.clarity_pct == null && metrics?.redness_pct == null && metrics?.skin_age_delta == null ? (
+          <Text style={styles.emptyMetrics}>Log progress photos to unlock improvement metrics.</Text>
         ) : null}
 
         <Text style={styles.sectionLabel}>{days.length}-day photo timeline</Text>
         <View style={styles.thumbGrid}>
-          {days.map((d) => {
+          {days.map((d, idx) => {
             const logged = (d.completion_score || 0) >= 100 || d.has_media;
             const isToday = d.date === localTodayIso();
+            const tagColor = d.verdict_overall
+              ? verdictTagColor(d.verdict_overall as 'safe' | 'caution' | 'avoid')
+              : null;
+            const dayLabel = isToday ? 'Today' : idx === 0 ? 'Day 1' : d.date.slice(8);
             return (
               <Pressable
                 key={d.date}
                 onPress={() => router.push({ pathname: '/(tabs)/timeline', params: { date: d.date } })}
                 style={[styles.thumb, logged && styles.thumbLogged, isToday && styles.thumbToday]}>
-                <Text style={styles.thumbIcon}>{logged ? '📷' : isToday ? '📸' : '·'}</Text>
+                {tagColor ? <View style={[styles.thumbTag, { backgroundColor: tagColor }]} /> : null}
+                {d.thumbnail_url ? (
+                  <SessionImage uri={d.thumbnail_url} style={styles.thumbImage} contentFit="cover" />
+                ) : (
+                  <Text style={styles.thumbIcon}>{logged ? '📷' : isToday ? '📸' : '·'}</Text>
+                )}
+                <View style={styles.dayChip}>
+                  <Text style={styles.dayChipText}>{dayLabel}</Text>
+                </View>
               </Pressable>
             );
           })}
         </View>
 
-        {insight ? (
-          <View style={styles.insightCard}>
-            <Text style={styles.insightTitle}>AI insight</Text>
-            <Text style={styles.insightBody}>{insight}</Text>
-          </View>
-        ) : null}
-
-        <Pressable onPress={() => router.push('/(tabs)/timeline')} style={styles.linkWrap}>
-          <Text style={styles.link}>Open full timeline →</Text>
+        <Pressable
+          onPress={() => router.push(TIMELINE_HREF)}
+          style={styles.linkWrap}
+          accessibilityRole="button"
+          accessibilityLabel="Open journal timeline">
+          <Text style={styles.link}>Open journal timeline →</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -171,23 +193,25 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: JournalTokens.color.cream },
   content: { padding: JournalTokens.spacing.lg, gap: 10 },
   title: { fontFamily: JournalTokens.font.display, fontSize: 28, color: JournalTokens.color.ink },
-  subtitle: { color: JournalTokens.color.muted, marginBottom: 8 },
-  metricRow: { flexDirection: 'row', gap: 8 },
-  metricCard: { flex: 1, borderRadius: 12, padding: 12 },
-  metricCardBlue: { backgroundColor: '#eef4ff' },
-  metricCardGreen: { backgroundColor: '#eaf3de' },
-  metricLabel: { fontSize: 11, color: JournalTokens.color.brandAccent, marginBottom: 4 },
-  metricLabelGreen: { color: '#0f6e56' },
-  metricValue: {
-    fontFamily: JournalTokens.font.display,
-    fontSize: 22,
-    fontWeight: '700',
-    color: JournalTokens.color.ink,
+  streakBanner: {
+    backgroundColor: '#FAEEDA',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 8,
   },
-  metricValueGreen: { color: '#085041' },
-  metricGoal: { fontSize: 14, color: JournalTokens.color.brandAccent },
-  metricUnit: { fontSize: 14, fontWeight: '400' },
-  metricHint: { fontSize: 11, color: JournalTokens.color.brandAccent, marginTop: 2 },
+  streakValue: { fontSize: 18, fontWeight: '800', color: '#633806' },
+  streakSub: { fontSize: 13, color: '#633806', marginTop: 4 },
+  emptyMetrics: { fontSize: 13, color: JournalTokens.color.muted, marginBottom: 8 },
+  dipCard: {
+    backgroundColor: JournalTokens.color.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.line,
+    padding: 14,
+    marginTop: 8,
+  },
+  dipTitle: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  dipBody: { fontSize: 13, color: JournalTokens.color.muted, lineHeight: 20 },
   sectionLabel: { fontSize: 12, color: JournalTokens.color.muted, marginTop: 8 },
   thumbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   thumb: {
@@ -200,28 +224,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.5,
+    position: 'relative',
   },
   thumbLogged: { backgroundColor: '#eef4ff', opacity: 1 },
   thumbToday: { borderColor: JournalTokens.color.brandAccent, borderWidth: 2, opacity: 1 },
+  thumbTag: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, zIndex: 2 },
+  thumbImage: { ...StyleSheet.absoluteFillObject, borderRadius: 10 },
   thumbIcon: { fontSize: 18 },
-  trendCard: {
-    backgroundColor: '#f8f4ff',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 4,
+  dayChip: {
+    position: 'absolute',
+    bottom: 4,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
-  trendTitle: { fontSize: 12, fontWeight: '700', color: JournalTokens.color.ink, marginBottom: 4 },
-  trendBody: { fontSize: 14, color: JournalTokens.color.brandAccent, fontWeight: '600' },
-  insightCard: {
-    backgroundColor: JournalTokens.color.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: JournalTokens.color.line,
-    padding: 12,
-    marginTop: 4,
-  },
-  insightTitle: { fontSize: 12, fontWeight: '700', color: JournalTokens.color.ink, marginBottom: 6 },
-  insightBody: { fontSize: 13, color: JournalTokens.color.muted, lineHeight: 20 },
+  dayChipText: { color: '#fff', fontSize: 8, fontWeight: '700' },
   linkWrap: { marginTop: 8 },
   link: { color: JournalTokens.color.brandAccent, fontWeight: '700', fontSize: 14 },
 });

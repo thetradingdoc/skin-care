@@ -12,8 +12,8 @@ import { BillingFeedbackProvider } from '@/components/billing-feedback';
 import { SkinCareNavigationTheme } from '@/constants/navigationTheme';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
-import { patientGet } from '@/lib/patient-api';
-import { SIGN_IN_HREF, INDEX_HREF, TODAY_HREF } from '@/constants/routes';
+import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
+import { SIGN_IN_HREF } from '@/constants/routes';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,12 +37,7 @@ function useAppDeepLinks() {
           const sid = String(exchanged.session_id || '');
           if (!sid) return;
           await setPatientSession(sid);
-          const template = await patientGet('/api/patient/routine/template').catch(() => ({ has_template: false }));
-          if (template?.has_template) {
-            router.replace(TODAY_HREF);
-          } else {
-            router.replace(INDEX_HREF);
-          }
+          router.replace(await resolvePostAuthRoute());
         } catch {
           router.replace(SIGN_IN_HREF);
         }
@@ -97,6 +92,7 @@ export default function RootLayout() {
           <Stack.Screen name="capture-review" options={{ presentation: 'modal', title: 'Review extraction' }} />
           <Stack.Screen name="capture-complete" options={{ presentation: 'modal', title: 'Saved' }} />
           <Stack.Screen name="routine" options={{ headerShown: false }} />
+          <Stack.Screen name="verdict" options={{ headerShown: false }} />
           <Stack.Screen name="compare" options={{ presentation: 'modal', title: 'Compare photos' }} />
         </Stack>
         <StatusBar style="auto" />

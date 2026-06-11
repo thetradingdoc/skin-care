@@ -81,4 +81,18 @@ describe('face-read-vision normalizeVisionPayload', () => {
     });
     expect(result.findings).toHaveLength(0);
   });
+
+  test('health_scores clamped 0-100', () => {
+    const result = normalizeVisionPayload({
+      concern_scores: { acne: 1 },
+      findings: [{ id: 'acne', label: 'Breakouts', severity: 1, zones: ['chin'], confidence: 0.9 }],
+      health_scores: { hydration: 150, clarity: -5, evenness: 55.4, barrier: null },
+      scan_summary: 'Test.',
+      quality: 'ok',
+    });
+    expect(result.health_scores.hydration).toBe(100);
+    expect(result.health_scores.clarity).toBe(0);
+    expect(result.health_scores.evenness).toBe(55);
+    expect(result.health_scores.barrier).toBeNull();
+  });
 });

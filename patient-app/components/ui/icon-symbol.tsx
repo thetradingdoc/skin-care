@@ -22,6 +22,7 @@ const MAPPING = {
   calendar: 'calendar-today',
   'person.fill': 'person',
   'chart.line.uptrend.xyaxis': 'show-chart',
+  'barcode.viewfinder': 'qr-code-scanner',
 } as IconMapping;
 
 /**

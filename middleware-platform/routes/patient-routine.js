@@ -385,33 +385,152 @@ app.get('/api/patient/routine/compare', (req, res, next) => apiLimiter(req, res,
 app.get('/api/patient/routine/layering-check', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, async (req, res) => {
   try {
     ensureRoutineTables();
-    const concernRoutineService = require('../services/concern-routine-service');
-    const { runLayeringCheck } = require('../lib/routine-layering-check');
     const sessionId = req.patientSessionId;
     const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
-    const whereSql = patientId
-      ? `WHERE (patient_id = ? OR session_id = ?) AND is_active = 1`
-      : `WHERE session_id = ? AND is_active = 1`;
-    const tParams = patientId ? [patientId, sessionId] : [sessionId];
-    const template = db.db.prepare(`
-      SELECT id, start_date, concern_id, metadata_json
-      FROM patient_routine_templates ${whereSql} ORDER BY datetime(updated_at) DESC LIMIT 1
-    `).get(...tParams);
-    if (!template) return res.json({ success: true, has_template: false, verdict: null });
-    let program = null;
-    if (template.metadata_json) {
-      try { program = JSON.parse(String(template.metadata_json)); } catch (_) { program = null; }
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const result = evaluatePatientLineup(db.db, { sessionId, patientId });
+    if (!result.success) {
+      return res.json({
+        success: true,
+        has_template: false,
+        graph_unavailable: true,
+        overall: 'unknown',
+        conflicts: [],
+      });
     }
-    if (!program && template.concern_id) program = concernRoutineService.getConcernProgram(template.concern_id);
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const phase = program
-      ? concernRoutineService.resolveCurrentPhase(program, template.start_date, todayIso)
-      : null;
-    const steps = program
-      ? concernRoutineService.phaseStepsAsTemplateItems(phase, program)
-      : [];
-    const result = runLayeringCheck({ steps, db: db.db });
-    return res.json({ success: true, has_template: true, ...result });
+    return res.json({
+      success: true,
+      has_template: result.has_lineup,
+      overall: result.overall,
+      conflicts: result.conflicts,
+      actives_detected: [],
+      compatibility_score: result.compatibility_score,
+      barrier_friction_index: result.barrier_friction_index,
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+function recordEvaluatePortalEvents(req, result, eventName = 'conflict.evaluate.request') {
+  if (typeof recordPatientPortalEvent !== 'function' || !result?.success) return;
+  recordPatientPortalEvent(req, eventName, {
+    overall: result.overall,
+    compatibility_score: result.compatibility_score,
+    conflict_count: (result.conflicts || []).length,
+    barrier_friction_index: result.barrier_friction_index,
+    highlight_product_id: result.highlight_product_id || null,
+  });
+  const bfi = Number(result.barrier_friction_index);
+  if (Number.isFinite(bfi)) {
+    if (bfi < 60) recordPatientPortalEvent(req, 'bfi.critical', { barrier_friction_index: bfi });
+    else if (bfi < 80) recordPatientPortalEvent(req, 'bfi.elevated', { barrier_friction_index: bfi });
+  }
+}
+
+function handleRoutineEvaluate(req, res) {
+  try {
+    ensureRoutineTables();
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const body = req.body && typeof req.body === 'object' ? req.body : {};
+    const { evaluatePatientLineup, saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
+    const result = evaluatePatientLineup(db.db, {
+      sessionId,
+      patientId,
+      slots: body.slots,
+      highlightProductId: body.highlight_product_id || null,
+    });
+    if (!result.success) {
+      return res.status(503).json(result);
+    }
+    recordEvaluatePortalEvents(req, result);
+    const entryDate = String(body.date || new Date().toISOString().slice(0, 10)).trim();
+    if (body.persist_snapshot) {
+      saveLineupSnapshot(db.db, { sessionId, patientId, entryDate, evaluateResult: result });
+    }
+    return res.json({ success: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+}
+
+app.get('/api/patient/routine/evaluate', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, handleRoutineEvaluate);
+app.post('/api/patient/routine/evaluate', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, handleRoutineEvaluate);
+
+app.get('/api/patient/routine/verdict-history', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
+  try {
+    const sessionId = req.patientSessionId;
+    const days = Math.min(30, Math.max(1, Number(req.query?.days) || 8));
+    const migration = require('../migrations/055_conflict_engine');
+    if (migration?.up) migration.up(db.db);
+    const rows = db.db.prepare(`
+      SELECT entry_date, barrier_friction_index, verdict_json, lineup_hash
+      FROM patient_routine_lineup_snapshots
+      WHERE session_id = ?
+      ORDER BY entry_date DESC
+      LIMIT ?
+    `).all(sessionId, days);
+    const history = rows.reverse().map((r) => {
+      let verdict = {};
+      try {
+        verdict = JSON.parse(r.verdict_json || '{}');
+      } catch (_) {}
+      return {
+        date: r.entry_date,
+        barrier_friction_index: r.barrier_friction_index,
+        overall: verdict.overall || null,
+        lineup_hash: r.lineup_hash,
+      };
+    });
+    return res.json({ success: true, days: history });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/patient/routine/daily/:date/lineup-preview', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
+  try {
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const date = String(req.params?.date || '').trim();
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const result = evaluatePatientLineup(db.db, { sessionId, patientId });
+    return res.json({
+      success: true,
+      date,
+      preview: {
+        overall: result.overall,
+        conflict_count: (result.conflicts || []).length,
+        barrier_friction_index: result.barrier_friction_index,
+        hero_subtitle: result.hero_subtitle,
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/patient/home/barrier-insight', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
+  try {
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const { findBarrierDip } = require('../services/barrier-insight-service');
+    const insight = findBarrierDip(db.db, { sessionId, patientId, days: 14 });
+    return res.json({ success: true, insight });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/patient/home/streak-percentile', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
+  try {
+    const streak = Math.max(0, Number(req.query?.streak) || 0);
+    let percentile = 50;
+    if (streak >= 14) percentile = 12;
+    else if (streak >= 7) percentile = 28;
+    else if (streak >= 3) percentile = 45;
+    return res.json({ success: true, streak_days: streak, percentile, copy: `You're in the top ${percentile}% of users` });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });
   }
@@ -726,6 +845,9 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       }
     } catch (_) {}
 
+    const { evaluatePatientLineup, saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
+    const evaluateResult = evaluatePatientLineup(db.db, { sessionId, patientId });
+
     const { applyPhotoDayCompletion } = require('../lib/routine-photo-day');
     const completion = applyPhotoDayCompletion({
       db: db.db,
@@ -737,7 +859,17 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       concernRoutineService,
       storageRef,
       symptomTags,
+      evaluateResult,
     });
+
+    if (evaluateResult.success) {
+      saveLineupSnapshot(db.db, {
+        sessionId,
+        patientId,
+        entryDate: entry.entry_date,
+        evaluateResult,
+      });
+    }
 
     recordPatientPortalEvent(req, 'routine_photo_uploaded', {
       daily_entry_id: dailyEntryId,
@@ -1210,10 +1342,32 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
       source: row.source,
     }));
 
+    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
+    const evaluateNow = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const ageDelta =
+      Number.isFinite(baselineSkinAge) && Number.isFinite(latestSkinAge)
+        ? Math.round(latestSkinAge - baselineSkinAge)
+        : null;
+
+    const { computeImprovementMetrics } = require('../services/improvement-metrics-service');
+    const improvement_metrics = computeImprovementMetrics(db.db, {
+      sessionId,
+      patientId,
+      skinAgeDelta: ageDelta,
+    });
+
     return res.json({
       success: true,
       has_template: true,
       template: { id: template.id, name: template.name, concern_id: template.concern_id },
+      evaluate: evaluateNow.success
+        ? {
+            overall: evaluateNow.overall,
+            compatibility_score: evaluateNow.compatibility_score,
+            barrier_friction_index: evaluateNow.barrier_friction_index,
+            conflict_count: (evaluateNow.conflicts || []).length,
+          }
+        : null,
       summary: {
         adherence_pct: adherencePct,
         upcoming_checkins: upcomingCheckins,
@@ -1231,6 +1385,12 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
         program_week: phaseNow?.program_week || null,
         total_weeks: program?.total_weeks || 12,
         phase_label: phaseLabelNow,
+        conflict_count: evaluateNow.success ? (evaluateNow.conflicts || []).length : 0,
+        barrier_friction_index: evaluateNow.success ? evaluateNow.barrier_friction_index : null,
+      },
+      improvement_metrics: {
+        ...improvement_metrics,
+        skin_age_years: ageDelta,
       },
       cards
     });

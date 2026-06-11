@@ -48,12 +48,19 @@ JSON schema (all fields required):
       "confidence": <0.0-1.0>
     }
   ],
+  "health_scores": {
+    "hydration": <0-100>,
+    "clarity": <0-100>,
+    "evenness": <0-100>,
+    "barrier": <0-100>
+  },
   "scan_summary": "<2 sentences max>",
   "positive_observations": ["<thing skin is doing well>"],
   "not_diagnosis": true
 }
 
 RULES:
+- health_scores: higher = healthier (100 = excellent). hydration/barrier inversely track dryness/redness; clarity tracks acne/pores/oiliness; evenness tracks hyperpigmentation/texture. Never return all 100 when findings exist.
 - findings: minimum 1, maximum 5 when quality is ok; confidence >= 0.5 (>= 0.4 for Fitzpatrick V-VI / dark/deep skin tones)
 - If no face: quality="wrong_subject", reject_reason="not_a_face", findings=[]
 - If clearly not a face (arm, hand, torso): reject_reason="wrong_subject"
@@ -71,6 +78,24 @@ DARK SKIN AND LOW LIGHT RULES:
     "plain_language": "The photo lighting made it harder to read your skin details accurately. A retake in better light will give more precise results.",
     "severity": 1, "zones": [], "confidence": 0.95 }
 - If you detect the scan is a dark skin tone (Fitzpatrick V-VI), mention this in scan_summary.`;
+
+const HEALTH_SCORE_KEYS = ['hydration', 'clarity', 'evenness', 'barrier'];
+
+function clampHealthScore(value) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function normalizeHealthScores(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {};
+  const out = {};
+  for (const key of HEALTH_SCORE_KEYS) {
+    out[key] = clampHealthScore(src[key]);
+  }
+  return out;
+}
 
 function parseVisionJson(text) {
   let raw = String(text || '').trim();
@@ -119,6 +144,7 @@ function normalizeVisionPayload(parsed) {
     fit_skin_tone,
     fitzpatrick_estimate: parsed.fitzpatrick_estimate || null,
     concern_scores: scores,
+    health_scores: normalizeHealthScores(parsed.health_scores),
     findings: filteredFindings,
     scan_summary: String(parsed.scan_summary || ''),
     positive_observations: Array.isArray(parsed.positive_observations)
@@ -188,6 +214,9 @@ async function analyzeWithVision(imageBuffer, mime = 'image/jpeg', _faceBbox = n
 module.exports = {
   analyzeWithVision,
   normalizeVisionPayload,
+  normalizeHealthScores,
+  clampHealthScore,
+  HEALTH_SCORE_KEYS,
   MODEL_ID,
   MODEL_VERSION,
   VALID_ZONES,

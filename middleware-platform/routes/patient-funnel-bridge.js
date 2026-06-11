@@ -161,6 +161,18 @@ function registerPatientFunnelBridgeRoutes(
           });
         }
 
+        try {
+          const { hydrateBioProfileFromFunnel } = require('../services/patient-bio-profile-service');
+          hydrateBioProfileFromFunnel(db.db, {
+            sessionId,
+            patientId,
+            funnelPayload: {
+              ...payload,
+              secondary_concern_ids: secondaryConcernIds,
+            },
+          });
+        } catch (_) {}
+
         return res.json({ success: true, session_id: sessionId });
       } catch (e) {
         return res.status(500).json({ success: false, error: e.message });

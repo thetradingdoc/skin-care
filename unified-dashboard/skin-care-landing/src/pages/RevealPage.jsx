@@ -3,13 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import FunnelShell from '../components/FunnelShell';
 import { computeSkinAge } from '../lib/computeSkinAge';
+import {
+  HEALTH_SCORE_KEYS,
+  HEALTH_SCORE_LABELS,
+  meterColor,
+  resolveHealthScores,
+} from '../lib/computeHealthScores';
 import { isLiveFaceRead } from '../lib/faceReadApi';
 import {
-  concernFallbackChips,
+  buildZoneOverlays,
+  concernScoresToFindingCards,
   findingIcon,
-  fitzpatrickToneLabel,
+  fitzDisplay,
+  isVisionFailed,
+  scanInsightText,
   severityLabel,
-  SEV_COLORS,
   zoneCentroids,
 } from '../lib/revealHelpers';
 import {
@@ -48,26 +56,42 @@ export default function RevealPage() {
 
   const faceAge = faceRead?.apparent_age_estimate;
   const concernScores = faceRead?.concern_scores ?? {};
-  const allScoresZero = Object.values(concernScores).every((v) => (v ?? 0) === 0);
   const findings = Array.isArray(faceRead?.findings) ? faceRead.findings : [];
-  const fallbackChips = useMemo(
-    () => (findings.length ? [] : concernFallbackChips(concernScores)),
-    [findings.length, concernScores],
-  );
-  const visionFailed =
-    faceRead?.vision_enabled &&
-    (Boolean(faceRead?.vision_error) ||
-      (findings.length === 0 &&
-        !faceRead?.scan_summary &&
-        allScoresZero &&
-        fallbackChips.length === 0));
+  const visionFailed = isVisionFailed(faceRead);
 
   const skinAge = useMemo(
     () => (faceAge != null && !visionFailed ? computeSkinAge(faceAge, concernScores) : null),
     [faceAge, concernScores, visionFailed],
   );
-  const zonePolygons = faceRead?.zone_polygons || {};
-  const centroids = useMemo(() => zoneCentroids(zonePolygons), [zonePolygons]);
+
+  const healthScores = useMemo(
+    () => (!visionFailed ? resolveHealthScores(faceRead) : null),
+    [faceRead, visionFailed],
+  );
+
+  const displayFindings = useMemo(() => {
+    if (visionFailed) return [];
+    if (findings.length > 0) return findings;
+    return concernScoresToFindingCards(concernScores);
+  }, [findings, concernScores, visionFailed]);
+
+  const zoneOverlays = useMemo(() => {
+    if (visionFailed) return [];
+    return buildZoneOverlays(findings, zoneCentroids(faceRead?.zone_polygons));
+  }, [findings, faceRead?.zone_polygons, visionFailed]);
+
+  const fitz = useMemo(
+    () => fitzDisplay(faceRead?.fitzpatrick_estimate, faceRead?.fit_skin_tone),
+    [faceRead?.fitzpatrick_estimate, faceRead?.fit_skin_tone],
+  );
+
+  const insight = useMemo(
+    () =>
+      !visionFailed
+        ? scanInsightText(faceRead?.scan_summary, faceRead?.positive_observations)
+        : null,
+    [faceRead, visionFailed],
+  );
 
   const retake = () => {
     setFaceRead(null);
@@ -92,44 +116,48 @@ export default function RevealPage() {
     setEditingAge(false);
   };
 
-  const zoneDots = !visionFailed
-    ? findings.flatMap((f) =>
-        (f.zones || []).map((zone) => {
-          const c = centroids[zone];
-          if (!c) return null;
-          return (
-            <div
-              key={`${f.id}-${zone}`}
-              className="sc-zone-dot"
-              style={{
-                left: `${c.x * 100}%`,
-                top: `${c.y * 100}%`,
-                background: SEV_COLORS[f.severity] || '#888780',
-              }}
-              title={f.label}
-            />
-          );
-        }),
-      ).filter(Boolean)
-    : [];
+  const skinDelta = skinAge != null && faceAge != null ? skinAge - faceAge : 0;
 
   return (
     <FunnelShell step={3}>
       <div className="sc-funnel-inner sc-reveal-inner">
-        <Link to="/quick-check" className="sc-funnel-back">
-          ← Back
-        </Link>
-        <span className="sc-funnel-tag sc-funnel-tag--coral">Your scan</span>
+        <div className="sc-reveal-topbar">
+          <Link to="/quick-check" className="sc-funnel-back sc-funnel-back--inline">
+            <i className="ti ti-arrow-left" aria-hidden="true" /> Back
+          </Link>
+          <span className="sc-funnel-tag sc-funnel-tag--coral sc-funnel-tag--topbar">Your scan</span>
+        </div>
 
         <div className={`sc-reveal-photo${visionFailed ? ' sc-reveal-photo--dim' : ''}`}>
           {photoUrl ? (
             <img src={photoUrl} alt="Your scan" className="sc-reveal-photo-img" />
           ) : (
-            <span style={{ fontSize: '3rem', opacity: 0.35 }} aria-hidden="true">
+            <span className="sc-reveal-photo-placeholder" aria-hidden="true">
               👤
             </span>
           )}
-          {zoneDots}
+          {zoneOverlays.map((o) => (
+            <div key={o.key}>
+              <div
+                className="sc-zone-dot"
+                style={{ left: o.dot.left, top: o.dot.top, background: o.dot.color }}
+              />
+              <div
+                className="sc-zone-line"
+                style={{
+                  left: o.line.left,
+                  top: o.line.top,
+                  width: `${o.line.width}px`,
+                  transform: `rotate(${o.line.rotate}deg)`,
+                }}
+              />
+              <div
+                className="sc-zone-label"
+                style={{ top: o.label.top, left: o.label.left, right: o.label.right }}>
+                {o.label.text}
+              </div>
+            </div>
+          ))}
           <div
             className={`sc-reveal-photo-badge${visionFailed ? ' sc-reveal-photo-badge--warn' : ''}`}>
             {visionFailed ? (
@@ -149,29 +177,34 @@ export default function RevealPage() {
             <div className="sc-score-card">
               <div className="sc-score-n">{faceAge}</div>
               <div className="sc-score-l">Face age</div>
+              {faceRead?.age_unreliable ? (
+                <div className="sc-score-note">
+                  Estimate may vary on deep skin tones — retake in good light for best results.
+                </div>
+              ) : null}
             </div>
-            {skinAge != null && skinAge !== faceAge && (
+            {skinAge != null && (
               <div className="sc-score-card">
-                <div className="sc-score-n sc-score-n--warn">{skinAge}</div>
+                <div className={`sc-score-n${skinDelta > 0 ? ' sc-score-n--warn' : ''}`}>{skinAge}</div>
                 <div className="sc-score-l">Skin age</div>
-                <div className="sc-score-delta">+{skinAge - faceAge} yrs gap</div>
+                <div className={`sc-score-delta${skinDelta <= 0 ? ' sc-score-delta--ok' : ''}`}>
+                  {skinDelta > 0 ? `+${skinDelta} yrs` : skinDelta < 0 ? `${skinDelta} yrs` : 'Aligned'}
+                </div>
               </div>
             )}
             {faceRead?.fitzpatrick_estimate && (
               <div className="sc-score-card">
-                <div className="sc-score-n sc-score-n--sm">{faceRead.fitzpatrick_estimate}</div>
-                <div className="sc-score-l">Fitzpatrick</div>
-                <div className="sc-score-delta sc-score-delta--muted">
-                  {fitzpatrickToneLabel(faceRead.fit_skin_tone, faceRead.fitzpatrick_estimate)}
-                </div>
+                <div className="sc-score-n sc-score-n--sm">{fitz.short}</div>
+                <div className="sc-score-l">{fitz.toneLine || 'tone'}</div>
+                {fitz.skinLine ? (
+                  <div className="sc-score-delta sc-score-delta--muted">{fitz.skinLine}</div>
+                ) : null}
               </div>
             )}
           </div>
         )}
 
-        {!visionFailed && faceRead?.scan_summary ? (
-          <p className="sc-reveal-summary">{faceRead.scan_summary}</p>
-        ) : null}
+        {!visionFailed && insight ? <p className="sc-scan-insight">{insight}</p> : null}
 
         {visionFailed ? (
           <div className="sc-retry-state">
@@ -194,17 +227,17 @@ export default function RevealPage() {
               <li>No glasses, hair away from face</li>
               <li>Hold still for 2 seconds before capturing</li>
             </ul>
-            <button type="button" className="sc-btn sc-btn-dark sc-btn-block" onClick={retake}>
+            <button type="button" className="sc-btn-reveal-primary" onClick={retake}>
               <i className="ti ti-refresh" aria-hidden="true" /> Scan again
             </button>
           </div>
         ) : null}
 
-        {!visionFailed && findings.length > 0 ? (
+        {!visionFailed && displayFindings.length > 0 ? (
           <>
             <p className="sc-section-label">What we found</p>
             <ul className="sc-findings-list">
-              {findings.map((f, i) => {
+              {displayFindings.map((f, i) => {
                 const { icon, cls, color } = findingIcon(f.id);
                 const description = f.plain_language || f.detail || '';
                 return (
@@ -228,17 +261,27 @@ export default function RevealPage() {
           </>
         ) : null}
 
-        {!visionFailed && !findings.length && fallbackChips.length > 0 ? (
+        {!visionFailed && healthScores ? (
           <>
-            <p className="sc-section-label">What we found</p>
-            <ul className="sc-findings-list sc-findings-list--chips">
-              {fallbackChips.map((chip) => (
-                <li key={chip.id} className="sc-finding-chip">
-                  {chip.label}
-                  <span className="sc-finding-chip-score">{chip.severity}/3</span>
-                </li>
-              ))}
-            </ul>
+            <p className="sc-section-label">Skin health score</p>
+            {HEALTH_SCORE_KEYS.map((key) => {
+              const value = healthScores[key];
+              const color = meterColor(value);
+              return (
+                <div key={key} className="sc-score-meter">
+                  <div className="sc-meter-label">{HEALTH_SCORE_LABELS[key]}</div>
+                  <div className="sc-meter-bar">
+                    <div
+                      className="sc-meter-fill"
+                      style={{ width: `${value}%`, background: color }}
+                    />
+                  </div>
+                  <div className="sc-meter-val" style={{ color }}>
+                    {value}
+                  </div>
+                </div>
+              );
+            })}
           </>
         ) : null}
 
@@ -268,48 +311,49 @@ export default function RevealPage() {
                   className="sc-funnel-input"
                   placeholder="32"
                 />
-                <button type="button" className="sc-btn sc-btn-dark sc-btn-block" onClick={saveAge}>
+                <button type="button" className="sc-btn-reveal-primary" onClick={saveAge}>
                   Save
                 </button>
               </div>
             ) : (
-              <button type="button" className="sc-funnel-link" onClick={() => setEditingAge(true)}>
-                {confirmedAge
-                  ? `Real age: ${confirmedAge} · Edit`
-                  : 'Add your real age for comparison'}
+              <button type="button" className="sc-real-age-row" onClick={() => setEditingAge(true)}>
+                <i className="ti ti-calendar" aria-hidden="true" />
+                <span className="sc-real-age-label">Add your real age for comparison</span>
+                <span className="sc-real-age-action">
+                  {confirmedAge ? `Age ${confirmedAge} · Edit` : 'Enter age →'}
+                </span>
               </button>
             )}
 
-            <p className="sc-funnel-sub sc-reveal-body">
-              Wellness estimate from your photo — not a diagnosis.
-              {findings.length ? ' Findings guide your personalized plan.' : ''}
-            </p>
+            <div className="sc-cta-block">
+              <button
+                type="button"
+                className="sc-btn-reveal-primary"
+                onClick={() => navigate('/concerns')}>
+                Build my routine →
+              </button>
+              <button type="button" className="sc-btn-reveal-secondary" onClick={retake}>
+                That doesn&apos;t look right — scan again
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className="sc-btn sc-btn-dark sc-btn-block"
-              onClick={() => navigate('/concerns')}>
-              Build my routine →
-            </button>
-            <button type="button" className="sc-funnel-link" onClick={retake}>
-              That doesn&apos;t look right — scan again
-            </button>
+            <p className="sc-reveal-disclaimer">
+              Wellness estimate from your photo — not a medical diagnosis.
+            </p>
           </>
         )}
 
         {visionFailed ? (
-          <div className="sc-skip-row">
-            Don&apos;t want to retry?{' '}
-            <button type="button" className="sc-link" onClick={() => navigate('/concerns')}>
-              Continue with quick-check →
-            </button>
-          </div>
-        ) : null}
-
-        {visionFailed ? (
-          <p className="sc-funnel-sub sc-reveal-body sc-reveal-body--bottom">
-            Wellness estimate from your photo — not a diagnosis.
-          </p>
+          <>
+            <hr className="sc-reveal-divider" />
+            <div className="sc-skip-row">
+              Don&apos;t want to retry?{' '}
+              <button type="button" className="sc-link" onClick={() => navigate('/concerns')}>
+                Continue with quick-check →
+              </button>
+            </div>
+            <p className="sc-reveal-disclaimer">Wellness estimate from your photo — not a diagnosis.</p>
+          </>
         ) : null}
       </div>
     </FunnelShell>

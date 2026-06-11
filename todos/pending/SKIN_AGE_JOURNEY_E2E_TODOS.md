@@ -196,6 +196,8 @@ flowchart LR
 
 - [x] **P2-U6** Reveal redesign: State A (score row, finding cards, zone dots) + State B (retry tips, no age when vision empty); dark-skin vision prompt (`poor_lighting` finding).
 
+- [x] **P2-U7** Reveal spec parity: skin health score meters (Hydration/Clarity/Evenness/Barrier), zone labels/lines, real-age card, reveal-scoped CTAs, `health_scores` API + client fallback, `age_unreliable`.
+
 
 
 ---

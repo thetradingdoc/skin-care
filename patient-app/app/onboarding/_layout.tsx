@@ -7,6 +7,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="reveal" />
       <Stack.Screen name="concerns" />
       <Stack.Screen name="signup" />
+      <Stack.Screen name="bio-calibration" />
     </Stack>
   );
 }
