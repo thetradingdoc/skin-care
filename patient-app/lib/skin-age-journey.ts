@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 
+import { patchConsumerProfile } from '@/lib/consumer-profile-api';
+import { setJourneyProfile } from '@/lib/journey-mode-storage';
 import { patientPost } from '@/lib/patient-api';
 
 const KEYS = {
@@ -80,10 +82,11 @@ export async function completeSkinAgeJourney(sessionId: string): Promise<boolean
   const quickCheck = getQuickCheck();
   const confirmedRaw = readSession(KEYS.CONFIRMED_AGE);
   const confirmedAge = confirmedRaw ? Number(confirmedRaw) : null;
+  const hasBridgeData = Boolean(faceRead || matchJson || quickCheck);
 
   await patientPost('/api/patient/routine/template', { concern_id: concernId });
 
-  if (faceRead || matchJson || quickCheck) {
+  if (hasBridgeData) {
     try {
       await patientPost('/api/patient/funnel/bridge', {
         concern_id: concernId,
@@ -96,6 +99,25 @@ export async function completeSkinAgeJourney(sessionId: string): Promise<boolean
     } catch {
       /* bridge optional */
     }
+  }
+
+  const chosenAt = new Date().toISOString();
+  await setJourneyProfile({
+    modes: ['routine'],
+    primary: 'routine',
+    chosenAt,
+  });
+  try {
+    await patchConsumerProfile({
+      journey_modes: ['routine'],
+      primary_mode: 'routine',
+      chosen_at: chosenAt,
+      bio_calibration_complete: hasBridgeData,
+      onboarding_complete: true,
+      needs_first_photo: true,
+    });
+  } catch {
+    /* local journey profile still set */
   }
 
   clearSkinAgeJourney();

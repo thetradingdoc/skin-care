@@ -1,14 +1,19 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 /**
  * Skin & Care transactional email layout — see docs/Brand/SKIN_AND_CARE_GUIDELINES.md
  * Consumer luxury theme: white header, wordmark, Gloock headlines (landing / sign-in parity).
  */
 
+const EMAIL_WORDMARK_CID = 'skin-care-wordmark@brand';
+
 const SITE_URL = (
   process.env.SKIN_CARE_EMAIL_SITE_URL ||
   process.env.SOMO_EMAIL_SITE_URL ||
-  'https://www.myskinandcare.com'
+  'https://myskinandcare.com'
 ).replace(/\/$/, '');
 
 const EMAIL_WORDMARK_URL = `${SITE_URL}/assets/brand/email-wordmark.png`;
@@ -198,24 +203,76 @@ function hasCustomLogoUrl() {
   return !!getCustomLogoUrl();
 }
 
+function resolveEmailWordmarkPath() {
+  const candidates = [
+    path.join(__dirname, '../public/assets/brand/email-wordmark.png'),
+    path.join(__dirname, '../../unified-dashboard/assets/brand/email-wordmark.png'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+function getEmailWordmarkAttachment() {
+  if (hasCustomLogoUrl()) return null;
+  const filePath = resolveEmailWordmarkPath();
+  if (!filePath) return null;
+  return {
+    filename: 'email-wordmark.png',
+    path: filePath,
+    cid: EMAIL_WORDMARK_CID,
+    contentDisposition: 'inline',
+  };
+}
+
+const LOGO_IMG_STYLE =
+  'display:block;margin:0 auto;max-width:240px;width:240px;height:auto;border:0;';
+
+const WORDMARK_FONT = "'Be Vietnam Pro', Arial, Helvetica, sans-serif";
+const WORDMARK_SIZE_PX = 30;
+
 function logoImg(url) {
   const src = url || getCustomLogoUrl();
-  return `<img class="sc-logo" src="${escapeHtml(src)}" alt="skin care" width="240" />`;
+  return `<img class="sc-logo" src="${escapeHtml(src)}" alt="" width="240" style="${LOGO_IMG_STYLE}" />`;
 }
 
-/** Solid black composite — see docs/Brand/WORDMARK_BY_SURFACE.md */
-function emailWordmarkImg() {
-  return `<img class="sc-logo" src="${escapeHtml(EMAIL_WORDMARK_URL)}" srcset="${escapeHtml(EMAIL_WORDMARK_URL)} 1x, ${escapeHtml(EMAIL_WORDMARK_URL_2X)} 2x" alt="skin care" width="240" height="52" />`;
+/**
+ * HTML wordmark — mirrors landing lockup (skin + tulip + care).
+ * Used when no raster attachment is available (Azure-only path).
+ */
+function emailHtmlWordmark() {
+  const tulipUrl = `${SITE_URL}/assets/brand/tulip-mark.png`;
+  const font = WORDMARK_FONT;
+  const em = WORDMARK_SIZE_PX;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;border-collapse:collapse;">
+  <tr>
+    <td align="center" style="padding:0;line-height:1;mso-line-height-rule:exactly;">
+      <span style="font-family:${font};font-size:${em}px;font-weight:700;font-style:italic;color:#000000;vertical-align:bottom;">skin</span><img src="${escapeHtml(tulipUrl)}" width="34" height="12" alt="" style="display:inline-block;vertical-align:text-bottom;margin:0 3px 1px;border:0;outline:none;text-decoration:none;" /><span style="font-family:${font};font-size:${em}px;font-weight:700;font-style:normal;color:#000000;letter-spacing:-0.03em;vertical-align:bottom;">care</span>
+    </td>
+  </tr>
+</table>`;
 }
 
-function headerLogo() {
+/** Solid black composite PNG — see docs/Brand/WORDMARK_BY_SURFACE.md */
+function emailWordmarkImg(opts = {}) {
+  const { logoCid } = opts;
+  if (logoCid) {
+    return `<img class="sc-logo" src="cid:${escapeHtml(logoCid)}" alt="" width="240" height="52" style="${LOGO_IMG_STYLE}" />`;
+  }
+  return `<img class="sc-logo" src="${escapeHtml(EMAIL_WORDMARK_URL)}" srcset="${escapeHtml(EMAIL_WORDMARK_URL)} 1x, ${escapeHtml(EMAIL_WORDMARK_URL_2X)} 2x" alt="" width="240" height="52" style="${LOGO_IMG_STYLE}" />`;
+}
+
+function headerLogo(opts = {}) {
   if (hasCustomLogoUrl()) return logoImg();
-  return emailWordmarkImg();
+  if (opts.logoCid) return emailWordmarkImg(opts);
+  if (opts.useHtmlWordmark) return emailHtmlWordmark();
+  return emailWordmarkImg(opts);
 }
 
 /**
  * Full HTML email document.
- * @param {{ title: string, subtitle?: string, bodyHtml: string, preheader?: string, footerExtra?: string }} opts
+ * @param {{ title: string, subtitle?: string, bodyHtml: string, preheader?: string, footerExtra?: string, logoCid?: string }} opts
  */
 function layout(opts) {
   const title = escapeHtml(opts.title);
@@ -244,7 +301,7 @@ function layout(opts) {
   <div class="sc-wrap">
     <div class="sc-card">
       <div class="sc-header">
-        ${headerLogo()}
+        ${headerLogo({ logoCid: opts.logoCid, useHtmlWordmark: opts.useHtmlWordmark })}
         <h1>${title}</h1>
         ${subtitle}
       </div>
@@ -297,12 +354,24 @@ function infoRows(rows) {
   return panel(html);
 }
 
+function layoutBundle(opts) {
+  const attachment = hasCustomLogoUrl() ? null : getEmailWordmarkAttachment();
+  const logoCid = attachment?.cid;
+  const useHtmlWordmark = !hasCustomLogoUrl() && !attachment;
+  const html = layout({ ...opts, logoCid, useHtmlWordmark });
+  return {
+    html,
+    attachments: attachment ? [attachment] : [],
+  };
+}
+
 module.exports = {
   TOKENS,
   get LOGO_URL() {
     return getCustomLogoUrl();
   },
   getCustomLogoUrl,
+  EMAIL_WORDMARK_CID,
   EMAIL_WORDMARK_URL,
   EMAIL_WORDMARK_URL_2X,
   SITE_URL,
@@ -310,6 +379,10 @@ module.exports = {
   FOOTER_TAGLINE,
   escapeHtml,
   layout,
+  layoutBundle,
+  resolveEmailWordmarkPath,
+  getEmailWordmarkAttachment,
+  emailHtmlWordmark,
   codeBox,
   button,
   panel,

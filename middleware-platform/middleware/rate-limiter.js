@@ -31,6 +31,12 @@ function isPublicCommercePath(req) {
   return p.startsWith('/api/public/commerce') || p.startsWith('/public/commerce');
 }
 
+/** Signed-in patient portal — separate bucket so tab loads do not exhaust the global API limiter. */
+function isPatientPortalPath(req) {
+  const p = req.path || '';
+  return p.startsWith('/api/patient/');
+}
+
 // Custom key generator that handles IP addresses with ports and trust proxy
 const keyGenerator = (req) => {
   // Extract IP from req.ip, removing port if present
@@ -69,7 +75,35 @@ const apiLimiter = rateLimit({
     ip: false // Disable IP validation to handle IPs with ports
   },
   skip: (req) =>
-    shouldSkipInternalJob(req) || isPublicCatalogRead(req) || isPublicCommercePath(req)
+    shouldSkipInternalJob(req) ||
+    isPublicCatalogRead(req) ||
+    isPublicCommercePath(req) ||
+    isPatientPortalPath(req)
+});
+
+const patientPortalMax = parseInt(
+  process.env.PATIENT_PORTAL_RATE_MAX || (isDev ? '4000' : '800'),
+  10
+);
+const patientPortalKey = (req) => {
+  const sid = String(
+    req.headers['x-session-id'] || req.cookies?.patient_session_id || req.cookies?.patient_session || '',
+  ).trim();
+  if (sid) return `patient:${sid}`;
+  return `patient-ip:${keyGenerator(req)}`;
+};
+const patientPortalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: Number.isFinite(patientPortalMax) && patientPortalMax > 0 ? patientPortalMax : 800,
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: patientPortalKey,
+  validate: { trustProxy: false, ip: false },
+  skip: shouldSkipInternalJob
 });
 
 const publicCatalogReadMax = parseInt(
@@ -268,11 +302,13 @@ const chatLimiter = rateLimit({
 
 module.exports = {
   apiLimiter,
+  patientPortalLimiter,
   publicCatalogReadLimiter,
   publicDiagnosticsLimiter,
   publicCommerceLimiter,
   isPublicCatalogRead,
   isPublicCommercePath,
+  isPatientPortalPath,
   strictLimiter,
   authLimiter,
   lenientAuthLimiter,

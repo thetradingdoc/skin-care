@@ -2,7 +2,10 @@
 
 const Database = require('better-sqlite3');
 const { ensureBillingTables } = require('../database/billing-tables');
-const { activateCareProgramSubscription } = require('../services/care-program-billing-service');
+const {
+  activateCareProgramSubscription,
+  createCareProgramCheckout,
+} = require('../services/care-program-billing-service');
 
 describe('care-program-billing-service', () => {
   let db;
@@ -67,5 +70,14 @@ describe('care-program-billing-service', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].tier).toBe('care_program');
     expect(rows[0].patient_id).toBe('patient-2');
+  });
+
+  test('createCareProgramCheckout throws when STRIPE_PRICE_CARE_PROGRAM unset', async () => {
+    const prev = process.env.STRIPE_PRICE_CARE_PROGRAM;
+    delete process.env.STRIPE_PRICE_CARE_PROGRAM;
+    await expect(
+      createCareProgramCheckout({ sessionId: 'sess-1', email: 'user@example.com' }),
+    ).rejects.toThrow('STRIPE_PRICE_CARE_PROGRAM is not configured');
+    if (prev) process.env.STRIPE_PRICE_CARE_PROGRAM = prev;
   });
 });

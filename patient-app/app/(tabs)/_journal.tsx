@@ -27,6 +27,7 @@ import {
   groupEventsByServiceDate,
   monthKeysFromSources,
   computeStats,
+  rollingJournalRange,
   todayIsoLocal,
   formatUsd,
 } from '@/components/journal/journalTypes';
@@ -68,8 +69,11 @@ export default function JournalScreen() {
       setError(null);
       setOffline(false);
       try {
+        const { start, end } = rollingJournalRange(180);
         const [calendarData, eventsData, docsData] = await Promise.all([
-          patientGet('/api/patient/journal/calendar-range?start=2026-01-01&end=2026-12-31&timezone=UTC'),
+          patientGet(
+            `/api/patient/journal/calendar-range?start=${start}&end=${end}&timezone=UTC&include_empty_days=1`,
+          ),
           patientGet('/api/patient/billing/events?limit=200'),
           patientGet('/api/patient/billing/documents?limit=200'),
         ]);
@@ -341,7 +345,7 @@ export default function JournalScreen() {
                   style={styles.modalLink}
                   onPress={() => {
                     setDaySheetIso(null);
-                    router.push({ pathname: '/(tabs)/today', params: { date: daySheetIso || '' } });
+                    router.push({ pathname: '/(tabs)/home', params: { date: daySheetIso || '' } });
                   }}>
                   <Text style={styles.modalLinkText}>Open routine for this day →</Text>
                 </Pressable>
@@ -378,7 +382,7 @@ export default function JournalScreen() {
               style={styles.modalLink}
               onPress={() => {
                 setRoutineSheetIso(null);
-                router.push({ pathname: '/(tabs)/today', params: { date: routineSheetIso || '' } });
+                router.push({ pathname: '/(tabs)/home', params: { date: routineSheetIso || '' } });
               }}>
               <Text style={styles.modalLinkText}>Open full day →</Text>
             </Pressable>

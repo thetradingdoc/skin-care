@@ -1550,7 +1550,7 @@ Covers **routine Today** (photo loop), **Timeline / journal**, **middleware cale
 
 | Tab | File | Role |
 |-----|------|------|
-| Today | `patient-app/app/(tabs)/today.tsx` | Default tab — phase card, photo CTA, `/phase` steps. |
+| Home | `patient-app/app/(tabs)/home.tsx` | Default tab — BFI ring, routine steps, photo CTA. `today.tsx` redirects here. |
 | Timeline | `patient-app/app/(tabs)/timeline.tsx` | Re-exports **Journal** (`journal.tsx`). |
 | Journal | `patient-app/app/(tabs)/journal.tsx` | Calendar \| List \| Documents; calendar range + billing + documents. |
 | Money | `patient-app/app/(tabs)/money.tsx` | `GET /api/patient/billing/money-summary`. |

@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,24 +17,32 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhotoAlignPreview } from '@/components/PhotoAlignPreview';
 import { useToast } from '@/components/billing-feedback';
+import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { fetchLineupPreview } from '@/lib/conflict-api';
 import { fetchPriorProgressPhotoUrl } from '@/lib/routine-capture-overlay';
 import { uploadRoutineProgressPhoto } from '@/lib/routine-capture';
 import { setFirstPhotoLogged } from '@/lib/onboarding-storage';
+import { consumePendingCaptureUri } from '@/lib/pending-capture-uri';
 import { localTodayIso, resolveRoutineDayMode } from '@/lib/routine-day-mode';
 
 const SYMPTOM_OPTIONS = ['Redness', 'Stinging', 'New breakout', 'Dryness', 'Itching'] as const;
 
 export default function RoutineCaptureScreen() {
+  const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ date?: string; libraryUri?: string }>();
+  const params = useLocalSearchParams<{ date?: string; libraryUri?: string; library?: string }>();
   const entryDate =
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
       : localTodayIso();
-  const libraryUri = typeof params.libraryUri === 'string' ? params.libraryUri : null;
+  const pendingLibrary = consumePendingCaptureUri();
+  const libraryUri =
+    pendingLibrary?.uri ||
+    (typeof params.libraryUri === 'string' ? params.libraryUri : null);
+  const libraryMimeType = pendingLibrary?.mimeType;
 
   const [permission, requestPermission] = useCameraPermissions();
   const camRef = useRef<CameraView>(null);
@@ -98,7 +107,7 @@ export default function RoutineCaptureScreen() {
       void setFirstPhotoLogged();
       if (verdictLine) showToast(verdictLine, 'success');
       router.replace({
-        pathname: '/(tabs)/today',
+        pathname: '/(tabs)/home',
         params: { date: entryDate, celebrate: '1' },
       });
     },
@@ -106,7 +115,7 @@ export default function RoutineCaptureScreen() {
   );
 
   const uploadPhoto = useCallback(
-    async (uri: string) => {
+    async (uri: string, mimeType?: string) => {
       if (!allowsPhoto) return;
       setBusy(true);
       setError(null);
@@ -114,6 +123,7 @@ export default function RoutineCaptureScreen() {
         await uploadRoutineProgressPhoto({
           entryDate,
           uri,
+          mimeType,
           symptomTags: symptoms,
         });
         finishSuccess(preflight ? `Photo saved · ${preflight.split('—')[0].trim()}` : 'Photo saved with today\'s verdict');
@@ -170,8 +180,33 @@ export default function RoutineCaptureScreen() {
 
   const saveLibraryPhoto = useCallback(async () => {
     if (!libraryUri) return;
-    await uploadPhoto(libraryUri);
-  }, [libraryUri, uploadPhoto]);
+    await uploadPhoto(libraryUri, libraryMimeType);
+  }, [libraryUri, libraryMimeType, uploadPhoto]);
+
+  const pickWebPhoto = useCallback(async (useCamera: boolean) => {
+    setError(null);
+    const perm = useCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError(useCamera ? 'Camera access is required.' : 'Photo library access is required.');
+      return;
+    }
+    const picked = useCamera
+      ? await ImagePicker.launchCameraAsync({ quality: 0.7 })
+      : await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+    if (!picked.canceled && picked.assets?.[0]?.uri) {
+      setCapturedUri(picked.assets[0].uri);
+    }
+  }, []);
+
+  if (checking || !ready) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator color={AppTokens.color.fabBg} />
+      </SafeAreaView>
+    );
+  }
 
   if (!allowsPhoto) {
     return (
@@ -185,15 +220,37 @@ export default function RoutineCaptureScreen() {
     );
   }
 
-  if (libraryUri && !permission?.granted) {
+  if (Platform.OS === 'web' && !libraryUri && !capturedUri) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Stack.Screen options={{ title: 'Progress photo', headerShown: true }} />
+        <Text style={styles.msg}>Take or choose a photo for today&apos;s progress check-in.</Text>
+        <Pressable style={styles.btnPrimary} onPress={() => void pickWebPhoto(true)}>
+          <Text style={styles.btnPrimaryText}>Take photo</Text>
+        </Pressable>
+        <Pressable style={styles.btnGhost} onPress={() => void pickWebPhoto(false)}>
+          <Text style={styles.btnGhostText}>Choose from library</Text>
+        </Pressable>
+        <Pressable style={styles.btnGhost} onPress={() => router.back()}>
+          <Text style={styles.btnGhostText}>Cancel</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
+
+  if ((libraryUri || capturedUri) && (Platform.OS === 'web' || !permission?.granted)) {
+    const previewUri = capturedUri || libraryUri;
     return (
       <SafeAreaView style={styles.root}>
         <Stack.Screen options={{ title: 'Progress photo', headerShown: true }} />
         <View style={styles.libraryWrap}>
-          <Image source={{ uri: libraryUri }} style={styles.libraryPreview} resizeMode="cover" />
+          <Image source={{ uri: previewUri! }} style={styles.libraryPreview} resizeMode="cover" />
           {symptomsOpen ? renderSymptoms() : null}
           {error ? <Text style={styles.err}>{error}</Text> : null}
-          <Pressable style={styles.btnPrimary} onPress={() => void saveLibraryPhoto()} disabled={busy}>
+          <Pressable
+            style={styles.btnPrimary}
+            onPress={() => void uploadPhoto(previewUri!, libraryMimeType)}
+            disabled={busy}>
             <Text style={styles.btnPrimaryText}>{busy ? 'Saving…' : 'Save photo'}</Text>
           </Pressable>
           <Pressable style={styles.btnGhost} onPress={() => setAlignOpen(true)}>
@@ -207,7 +264,7 @@ export default function RoutineCaptureScreen() {
           visible={alignOpen}
           priorUrl={ghostUrl}
           priorDate={ghostPriorDate}
-          newUri={libraryUri}
+          newUri={previewUri!}
           onRetake={() => router.back()}
           onUsePhoto={() => setAlignOpen(false)}
           onCancel={() => setAlignOpen(false)}
@@ -264,7 +321,7 @@ export default function RoutineCaptureScreen() {
         </Pressable>
         {symptomsOpen ? renderSymptoms() : null}
         {error ? <Text style={styles.err}>{error}</Text> : null}
-        {busy ? <ActivityIndicator color={JournalTokens.color.accent} style={{ marginBottom: 8 }} /> : null}
+        {busy ? <ActivityIndicator color={AppTokens.color.fabBg} style={{ marginBottom: 8 }} /> : null}
         <Pressable
           style={[styles.shutter, busy && styles.shutterDisabled]}
           onPress={() => void snap()}
@@ -282,7 +339,7 @@ export default function RoutineCaptureScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: JournalTokens.color.cream },
+  center: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: AppTokens.color.pageBg },
   cameraWrap: { flex: 1, position: 'relative' },
   camera: { flex: 1 },
   ghostOverlayWrap: {
@@ -321,7 +378,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: JournalTokens.color.accent,
+    backgroundColor: AppTokens.color.fabBg,
     borderWidth: 4,
     borderColor: '#fff',
     marginBottom: 8,
@@ -339,16 +396,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  chipOn: { backgroundColor: JournalTokens.color.accent, borderColor: JournalTokens.color.accent },
+  chipOn: { backgroundColor: AppTokens.color.fabBg, borderColor: AppTokens.color.fabBg },
   chipText: { color: '#e2e8f0', fontSize: 11 },
   chipTextOn: { color: '#fff', fontWeight: '600' },
   err: { color: '#fca5a5', fontSize: 12, marginBottom: 6, textAlign: 'center' },
   btnPrimary: {
-    backgroundColor: JournalTokens.color.accent,
+    backgroundColor: AppTokens.color.fabBg,
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 10,
+    borderRadius: 12,
     marginTop: 8,
+    minHeight: AppTokens.minTap,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   btnPrimaryText: { color: '#fff', fontWeight: '700' },
   btnGhost: { paddingVertical: 10 },
@@ -356,6 +416,6 @@ const styles = StyleSheet.create({
   btn: { marginTop: 12, padding: 12 },
   btnText: { color: JournalTokens.color.accent, fontWeight: '600' },
   msg: { color: JournalTokens.color.ink, textAlign: 'center', marginBottom: 16 },
-  libraryWrap: { flex: 1, padding: 16, backgroundColor: JournalTokens.color.cream },
+  libraryWrap: { flex: 1, padding: 16, backgroundColor: AppTokens.color.pageBg },
   libraryPreview: { width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: '#e2e8f0' },
 });

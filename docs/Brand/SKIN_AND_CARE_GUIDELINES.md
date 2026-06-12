@@ -51,6 +51,24 @@ Matches `patient-app/constants/journalTokens.ts` and `unified-dashboard/assets/c
 | `--sc-terracotta` | `#c16e52` | Warm highlight |
 | `--sc-success` | `#4f8a5b` | Success states |
 
+## Consumer UI (patient app + landing funnel)
+
+In-app and funnel surfaces use a **white** page shell (not cream) for uniformity with the web scan funnel.
+
+| Token | Hex | Role |
+|-------|-----|------|
+| `pageBg` / funnel shell | `#ffffff` | Page background (patient app roots, funnel steps) |
+| `fabBg` / consumer CTA | `#111111` | Primary buttons (Continue, Scan, Add product) |
+| `card` | `#fffdf9` | Tab bar, cards, panels |
+
+Rules:
+
+- **Primary actions** in consumer flows: black `#111`, not billing blue `#314db6` (blue remains for links and provider portal).
+- **Onboarding / funnel steps** (`/scan`, journey chooser, sign-in): no header wordmark — back link + content only.
+- **Marketing home** (`/`): full wordmark header unchanged.
+
+RN SSOT: `patient-app/constants/appTokens.ts`.
+
 ## Typography
 
 | Role | Font | CSS variable |

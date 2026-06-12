@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton } from '@/components/billing-ui';
+import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
-import { TODAY_HREF } from '@/constants/routes';
+import { HOME_HREF } from '@/constants/routes';
+import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { fetchBioProfile, saveBioProfile } from '@/lib/conflict-api';
 
 const CONDITIONS: { id: string; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
@@ -29,6 +31,7 @@ const PRESCRIPTIONS: { id: string; label: string; icon: keyof typeof MaterialIco
 ];
 
 export default function BioCalibrationScreen() {
+  const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [conditions, setConditions] = useState<string[]>([]);
@@ -84,13 +87,17 @@ export default function BioCalibrationScreen() {
         prescriptions: noneRx ? [] : prescriptions,
         profile_complete: true,
       });
-      router.replace(TODAY_HREF);
+      router.replace(HOME_HREF);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not save profile');
     } finally {
       setBusy(false);
     }
   };
+
+  if (checking || !ready) {
+    return <SafeAreaView style={styles.root} />;
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -169,9 +176,9 @@ export default function BioCalibrationScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {step < 2 ? (
-          <PrimaryButton label="Continue" onPress={next} />
+          <ConsumerPrimaryButton label="Continue" onPress={next} />
         ) : (
-          <PrimaryButton label={busy ? 'Saving…' : 'Save profile'} onPress={() => void save()} />
+          <ConsumerPrimaryButton label={busy ? 'Saving…' : 'Save profile'} onPress={() => void save()} />
         )}
         {step > 0 ? (
           <Pressable onPress={() => setStep((s) => s - 1)}>
@@ -184,7 +191,7 @@ export default function BioCalibrationScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, gap: 12 },
   dots: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#D1D5DB' },

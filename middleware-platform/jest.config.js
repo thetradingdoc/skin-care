@@ -8,7 +8,8 @@ module.exports = {
   // Opt-in HTTP smoke — not part of default CI Jest. See __tests__/README.md. Playwright specs live under e2e/*.spec.cjs.
   testPathIgnorePatterns: [
     '/node_modules/',
-    '<rootDir>/__tests__/smoke/'
+    '<rootDir>/__tests__/smoke/',
+    '<rootDir>/__tests__/helpers/',
   ],
   setupFiles: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [

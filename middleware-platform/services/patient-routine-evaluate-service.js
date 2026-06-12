@@ -199,145 +199,13 @@ function filterForHighlight(allConflicts, alerts, highlightRow) {
 }
 
 function evaluatePatientLineup(db, { sessionId, patientId, slots: inputSlots, highlightProductId = null }) {
-  ensureConflictEngineTables(db);
-  const graph = require('../database').createIngredientConflictGraph?.();
-  if (!graph) {
-    return {
-      success: false,
-      error: 'conflict_graph_unavailable',
-      graph_unavailable: true,
-    };
-  }
-
-  const bioContext = buildBioProfileContext(db, { sessionId, patientId });
-  let lineup = inputSlots
-    ? { slots: inputSlots, source: 'manual', productRows: [] }
-    : resolvePatientLineupSlots(db, { sessionId, patientId });
-
-  if (!lineup.productRows?.length && sessionId) {
-    lineup.productRows = resolveShelfToSlots(db, sessionId).productRows || [];
-  }
-
-  const highlightRow = highlightProductId
-    ? (lineup.productRows || []).find((r) => String(r.id) === String(highlightProductId)) ||
-      db.prepare(`SELECT * FROM patient_onboarding_step3_products WHERE session_id = ? AND id = ?`).get(
-        sessionId,
-        highlightProductId
-      )
-    : null;
-
-  const productLabels = (lineup.productRows || []).map(
-    (r) => r.custom_product_name || r.catalog_product_id || ''
-  );
-  productLabels.push(
-    ...(lineup.slots || []).flatMap((s) => (s.steps || []).map((st) => st.product_name || ''))
-  );
-
-  const verdict = graph.evaluateRoutine(lineup.slots || []);
-  const classOverloads = detectClassOverloads(lineup.slots, productLabels);
-  let allConflicts = [...(verdict.conflicts || []), ...classOverloads];
-
-  let overall = verdict.overall;
-  if (classOverloads.some((c) => c.verdict === 'avoid')) overall = 'avoid';
-  else if (classOverloads.length && overall === 'safe') overall = 'caution';
-
-  const barrier = computeBarrierMetrics(lineup.slots, allConflicts);
-  let contraindicationAlerts = bioContext.profile_complete
-    ? buildContraindicationAlerts(bioContext, lineup.slots)
-    : [];
-
-  if (contraindicationAlerts.some((a) => a.severity === 'high') && overall === 'safe') {
-    overall = 'caution';
-  }
-
-  if (highlightRow) {
-    const filtered = filterForHighlight(allConflicts, contraindicationAlerts, highlightRow);
-    allConflicts = filtered.conflicts.length ? filtered.conflicts : allConflicts;
-    contraindicationAlerts = filtered.contraindication_alerts;
-    if (filtered.conflicts.length) {
-      overall = filtered.conflicts.some((c) => c.verdict === 'avoid' || c.severity === 'critical')
-        ? 'avoid'
-        : 'caution';
-    }
-  }
-
-  const compatibility_score = overallToScore(overall, barrier.barrier_friction_index);
-  const lineup_hash = computeLineupHash({ slots: lineup.slots, bioProfile: bioContext });
-  const spacing_notes = buildSpacingNotes(allConflicts);
-  const evidence_snippets = buildEvidenceSnippets(db, { ...verdict, conflicts: allConflicts });
-  const suggested_fix = buildSuggestedFix(verdict, contraindicationAlerts);
-
-  const productName =
-    highlightRow?.custom_product_name || highlightRow?.catalog_product_id || null;
-
-  let heroTitle =
-    overall === 'avoid'
-      ? 'High conflict for you'
-      : overall === 'caution'
-        ? 'Barrier under stress'
-        : 'Looking good';
-  let heroSub =
-    overall === 'safe'
-      ? 'Your current lineup is compatible.'
-      : `${allConflicts.length} issue${allConflicts.length === 1 ? '' : 's'} detected in your stack.`;
-
-  if (highlightRow && productName) {
-    heroTitle =
-      overall === 'avoid'
-        ? 'High conflict for you'
-        : overall === 'caution'
-          ? 'Use with caution'
-          : 'Looks compatible';
-    heroSub =
-      overall === 'safe'
-        ? `${productName} fits your current routine.`
-        : `${productName} may clash with actives already on your shelf.`;
-  }
-
-  const product_statuses = (lineup.productRows || []).map((row) => ({
-    shelf_product_id: row.id,
-    product_name: row.custom_product_name || row.catalog_product_id,
-    status: perProductStatus({ conflicts: allConflicts }, row),
-    usage_time: row.usage_time,
-    note:
-      String(row.id) === String(highlightProductId) && allConflicts[0]?.notes
-        ? allConflicts[0].notes
-        : undefined,
-  }));
-
-  const routine_step_states = buildRoutineStepStates(db, {
+  const { runEvaluatePipelineSync } = require('./consumer-evaluate-nodes');
+  return runEvaluatePipelineSync(db, {
     sessionId,
     patientId,
-    slots: lineup.slots,
-    conflicts: allConflicts,
-    bfi: barrier.barrier_friction_index,
+    slots: inputSlots,
+    highlightProductId,
   });
-
-  return {
-    success: true,
-    has_lineup: (lineup.slots || []).length > 0,
-    source: lineup.source,
-    overall,
-    compatibility_score,
-    barrier_friction_index: barrier.barrier_friction_index,
-    barrier_label: barrier.barrier_label,
-    conflicts: allConflicts,
-    spacing_notes,
-    contraindication_alerts: contraindicationAlerts,
-    suggested_split: verdict.suggested_split,
-    suggested_fix,
-    evidence_snippets,
-    lineup_hash,
-    slots: lineup.slots,
-    product_statuses,
-    routine_step_states,
-    profile_complete: bioContext.profile_complete,
-    partial_verdict: !bioContext.profile_complete,
-    hero_title: heroTitle,
-    hero_subtitle: heroSub,
-    highlight_product_id: highlightProductId || null,
-    reason_codes: verdict.reason_codes || [],
-  };
 }
 
 function saveLineupSnapshot(db, { sessionId, patientId, entryDate, evaluateResult }) {
@@ -374,6 +242,8 @@ module.exports = {
   saveLineupSnapshot,
   buildSpacingNotes,
   buildRoutineStepStates,
+  buildContraindicationAlerts,
+  buildEvidenceSnippets,
   overallToScore,
   perProductStatus,
 };

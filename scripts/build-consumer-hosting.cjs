@@ -21,9 +21,16 @@ const ROOT = path.join(__dirname, '..');
 const UD = path.join(ROOT, 'unified-dashboard');
 const LANDING = path.join(UD, 'skin-care-landing');
 const PATIENT_APP = path.join(ROOT, 'patient-app');
-const OUT = path.join(UD, 'hosting-dist-consumer');
+const OUT = path.join(UD, process.env.CONSUMER_HOSTING_OUT || 'hosting-dist-consumer');
 
-const API_BASE = (process.env.VITE_API_BASE || 'https://api.callsomo.com').replace(/\/$/, '');
+function resolveBuildApiBase(envKey, fallback) {
+  const trimmed = String(process.env[envKey] ?? '').trim();
+  if (trimmed) return trimmed.replace(/\/$/, '');
+  return fallback.replace(/\/$/, '');
+}
+
+const API_BASE = resolveBuildApiBase('VITE_API_BASE', 'https://api.callsomo.com');
+const PATIENT_API_BASE = resolveBuildApiBase('EXPO_PUBLIC_API_BASE_URL', API_BASE);
 
 const TULIP_FAVICON_LINKS = `  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -125,7 +132,8 @@ function copyDir(src, dest, { merge = false } = {}) {
 }
 
 function main() {
-  console.log(`Building skin-care-landing (VITE_API_BASE=${API_BASE})…`);
+  const landingApiLabel = API_BASE || '(relative /api)';
+  console.log(`Building skin-care-landing (VITE_API_BASE=${landingApiLabel})…`);
   const env = { ...process.env, VITE_API_BASE: API_BASE };
   const install = spawnSync('npm', ['ci'], {
     cwd: LANDING,
@@ -142,11 +150,12 @@ function main() {
   });
   if (build.status !== 0) process.exit(build.status || 1);
 
-  console.log('Building Expo web patient app…');
+  const patientApiLabel = PATIENT_API_BASE || '(relative /api)';
+  console.log(`Building Expo web patient app (EXPO_PUBLIC_API_BASE_URL=${patientApiLabel})…`);
   const patientEnv = {
     ...process.env,
-    EXPO_PUBLIC_API_BASE_URL: API_BASE,
-    EXPO_PUBLIC_WEB_SIGNUP_URL: 'https://myskinandcare.com/scan',
+    EXPO_PUBLIC_API_BASE_URL: PATIENT_API_BASE,
+    EXPO_PUBLIC_WEB_SIGNUP_URL: process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://myskinandcare.com/scan',
   };
   const patientInstall = spawnSync('npm', ['ci'], {
     cwd: PATIENT_APP,
@@ -223,8 +232,13 @@ function main() {
   writeTulipFaviconIco(OUT);
 
   console.log(`\n✅ Consumer hosting bundle: ${OUT}`);
-  console.log('   Verify: npm run verify:consumer-hosting');
-  console.log('   Deploy: npm run deploy:consumer-hosting');
+  if (path.basename(OUT) === 'hosting-dist-consumer-local') {
+    console.log('   Serve: npm run dev:consumer-local');
+    console.log('   Verify: npm run verify:local-consumer-dev');
+  } else {
+    console.log('   Verify: npm run verify:consumer-hosting');
+    console.log('   Deploy: npm run deploy:consumer-hosting');
+  }
 }
 
 main();

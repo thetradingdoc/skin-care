@@ -1,18 +1,31 @@
 import type { Href } from 'expo-router';
 
-import { getPatientSessionId } from '@/lib/patient-session';
+import { SIGN_IN_HREF } from '@/constants/routes';
+import { isPatientSessionAuthError } from '@/lib/patient-auth';
+import { patientGet } from '@/lib/patient-api';
+import { clearPatientSession, getPatientSessionId } from '@/lib/patient-session';
 import { resolvePostAuthRoute } from '@/lib/resolve-post-auth-route';
-import { SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
 
 export type InitialRoute = Href;
 
-export { BIO_CALIBRATION_HREF, resolvePostAuthRoute };
+export { resolvePostAuthRoute };
+export { BIO_CALIBRATION_HREF, JOURNEY_CHOOSE_HREF } from '@/constants/routes';
 
-/** Cold start — includes sign-in gate when no session. */
+/** Cold start — validates session server-side when stored locally. */
 export async function resolveInitialRoute(): Promise<InitialRoute> {
   const sessionId = await getPatientSessionId();
-  if (sessionId) {
+  if (!sessionId) {
+    return SIGN_IN_HREF;
+  }
+  try {
+    await patientGet('/api/patient/me');
+    return resolvePostAuthRoute();
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '';
+    if (isPatientSessionAuthError(401, msg)) {
+      await clearPatientSession();
+      return SIGN_IN_HREF;
+    }
     return resolvePostAuthRoute();
   }
-  return SIGN_IN_HREF;
 }

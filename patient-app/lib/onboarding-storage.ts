@@ -1,5 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { persistDelete, persistGet, persistSet } from '@/lib/local-persist';
 
 export const ONBOARDING_FACE_READ_KEY = 'onboarding_face_read';
 export const ONBOARDING_FACE_PHOTO_URI_KEY = 'onboarding_face_photo_uri';
@@ -40,37 +39,18 @@ export type FaceReadPayload = {
   user_message?: string;
 };
 
-async function secureSet(key: string, value: string): Promise<void> {
-  if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      /* private mode / quota */
-    }
-  }
-  try {
-    await SecureStore.setItemAsync(key, value);
-  } catch {
-    /* web static export may not expose SecureStore writes */
-  }
-}
-
 export async function getOnboardingDone(): Promise<boolean> {
-  try {
-    return (await SecureStore.getItemAsync(ONBOARDING_DONE_KEY)) === '1';
-  } catch {
-    return false;
-  }
+  return (await persistGet(ONBOARDING_DONE_KEY)) === '1';
 }
 
 export async function setOnboardingDone(): Promise<void> {
-  await SecureStore.setItemAsync(ONBOARDING_DONE_KEY, '1');
+  await persistSet(ONBOARDING_DONE_KEY, '1');
 }
 
 export async function getFaceRead(): Promise<FaceReadPayload | null> {
+  const raw = await persistGet(ONBOARDING_FACE_READ_KEY);
+  if (!raw) return null;
   try {
-    const raw = await SecureStore.getItemAsync(ONBOARDING_FACE_READ_KEY);
-    if (!raw) return null;
     return JSON.parse(raw) as FaceReadPayload;
   } catch {
     return null;
@@ -79,63 +59,51 @@ export async function getFaceRead(): Promise<FaceReadPayload | null> {
 
 export async function setFaceRead(payload: FaceReadPayload | null): Promise<void> {
   if (!payload) {
-    await SecureStore.deleteItemAsync(ONBOARDING_FACE_READ_KEY);
+    await persistDelete(ONBOARDING_FACE_READ_KEY);
     return;
   }
-  await SecureStore.setItemAsync(ONBOARDING_FACE_READ_KEY, JSON.stringify(payload));
+  await persistSet(ONBOARDING_FACE_READ_KEY, JSON.stringify(payload));
 }
 
 export async function getFacePhotoUri(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY);
-  } catch {
-    return null;
-  }
+  return persistGet(ONBOARDING_FACE_PHOTO_URI_KEY);
 }
 
 export async function setFacePhotoUri(uri: string | null): Promise<void> {
   if (!uri) {
-    await SecureStore.deleteItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY);
+    await persistDelete(ONBOARDING_FACE_PHOTO_URI_KEY);
     return;
   }
-  await SecureStore.setItemAsync(ONBOARDING_FACE_PHOTO_URI_KEY, uri);
+  await persistSet(ONBOARDING_FACE_PHOTO_URI_KEY, uri);
 }
 
 export async function getConfirmedAge(): Promise<number | null> {
-  try {
-    const raw = await SecureStore.getItemAsync(ONBOARDING_CONFIRMED_AGE_KEY);
-    if (!raw) return null;
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
+  const raw = await persistGet(ONBOARDING_CONFIRMED_AGE_KEY);
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
 }
 
 export async function setConfirmedAge(age: number | null): Promise<void> {
   if (age == null) {
-    await SecureStore.deleteItemAsync(ONBOARDING_CONFIRMED_AGE_KEY);
+    await persistDelete(ONBOARDING_CONFIRMED_AGE_KEY);
     return;
   }
-  await SecureStore.setItemAsync(ONBOARDING_CONFIRMED_AGE_KEY, String(Math.round(age)));
+  await persistSet(ONBOARDING_CONFIRMED_AGE_KEY, String(Math.round(age)));
 }
 
 export async function getOnboardingConcernId(): Promise<string | null> {
-  try {
-    return await SecureStore.getItemAsync(ONBOARDING_CONCERN_ID_KEY);
-  } catch {
-    return null;
-  }
+  return persistGet(ONBOARDING_CONCERN_ID_KEY);
 }
 
 export async function setOnboardingConcernId(concernId: string): Promise<void> {
-  await secureSet(ONBOARDING_CONCERN_ID_KEY, concernId);
+  await persistSet(ONBOARDING_CONCERN_ID_KEY, concernId);
 }
 
 export async function getMatchJson(): Promise<Record<string, unknown> | null> {
+  const raw = await persistGet(ONBOARDING_MATCH_JSON_KEY);
+  if (!raw) return null;
   try {
-    const raw = await SecureStore.getItemAsync(ONBOARDING_MATCH_JSON_KEY);
-    if (!raw) return null;
     return JSON.parse(raw) as Record<string, unknown>;
   } catch {
     return null;
@@ -144,47 +112,39 @@ export async function getMatchJson(): Promise<Record<string, unknown> | null> {
 
 export async function setMatchJson(match: Record<string, unknown> | null): Promise<void> {
   if (!match) {
-    await SecureStore.deleteItemAsync(ONBOARDING_MATCH_JSON_KEY);
+    await persistDelete(ONBOARDING_MATCH_JSON_KEY);
     return;
   }
-  await secureSet(ONBOARDING_MATCH_JSON_KEY, JSON.stringify(match));
+  await persistSet(ONBOARDING_MATCH_JSON_KEY, JSON.stringify(match));
 }
 
 export async function setNeedsFirstPhoto(): Promise<void> {
-  await SecureStore.setItemAsync(ONBOARDING_NEEDS_FIRST_PHOTO_KEY, '1');
+  await persistSet(ONBOARDING_NEEDS_FIRST_PHOTO_KEY, '1');
 }
 
 export async function getNeedsFirstPhoto(): Promise<boolean> {
-  try {
-    return (await SecureStore.getItemAsync(ONBOARDING_NEEDS_FIRST_PHOTO_KEY)) === '1';
-  } catch {
-    return false;
-  }
+  return (await persistGet(ONBOARDING_NEEDS_FIRST_PHOTO_KEY)) === '1';
 }
 
 export async function clearNeedsFirstPhoto(): Promise<void> {
-  await SecureStore.deleteItemAsync(ONBOARDING_NEEDS_FIRST_PHOTO_KEY);
+  await persistDelete(ONBOARDING_NEEDS_FIRST_PHOTO_KEY);
 }
 
 export async function setFirstPhotoLogged(): Promise<void> {
-  await SecureStore.setItemAsync(FIRST_PHOTO_LOGGED_KEY, '1');
+  await persistSet(FIRST_PHOTO_LOGGED_KEY, '1');
   await clearNeedsFirstPhoto();
 }
 
 export async function getFirstPhotoLogged(): Promise<boolean> {
-  try {
-    return (await SecureStore.getItemAsync(FIRST_PHOTO_LOGGED_KEY)) === '1';
-  } catch {
-    return false;
-  }
+  return (await persistGet(FIRST_PHOTO_LOGGED_KEY)) === '1';
 }
 
 export async function clearOnboardingProgress(): Promise<void> {
   await Promise.allSettled([
-    SecureStore.deleteItemAsync(ONBOARDING_FACE_READ_KEY),
-    SecureStore.deleteItemAsync(ONBOARDING_CONFIRMED_AGE_KEY),
-    SecureStore.deleteItemAsync(ONBOARDING_CONCERN_ID_KEY),
-    SecureStore.deleteItemAsync(ONBOARDING_MATCH_JSON_KEY),
-    SecureStore.deleteItemAsync(ONBOARDING_NEEDS_FIRST_PHOTO_KEY),
+    persistDelete(ONBOARDING_FACE_READ_KEY),
+    persistDelete(ONBOARDING_CONFIRMED_AGE_KEY),
+    persistDelete(ONBOARDING_CONCERN_ID_KEY),
+    persistDelete(ONBOARDING_MATCH_JSON_KEY),
+    persistDelete(ONBOARDING_NEEDS_FIRST_PHOTO_KEY),
   ]);
 }

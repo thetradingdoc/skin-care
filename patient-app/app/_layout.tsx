@@ -12,14 +12,24 @@ import { BillingFeedbackProvider } from '@/components/billing-feedback';
 import { SkinCareNavigationTheme } from '@/constants/navigationTheme';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
-import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { SIGN_IN_HREF } from '@/constants/routes';
+import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
+import { registerSessionExpiredHandler } from '@/lib/patient-auth';
 
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+function useSessionExpiryRedirect() {
+  const router = useRouter();
+  useEffect(() => {
+    return registerSessionExpiredHandler(() => {
+      router.replace(SIGN_IN_HREF);
+    });
+  }, [router]);
+}
 
 function useAppDeepLinks() {
   const router = useRouter();
@@ -65,6 +75,7 @@ function useAppDeepLinks() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  useSessionExpiryRedirect();
   useAppDeepLinks();
 
   useEffect(() => {
@@ -82,7 +93,6 @@ export default function RootLayout() {
             name="sign-in"
             options={{ headerShown: false, contentStyle: { backgroundColor: '#FFFFFF' } }}
           />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           <Stack.Screen name="checkout-chat" options={{ presentation: 'modal', title: 'Checkout chat' }} />
           <Stack.Screen name="scan-entry" options={{ presentation: 'modal', title: 'Quick capture' }} />
           <Stack.Screen name="capture-scan" options={{ presentation: 'modal', title: 'Scan receipt' }} />
@@ -92,6 +102,7 @@ export default function RootLayout() {
           <Stack.Screen name="capture-review" options={{ presentation: 'modal', title: 'Review extraction' }} />
           <Stack.Screen name="capture-complete" options={{ presentation: 'modal', title: 'Saved' }} />
           <Stack.Screen name="routine" options={{ headerShown: false }} />
+          <Stack.Screen name="track" options={{ headerShown: false }} />
           <Stack.Screen name="verdict" options={{ headerShown: false }} />
           <Stack.Screen name="compare" options={{ presentation: 'modal', title: 'Compare photos' }} />
         </Stack>

@@ -31,7 +31,7 @@ function registerPatientFunnelBridgeRoutes(
     (req, res, next) => apiLimiter(req, res, next),
     express.json({ limit: '64kb' }),
     requirePatientSession,
-    (req, res) => {
+    async (req, res) => {
       try {
         const body = req.body && typeof req.body === 'object' ? req.body : {};
         const sessionId = req.patientSessionId;
@@ -171,6 +171,29 @@ function registerPatientFunnelBridgeRoutes(
               secondary_concern_ids: secondaryConcernIds,
             },
           });
+        } catch (_) {}
+
+        try {
+          const { upsertConsumerProfile } = require('../repositories/consumer-profile-repo');
+          const profilePatch = {};
+          if (Array.isArray(body.journey_modes) || Array.isArray(body.modes)) {
+            profilePatch.journey_modes = body.journey_modes ?? body.modes;
+          }
+          if (body.primary_mode || body.primary) {
+            profilePatch.primary_mode = body.primary_mode ?? body.primary;
+          }
+          if (body.onboarding_complete != null) {
+            profilePatch.onboarding_complete = Boolean(body.onboarding_complete);
+          }
+          if (body.needs_first_photo != null) {
+            profilePatch.needs_first_photo = Boolean(body.needs_first_photo);
+          }
+          if (faceRead || concernId) {
+            profilePatch.bio_calibration_complete = Boolean(faceRead);
+          }
+          if (Object.keys(profilePatch).length) {
+            await upsertConsumerProfile(db.db, { patientId, sessionId, patch: profilePatch });
+          }
         } catch (_) {}
 
         return res.json({ success: true, session_id: sessionId });

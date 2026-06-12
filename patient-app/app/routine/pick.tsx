@@ -1,5 +1,4 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,12 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton } from '@/components/billing-ui';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
-import { PENDING_ROUTINE_CONCERN_KEY } from '@/constants/routineSession';
+import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { patientPost, publicGet } from '@/lib/patient-api';
-import { SIGN_IN_HREF } from '@/constants/routes';
+import { clearPendingRoutineConcern } from '@/lib/routine-session';
 
 type ConcernRow = {
   id: string;
@@ -81,18 +81,9 @@ export default function RoutinePickScreen() {
     setBusy(true);
     setError(null);
     try {
-      if (!ready) {
-        await SecureStore.setItemAsync(PENDING_ROUTINE_CONCERN_KEY, selected);
-        router.replace(SIGN_IN_HREF);
-        return;
-      }
       await patientPost('/api/patient/routine/template', { concern_id: selected });
-      try {
-        await SecureStore.deleteItemAsync(PENDING_ROUTINE_CONCERN_KEY);
-      } catch {
-        /* web static export may not expose SecureStore delete */
-      }
-      router.replace('/(tabs)/today');
+      await clearPendingRoutineConcern();
+      router.replace(await resolvePostAuthRoute());
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not start routine.');
     } finally {
@@ -138,7 +129,7 @@ export default function RoutinePickScreen() {
           </View>
         ) : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <PrimaryButton
+        <ConsumerPrimaryButton
           label={busy ? 'Starting…' : 'Start tracking'}
           onPress={() => void startTracking()}
         />
@@ -149,7 +140,7 @@ export default function RoutinePickScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, gap: JournalTokens.spacing.md },
   title: {
     fontFamily: JournalTokens.font.display,

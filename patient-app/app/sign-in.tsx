@@ -3,15 +3,20 @@ import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BrandWordmark } from '@/components/BrandWordmark';
 import { OtpForm } from '@/components/OtpForm';
+import { AppTokens } from '@/constants/appTokens';
 import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
-import { PENDING_ROUTINE_CONCERN_KEY } from '@/constants/routineSession';
+import { HOME_HREF, LANDING_CONCERNS_HREF, LANDING_HOME_HREF, LANDING_ORIGIN, LANDING_SCAN_HREF } from '@/constants/routes';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
-import { ROUTINE_PICK_HREF } from '@/constants/routes';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
+import { patientGet, patientPost } from '@/lib/patient-api';
+import { isPatientSessionAuthError } from '@/lib/patient-auth';
+import {
+  clearPendingRoutineConcern,
+  getPendingRoutineConcern,
+} from '@/lib/routine-session';
 import { completeSkinAgeJourney, hasSkinAgeJourneyData } from '@/lib/skin-age-journey';
 
 function webSignupLabel(url: string): string {
@@ -25,9 +30,17 @@ function webSignupLabel(url: string): string {
 }
 
 function getSignInBackHref(intent?: string, from?: string): string {
-  if (intent === 'signup' && from === 'skin-age-landing') return '/concerns';
-  if (intent === 'signup') return '/scan';
-  return '/';
+  if (intent === 'signup' && from === 'skin-age-landing') return LANDING_CONCERNS_HREF;
+  if (intent === 'signup') return LANDING_SCAN_HREF;
+  return LANDING_HOME_HREF;
+}
+
+function signInBackUrl(intent?: string, from?: string): string {
+  const path = getSignInBackHref(intent, from);
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return `${LANDING_ORIGIN}${path}`;
+  }
+  return `${LANDING_ORIGIN}${path}`;
 }
 
 function useSignInQueryParams() {
@@ -75,16 +88,16 @@ export default function SignInScreen() {
   }, [isSignupIntent, fromSkinAgeLanding]);
 
   const onBack = useCallback(() => {
-    const href = getSignInBackHref(intent, from);
+    const url = signInBackUrl(intent, from);
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.assign(href);
+      window.location.assign(url);
       return;
     }
     if (router.canGoBack()) {
       router.back();
       return;
     }
-    void Linking.openURL(`https://myskinandcare.com${href}`);
+    void Linking.openURL(url);
   }, [intent, from, router]);
 
   useEffect(() => {
@@ -96,7 +109,15 @@ export default function SignInScreen() {
         }
         const sid = await getPatientSessionId();
         if (!sid) return;
-        router.replace(await resolvePostAuthRoute());
+        try {
+          await patientGet('/api/patient/me');
+          router.replace(await resolvePostAuthRoute());
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : '';
+          if (isPatientSessionAuthError(401, msg)) {
+            await clearPatientSession();
+          }
+        }
       } catch {
         // stay on sign-in
       } finally {
@@ -109,26 +130,34 @@ export default function SignInScreen() {
     if (fromSkinAgeLanding && Platform.OS === 'web' && hasSkinAgeJourneyData() && sessionId) {
       const completed = await completeSkinAgeJourney(sessionId);
       if (completed) {
-        router.replace('/(tabs)/today?celebrate=1' as Href);
+        const route = await resolvePostAuthRoute({ journeyModes: ['routine'] });
+        if (route === HOME_HREF) {
+          router.replace({ pathname: HOME_HREF, params: { celebrate: '1' } } as Href);
+        } else {
+          router.replace(route);
+        }
         return;
       }
     }
 
-    let pendingConcern: string | null = null;
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-      pendingConcern = localStorage.getItem(PENDING_ROUTINE_CONCERN_KEY);
+    const pendingConcern = await getPendingRoutineConcern();
+    if (pendingConcern) {
+      try {
+        await patientPost('/api/patient/routine/template', { concern_id: pendingConcern });
+        await clearPendingRoutineConcern();
+        router.replace(await resolvePostAuthRoute());
+        return;
+      } catch {
+        await clearPendingRoutineConcern();
+        router.replace({
+          pathname: '/routine/pick',
+          params: { concern: pendingConcern },
+        } as Href);
+        return;
+      }
     }
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-      localStorage.removeItem(PENDING_ROUTINE_CONCERN_KEY);
-    }
+
     const route = await resolvePostAuthRoute();
-    if (route === ROUTINE_PICK_HREF && pendingConcern) {
-      router.replace({
-        pathname: '/routine/pick',
-        params: { concern: pendingConcern },
-      } as Href);
-      return;
-    }
     router.replace(route);
   }
 
@@ -151,7 +180,6 @@ export default function SignInScreen() {
           <MaterialIcons name="arrow-back" size={20} color={JournalTokens.color.muted} />
           <Text style={styles.backText}>Back</Text>
         </Pressable>
-        <BrandWordmark height={40} />
         {copy.showWebCta ? (
           <>
             <Text style={styles.newUser}>
@@ -180,7 +208,7 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   wrap: { flex: 1, padding: JournalTokens.spacing.lg },
   backRow: {
     flexDirection: 'row',

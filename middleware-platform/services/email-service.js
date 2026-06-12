@@ -46,7 +46,7 @@ function smtpFromAddress(raw) {
 class EmailService {
   /** @private Skin & Care-branded HTML wrapper — see lib/skin-care-email-layout.js */
   static _skinCareLayout(title, subtitle, bodyHtml, opts = {}) {
-    return SkinCareEmail.layout({ title, subtitle, bodyHtml, ...opts });
+    return SkinCareEmail.layoutBundle({ title, subtitle, bodyHtml, ...opts });
   }
   /**
    * Check if Azure Communication Services is configured
@@ -374,7 +374,7 @@ class EmailService {
     const calBtn = appointment.calendar_link
       ? `<p style="text-align:center;margin-top:16px;">${SkinCareEmail.button(appointment.calendar_link, 'Add to calendar')}</p>`
       : '';
-    const html = this._skinCareLayout('Appointment confirmed', dateTime, `
+    const { html, attachments } = this._skinCareLayout('Appointment confirmed', dateTime, `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p>Your appointment is scheduled.</p>
       ${SkinCareEmail.infoRows([
@@ -393,7 +393,8 @@ class EmailService {
     return await this.sendEmail({
       to: appointment.patient_email,
       subject: `Appointment Confirmed - ${dateTime}`,
-      html: html
+      html,
+      attachments
     });
   }
 
@@ -420,7 +421,7 @@ class EmailService {
       ? `<p><strong>Join here:</strong> <a href="${joinLink}">${joinLink}</a></p>`
       : '';
 
-    const html = this._skinCareLayout('Appointment in 1 hour', dateTime, `
+    const { html, attachments } = this._skinCareLayout('Appointment in 1 hour', dateTime, `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p><strong>Your appointment starts in about one hour.</strong></p>
       ${joinBlock}
@@ -439,7 +440,8 @@ class EmailService {
     return await this.sendEmail({
       to: appointment.patient_email,
       subject: `Appointment Reminder - ${dateTime}`,
-      html: html
+      html,
+      attachments
     });
   }
 
@@ -463,7 +465,7 @@ class EmailService {
       ? `<p>Upload documents before your visit: <a href="${uploadLink}">${uploadLink}</a></p>`
       : '';
 
-    const html = this._skinCareLayout('Appointment tomorrow', dateTime, `
+    const { html, attachments } = this._skinCareLayout('Appointment tomorrow', dateTime, `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name)},</h2>
       <p><strong>Your appointment is tomorrow.</strong></p>
       ${uploadBlock}
@@ -479,7 +481,8 @@ class EmailService {
     return await this.sendEmail({
       to: appointment.patient_email,
       subject: `Appointment Tomorrow - ${dateTime}`,
-      html: html
+      html,
+      attachments
     });
   }
 
@@ -487,7 +490,7 @@ class EmailService {
    * Send checkout verification code to email
    */
   static async sendCheckoutVerificationCode(email, code) {
-    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Checkout', `
+    const { html, attachments } = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Checkout', `
       <p>Enter this code to continue checkout:</p>
       ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 15 minutes.</strong></p>
@@ -495,7 +498,8 @@ class EmailService {
     return await this.sendEmail({
       to: email,
       subject: EMAIL_SUBJECT_VERIFICATION,
-      html
+      html,
+      attachments
     });
   }
 
@@ -503,7 +507,7 @@ class EmailService {
    * Send patient portal verification code
    */
   static async sendPatientVerificationCode(email, code) {
-    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, '', `
+    const { html, attachments } = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, '', `
       <p>Use this code to sign in and save your skin journey:</p>
       ${SkinCareEmail.codeBox(code)}
       <p><strong>Expires in 10 minutes.</strong></p>
@@ -513,7 +517,8 @@ class EmailService {
     const result = await this.sendEmail({
       to: email,
       subject: EMAIL_SUBJECT_VERIFICATION,
-      html
+      html,
+      attachments
     });
     if (!result?.success && process.env.NODE_ENV === 'production') {
       console.error('❌ Patient verification email not delivered:', result?.error || result?.provider);
@@ -532,7 +537,7 @@ class EmailService {
     const baseUrl = process.env.BASE_URL || process.env.API_BASE_URL || 'https://api.callsomo.com';
     const appointmentsUrl = baseUrl.replace(/\/$/, '') + '/patients/appointments.html';
 
-    const html = this._skinCareLayout('Complete your payment', 'Secure checkout', `
+    const { html, attachments } = this._skinCareLayout('Complete your payment', 'Secure checkout', `
       <p>Your email is verified. Use the button below to pay securely.</p>
       ${SkinCareEmail.infoRows([
         { label: 'Product', value: order?.product_name || 'Service' },
@@ -547,7 +552,8 @@ class EmailService {
     const result = await this.sendEmail({
       to: email,
       subject: 'Complete Your Payment',
-      html: html
+      html,
+      attachments
     });
     this._recordRcmE2eEmail({
       to: email,
@@ -607,7 +613,7 @@ class EmailService {
       ? `<p><img src="${esc(productImageUrl)}" alt="${product}" style="display:block;max-width:220px;height:auto;border-radius:14px;border:1px solid #ece8df;" /></p>`
       : '';
 
-    const html = this._skinCareLayout('Payment receipt', 'Thank you for your order', `
+    const { html, attachments } = this._skinCareLayout('Payment receipt', 'Thank you for your order', `
       <h2>Hi ${name},</h2>
       <p>Thanks for your order. Your payment was successful and your receipt is below.</p>
       ${productImageBlock}
@@ -619,7 +625,8 @@ class EmailService {
     return await this.sendEmail({
       to: checkout.customer_email,
       subject: `Payment Receipt - $${amountPaid}`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -629,7 +636,7 @@ class EmailService {
   static async sendEscrowTimeoutNotification(providerEmail, attempt) {
     const claimId = attempt.claim_id || 'N/A';
     const amount = attempt.provider_amount ?? attempt.total_approved ?? 0;
-    const html = this._skinCareLayout('Escrow timeout', 'Action required', `
+    const { html, attachments } = this._skinCareLayout('Escrow timeout', 'Action required', `
       <p>An escrow settlement has exceeded the timeout threshold and requires attention.</p>
       ${SkinCareEmail.infoRows([
         { label: 'Claim ID', value: claimId },
@@ -638,14 +645,14 @@ class EmailService {
       <p>Please review and retry settlement via the admin recovery endpoint if needed.</p>
       <p>Best regards,<br>The Skin & Care finance team</p>
     `, { preheader: 'Escrow settlement timeout' });
-    return await this.sendEmail({ to: providerEmail, subject: 'Escrow Timeout – Action Required', html });
+    return await this.sendEmail({ to: providerEmail, subject: 'Escrow Timeout – Action Required', html, attachments });
   }
 
   /**
    * Send insurance billing email
    */
   static async sendInsuranceBillingEmail(insurerEmail, claimData) {
-    const html = this._skinCareLayout('Insurance claim submitted', 'For your review', `
+    const { html, attachments } = this._skinCareLayout('Insurance claim submitted', 'For your review', `
       <p>Dear Insurance Provider,</p>
       <p>A new insurance claim has been submitted for processing:</p>
       ${SkinCareEmail.infoRows([
@@ -669,7 +676,8 @@ class EmailService {
     return await this.sendEmail({
       to: insurerEmail,
       subject: `Insurance Claim Submitted - ${claimData.claimId || 'New Claim'}`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -680,7 +688,7 @@ class EmailService {
     const payBtn = billingData.paymentLink
       ? `<p style="text-align:center;">${SkinCareEmail.button(billingData.paymentLink, 'Pay now')}</p>`
       : '';
-    const html = this._skinCareLayout(
+    const { html, attachments } = this._skinCareLayout(
       'Billing statement',
       `$${(billingData.amountDue || 0).toFixed(2)} due`,
       `
@@ -703,7 +711,8 @@ class EmailService {
     return await this.sendEmail({
       to: patientEmail,
       subject: `Billing Statement - $${(billingData.amountDue || 0).toFixed(2)} Due`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -729,7 +738,7 @@ class EmailService {
    * Send email verification code
    */
   static async sendVerificationCode(email, code, name) {
-    const html = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Skin & Care API', `
+    const { html, attachments } = this._skinCareLayout(EMAIL_SUBJECT_VERIFICATION, 'Skin & Care API', `
       <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>Thanks for signing up. Use this code to verify your email:</p>
       ${SkinCareEmail.codeBox(code)}
@@ -740,7 +749,8 @@ class EmailService {
     return await this.sendEmail({
       to: email,
       subject: EMAIL_SUBJECT_VERIFICATION,
-      html
+      html,
+      attachments
     });
   }
 
@@ -771,7 +781,7 @@ class EmailService {
       : null;
 
     const shopUrl = `${(process.env.BASE_URL || 'https://api.callsomo.com').replace(/\/$/, '')}/storefront`;
-    const html = this._skinCareLayout('Special offer', SkinCareEmail.escapeHtml(merchantName), `
+    const { html, attachments } = this._skinCareLayout('Special offer', SkinCareEmail.escapeHtml(merchantName), `
       <h2>Hi ${SkinCareEmail.escapeHtml(customerName) || 'there'},</h2>
       <p style="text-align:center;">
         <span style="display:inline-block;background:${SkinCareEmail.TOKENS.brandBlue};color:#fff;font-size:32px;font-weight:700;padding:16px 28px;border-radius:12px;">${SkinCareEmail.escapeHtml(discountText)}</span>
@@ -787,7 +797,8 @@ class EmailService {
     return await this.sendEmail({
       to: email,
       subject: `${discountText} — ${promotion.name || 'Special offer'} (${merchantName})`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -828,7 +839,7 @@ class EmailService {
       valueHtml: `<strong style="font-size:20px;color:${SkinCareEmail.TOKENS.brandBlue}">$${invoice.total.toFixed(2)}</strong>`
     });
 
-    const html = this._skinCareLayout(
+    const { html, attachments } = this._skinCareLayout(
       'Monthly invoice',
       `Invoice #${invoice.invoice_number}`,
       `
@@ -844,7 +855,8 @@ class EmailService {
     return await this.sendEmail({
       to: email,
       subject: `Skin & Care invoice — $${invoice.total.toFixed(2)} due (${invoice.invoice_number})`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -879,7 +891,7 @@ class EmailService {
       });
     }
 
-    const html = this._skinCareLayout('Welcome to Skin & Care', 'Your account is ready', `
+    const { html, attachments } = this._skinCareLayout('Welcome to Skin & Care', 'Your account is ready', `
       <h2>Hi ${SkinCareEmail.escapeHtml(customerName) || 'there'},</h2>
       <p>Your Skin & Care account is ready. Sign in to access your ${SkinCareEmail.escapeHtml(dashboardType)}.</p>
       ${SkinCareEmail.infoRows(infoRows)}
@@ -892,7 +904,8 @@ class EmailService {
     return await this.sendEmail({
       to: customerEmail,
       subject: 'Welcome to Skin & Care — your account is ready',
-      html
+      html,
+      attachments
     });
   }
 
@@ -900,7 +913,7 @@ class EmailService {
    * Send password reset email
    */
   static async sendPasswordResetEmail(email, name, resetUrl) {
-    const html = this._skinCareLayout('Reset your password', 'Account security', `
+    const { html, attachments } = this._skinCareLayout('Reset your password', 'Account security', `
       <h2>Hi ${SkinCareEmail.escapeHtml(name) || 'there'},</h2>
       <p>We received a request to reset your password.</p>
       <p style="text-align:center;">${SkinCareEmail.button(resetUrl, 'Reset password')}</p>
@@ -912,7 +925,8 @@ class EmailService {
     return await this.sendEmail({
       to: email,
       subject: 'Skin & Care — Reset your password',
-      html
+      html,
+      attachments
     });
   }
 
@@ -934,7 +948,7 @@ class EmailService {
       .join('');
     const esc = SkinCareEmail.escapeHtml;
 
-    const html = this._skinCareLayout('New feature request', 'Admin notification', `
+    const { html, attachments } = this._skinCareLayout('New feature request', 'Admin notification', `
       <p>A customer has requested access to new API features:</p>
       ${SkinCareEmail.panel(`<ul style="margin:0;padding-left:20px;">${featuresList}</ul>`)}
       ${SkinCareEmail.infoRows([
@@ -952,7 +966,8 @@ class EmailService {
     return await this.sendEmail({
       to: adminEmail,
       subject: `Notification — New feature request from ${esc(customerName)} (${requestedFeatures.length} feature(s))`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -976,11 +991,12 @@ class EmailService {
         <tr><td style="padding:8px 0;font-weight:600;vertical-align:top;">Message</td><td style="white-space:pre-wrap;">${esc(product || '(none)')}</td></tr>
       </table>
     `;
-    const html = this._skinCareLayout('New inquiry', sourceLabel, bodyHtml);
+    const { html, attachments } = this._skinCareLayout('New inquiry', sourceLabel, bodyHtml);
     return await this.sendEmail({
       to: adminEmail,
       subject: `Notification — Inquiry (${sourceLabel}) from ${name}`,
       html,
+      attachments,
       text: `Source: ${source || 'unknown'}\nName: ${name}\nEmail: ${email}\n\n${product || ''}`,
     });
   }
@@ -998,7 +1014,7 @@ class EmailService {
     const alertLevel = isCritical ? 'Critical' : 'Low';
     const variant = isCritical ? 'warning' : undefined;
 
-    const html = this._skinCareLayout(
+    const { html, attachments } = this._skinCareLayout(
       `${alertLevel} credit alert`,
       `${creditBalance} minutes remaining`,
       `
@@ -1029,7 +1045,8 @@ class EmailService {
     return await this.sendEmail({
       to: customerEmail,
       subject: `Notification — ${alertLevel} credit alert (${creditBalance} minutes remaining)`,
-      html
+      html,
+      attachments
     });
   }
 
@@ -1041,7 +1058,7 @@ class EmailService {
     const prev = details.previous_datetime || details.previous || '—';
     const next = details.new_datetime || details.next || '—';
     const subject = 'Skin & Care — Appointment rescheduled';
-    const html = this._skinCareLayout('Appointment rescheduled', '', `
+    const { html, attachments } = this._skinCareLayout('Appointment rescheduled', '', `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
       <p>Your appointment was rescheduled.</p>
       ${SkinCareEmail.infoRows([
@@ -1050,7 +1067,7 @@ class EmailService {
       ])}
       <p>You can review or manage your visit in your portal.</p>
     `);
-    return this.sendEmail({ to: appointment.patient_email, subject, html });
+    return this.sendEmail({ to: appointment.patient_email, subject, html, attachments });
   }
 
   static async sendAppointmentCanceled(appointment) {
@@ -1066,13 +1083,13 @@ class EmailService {
         timeZone: appointment.timezone || 'America/New_York'
       })
       : `${appointment.date || ''} ${appointment.time || ''}`;
-    const html = this._skinCareLayout('Appointment canceled', '', `
+    const { html, attachments } = this._skinCareLayout('Appointment canceled', '', `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
       <p>Your appointment was canceled.</p>
       ${SkinCareEmail.infoRows([{ label: 'Canceled visit', value: dt }])}
       <p>If this was a mistake, please schedule a new visit or contact your clinic.</p>
     `);
-    return this.sendEmail({ to: appointment.patient_email, subject, html });
+    return this.sendEmail({ to: appointment.patient_email, subject, html, attachments });
   }
 
   static async sendPostVisitSummaryReady(appointment) {
@@ -1083,7 +1100,7 @@ class EmailService {
     const feedbackToken = createFeedbackToken(appointment.id, feedbackExpiry);
     const feedbackUrl = `${baseUrl}/patients/feedback.html?appointment_id=${encodeURIComponent(appointment.id)}&token=${encodeURIComponent(feedbackToken)}`;
     const subject = 'Skin & Care — Your visit summary is ready';
-    const html = this._skinCareLayout('Visit summary ready', '', `
+    const { html, attachments } = this._skinCareLayout('Visit summary ready', '', `
       <h2>Hi ${SkinCareEmail.escapeHtml(appointment.patient_name || 'there')},</h2>
       <p>Your visit summary is ready. You can view your records and documents in the patient portal.</p>
       <p><strong>Was this visit helpful?</strong></p>
@@ -1093,7 +1110,7 @@ class EmailService {
       </p>
       <p>Or leave detailed feedback: <a href="${SkinCareEmail.escapeHtml(feedbackUrl)}">${SkinCareEmail.escapeHtml(feedbackUrl)}</a></p>
     `);
-    return this.sendEmail({ to: appointment.patient_email, subject, html });
+    return this.sendEmail({ to: appointment.patient_email, subject, html, attachments });
   }
 }
 

@@ -46,6 +46,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

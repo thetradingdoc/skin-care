@@ -79,6 +79,15 @@ async function main() {
   }
   if (action === 'serve') {
     await download();
+    if (process.env.POSTGRES_URL || process.env.DATABASE_URL) {
+      try {
+        const { ensurePostgresConsumerTables } = require('../db/client');
+        await ensurePostgresConsumerTables();
+        console.log('[cloudrun-db-sync] Consumer v3 Postgres tables ensured');
+      } catch (e) {
+        console.warn('[cloudrun-db-sync] Consumer v3 Postgres migrate skipped:', e.message);
+      }
+    }
     const cmd = rest[0] || 'node';
     const args = rest.slice(1).length ? rest.slice(1) : ['server.js'];
     serve(cmd, args);

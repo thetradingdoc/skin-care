@@ -47,7 +47,11 @@ function registerPatientRoutineRoutes(app, deps) {
     otpSendLimiter,
     otpConfirmLimiter,
   } = deps;
-  
+
+  function clientTodayIso(req) {
+    const { resolveClientTodayIso } = require('../lib/routine-day-mode');
+    return resolveClientTodayIso(req);
+  }
 
 app.post('/api/patient/auth/handoff/create', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
   try {
@@ -320,7 +324,7 @@ app.get('/api/patient/routine/phase', (req, res, next) => apiLimiter(req, res, n
         .run(JSON.stringify(meta), template.id);
     }
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
-    const dayMode = resolveRoutineDayMode(targetDate);
+    const dayMode = resolveRoutineDayMode(targetDate, clientTodayIso(req));
     const weekSchedule = concernRoutineService.resolveWeekSchedule(program, phase?.program_week);
     return res.json({
       success: true,
@@ -387,8 +391,8 @@ app.get('/api/patient/routine/layering-check', (req, res, next) => apiLimiter(re
     ensureRoutineTables();
     const sessionId = req.patientSessionId;
     const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const result = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const result = await evaluateWithGraph(db.db, { sessionId, patientId });
     if (!result.success) {
       return res.json({
         success: true,
@@ -428,14 +432,15 @@ function recordEvaluatePortalEvents(req, result, eventName = 'conflict.evaluate.
   }
 }
 
-function handleRoutineEvaluate(req, res) {
+async function handleRoutineEvaluate(req, res) {
   try {
     ensureRoutineTables();
     const sessionId = req.patientSessionId;
     const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
     const body = req.body && typeof req.body === 'object' ? req.body : {};
-    const { evaluatePatientLineup, saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
-    const result = evaluatePatientLineup(db.db, {
+    const { saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const result = await evaluateWithGraph(db.db, {
       sessionId,
       patientId,
       slots: body.slots,
@@ -489,13 +494,13 @@ app.get('/api/patient/routine/verdict-history', (req, res, next) => apiLimiter(r
   }
 });
 
-app.get('/api/patient/routine/daily/:date/lineup-preview', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, (req, res) => {
+app.get('/api/patient/routine/daily/:date/lineup-preview', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, async (req, res) => {
   try {
     const sessionId = req.patientSessionId;
     const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
     const date = String(req.params?.date || '').trim();
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const result = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const result = await evaluateWithGraph(db.db, { sessionId, patientId });
     return res.json({
       success: true,
       date,
@@ -580,7 +585,7 @@ app.get('/api/patient/routine/daily', (req, res, next) => apiLimiter(req, res, n
       : [];
 
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
-    const dayMode = resolveRoutineDayMode(targetDate);
+    const dayMode = resolveRoutineDayMode(targetDate, clientTodayIso(req));
     let skinReportParsed = null;
     if (dailyEntry?.skin_report) {
       try {
@@ -633,7 +638,7 @@ app.post('/api/patient/routine/daily', (req, res, next) => apiLimiter(req, res, 
     }
 
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
-    const dayMode = resolveRoutineDayMode(entryDate);
+    const dayMode = resolveRoutineDayMode(entryDate, clientTodayIso(req));
     const existingPre = db.db.prepare(`
       SELECT id FROM patient_routine_daily_entries
       WHERE template_id = ? AND entry_date = ?
@@ -789,7 +794,7 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
     if (!ownsEntry) return res.status(403).json({ success: false, error: 'Not allowed to modify this daily entry.' });
 
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
-    const dayMode = resolveRoutineDayMode(entry.entry_date);
+    const dayMode = resolveRoutineDayMode(entry.entry_date, clientTodayIso(req));
     if (!dayMode.allows_photo) {
       return res.status(403).json({
         success: false,
@@ -845,8 +850,9 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       }
     } catch (_) {}
 
-    const { evaluatePatientLineup, saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
-    const evaluateResult = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const { saveLineupSnapshot } = require('../services/patient-routine-evaluate-service');
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const evaluateResult = await evaluateWithGraph(db.db, { sessionId, patientId });
 
     const { applyPhotoDayCompletion } = require('../lib/routine-photo-day');
     const completion = applyPhotoDayCompletion({
@@ -858,6 +864,7 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       program: program || {},
       concernRoutineService,
       storageRef,
+      todayIso: clientTodayIso(req),
       symptomTags,
       evaluateResult,
     });
@@ -1051,6 +1058,7 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
     }
     const tplStartIso = String(template.start_date || '').trim() || startIso;
     const { resolveRoutineDayMode } = require('../lib/routine-day-mode');
+    const todayIso = clientTodayIso(req);
     const { enrichRoutineCalendarDay } = require('../lib/routine-calendar-enrich');
     const concernId = String(template.concern_id || careProgram?.concern || '').trim() || null;
 
@@ -1064,7 +1072,7 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
       const thumbnailUrl = m && m.media_url
         ? String(m.media_url)
         : (patientId && patientDocumentId ? issuePatientDocumentDownloadUrl(req, patientId, patientDocumentId) : null);
-      const dayMode = resolveRoutineDayMode(iso);
+      const dayMode = resolveRoutineDayMode(iso, todayIso);
       const base = {
         date: iso,
         is_routine_day: !!isRoutineDay,
@@ -1342,8 +1350,8 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
       source: row.source,
     }));
 
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const evaluateNow = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const evaluateNow = await evaluateWithGraph(db.db, { sessionId, patientId });
     const ageDelta =
       Number.isFinite(baselineSkinAge) && Number.isFinite(latestSkinAge)
         ? Math.round(latestSkinAge - baselineSkinAge)

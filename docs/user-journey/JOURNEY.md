@@ -1,10 +1,10 @@
 # JOURNEY
 
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-12
 
 **Status:** Patient signup → mobile app journey is **complete** (2026-06). See also [`docs/development/CODE_REVIEW_2026-06.md`](../development/CODE_REVIEW_2026-06.md).
 
-**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** → **`/quick-check`** (tap) → **`/reveal`** (findings + score row, or retry tips if vision empty) → **`/concerns`** (pre-selected primary) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/today`**. Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) activates template + funnel bridge on web. **Native app:** returning signed-in users sign in at `/app/sign-in`; new users complete the web funnel first.
+**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** → **`/quick-check`** (tap) → **`/reveal`** (findings + score row, or retry tips if vision empty) → **`/concerns`** (pre-selected primary) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/home`** (via `resolvePostAuthRoute`). Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) activates template, funnel bridge, and `journey_modes: ['routine']` on web. **Native app:** cold start → sign-in; post-auth → journey-choose → routine gates → Home.
 
 Frictionless path (legacy): **optional age hook → intent (why you’re here) → match …** (see below; `/start` BiologicalAge funnel archived).
 
@@ -23,26 +23,26 @@ Frictionless path (legacy): **optional age hook → intent (why you’re here) �
 4. **Reveal** — `/reveal`: **State A** — score cards (face age, skin age gap, Fitzpatrick), finding cards with zone dots, positive observations → **Build my routine**; **State B** — dimmed photo + lighting retry tips (no age) when vision returns nothing.
 5. **Concerns** — `/concerns`: single primary concern pre-selected via `POST /api/public/funnel/match` (`suggested_concern_ids`) → **Start {plan} plan**.
 6. **Signup** — `/app/sign-in?intent=signup&from=skin-age-landing`: OTP → template + funnel bridge (skips `/routine/pick` when concern chosen).
-7. **Today loop** — `/(tabs)/today` with BFI ring, conflict metrics, check-in photo; **Scan** tab (center) for barcode shelf + verdict; **Progress** for 8-day BFI grid and improvement bars.
+7. **Home loop** — `/(tabs)/home` with BFI ring, conflict metrics, check-in photo; **Scan** tab for barcode shelf + verdict; **Progress** for 8-day BFI grid and improvement bars.
 
 ## Conflict Engine wedge (primary retention loop)
 
 After signup, the app centers on **ingredient conflict detection**:
 
 1. **Scan** (center tab) — barcode or manual add → OBF INCI resolution → instant verdict screen.
-2. **Today** — Whoop-style **Barrier Friction Index (BFI)** ring, conflict count (tap → Scan), routine step warnings, daily photo with yesterday's verdict tag.
+2. **Home** — Whoop-style **Barrier Friction Index (BFI)** ring, conflict count (tap → Scan), routine step warnings, daily photo with yesterday's verdict tag.
 3. **Progress** — 8-day BFI grid, "what caused the dip" insight, clarity/redness/skin-age improvement bars, photo timeline with verdict color tags.
 4. **Bio profile** — conditions + prescriptions (`PUT /api/patient/bio-profile`); incomplete profile shows partial verdict banner; bootstrap routes to bio-calibration or Scan when shelf empty / conflicts present.
 5. **Public funnel** — `POST /api/public/routine/evaluate` (max 2 products, rate-limited); full detail gated on bio profile.
 
-Tab bar: **Today | Progress | Scan | Plan | Profile**.
+Tab bar: **Home | Track | Scan | Progress | Profile** (v3 redesign — see `docs/patient-app/design/V3_SCREEN_MAP.md`).
 
-Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
+Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `hyperpigmentation_dark_skin`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
 
 ## Skin Age Journey (native app — returning users)
 
 - Cold start with no session → **sign-in** only (link to web `/scan` for new accounts).
-- Session + template → `/(tabs)/today`.
+- Session + template → `/(tabs)/home` (or journey-choose / bio-calibration / Scan per `resolvePostAuthRoute`).
 - Legacy `app/onboarding/*` screens remain for dev/deeplink but are off the default path.
 
 ## Happy path (7 steps)
@@ -52,8 +52,8 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
 3. **Account on funnel** — **Save** on `/start`: email → verify → `POST /api/patient/routine/template` only when `route` is `program` or `dual`. Specialist-only saves email + bridge meta without template. **Done** primary CTA: log today’s photo → `patient-dashboard.html`.
 4. **Handoff** — **Get the app** (`POST /api/patient/auth/handoff/create` → `patientapp://auth?ticket=…`) or **Continue on web** (`patient-routine-pick.html` or dashboard if template exists).
 5. **Alternate account** — **Sign in** / **Signup** from `/` go to **`/app/sign-in`** (signup adds `?intent=signup&from=skin-age-landing` after funnel, or `?intent=signup` from header).
-6. **Land on Today** — `/(tabs)/today` as the first meaningful screen (default tab).
-7. **Daily loop** — progress photo on Today; history on Timeline; bills via Money tab (optional).
+6. **Land on Home** — `/(tabs)/home` as the default tab after gates pass.
+7. **Daily loop** — progress photo on Home; history on Progress; legacy Money tab hidden (wallet via Profile when enabled).
 
 ## Alternate paths
 
@@ -62,8 +62,8 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
 | **Signup from landing** | `/` → `/app/sign-in?intent=signup&from=skin-age-landing` (after funnel) or `/scan` first |
 | **After age + preview** | `/start` save step → inline OTP → done handoff (app or web) |
 | **Skip save on funnel** | `/start` → **Continue without saving** → done → `/app/sign-in` |
-| **Returning user (web)** | `/app/sign-in` → template check → `/(tabs)/today` or `/routine/pick` (Expo web) |
-| **Returning user (app)** | App session in SecureStore → Today; sign-in only if session expired |
+| **Returning user (web)** | `/app/sign-in` → `resolvePostAuthRoute` → Home / journey-choose / routine pick |
+| **Returning user (app)** | Session in SecureStore/localStorage → Home; sign-in after 60 min idle or 24h max |
 | **Legacy URLs** | `/app`, `/join`, `/patients/patient-login.html` → **`/app/sign-in`** (query preserved) |
 
 ## What we ask — now vs later
@@ -88,10 +88,10 @@ Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `barrier_r
  └── Signup ──► /app/sign-in?intent=signup                │
                         email → code → confirm ──────────┤
                                                         ▼
-                                              /(tabs)/today (Expo web + native)
+                                              /(tabs)/home (Expo web + native)
                                                         │
                                                         ▼
-                                              /(tabs)/today  (daily)
+                                              /(tabs)/home  (daily)
 ```
 
 ## Implementation status
@@ -106,7 +106,7 @@ Docs describe **target** behavior. Gaps below are intentional follow-up work (no
 | Web parity nav | Today / Timeline / Money / Profile + FAB | Done: `patient-shell.js` + sidebar IA |
 | Web Today / pick / Timeline copy | Routine-first, brand tokens | Done: see [06-mobile-and-web-parity.md](./06-mobile-and-web-parity.md) |
 | App post-confirm | `/routine/pick` when `!has_template`, else Today | Done: `(tabs)/index.tsx` |
-| Default tab | `/(tabs)/today` | Done: `(tabs)/_layout.tsx` |
+| Default tab | `/(tabs)/home` | Done: `(tabs)/_layout.tsx` |
 | Progress photos | Photo → `completion_score` 100 + all `item_logs` complete; `today_logged` on summary | Done: see [07-v1-product-decisions.md](./07-v1-product-decisions.md) |
 | Today phase card | `/phase` `expect` + collapsed steps | Done: web `patient-dashboard.html`, app `today.tsx` |
 | Confirmed age | Optional enrichment | `sc_confirmed_age` in sessionStorage only |
@@ -174,7 +174,7 @@ Open `http://127.0.0.1:4000/`
 | `/api/patient/routine/phase` | middleware | Week/phase copy for Today |
 | `/api/patient/routine/daily/:id/photo` | middleware | Progress photo → day logged |
 | `/api/patient/home/progress-summary` | middleware | Portfolio cards + `today_logged` |
-| `/(tabs)/today` | Expo web `/app` | **Consumer Today** (primary post-auth home on myskinandcare.com) |
+| `/(tabs)/home` | Expo web `/app` | **Consumer Today** (primary post-auth home on myskinandcare.com) |
 | `/patients/patient-dashboard.html` | middleware only | Legacy web Today (not in consumer Firebase bundle) |
 | `/patients/patient-routine-pick.html` | middleware only | Legacy web routine pick |
 | `/patients/schedule.html` | middleware only | Legacy web Timeline |
@@ -201,7 +201,7 @@ Open `http://127.0.0.1:4000/`
 |-------|---------|
 | `/(tabs)/index` | Login tab — email + code (returning users or dev without web signup) |
 | `/routine/pick` | Choose routine from bundled JSON (shown when `!has_template` after confirm) |
-| `/(tabs)/today` | **Today** — phase card + photo (default tab) |
+| `/(tabs)/home` | **Today** — phase card + photo (default tab) |
 | `/(tabs)/timeline` | Calendar / journal |
 | `/(tabs)/money` | Bills |
 | `/(tabs)/profile` | Settings (profile depth deferred) |
@@ -245,7 +245,7 @@ One routine-tracker journey on **Expo** and **web patient portal**. Same APIs, s
 | 1 | Discover (optional age) | — | `/`, `/start` |
 | 2 | Email + 6-digit code | `/sign-in` or Account tab | `/app/sign-in` |
 | 3 | Pick one of five routines | `/routine/pick` | `/app/routine/pick` (when no template) |
-| 4 | Land on Today | `/(tabs)/today` | `/app/(tabs)/today` |
+| 4 | Land on Today | `/(tabs)/home` | `/app/(tabs)/home` |
 | 5 | Log progress photo | Today CTA or FAB → `/routine/capture` (front camera + live ghost) | Today **Log today's photo** |
 | 6 | Review history | `/(tabs)/timeline` — **Photos** filmstrip default | `/patients/schedule.html` |
 | 7 | Bills (optional) | `/(tabs)/money` via Account → Bills & receipts | `/patients/wallet.html` (secondary; Profile submenu intent) |
@@ -332,7 +332,7 @@ Verifies all five concerns: every program phase has `expect` or `focus`, photo s
 
 ## Manual verification (web + Expo)
 
-1. **Web login** — `/app/sign-in` → no template → `/routine/pick`; with template → `/(tabs)/today`.
+1. **Web login** — `/app/sign-in` → no template → `/routine/pick`; with template → `/(tabs)/home`.
 2. **Pick** — select template → lands on Today with `?started=1` toast; bottom nav shows Today / Timeline / Money / Profile.
 3. **Today** — black primary CTA; center FAB is blue; brown active sidebar tab.
 4. **Photo** — Today CTA uploads via `/routine/daily/:id/photo`; progress cards not 0%; stat “Logged today” = Yes; Timeline calendar shows logged/media.

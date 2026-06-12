@@ -1,4 +1,5 @@
 import { patientGet, patientPost, patientUploadForm } from '@/lib/patient-api';
+import { uriToUploadFile, appendUploadToForm } from '@/lib/upload-uri';
 
 export type SkinReportPayload = {
   source?: string;
@@ -60,7 +61,8 @@ export async function uploadRoutineProgressPhoto(
     : [];
 
   const form = new FormData();
-  form.append('file', { uri, name: fileName, type: mimeType } as unknown as Blob);
+  const file = await uriToUploadFile(uri, fileName, mimeType);
+  appendUploadToForm(form, file, fileName);
   if (symptomTags.length) {
     form.append('symptom_tags', JSON.stringify(symptomTags));
   }

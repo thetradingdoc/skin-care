@@ -9,5 +9,7 @@ export { BarrierGrid8 } from './BarrierGrid8';
 export { ImprovementBar } from './ImprovementBar';
 export { SpacingTimer } from './SpacingTimer';
 export { GraphUnavailableBanner } from './GraphUnavailableBanner';
+export { ProductBarcodeScanner } from './ProductBarcodeScanner';
 export { VerdictActions } from './VerdictActions';
 export { EvidenceSnippetCard } from './EvidenceSnippetCard';
+export { ProductInsightCard } from './ProductInsightCard';

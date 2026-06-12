@@ -68,11 +68,25 @@ test.describe('Consumer sign-in OTP flow (/app/sign-in)', () => {
         }),
       });
     });
-    await page.route('**/api/patient/routine/template', async (route) => {
+    await page.route('**/api/patient/consumer-profile', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            profile: { journey_modes: [], primary_mode: null },
+          }),
+        });
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, has_template: false }),
+        body: JSON.stringify({
+          success: true,
+          profile: { journey_modes: [], primary_mode: null },
+        }),
       });
     });
 
@@ -84,7 +98,7 @@ test.describe('Consumer sign-in OTP flow (/app/sign-in)', () => {
     await page.getByPlaceholder('123456').fill('123456');
     await page.getByRole('button', { name: 'Continue' }).click();
 
-    await expect(page).toHaveURL(/\/app\/routine\/pick/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/app\/onboarding\/journey-choose/, { timeout: 15_000 });
   });
 
   (LIVE ? test : test.skip)(

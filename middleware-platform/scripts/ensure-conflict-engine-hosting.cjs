@@ -12,6 +12,8 @@ const { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..', '..');
 const PATIENT_APP = path.join(ROOT, 'patient-app');
 const OUT_APP = path.join(ROOT, 'unified-dashboard', 'hosting-dist-consumer', 'app');
+const HOME_HTML = path.join(OUT_APP, '(tabs)', 'home.html');
+const TRACK_HTML = path.join(OUT_APP, '(tabs)', 'track.html');
 const SCAN_HTML = path.join(OUT_APP, '(tabs)', 'scan.html');
 const VERDICT_HTML = path.join(OUT_APP, 'verdict', '[productId].html');
 
@@ -39,12 +41,12 @@ function main() {
     return;
   }
 
-  if (exists(SCAN_HTML) && exists(VERDICT_HTML)) {
-    console.log('ensure-conflict-engine-hosting: scan + verdict routes present');
+  if (exists(HOME_HTML) && exists(TRACK_HTML) && exists(SCAN_HTML) && exists(VERDICT_HTML)) {
+    console.log('ensure-conflict-engine-hosting: v3 routes present (home/track/scan/verdict)');
     return;
   }
 
-  console.log('ensure-conflict-engine-hosting: exporting Expo web (scan/verdict missing)…');
+  console.log('ensure-conflict-engine-hosting: exporting Expo web (v3 routes missing)…');
   const apiBase = (process.env.PW_API_BASE || 'http://127.0.0.1:4000').replace(/\/$/, '');
   const env = {
     ...process.env,

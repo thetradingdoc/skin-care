@@ -49,6 +49,33 @@ function materialIconsFontRelPath(distRoot) {
   return path.relative(distRoot, abs).split(path.sep).join('/');
 }
 
+function findExpoWebEntryJs(distRoot) {
+  const webDir = path.join(distRoot, 'app', '_expo', 'static', 'js', 'web');
+  if (!fs.existsSync(webDir)) return null;
+  const match = fs.readdirSync(webDir).find((f) => /^entry-.*\.js$/i.test(f));
+  return match ? path.join(webDir, match) : null;
+}
+
+function verifyExpoApiBaseInBundle(distRoot, label) {
+  const entryJs = findExpoWebEntryJs(distRoot);
+  if (!entryJs) {
+    fail(`${label}: missing app/_expo/static/js/web/entry-*.js — run npm run build:consumer-hosting`);
+  }
+  const text = fs.readFileSync(entryJs, 'utf8');
+  if (/String\(""\)\.replace\(\/\\\/\$\/, ''\)/.test(text)) {
+    fail(
+      `${label}: Expo web bundle has empty API_BASE_URL — OTP/sign-in will hit same-origin /api and fail. ` +
+        'Rebuild with EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com'
+    );
+  }
+  if (!text.includes('api.callsomo.com') && !text.includes('api.myskinandcare.com')) {
+    fail(
+      `${label}: Expo web bundle missing production API host — check EXPO_PUBLIC_API_BASE_URL at build time`
+    );
+  }
+  ok(`${label}: Expo web bundle targets production API`);
+}
+
 async function verifyLocalDist() {
   const indexPath = path.join(HOSTING_DIST, 'index.html');
   if (!fs.existsSync(indexPath)) {
@@ -104,6 +131,8 @@ async function verifyLocalDist() {
   }
   ok('app/index.html tulip favicon links');
 
+  verifyExpoApiBaseInBundle(HOSTING_DIST, 'local dist');
+
   const rootFavicon = path.join(HOSTING_DIST, 'favicon.ico');
   if (!fs.existsSync(rootFavicon)) {
     fail('Missing favicon.ico at bundle root');
@@ -145,6 +174,26 @@ async function verifyLive(base) {
     fail('Live /app/sign-in HTML missing tulip /favicon.svg link');
   }
   ok(`Live ${url}/app/sign-in (tulip favicon)`);
+
+  const signInPage = await fetch(`${url}/app/sign-in`);
+  const signInPageHtml = await signInPage.text();
+  const entryMatch = signInPageHtml.match(/\/app\/_expo\/static\/js\/web\/(entry-[^"]+\.js)/);
+  if (entryMatch) {
+    const entryRes = await fetch(`${url}/app/_expo/static/js/web/${entryMatch[1]}`);
+    const entryText = await entryRes.text();
+    if (/String\(""\)\.replace\(\/\\\/\$\/, ''\)/.test(entryText)) {
+      fail(
+        `Live Expo bundle has empty API_BASE_URL — redeploy consumer hosting with ` +
+          'EXPO_PUBLIC_API_BASE_URL=https://api.callsomo.com'
+      );
+    }
+    if (!entryText.includes('api.callsomo.com') && !entryText.includes('api.myskinandcare.com')) {
+      fail('Live Expo bundle missing production API host');
+    }
+    ok(`Live Expo bundle targets production API (${entryMatch[1]})`);
+  } else {
+    console.warn('⚠️  Could not locate live Expo entry bundle — skip API base check');
+  }
 
   const faviconRes = await fetch(`${url}/favicon.ico`);
   if (faviconRes.status < 200 || faviconRes.status >= 400) {

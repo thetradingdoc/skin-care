@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton } from '@/components/billing-ui';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { patientPostPublic, publicGet } from '@/lib/patient-api';
 import {
@@ -121,7 +122,7 @@ export default function OnboardingConcernsScreen() {
           })}
         </View>
 
-        <PrimaryButton
+        <ConsumerPrimaryButton
           label={busy ? 'Saving…' : 'Continue'}
           onPress={() => void continueNext()}
         />
@@ -138,7 +139,7 @@ export default function OnboardingConcernsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, gap: 14 },
   title: { fontSize: 26, fontWeight: '700', color: JournalTokens.color.ink, fontFamily: JournalTokens.font.display },
   subtitle: { color: JournalTokens.color.muted, lineHeight: 22, marginBottom: 8 },

@@ -12,13 +12,18 @@ function IconAccount() {
   );
 }
 
-export default function SiteHeader({ minimal = false, overlay = false }) {
+export default function SiteHeader({ minimal = false, overlay = false, hideBrand = false }) {
   return (
-    <header className={`sc-site-header${overlay ? ' sc-site-header-overlay' : ''}`}>
+    <header
+      className={`sc-site-header${overlay ? ' sc-site-header-overlay' : ''}${hideBrand ? ' sc-site-header--no-brand' : ''}`}>
       <div className="sc-site-header-inner">
-        <Link to="/" className="sc-brand-lockup" aria-label="skin care home">
-          <LogoWordmark className="sc-brand-logo" height={52} />
-        </Link>
+        {hideBrand ? (
+          <div className="sc-brand-lockup sc-brand-lockup--empty" aria-hidden="true" />
+        ) : (
+          <Link to="/" className="sc-brand-lockup" aria-label="skin care home">
+            <LogoWordmark className="sc-brand-logo" height={52} />
+          </Link>
+        )}
 
         {!minimal ? (
           <nav className="sc-site-nav" aria-label="Main">

@@ -3,6 +3,7 @@ import type {
   BarrierInsight,
   BioProfile,
   EvaluateResult,
+  ProductInsight,
   VerdictHistoryDay,
 } from '@/lib/conflict-types';
 
@@ -54,12 +55,34 @@ export async function fetchBarrierInsight(): Promise<BarrierInsight> {
   return data?.insight ?? null;
 }
 
+export type NextAction = {
+  type?: string;
+  title: string;
+  message?: string;
+  route?: string;
+  priority?: number;
+};
+
+export async function fetchNextActions(): Promise<NextAction[]> {
+  const data = await patientGet('/api/patient/home/next-actions');
+  return Array.isArray(data?.actions) ? data.actions : [];
+}
+
 export async function fetchStreakPercentile(streakDays: number): Promise<{ copy?: string; percentile?: number }> {
   const data = await patientGet(`/api/patient/home/streak-percentile?streak=${streakDays}`);
   return {
     copy: typeof data?.copy === 'string' ? data.copy : undefined,
     percentile: typeof data?.percentile === 'number' ? data.percentile : undefined,
   };
+}
+
+export async function fetchProductInsight(
+  productId: string,
+): Promise<{ insight: ProductInsight | null; featureEnabled: boolean }> {
+  const data = await patientGet(`/api/patient/shelf/products/${encodeURIComponent(productId)}/insight`);
+  const featureEnabled = Boolean(data?.feature_enabled);
+  if (!featureEnabled) return { insight: null, featureEnabled: false };
+  return { insight: (data?.insight as ProductInsight) || null, featureEnabled: true };
 }
 
 export async function fetchEvaluatePair(productId: string): Promise<EvaluateResult> {

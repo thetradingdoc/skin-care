@@ -2,6 +2,7 @@
 
 const {
   resolveRoutineDayMode,
+  resolveClientTodayIso,
   isPurgeWindowPhase,
   truncateSnippet,
   daysBetweenUtc,
@@ -61,5 +62,18 @@ describe('routine-day-mode', () => {
 
   test('daysBetweenUtc computes delta', () => {
     expect(daysBetweenUtc('2026-05-18', '2026-05-21')).toBe(3);
+  });
+
+  test('client local today wins over UTC for day mode', () => {
+    const m = resolveRoutineDayMode('2026-06-11', '2026-06-11');
+    expect(m.mode).toBe('today');
+    const utcMismatch = resolveRoutineDayMode('2026-06-11', '2026-06-12');
+    expect(utcMismatch.mode).toBe('backfill');
+  });
+
+  test('resolveClientTodayIso reads x-client-date header', () => {
+    expect(resolveClientTodayIso({ headers: { 'x-client-date': '2026-06-11' } })).toBe('2026-06-11');
+    expect(resolveClientTodayIso({ headers: { 'x-client-date': 'not-a-date' } })).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(resolveClientTodayIso({ headers: {} })).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

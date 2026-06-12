@@ -1,13 +1,15 @@
+import { AppTokens } from './appTokens';
+
 export const ConflictTokens = {
-  barrierGreat: '#1D9E75',
-  barrierOk: '#EF9F27',
-  barrierWarn: '#E24B4A',
-  cardRed: '#FCEBEB',
-  cardRedText: '#791F1F',
-  cardAmber: '#FAEEDA',
-  cardAmberText: '#633806',
-  cardGreen: '#E1F5EE',
-  cardGreenText: '#085041',
-  fabBg: '#111111',
-  photoBg: '#1a1a1a',
+  barrierGreat: AppTokens.color.barrierGreat,
+  barrierOk: AppTokens.color.barrierOk,
+  barrierWarn: AppTokens.color.barrierWarn,
+  cardRed: AppTokens.color.cardRed,
+  cardRedText: AppTokens.color.cardRedText,
+  cardAmber: AppTokens.color.cardAmber,
+  cardAmberText: AppTokens.color.cardAmberText,
+  cardGreen: AppTokens.color.cardGreen,
+  cardGreenText: AppTokens.color.cardGreenText,
+  fabBg: AppTokens.color.fabBg,
+  photoBg: AppTokens.color.photoBg,
 };

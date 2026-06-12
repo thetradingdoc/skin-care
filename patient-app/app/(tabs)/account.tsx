@@ -4,13 +4,20 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '@/components/billing-feedback';
-import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
-import { JournalTokens } from '@/constants/journalTokens';
+import { ConsumerPrimaryButton, SecondaryButton } from '@/components/billing-ui';
+import { GoalsCard, JourneyModeCard } from '@/components/v3';
+import { dismissGoal, fetchGoals, type PatientGoal } from '@/lib/goals-api';
+import { AppTokens } from '@/constants/appTokens';
 import { fetchBioProfile } from '@/lib/conflict-api';
 import type { BioProfile } from '@/lib/conflict-types';
+import {
+  getJourneyProfile,
+  toggleJourneyMode,
+  type JourneyMode,
+} from '@/lib/journey-mode-storage';
 import { patientGet, patientPost } from '@/lib/patient-api';
 import { clearPatientSession, getStoredEmail } from '@/lib/patient-session';
-import { SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
+import { JOURNEY_CHOOSE_HREF, SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
 
 type PlanTier = 'free' | 'care_program' | 'plus';
 
@@ -33,6 +40,8 @@ export default function AccountScreen() {
   const [walletEnabled, setWalletEnabled] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [bioProfile, setBioProfile] = useState<BioProfile | null>(null);
+  const [journeyModes, setJourneyModes] = useState<JourneyMode[]>([]);
+  const [goals, setGoals] = useState<PatientGoal[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,6 +75,13 @@ export default function AccountScreen() {
       setPlanTier(tierRaw === 'care_program' ? 'care_program' : tierRaw === 'plus' ? 'plus' : 'free');
       setCarePricing(sub?.pricing_policy?.care_program || null);
       setWalletEnabled(Boolean(features?.features?.wallet_enabled));
+      const journey = await getJourneyProfile();
+      setJourneyModes(journey?.modes ?? []);
+      try {
+        setGoals(await fetchGoals('active'));
+      } catch {
+        setGoals([]);
+      }
     } catch {
       setSignedIn(false);
     } finally {
@@ -122,17 +138,17 @@ export default function AccountScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Account</Text>
+        <Text style={styles.title}>Profile</Text>
 
         {loading ? (
-          <ActivityIndicator color={JournalTokens.color.accent} />
+          <ActivityIndicator color={AppTokens.color.accent} />
         ) : !signedIn ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign in</Text>
             <Text style={styles.cardBody}>
               Sign in to sync your routine, progress photos, and program subscription.
             </Text>
-            <PrimaryButton label="Sign in" onPress={() => router.push(SIGN_IN_HREF)} />
+            <ConsumerPrimaryButton label="Sign in" onPress={() => router.push(SIGN_IN_HREF)} />
           </View>
         ) : (
           <>
@@ -146,6 +162,54 @@ export default function AccountScreen() {
             </View>
 
             <View style={styles.card}>
+              <Text style={styles.cardTitle}>Your journeys</Text>
+              <Text style={styles.cardBody}>Turn on the experiences you use. You can enable both.</Text>
+              <JourneyModeCard
+                variant="watch"
+                title="Watch something on my skin"
+                subtitle="Track a spot, growth, or mark over time"
+                selected={journeyModes.includes('watch')}
+                onPress={() =>
+                  void toggleJourneyMode('watch', !journeyModes.includes('watch')).then((p) =>
+                    setJourneyModes(p.modes),
+                  )
+                }
+              />
+              <JourneyModeCard
+                variant="routine"
+                title="Improve my skin routine"
+                subtitle="Product conflicts and 12-week program"
+                selected={journeyModes.includes('routine')}
+                onPress={() =>
+                  void toggleJourneyMode('routine', !journeyModes.includes('routine')).then((p) =>
+                    setJourneyModes(p.modes),
+                  )
+                }
+              />
+              <SecondaryButton
+                label="Change journey setup"
+                onPress={() => router.push(JOURNEY_CHOOSE_HREF)}
+              />
+            </View>
+
+            <View style={styles.card}>
+              <GoalsCard
+                goals={goals}
+                onDismiss={(id) => {
+                  void dismissGoal(id)
+                    .then(() => fetchGoals('active'))
+                    .then(setGoals)
+                    .catch((e: unknown) =>
+                      showToast(e instanceof Error ? e.message : 'Could not update goal', 'error'),
+                    );
+                }}
+              />
+              {!goals.length ? (
+                <Text style={styles.cardBody}>Goals from onboarding will appear here.</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.card}>
               <Text style={styles.cardTitle}>Skin profile</Text>
               <Text style={styles.cardBody}>
                 {bioProfile?.conditions?.length
@@ -155,7 +219,7 @@ export default function AccountScreen() {
                   ? `\nPrescriptions: ${bioProfile.prescriptions.join(', ')}`
                   : ''}
               </Text>
-              <PrimaryButton
+              <ConsumerPrimaryButton
                 label="Edit skin profile"
                 onPress={() => router.push(BIO_CALIBRATION_HREF)}
               />
@@ -189,7 +253,7 @@ export default function AccountScreen() {
                 </Text>
               ) : null}
               {planTier !== 'care_program' ? (
-                <PrimaryButton
+                <ConsumerPrimaryButton
                   label={checkoutBusy ? 'Opening checkout…' : 'Subscribe'}
                   onPress={() => void startCareProgramCheckout()}
                 />
@@ -210,6 +274,10 @@ export default function AccountScreen() {
             <View style={{ height: 12 }} />
             <SecondaryButton label="Sign out" onPress={() => void signOut()} />
 
+            <Text style={styles.sessionNote}>
+              Sessions stay signed in on this device for up to 24 hours, or until 60 minutes of inactivity.
+            </Text>
+
             <Text style={styles.disclaimer}>
               Not a diagnosis. See a dermatologist if your symptoms worsen or you are unsure.
             </Text>
@@ -221,22 +289,22 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
-  content: { padding: JournalTokens.spacing.lg, gap: 14 },
-  title: { fontFamily: JournalTokens.font.display, fontSize: 28, color: JournalTokens.color.ink },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
+  content: { padding: AppTokens.spacing.lg, gap: 14, paddingBottom: 100 },
+  title: { fontFamily: AppTokens.font.display, fontSize: 28, color: AppTokens.color.ink },
   card: {
-    backgroundColor: JournalTokens.color.card,
-    borderRadius: JournalTokens.radius.md,
+    backgroundColor: AppTokens.color.card,
+    borderRadius: AppTokens.radius.md,
     borderWidth: 1,
-    borderColor: JournalTokens.color.line,
-    padding: JournalTokens.spacing.md,
+    borderColor: AppTokens.color.line,
+    padding: AppTokens.spacing.md,
     gap: 8,
   },
-  cardTitle: { fontWeight: '700', fontSize: 17, color: JournalTokens.color.ink },
-  cardBody: { color: JournalTokens.color.muted, lineHeight: 20 },
-  email: { fontSize: 15, color: JournalTokens.color.ink, fontWeight: '600' },
-  program: { fontSize: 14, color: JournalTokens.color.muted, marginTop: 4 },
-  programMuted: { fontSize: 14, color: JournalTokens.color.muted, fontStyle: 'italic' },
+  cardTitle: { fontWeight: '700', fontSize: 17, color: AppTokens.color.ink },
+  cardBody: { color: AppTokens.color.muted, lineHeight: 20 },
+  email: { fontSize: 15, color: AppTokens.color.ink, fontWeight: '600' },
+  program: { fontSize: 14, color: AppTokens.color.muted, marginTop: 4 },
+  programMuted: { fontSize: 14, color: AppTokens.color.muted, fontStyle: 'italic' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeActive: { backgroundColor: '#dcfce7' },
@@ -244,22 +312,29 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: '700' },
   badgeTextActive: { color: '#166534' },
   badgeTextNeutral: { color: '#64748b' },
-  pricingMeta: { fontSize: 13, color: JournalTokens.color.muted },
+  pricingMeta: { fontSize: 13, color: AppTokens.color.muted },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: JournalTokens.color.card,
-    borderRadius: JournalTokens.radius.md,
+    backgroundColor: AppTokens.color.card,
+    borderRadius: AppTokens.radius.md,
     borderWidth: 1,
-    borderColor: JournalTokens.color.line,
-    padding: JournalTokens.spacing.md,
-    minHeight: JournalTokens.minTap,
+    borderColor: AppTokens.color.line,
+    padding: AppTokens.spacing.md,
+    minHeight: AppTokens.minTap,
   },
-  linkLabel: { fontSize: 16, fontWeight: '600', color: JournalTokens.color.ink },
-  linkChevron: { fontSize: 22, color: JournalTokens.color.muted },
+  linkLabel: { fontSize: 16, fontWeight: '600', color: AppTokens.color.ink },
+  linkChevron: { fontSize: 22, color: AppTokens.color.muted },
+  sessionNote: {
+    color: AppTokens.color.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 4,
+  },
   disclaimer: {
-    color: JournalTokens.color.muted,
+    color: AppTokens.color.muted,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',

@@ -68,6 +68,10 @@ a {
   justify-self: start;
 }
 
+.sc-site-header--no-brand .sc-brand-lockup--empty {
+  min-height: 52px;
+}
+
 .sc-brand-logo,
 .sc-brand-dove {
   flex-shrink: 0;
@@ -738,15 +742,15 @@ a {
 }
 
 .sc-btn-dark {
-  background: var(--sc-ink);
-  color: var(--sc-cream);
-  border-color: var(--sc-ink);
+  background: #111111;
+  color: #ffffff;
+  border-color: #111111;
 }
 
 .sc-btn-dark:hover {
   opacity: 0.88;
-  background: var(--sc-ink);
-  border-color: var(--sc-ink);
+  background: #111111;
+  border-color: #111111;
 }
 
 .sc-hero-cta-sub {

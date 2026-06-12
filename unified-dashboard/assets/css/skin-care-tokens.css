@@ -4,9 +4,9 @@
  */
 
 :root {
-  --sc-hero-bg: #f5f5f0;
-  --sc-cream: var(--sc-hero-bg);
-  --sc-card: #fafaf7;
+  --sc-hero-bg: #f8f3ea;
+  --sc-cream: #f8f3ea;
+  --sc-card: #fffdf9;
   --sc-ink: #1a1a1a;
   --sc-muted: #6b6b6b;
   --sc-line: #e9e2d6;

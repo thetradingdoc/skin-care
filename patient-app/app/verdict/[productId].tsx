@@ -18,23 +18,28 @@ import {
   ContraindicationCard,
   EvidenceSnippetCard,
   GraphUnavailableBanner,
+  ProductInsightCard,
   SpacingTimer,
   SuggestedFixCard,
   VerdictActions,
 } from '@/components/conflict';
 import { useToast } from '@/components/billing-feedback';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { SCAN_HREF } from '@/constants/routes';
-import { fetchEvaluatePair, shelfVerdictAction } from '@/lib/conflict-api';
-import type { EvaluateResult } from '@/lib/conflict-types';
+import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { fetchEvaluatePair, fetchProductInsight, shelfVerdictAction } from '@/lib/conflict-api';
+import type { EvaluateResult, ProductInsight } from '@/lib/conflict-types';
 
 export default function VerdictScreen() {
+  const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const { showToast } = useToast();
   const { productId } = useLocalSearchParams<{ productId: string }>();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [evaluate, setEvaluate] = useState<EvaluateResult | null>(null);
+  const [productInsight, setProductInsight] = useState<ProductInsight | null>(null);
   const scoreCardRef = useRef<View>(null);
 
   const load = useCallback(async () => {
@@ -43,6 +48,16 @@ export default function VerdictScreen() {
     try {
       const res = await fetchEvaluatePair(String(productId));
       setEvaluate(res);
+      try {
+        const insightRes = await fetchProductInsight(String(productId));
+        if (insightRes.featureEnabled && !insightRes.insight) {
+          showToast('Personalized insight is not available right now.', 'error');
+        }
+        setProductInsight(insightRes.insight);
+      } catch (e: unknown) {
+        showToast(e instanceof Error ? e.message : 'Could not load product insight', 'error');
+        setProductInsight(null);
+      }
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Could not load verdict', 'error');
     } finally {
@@ -100,7 +115,7 @@ export default function VerdictScreen() {
     }
   };
 
-  if (loading) {
+  if (checking || !ready || loading) {
     return (
       <SafeAreaView style={styles.root}>
         <ActivityIndicator color={JournalTokens.color.accent} style={{ marginTop: 48 }} />
@@ -122,7 +137,9 @@ export default function VerdictScreen() {
           </Pressable>
         </View>
 
-        {evaluate?.graph_unavailable ? <GraphUnavailableBanner /> : null}
+        {evaluate?.graph_unavailable ? (
+          <GraphUnavailableBanner onRetry={() => void load()} />
+        ) : null}
 
         <View ref={scoreCardRef} collapsable={false}>
           <CompatibilityScoreCard
@@ -132,6 +149,8 @@ export default function VerdictScreen() {
             subtitle={evaluate?.hero_subtitle || evaluate?.suggested_fix?.message}
           />
         </View>
+
+        {productInsight ? <ProductInsightCard insight={productInsight} /> : null}
 
         {maxSpacing > 0 ? <SpacingTimer spacingHours={maxSpacing} /> : null}
 
@@ -180,7 +199,7 @@ export default function VerdictScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, gap: 4, paddingBottom: 40 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   productName: { fontSize: 20, fontWeight: '700', flex: 1 },

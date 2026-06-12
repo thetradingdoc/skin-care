@@ -1,8 +1,16 @@
 #!/usr/bin/env node
 /**
  * Static server for hosting-dist-consumer (landing + /app Expo SPA + patients stub).
+ * Proxies /api/* and /health/* to local middleware when API_PROXY_TARGET is set (default in local dev).
+ *
+ * Usage:
+ *   node scripts/serve-consumer-hosting.cjs [distDir] [port]
+ *   API_PROXY_TARGET=http://127.0.0.1:4000 node scripts/serve-consumer-hosting.cjs
+ *
+ * Set API_PROXY_TARGET= (empty) to disable proxy (production-like static only).
  */
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,6 +18,9 @@ const root = path.resolve(
   process.argv[2] || path.join(__dirname, '../../unified-dashboard/hosting-dist-consumer')
 );
 const port = Number(process.argv[3] || process.env.PW_CONSUMER_PORT || 5190, 10);
+const proxyTargetRaw = process.env.API_PROXY_TARGET;
+const proxyEnabled = Boolean(proxyTargetRaw && String(proxyTargetRaw).trim());
+const API_PROXY_TARGET = (proxyTargetRaw || 'http://127.0.0.1:4000').replace(/\/$/, '');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -21,6 +32,12 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.webmanifest': 'application/manifest+json',
 };
+
+const PROXY_PREFIXES = ['/api', '/health', '/waitlist'];
+
+function shouldProxy(urlPath) {
+  return PROXY_PREFIXES.some((p) => urlPath === p || urlPath.startsWith(`${p}/`));
+}
 
 function safeJoin(base, rel) {
   const baseR = path.resolve(base);
@@ -36,8 +53,47 @@ function trySend(file, res) {
   return true;
 }
 
+function proxyToApi(req, res) {
+  const target = new URL(req.url || '/', `${API_PROXY_TARGET}/`);
+  const lib = target.protocol === 'https:' ? https : http;
+  const headers = { ...req.headers, host: target.host };
+
+  const proxyReq = lib.request(
+    {
+      protocol: target.protocol,
+      hostname: target.hostname,
+      port: target.port || (target.protocol === 'https:' ? 443 : 80),
+      path: `${target.pathname}${target.search}`,
+      method: req.method,
+      headers,
+    },
+    (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+
+  proxyReq.on('error', (err) => {
+    res.statusCode = 502;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.end(
+      `API proxy error: ${err.message}\n` +
+        `Start middleware: cd middleware-platform && DB_PATH=./middleware-dev.db npm run dev\n` +
+        `Proxy target: ${API_PROXY_TARGET}`
+    );
+  });
+
+  req.pipe(proxyReq);
+}
+
 const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+
+  if (proxyEnabled && shouldProxy(urlPath)) {
+    proxyToApi(req, res);
+    return;
+  }
+
   const relPath = urlPath === '/' ? 'index.html' : urlPath.replace(/^\//, '');
 
   if (trySend(safeJoin(root, relPath), res)) return;
@@ -53,5 +109,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(port, '127.0.0.1', () => {
-  process.stdout.write(`serve-consumer-hosting ${root} http://127.0.0.1:${port}\n`);
+  const proxyNote = proxyEnabled ? ` api→${API_PROXY_TARGET}` : ' (no API proxy)';
+  process.stdout.write(`serve-consumer-hosting ${root} http://127.0.0.1:${port}${proxyNote}\n`);
 });

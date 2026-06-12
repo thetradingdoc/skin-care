@@ -76,6 +76,16 @@ export type VerdictHistoryDay = {
 export type BarrierInsight = {
   dip_date?: string;
   drop_points?: number;
+  pattern_count?: number;
   title?: string;
   message?: string;
 } | null;
+
+export type ProductInsight = {
+  title?: string;
+  message?: string;
+  barrier_note?: string | null;
+  routine_note?: string | null;
+  skin_note?: string | null;
+  severity?: 'info' | 'watch' | 'caution';
+};

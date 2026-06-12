@@ -67,16 +67,50 @@ DEPLOY_ARGS=(
 
 if [[ "$PRESERVE_ENV" == "1" ]]; then
   echo "==> Production image deploy (preserving existing service env vars)"
-  DEPLOY_ARGS+=(
-    --update-env-vars "GCS_DB_BUCKET=${GCS_DB_BUCKET:-somo-staging-db-somo-callsomo},DB_PATH=${CLOUDRUN_DB_PATH:-/var/data/middleware-staging.db}"
-  )
+  if [[ "$PROFILE" == "production" ]]; then
+    DEPLOY_ARGS+=(
+      --update-env-vars "GCS_DB_BUCKET=${GCS_DB_BUCKET:-somo-prod-db-somo-callsomo},DB_PATH=${CLOUDRUN_DB_PATH:-/var/data/middleware-prod.db},STAGING=0"
+    )
+  else
+    DEPLOY_ARGS+=(
+      --update-env-vars "GCS_DB_BUCKET=${GCS_DB_BUCKET:-somo-staging-db-somo-callsomo},DB_PATH=${CLOUDRUN_DB_PATH:-/var/data/middleware-staging.db},STAGING=1"
+    )
+  fi
 else
   echo "==> Generating env vars file..."
+  DEFAULT_DB_PATH="/var/data/middleware-staging.db"
+  DEFAULT_GCS_BUCKET="somo-staging-db-somo-callsomo"
+  if [[ "$PROFILE" == "production" ]]; then
+    DEFAULT_DB_PATH="/var/data/middleware-prod.db"
+    DEFAULT_GCS_BUCKET="somo-prod-db-somo-callsomo"
+  fi
+  if [[ "$PROFILE" == "staging" && -z "${USE_GCP_SECRETS:-}" ]]; then
+    export USE_GCP_SECRETS=1
+  fi
   CLOUDRUN_PROFILE="$PROFILE" \
-    GCS_DB_BUCKET="${GCS_DB_BUCKET:-}" \
-    CLOUDRUN_DB_PATH="${CLOUDRUN_DB_PATH:-/var/data/middleware-staging.db}" \
+    GCS_DB_BUCKET="${GCS_DB_BUCKET:-$DEFAULT_GCS_BUCKET}" \
+    CLOUDRUN_DB_PATH="${CLOUDRUN_DB_PATH:-$DEFAULT_DB_PATH}" \
     node "$MP/scripts/generate-cloudrun-env-yaml.cjs" "$ENV_FILE"
   DEPLOY_ARGS+=(--env-vars-file "$ENV_FILE")
+
+  SECRETS_FILE="${ENV_FILE%.yaml}-secrets.txt"
+  if [[ -f "$SECRETS_FILE" ]]; then
+    EXISTING_SECRETS=()
+    IFS=',' read -ra SECRET_PAIRS <<< "$(tr -d '\n' < "$SECRETS_FILE")"
+    for pair in "${SECRET_PAIRS[@]}"; do
+      [[ -z "$pair" ]] && continue
+      secret_name="${pair#*=}"
+      secret_name="${secret_name%%:*}"
+      if gcloud secrets describe "$secret_name" --project "$PROJECT" >/dev/null 2>&1; then
+        EXISTING_SECRETS+=("$pair")
+      fi
+    done
+    if [[ ${#EXISTING_SECRETS[@]} -gt 0 ]]; then
+      SECRETS_CSV=$(IFS=,; echo "${EXISTING_SECRETS[*]}")
+      echo "==> Binding ${#EXISTING_SECRETS[@]} Cloud Run secret(s)"
+      DEPLOY_ARGS+=(--set-secrets "$SECRETS_CSV")
+    fi
+  fi
 fi
 
 if [[ -n "${CLOUDSQL_CONNECTION_NAME:-}" ]]; then

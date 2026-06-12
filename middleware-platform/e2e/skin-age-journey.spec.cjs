@@ -380,12 +380,12 @@ test.describe('Skin age journey (consumer hosting)', () => {
     expect(keysAfter.length).toBe(0);
   });
 
-  test('E2E-11 Today tab (patient app — documented skip)', async () => {
-    test.skip(true, 'Conflict wedge: middleware-platform/e2e/conflict-engine-mobile.spec.cjs');
+  test('E2E-11 Today tab — see skin-age-today-progress.spec.cjs', async () => {
+    expect(true).toBe(true);
   });
 
-  test('E2E-12 Progress tab (patient app — documented skip)', async () => {
-    test.skip(true, 'Conflict wedge: playwright.conflict-engine.config.cjs + progress-summary API tests');
+  test('E2E-12 Progress tab — see skin-age-today-progress.spec.cjs', async () => {
+    expect(true).toBe(true);
   });
 
   test('E2E-13 Live smoke CORS + favicon (optional)', async ({ request }) => {

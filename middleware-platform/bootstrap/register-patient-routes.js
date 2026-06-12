@@ -7,13 +7,15 @@ const { registerPublicFunnelJourneyRoutes } = require('../routes/public-funnel-j
 const { registerPublicFunnelIntakeRoutes } = require('../routes/public-funnel-intake');
 const { registerPublicFunnelSpecialistRoutes } = require('../routes/public-funnel-specialists');
 const { registerPatientFunnelBridgeRoutes } = require('../routes/patient-funnel-bridge');
-const { registerPatientCareProgramBillingRoutes } = require('../routes/patient-care-program-billing');
 const { registerPublicProductScanRoutes } = require('../routes/public-product-scan');
 const { registerPublicRoutineEvaluateRoutes } = require('../routes/public-routine-evaluate');
 const { registerPatientCheckoutChatRoutes } = require('../routes/patient-checkout-chat');
 const { registerPatientRoutineRoutes } = require('../routes/patient-routine');
 const { registerPatientShelfRoutes } = require('../routes/patient-shelf');
 const { registerPatientBioProfileRoutes } = require('../routes/patient-bio-profile');
+const { registerPatientConsumerProfileRoutes } = require('../routes/patient-consumer-profile');
+const { registerPatientSpotsRoutes } = require('../routes/patient-spots');
+const { registerPatientGoalsRoutes } = require('../routes/patient-goals');
 const { registerPatientProductsRoutes } = require('../routes/patient-products');
 const { registerPatientBillingPortalRoutes } = require('../routes/patient-billing-portal');
 const { registerPatientBookingRoutes } = require('../routes/patient-booking');
@@ -69,18 +71,6 @@ function registerConsumerFunnelRoutes(app, deps) {
     return res.redirect(302, '/start');
   });
 
-  registerPatientCareProgramBillingRoutes(app, {
-    apiLimiter,
-    express,
-    requirePatientSession,
-    ensureBillingTables,
-    resolvePatientIdFromSession,
-    resolveBillingSubscription,
-    billingOk,
-    billingErr,
-    db,
-  });
-
   registerPublicProductScanRoutes(app, { apiLimiter });
   registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard: botGuard || ((_q, _r, n) => n()), db });
   registerPatientCheckoutChatRoutes(app, {
@@ -111,6 +101,9 @@ function registerPatientPortalRoutes(app, deps) {
 
   registerPatientRoutineRoutes(app, patientRouteDeps);
   registerPatientBioProfileRoutes(app, patientRouteDeps);
+  registerPatientConsumerProfileRoutes(app, patientRouteDeps);
+  registerPatientSpotsRoutes(app, patientRouteDeps);
+  registerPatientGoalsRoutes(app, patientRouteDeps);
   registerPatientShelfRoutes(app, patientRouteDeps);
   registerPatientProductsRoutes(app, patientRouteDeps);
   registerPatientBillingPortalRoutes(app, patientRouteDeps);

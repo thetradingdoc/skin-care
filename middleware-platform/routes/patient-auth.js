@@ -148,6 +148,17 @@ app.post('/api/patient/verify/confirm', botGuard, authLimiter, otpConfirmLimiter
       const step3 = getPatientStep3Status({ sessionId: result.session_id, patientId: result.patient_id || null });
       onboarding_step3_complete = !!step3.completed;
       const onboarding_complete = onboarding_profile_complete && onboarding_step3_complete;
+      try {
+        const { upsertConsumerProfile } = require('../repositories/consumer-profile-repo');
+        await upsertConsumerProfile(db.db, {
+          patientId: result.patient_id || null,
+          sessionId: result.session_id,
+          patch: {
+            onboarding_complete,
+            bio_calibration_complete: onboarding_profile_complete,
+          },
+        });
+      } catch (_) {}
       res.json({
         success: true,
         session_id: result.session_id,
@@ -196,6 +207,10 @@ app.post('/api/patient/logout', async (req, res) => {
       // Also delete any legacy patient_portal_sessions row
       db.db.prepare(`DELETE FROM patient_portal_sessions WHERE id = ?`).run(sessionId);
     } catch (_) {}
+
+    const isSecure = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
+    res.clearCookie('patient_session_id', { httpOnly: true, sameSite: 'lax', secure: isSecure });
+    res.clearCookie('patient_csrf', { sameSite: 'lax', secure: isSecure });
 
     res.json({ success: true });
   } catch (error) {

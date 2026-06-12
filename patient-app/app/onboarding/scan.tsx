@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton } from '@/components/billing-ui';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { postFaceRead } from '@/lib/face-read-api';
 import { setFacePhotoUri, setFaceRead } from '@/lib/onboarding-storage';
@@ -65,7 +66,7 @@ export default function OnboardingScanScreen() {
             We need your front camera for a wellness skin-age estimate. Your photo is analyzed securely and
             stays on this device until you create an account.
           </Text>
-          <PrimaryButton label="Allow camera" onPress={() => void requestPermission()} />
+          <ConsumerPrimaryButton label="Allow camera" onPress={() => void requestPermission()} />
           <Pressable
             onPress={skip}
             style={styles.skipBtn}
@@ -89,7 +90,7 @@ export default function OnboardingScanScreen() {
           <View style={styles.oval} />
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <PrimaryButton
+        <ConsumerPrimaryButton
           label={busy ? 'Analyzing…' : 'Scan now'}
           onPress={() => void capture()}
         />
@@ -108,7 +109,7 @@ export default function OnboardingScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   full: { flex: 1, backgroundColor: '#000' },
   center: { flex: 1, padding: JournalTokens.spacing.lg, justifyContent: 'center', gap: 12 },
   overlay: {

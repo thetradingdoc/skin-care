@@ -109,7 +109,18 @@ function resolveDbPath() {
 }
 
 const dbPath = resolveDbPath();
-console.log(`📁 Database path: ${dbPath} (environment: ${env})`);
+const stagingFlag = process.env.STAGING === '1' || process.env.SOMO_STAGING === '1';
+console.log(
+  `📁 Database path: ${dbPath} (environment: ${env}, STAGING=${stagingFlag ? '1' : '0'})`
+);
+
+const dbPathLower = String(dbPath).toLowerCase();
+if (stagingFlag && dbPathLower.includes('prod')) {
+  console.warn('⚠️  STAGING=1 but DB_PATH looks like production — check env (see docs/Database/ENV_AND_DB_SSOT.md)');
+}
+if (!stagingFlag && isProdEnv && dbPathLower.includes('staging')) {
+  console.warn('⚠️  Production NODE_ENV but DB_PATH contains "staging" — verify GCS_DB_BUCKET and DB_PATH');
+}
 
 // Ensure target directory exists (and warn if readonly).
 try {

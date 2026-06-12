@@ -1,6 +1,8 @@
 # PRODUCT
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-12
+
+> **v3 consumer app (current):** See [`design/V3_SCREEN_MAP.md`](./design/V3_SCREEN_MAP.md) for tab IA (Home, Track, Scan, Progress, Profile). Legacy sections below describe earlier Explore/checkout flows — still mounted but hidden from tab bar.
 
 
 ---

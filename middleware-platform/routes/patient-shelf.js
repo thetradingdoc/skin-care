@@ -246,8 +246,8 @@ app.post('/api/patient/shelf/products/scan', (req, res, next) => apiLimiter(req,
       (n.ingredients_text || '').slice(0, 200)
     );
     persistCanonicalIds(db.db, id, ids);
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const evaluate = evaluatePatientLineup(db.db, { sessionId, patientId, highlightProductId: id });
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const evaluate = await evaluateWithGraph(db.db, { sessionId, patientId, highlightProductId: id });
     if (typeof recordPatientPortalEvent === 'function') {
       recordPatientPortalEvent(req, 'shelf.scan', { barcode, product_id: id });
     }
@@ -262,15 +262,15 @@ app.post('/api/patient/shelf/products/scan', (req, res, next) => apiLimiter(req,
   }
 });
 
-app.post('/api/patient/shelf/evaluate-pair', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, (req, res) => {
+app.post('/api/patient/shelf/evaluate-pair', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, async (req, res) => {
   try {
     const sessionId = req.patientSessionId;
     const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
     const ids = Array.isArray(req.body?.product_ids) ? req.body.product_ids.map(String).slice(0, 2) : [];
     if (ids.length < 1) return res.status(400).json({ success: false, error: 'product_ids required' });
     const highlightId = String(req.body?.highlight_product_id || ids[0] || '').trim();
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const result = evaluatePatientLineup(db.db, {
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const result = await evaluateWithGraph(db.db, {
       sessionId,
       patientId,
       highlightProductId: highlightId || null,
@@ -295,7 +295,65 @@ app.post('/api/patient/shelf/evaluate-pair', (req, res, next) => apiLimiter(req,
   }
 });
 
-app.post('/api/patient/shelf/products/:productId/verdict-action', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, (req, res) => {
+app.get('/api/patient/shelf/products/:productId/insight', (req, res, next) => apiLimiter(req, res, next), requirePatientSession, async (req, res) => {
+  try {
+    const { isV3InsightsEnabled } = require('../services/consumer-insight-service');
+    const { composeProductInsightWithGraph } = require('../services/consumer-insight-graph');
+    if (!isV3InsightsEnabled()) {
+      return res.json({ success: true, insight: null, feature_enabled: false });
+    }
+    const sessionId = req.patientSessionId;
+    const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+    const productId = String(req.params.productId || '').trim();
+    const rows = loadPatientShelfProductRows(sessionId);
+    const product = rows.find((r) => String(r.id) === productId);
+    if (!product) return res.status(404).json({ success: false, error: 'Product not found' });
+
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const evaluate = await evaluateWithGraph(db.db, { sessionId, patientId, highlightProductId: productId });
+
+    const bio = require('../services/patient-bio-profile-service');
+    const bioProfile = bio.getBioProfile(db.db, { sessionId, patientId });
+
+    let phaseLabel = null;
+    try {
+      ensureRoutineTables();
+      const template = db.db.prepare(`
+        SELECT id, start_date, concern_id, metadata_json FROM patient_routine_templates
+        WHERE session_id = ? AND is_active = 1 ORDER BY datetime(updated_at) DESC LIMIT 1
+      `).get(sessionId);
+      if (template) {
+        const concernRoutineService = require('../services/concern-routine-service');
+        let program = null;
+        if (template.metadata_json) {
+          try { program = JSON.parse(String(template.metadata_json)); } catch (_) { program = null; }
+        }
+        if (!program && template.concern_id) program = concernRoutineService.getConcernProgram(template.concern_id);
+        if (program) {
+          const todayIso = new Date().toISOString().slice(0, 10);
+          const phase = concernRoutineService.resolveCurrentPhase(program, template.start_date, todayIso);
+          phaseLabel = phase?.label || phase?.focus || null;
+        }
+      }
+    } catch (_) {}
+
+    const insight = await composeProductInsightWithGraph(db.db, {
+      sessionId,
+      patientId,
+      productId,
+      product,
+      evaluate,
+      bioProfile,
+      phaseLabel,
+      loadShelfRows: (sid) => loadPatientShelfProductRows(sid),
+    });
+    return res.json({ success: true, insight, feature_enabled: true });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/patient/shelf/products/:productId/verdict-action', (req, res, next) => apiLimiter(req, res, next), express.json(), requirePatientSession, async (req, res) => {
   try {
     ensurePatientShelfInventoryColumns();
     const sessionId = req.patientSessionId;
@@ -314,8 +372,8 @@ app.post('/api/patient/shelf/products/:productId/verdict-action', (req, res, nex
     if (typeof recordPatientPortalEvent === 'function') {
       recordPatientPortalEvent(req, 'shelf.verdict_action', { product_id: productId, action });
     }
-    const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-    const evaluate = evaluatePatientLineup(db.db, { sessionId, patientId });
+    const { evaluateWithGraph } = require('../services/consumer-analysis-graph');
+    const evaluate = await evaluateWithGraph(db.db, { sessionId, patientId, highlightProductId: productId });
     return res.json({ success: true, action, evaluate });
   } catch (e) {
     return res.status(500).json({ success: false, error: e.message });

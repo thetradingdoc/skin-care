@@ -39,6 +39,10 @@ function hasLoginPortal(body) {
   return t.includes('loginemail') || t.includes('sign in to your somo front desk');
 }
 
+function isConsumerRedirect(body) {
+  return /redirecting to https:\/\/myskinandcare\.com/i.test(body);
+}
+
 function isJsNotSpa(body, ct) {
   if (String(ct).toLowerCase().includes('javascript')) return true;
   const t = body.trim().toLowerCase();
@@ -68,29 +72,43 @@ async function main() {
     ) && all;
 
   const signup = await fetchPage(`${UI}/signup`);
+  const signupRedirected = isConsumerRedirect(signup.text);
   const signupOk =
-    signup.status >= 200 && signup.status < 400 && hasSignupWizard(signup.text);
+    !signupRedirected &&
+    signup.status >= 200 &&
+    signup.status < 400 &&
+    hasSignupWizard(signup.text);
   all =
     (signupOk ? ok : fail)(
       'UI_SIGNUP_WIZARD',
       signupOk
         ? 'portal signup wizard detected'
-        : `status=${signup.status} — deploy full hosting-dist (npm run deploy:staging-hosting)`
+        : signupRedirected
+          ? `${UI} redirects to myskinandcare.com — provider portal is not served on this host (Firebase redirect or consumer DNS)`
+          : `status=${signup.status} — deploy full hosting-dist (npm run deploy:staging-hosting)`
     ) && all;
 
   const login = await fetchPage(`${UI}/login`);
+  const loginRedirected = isConsumerRedirect(login.text);
   const loginOk =
-    login.status >= 200 && login.status < 400 && hasLoginPortal(login.text);
+    !loginRedirected &&
+    login.status >= 200 &&
+    login.status < 400 &&
+    hasLoginPortal(login.text);
   all =
     (loginOk ? ok : fail)(
       'UI_LOGIN_PORTAL',
       loginOk
         ? 'provider login page detected'
-        : `status=${login.status} — expected loginEmail / Somo login heading`
+        : loginRedirected
+          ? `${UI} redirects to myskinandcare.com — use a host that serves hosting-dist (not consumer)`
+          : `status=${login.status} — expected loginEmail / Somo login heading`
     ) && all;
 
   const apiBase = await fetchPage(`${UI}/assets/js/api-base.js`);
+  const apiBaseRedirected = isConsumerRedirect(apiBase.text);
   const apiBaseOk =
+    !apiBaseRedirected &&
     apiBase.status >= 200 &&
     apiBase.status < 400 &&
     isJsNotSpa(apiBase.text, apiBase.ct) &&
@@ -100,7 +118,9 @@ async function main() {
       'UI_API_BASE_JS',
       apiBaseOk
         ? 'api-base.js → api.callsomo.com'
-        : `status=${apiBase.status} — got SPA HTML or wrong API host`
+        : apiBaseRedirected
+          ? `${UI}/assets/js/api-base.js redirects — consumer host overwrites provider assets`
+          : `status=${apiBase.status} — got SPA HTML or wrong API host`
     ) && all;
 
   console.log('');

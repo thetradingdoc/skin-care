@@ -1,7 +1,7 @@
 # patient-app - Unified Architecture and System Design
-> Last reviewed: 2026-05-25
+> Last reviewed: 2026-06-12
 
-**Last Updated:** 2026-05-25
+**Last Updated:** 2026-06-12
 
 
 **Canonical map:** [CANONICAL_DOC_MAP.md](../meta/CANONICAL_DOC_MAP.md) — read here first to avoid duplicating documentation.
@@ -12,19 +12,22 @@ This document is the single source of truth for this subfolder. It consolidates 
 
 ## Current product direction (routine tracker + billing)
 
-For the active consumer MVP, start here:
+For the active consumer v3 app, start here:
 
-- **[`../user-journey/README.md`](../user-journey/README.md)** — pick → **Today** (photo) → Timeline; web parity.
-- **[`../architecture/patients/PATIENT_TIMELINE_ROUTINE_AND_BILLING.md`](../architecture/patients/PATIENT_TIMELINE_ROUTINE_AND_BILLING.md)** — **Today** + routine APIs, Timeline / Money / Profile, `calendar-range`, billing.
-- [`PATIENT_APP_ARCHITECTURE_AND_AGENT_ORCHESTRATION.md`](./PATIENT_APP_ARCHITECTURE_AND_AGENT_ORCHESTRATION.md)
-- [`PATIENT_HOME_SUMMARY_METRICS_V1.md`](./PATIENT_HOME_SUMMARY_METRICS_V1.md)
+- **[`design/V3_SCREEN_MAP.md`](./design/V3_SCREEN_MAP.md)** — routes, tabs, post-auth gates (source of truth).
+- **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — web skin-age funnel + native sign-in paths.
+- **[`../runbooks/WEB_CONSUMER_SMOKE.md`](../runbooks/WEB_CONSUMER_SMOKE.md)** — web release smoke checklist.
+- [`design/CONSUMER_AGENTIC_ARCHITECTURE.md`](./design/CONSUMER_AGENTIC_ARCHITECTURE.md) — LangGraph eval, insights, env flags.
 
-This architecture defines:
+**v3 tab IA (Expo web at `/app`):**
 
-- Tab IA: **Today** (default), Timeline, Money, Profile (+ Account/login tab)
-- Center scan/upload FAB
-- Money tab as Wallet + Plan merged
-- Monetization model: Free + Plus subscription, with unlimited scans on Plus
+- **Home** (default) — BFI ring, routine steps, daily photo
+- **Track** — spot watcher journey
+- **Scan** — barcode shelf + verdict
+- **Progress** — photo grid, BFI history
+- **Profile** (`account`) — goals, journey toggle, subscribe
+
+Hosted at `myskinandcare.com/app` (static export). Session: `localStorage` + `x-session-id` header; client date via `x-client-date`.
 
 
 ## Scope

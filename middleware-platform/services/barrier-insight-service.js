@@ -1,5 +1,19 @@
 'use strict';
 
+function parseVerdict(row) {
+  try {
+    return JSON.parse(row.verdict_json || '{}');
+  } catch (_) {
+    return {};
+  }
+}
+
+function conflictTitle(verdict) {
+  const topConflict = (verdict.conflicts || [])[0];
+  if (!topConflict) return 'Aggressive actives';
+  return `${topConflict.ingredient_a} + ${topConflict.ingredient_b}`;
+}
+
 function findBarrierDip(db, { sessionId, patientId, days = 14 }) {
   const migration = require('../migrations/055_conflict_engine');
   if (migration?.up) migration.up(db);
@@ -20,10 +34,17 @@ function findBarrierDip(db, { sessionId, patientId, days = 14 }) {
   let dipRow = null;
   let priorRow = null;
 
+  const dipsByTitle = {};
+
   for (let i = 0; i < rows.length - 1; i += 1) {
     const curr = Number(rows[i].barrier_friction_index) || 0;
     const prev = Number(rows[i + 1].barrier_friction_index) || 0;
     const drop = prev - curr;
+    if (drop >= 10) {
+      const verdict = parseVerdict(rows[i]);
+      const title = conflictTitle(verdict);
+      dipsByTitle[title] = (dipsByTitle[title] || 0) + 1;
+    }
     if (drop > maxDrop) {
       maxDrop = drop;
       dipRow = rows[i];
@@ -33,24 +54,25 @@ function findBarrierDip(db, { sessionId, patientId, days = 14 }) {
 
   if (!dipRow || maxDrop < 10) return null;
 
-  let verdict = {};
-  try {
-    verdict = JSON.parse(dipRow.verdict_json || '{}');
-  } catch (_) {}
-
+  const verdict = parseVerdict(dipRow);
   const topConflict = (verdict.conflicts || [])[0];
-  const title = topConflict
-    ? `${topConflict.ingredient_a} + ${topConflict.ingredient_b}`
-    : 'Aggressive actives';
+  const title = conflictTitle(verdict);
+  const patternCount = dipsByTitle[title] || 1;
+
+  const patternSuffix =
+    patternCount > 1
+      ? ` This pattern has appeared ${patternCount} times.`
+      : '';
 
   return {
     dip_date: dipRow.entry_date,
     prior_date: priorRow?.entry_date,
     drop_points: maxDrop,
+    pattern_count: patternCount,
     title,
-    message: `Your barrier dropped ${maxDrop} points around ${dipRow.entry_date}. ${
+    message: `Your barrier dropped ${maxDrop} points the morning after.${patternSuffix} ${
       topConflict?.notes || 'Review products used that day.'
-    }`,
+    }`.trim(),
   };
 }
 

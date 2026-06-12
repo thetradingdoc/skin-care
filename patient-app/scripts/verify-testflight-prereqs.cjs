@@ -54,6 +54,13 @@ if (hasCmd('node')) pass('NODE', process.version);
 else fail('NODE', 'Node.js required');
 
 try {
+  execSync('npm test', { cwd: ROOT, stdio: 'pipe' });
+  pass('UNIT_TESTS', 'vitest');
+} catch {
+  fail('UNIT_TESTS', 'run npm test in patient-app');
+}
+
+try {
   execSync('npx eas-cli --version', { cwd: ROOT, stdio: 'pipe' });
   pass('EAS_CLI', 'available via npx eas-cli');
 } catch {

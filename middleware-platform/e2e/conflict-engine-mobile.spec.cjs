@@ -124,8 +124,8 @@ test.describe('Conflict engine mobile wedge', () => {
   test('scan hub → verdict score → keep action', async ({ page }) => {
     await stubConflictApis(page);
     await page.goto('/app/(tabs)/scan', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('Scan a product')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('1 in shelf')).toBeVisible();
+    await expect(page.getByText('Your products')).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText('1 added')).toBeVisible();
 
     await page.goto(`/app/verdict/${MOCK_PRODUCT_ID}`, { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('58')).toBeVisible({ timeout: 30_000 });

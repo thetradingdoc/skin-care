@@ -1,14 +1,25 @@
 # Conflict Engine runbook
 
-## Feature flag
+**Last reviewed:** 2026-06-12
 
-Set `PATIENT_CONFLICT_ENGINE_V1=1` on middleware-platform to enable evaluate-backed layering-check (default in dev).
+## Feature flags (prod SSOT)
+
+Run `node middleware-platform/scripts/verify-prod-consumer-env.cjs` before release. Required on prod:
+
+| Variable | Prod value |
+|----------|------------|
+| `FEATURE_V3_INSIGHTS` | `1` |
+| `LANGGRAPH_CONSUMER_EVAL_ROLLOUT_PCT` | `1` |
+| `NEXT_GEN_PIPELINE` | `1` |
+| `STRIPE_PRICE_CARE_PROGRAM` | Stripe price id |
+
+Legacy: `PATIENT_CONFLICT_ENGINE_V1=1` enables evaluate-backed layering-check in dev.
 
 ## Graph unavailable UX
 
 When the ingredient conflict graph cannot load (`conflict_graph_unavailable` or `graph_unavailable: true`):
 
-1. **Today / Scan / Verdict** — show amber banner: *Ingredient compatibility data is temporarily unavailable.*
+1. **Home / Scan / Verdict** — show amber banner: *Ingredient compatibility data is temporarily unavailable.*
 2. **Do not** block photo upload or shelf scan; OBF + shelf rows still persist.
 3. **BFI ring** — hide or show last snapshot from `patient_routine_lineup_snapshots` if available.
 4. **Public evaluate** — return HTTP 503 with `{ success: false, error: 'conflict_graph_unavailable' }`.

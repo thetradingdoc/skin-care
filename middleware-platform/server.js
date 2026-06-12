@@ -1689,6 +1689,7 @@ const RetellWebSocketHandler = require('./webhooks/retell-websocket');
 const { securityHeaders, sanitizeInput, requestLogger } = require('./middleware/security');
 const {
   apiLimiter,
+  patientPortalLimiter,
   publicCatalogReadLimiter,
   publicDiagnosticsLimiter,
   publicCommerceLimiter,
@@ -1924,7 +1925,7 @@ app.use('/public/', usageLogger);
 // Input sanitization
 app.use(sanitizeInput);
 
-// Global rate limiting
+// Global rate limiting (/api/patient/* uses patientPortalLimiter on each route instead)
 app.use('/api/', apiLimiter);
 // Diagnostics endpoints get their own larger bucket to keep ops visibility available.
 app.use('/api/public/plans/meta', publicDiagnosticsLimiter);
@@ -2624,7 +2625,7 @@ const { registerConsumerFunnelRoutes } = require('./bootstrap/register-patient-r
 
 const patientValidators = createPatientValidators(db);
 const patientRouteDeps = createBasePatientRouteDeps({
-  apiLimiter,
+  apiLimiter: patientPortalLimiter,
   express,
   db,
   shelfApi,
@@ -2670,7 +2671,7 @@ const patientRouteDeps = createBasePatientRouteDeps({
 });
 
 registerConsumerFunnelRoutes(app, {
-  apiLimiter,
+  apiLimiter: patientPortalLimiter,
   db,
   express,
   requirePatientSession,

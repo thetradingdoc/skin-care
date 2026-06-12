@@ -2,42 +2,107 @@ import type { Href } from 'expo-router';
 
 import {
   BIO_CALIBRATION_HREF,
+  HOME_HREF,
+  JOURNEY_CHOOSE_HREF,
   ROUTINE_PICK_HREF,
   SCAN_HREF,
-  TODAY_HREF,
+  TRACK_HREF,
 } from '@/constants/routes';
 import { fetchBioProfile } from '@/lib/conflict-api';
+import { fetchConsumerProfile } from '@/lib/consumer-profile-api';
+import { getJourneyProfile, type JourneyMode } from '@/lib/journey-mode-storage';
+import { listSpots } from '@/lib/spot-store';
 import { patientGet } from '@/lib/patient-api';
 
 export type PostAuthRoute = Href;
 
-/** Route after session is established (template + shelf + bio). */
-export async function resolvePostAuthRoute(): Promise<PostAuthRoute> {
+export type PostAuthRouteHints = {
+  /** Freshly saved modes before server PATCH propagates (journey-choose). */
+  journeyModes?: JourneyMode[];
+};
+
+function resolveJourneyModes(
+  serverModes: JourneyMode[] | undefined,
+  localModes: JourneyMode[] | undefined,
+  hints?: PostAuthRouteHints,
+): JourneyMode[] {
+  if (serverModes?.length) return serverModes;
+  if (hints?.journeyModes?.length) return hints.journeyModes;
+  if (localModes?.length) return localModes;
+  return [];
+}
+
+async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
+  const routineMode = modes.includes('routine');
+  const watchMode = modes.includes('watch');
+  const serverProfile = await fetchConsumerProfile().catch(() => null);
+
+  const [spots, template, shelf, bio] = await Promise.all([
+    listSpots().catch(() => []),
+    patientGet('/api/patient/routine/template').catch(() => ({ has_template: false })),
+    patientGet('/api/patient/shelf/products').catch(() => ({ products: [] })),
+    fetchBioProfile().catch(() => ({ profile_complete: false, conditions: [], prescriptions: [] })),
+  ]);
+
+  if (watchMode && !routineMode) {
+    return spots.length === 0 ? TRACK_HREF : HOME_HREF;
+  }
+
+  const products = Array.isArray(shelf?.products) ? shelf.products : [];
+  const hasTemplate = Boolean(template?.has_template);
+  const bioComplete = Boolean(
+    serverProfile?.bio_calibration_complete ||
+      bio?.profile_complete ||
+      (bio?.conditions?.length ?? 0) > 0,
+  );
+
+  if (routineMode && !hasTemplate) {
+    return ROUTINE_PICK_HREF;
+  }
+
+  if (routineMode && !bioComplete) {
+    return BIO_CALIBRATION_HREF;
+  }
+
+  if (routineMode && products.length === 0) {
+    return SCAN_HREF;
+  }
+
+  if (watchMode && spots.length === 0) {
+    return TRACK_HREF;
+  }
+
+  return HOME_HREF;
+}
+
+/** Route after session is established (journey + template + shelf + bio). */
+export async function resolvePostAuthRoute(hints?: PostAuthRouteHints): Promise<PostAuthRoute> {
   try {
-    const [template, shelf, bio] = await Promise.all([
-      patientGet('/api/patient/routine/template'),
-      patientGet('/api/patient/shelf/products').catch(() => ({ products: [] })),
-      fetchBioProfile().catch(() => ({ profile_complete: true, conditions: [], prescriptions: [] })),
+    const [serverProfile, journeyProfile] = await Promise.all([
+      fetchConsumerProfile(),
+      getJourneyProfile(),
     ]);
 
-    const products = Array.isArray(shelf?.products) ? shelf.products : [];
-    const hasTemplate = Boolean(template?.has_template);
-    const bioComplete = Boolean(bio?.profile_complete || (bio?.conditions?.length ?? 0) > 0);
+    const modes = resolveJourneyModes(
+      serverProfile?.journey_modes,
+      journeyProfile?.modes,
+      hints,
+    );
 
-    if (!hasTemplate) {
-      return ROUTINE_PICK_HREF;
+    if (!modes.length) {
+      return JOURNEY_CHOOSE_HREF;
     }
 
-    if (!bioComplete) {
-      return BIO_CALIBRATION_HREF;
-    }
-
-    if (products.length === 0) {
-      return SCAN_HREF;
-    }
-
-    return TODAY_HREF;
+    return resolveWithModes(modes);
   } catch {
-    return ROUTINE_PICK_HREF;
+    const local = await getJourneyProfile().catch(() => null);
+    if (local?.modes?.length) {
+      try {
+        return await resolveWithModes(local.modes);
+      } catch {
+        return HOME_HREF;
+      }
+    }
+    return HOME_HREF;
   }
 }

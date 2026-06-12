@@ -105,7 +105,7 @@ export function JournalCalendarTab({
               onPress={() => {
                 const target = isoAddDays(templateStartDate, (chip.week_start - 1) * 7);
                 onScrollToIso(target);
-                router.push({ pathname: '/(tabs)/today', params: { date: target } });
+                router.push({ pathname: '/(tabs)/home', params: { date: target } });
               }}>
               <Text style={styles.phaseChipText} numberOfLines={1}>
                 {chip.label}
@@ -318,7 +318,7 @@ export function JournalCalendarTab({
                 if (row.has_media) {
                   onOpenRoutineSheet(row.date);
                 } else {
-                  router.push({ pathname: '/(tabs)/today', params: { date: row.date } });
+                  router.push({ pathname: '/(tabs)/home', params: { date: row.date } });
                 }
               }}
               accessibilityRole="button"

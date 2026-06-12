@@ -38,6 +38,54 @@ describe('skin-care-email-layout', () => {
     expect(html).toContain('Gloock');
   });
 
+  test('layoutBundle embeds CID wordmark attachment when PNG is available', () => {
+    delete process.env.SKIN_CARE_EMAIL_LOGO_URL;
+    const wordmarkPath = SkinCareEmail.resolveEmailWordmarkPath();
+    if (!wordmarkPath) {
+      console.warn('skip: email-wordmark.png not on disk');
+      return;
+    }
+    const bundle = SkinCareEmail.layoutBundle({
+      title: 'Test',
+      bodyHtml: '<p>Hello</p>'
+    });
+    expect(bundle.attachments).toHaveLength(1);
+    expect(bundle.attachments[0].cid).toBe(SkinCareEmail.EMAIL_WORDMARK_CID);
+    expect(bundle.html).toContain(`cid:${SkinCareEmail.EMAIL_WORDMARK_CID}`);
+    expect(bundle.html).not.toContain('data:image/png;base64,');
+    expect(bundle.html).not.toContain('alt="skin care"');
+    expect(bundle.html).not.toContain('srcset=');
+  });
+
+  test('emailHtmlWordmark matches landing lockup when no raster logo', () => {
+    const html = SkinCareEmail.emailHtmlWordmark();
+    expect(html).toContain('skin</span>');
+    expect(html).toContain('care</span>');
+    expect(html).toContain(`${SkinCareEmail.SITE_URL}/assets/brand/tulip-mark.png`);
+  });
+
+  test('layout uses HTML wordmark when useHtmlWordmark is set', () => {
+    delete process.env.SKIN_CARE_EMAIL_LOGO_URL;
+    const html = SkinCareEmail.layout({
+      title: 'Test',
+      bodyHtml: '<p>Hello</p>',
+      useHtmlWordmark: true
+    });
+    expect(html).toContain('tulip-mark.png');
+    expect(html).not.toContain(`cid:${SkinCareEmail.EMAIL_WORDMARK_CID}`);
+    expect(html).not.toContain('data:image/png;base64,');
+  });
+
+  test('layout without logoCid keeps remote wordmark fallback', () => {
+    delete process.env.SKIN_CARE_EMAIL_LOGO_URL;
+    const html = SkinCareEmail.layout({
+      title: 'Test',
+      bodyHtml: '<p>Hello</p>'
+    });
+    expect(html).toContain(SkinCareEmail.EMAIL_WORDMARK_URL);
+    expect(html).not.toContain(`cid:${SkinCareEmail.EMAIL_WORDMARK_CID}`);
+  });
+
   test('layout uses custom logo image when SKIN_CARE_EMAIL_LOGO_URL is set', () => {
     process.env.SKIN_CARE_EMAIL_LOGO_URL = 'https://example.com/custom-logo.png';
     const html = SkinCareEmail.layout({

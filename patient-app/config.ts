@@ -12,12 +12,42 @@ import Constants from 'expo-constants';
 // Demo patient (Jeremiah in local DB): set EXPO_PUBLIC_DEMO_PATIENT_EMAIL to the email
 // stored on `appointments.patient_email` for that patient (see your provider portal / DB).
 
-const rawBase = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.callsomo.com').replace(
-  /\/$/,
-  ''
-);
+function resolveApiBaseUrl(): string {
+  const env = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  if (env) {
+    return env.replace(/\/$/, '');
+  }
+  return 'https://api.callsomo.com';
+}
 
-export const API_BASE_URL = rawBase;
+export const API_BASE_URL = resolveApiBaseUrl();
+
+const PROD_API_HOSTS = ['api.callsomo.com', 'api.myskinandcare.com'];
+
+function isLocalWebHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+}
+
+/** Block local static UI from calling production API (CORS + data isolation). */
+export function getLocalhostProdApiIssue(): string | null {
+  if (!isLocalWebHost()) return null;
+  if (!API_BASE_URL) return null;
+  try {
+    const host = new URL(API_BASE_URL).hostname;
+    if (PROD_API_HOSTS.includes(host)) {
+      return (
+        'This local build is pointed at the production API. ' +
+        'Run: npm run dev:consumer-local (with middleware on :4000 using middleware-dev.db). ' +
+        'Or test on https://myskinandcare.com/app/sign-in after deploy.'
+      );
+    }
+  } catch {
+    /* relative or invalid — OK for local proxy */
+  }
+  return null;
+}
 
 /** Web funnel entry for new users (sign-in screen). Override when myskinandcare.com DNS is live. */
 export const WEB_SIGNUP_URL = (
@@ -40,6 +70,9 @@ export const DEMO_PROVIDER_ID = (process.env.EXPO_PUBLIC_MERCHANT_ID || '').trim
  * On a real device, localhost/127.0.0.1 points at the phone — every fetch fails with "Network request failed".
  */
 export function getApiReachabilityIssue(): string | null {
+  const localhostProd = getLocalhostProdApiIssue();
+  if (localhostProd) return localhostProd;
+
   const isLocalHost = /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/i.test(API_BASE_URL);
   if (isLocalHost && Constants.isDevice) {
     return (

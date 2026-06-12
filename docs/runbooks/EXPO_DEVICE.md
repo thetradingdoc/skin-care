@@ -2,7 +2,7 @@
 
 Use this path first. You do **not** need Apple Developer, TestFlight, or EAS builds.
 
-**Last reviewed:** 2026-06-10
+**Last reviewed:** 2026-06-12
 
 The native app runs inside **Expo Go** and talks to production API `https://api.callsomo.com` (same middleware as `https://api.myskinandcare.com`).
 
@@ -49,7 +49,7 @@ npm run start:device
 
 1. Open **Camera** app → scan the QR code in the terminal (or Expo Dev Tools in browser).
 2. Tap the banner → opens **Expo Go** with Skin & Care.
-3. Fresh install → **onboarding** (scan → reveal → concerns → signup) → Today.
+3. Fresh install → **sign-in** (OTP). New users: complete web funnel at `myskinandcare.com/scan` first.
 
 ## Onboarding test checklist
 
@@ -58,7 +58,7 @@ npm run start:device
 | 1 | `onboarding/scan` | Camera permission; capture or **Skip for now** |
 | 2 | `onboarding/reveal` | Findings + score row, or retry tips if vision empty (parity with web `/reveal`) |
 | 3 | `onboarding/concerns` | Chips load; pick 1–2; continue |
-| 4 | `onboarding/signup` | Email OTP → lands on Today with celebrate + photo prompt |
+| 4 | `onboarding/signup` | Email OTP → lands on Home with celebrate + photo prompt |
 | 5 | Today | Day 1 overlay; log photo dismisses overlay; Account tab appears after first photo |
 
 **Face-read (GPU):** middleware must have `FACE_READ_INFERENCE_BASE_URL` (teamkelly). See [FACE_READ_INFERENCE.md](FACE_READ_INFERENCE.md).
@@ -77,7 +77,41 @@ Set `FACE_READ_INFERENCE_BASE_URL=http://127.0.0.1:8765` in middleware `.env` fo
 
 Sign in from Account or `sign-in` route — skips onboarding if session + template exist.
 
-## Web mobile sign-in (`/app/sign-in`)
+## Local web patient app (v3) — `npm run dev:consumer-local`
+
+Use this for **local sign-in and v3 tab testing** against `middleware-dev.db` only (never production API/DB).
+
+**Terminal 1 — middleware:**
+
+```bash
+cd middleware-platform
+DB_PATH=./middleware-dev.db npm run dev
+```
+
+**Terminal 2 — static UI + `/api` proxy:**
+
+```bash
+npm run dev:consumer-local
+```
+
+Open **http://127.0.0.1:5194/app/sign-in**. API calls go to same-origin `/api/...` and are proxied to `http://127.0.0.1:4000`.
+
+**Verify:**
+
+```bash
+npm run verify:local-consumer-dev
+```
+
+**Do not** serve `hosting-dist-consumer` (production build) on localhost — it calls `api.callsomo.com` and fails CORS with "Failed to fetch". See [ENV_AND_DB_SSOT.md](../Database/ENV_AND_DB_SSOT.md).
+
+**Expo web hot reload (alternative):**
+
+```bash
+cd patient-app
+EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:4000 npx expo start --web
+```
+
+## Web mobile sign-in (`/app/sign-in`) — production
 
 The Expo web bundle is hosted at **`https://www.myskinandcare.com/app/sign-in`** (mobile Safari/Chrome). It is **not** the same as Expo Go — it runs in the browser and calls `https://api.callsomo.com` cross-origin.
 
@@ -116,7 +150,8 @@ CONSUMER_SIGNIN_LIVE=1 npm run test:e2e-consumer-sign-in --prefix middleware-pla
 
 | Issue | Fix |
 |-------|-----|
-| Network request failed | Confirm `.env` has `https://api.callsomo.com`, restart with `npx expo start --clear` |
+| Network request failed (Expo Go) | Confirm `.env` has `https://api.callsomo.com`, restart with `npx expo start --clear` |
+| Failed to fetch on `localhost:5194` | Production API build on local static server — use `npm run dev:consumer-local` instead |
 | QR won't connect | Use `npm run start:device` (tunnel) |
 | Stale login after URL change | Account tab → Sign out, sign in again |
 | Camera permission | iOS Settings → Expo Go → Camera |

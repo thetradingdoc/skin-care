@@ -58,7 +58,7 @@ export function JournalDocumentsTab({ rows, documents, onOpenDocDetail }: Props)
                 style={styles.mediaTile}
                 accessibilityRole="button"
                 accessibilityLabel={`Routine photo ${d.date}`}
-                onPress={() => router.push({ pathname: '/(tabs)/today', params: { date: d.date } })}>
+                onPress={() => router.push({ pathname: '/(tabs)/home', params: { date: d.date } })}>
                 <Image source={{ uri: d.thumbnail_url || '' }} style={styles.mediaImage} />
                 {d.program_week ? (
                   <View style={styles.weekBadgeGrid}>

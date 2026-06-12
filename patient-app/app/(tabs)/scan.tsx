@@ -1,9 +1,10 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,9 +16,11 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GraphUnavailableBanner, ShelfProductRow } from '@/components/conflict';
+import { GraphUnavailableBanner, ProductBarcodeScanner, ShelfProductRow } from '@/components/conflict';
 import { useToast } from '@/components/billing-feedback';
-import { PrimaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton } from '@/components/billing-ui';
+import { PrimaryFab, SectionLabel } from '@/components/v3';
+import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { verdictHref } from '@/constants/routes';
@@ -84,6 +87,8 @@ export default function ScanScreen() {
   const [manualBusy, setManualBusy] = useState(false);
   const scanLock = useRef(false);
   const lastScanRef = useRef<{ code: string; at: number } | null>(null);
+  const scannedCodesRef = useRef<Set<string>>(new Set());
+  const SCAN_COOLDOWN_MS = 8000;
   const scanLine = useSharedValue(0);
 
   useEffect(() => {
@@ -103,6 +108,8 @@ export default function ScanScreen() {
       ]);
       setProducts(Array.isArray(shelf?.products) ? shelf.products : []);
       setEvaluate(evalRes);
+    } catch {
+      /* 401 → patient-api clears session and redirects to sign-in */
     } finally {
       setLoading(false);
     }
@@ -125,10 +132,14 @@ export default function ScanScreen() {
 
   const handleBarcode = async (data: string) => {
     const code = data.trim();
-    if (!code || scanLock.current || scanning) return;
+    if (!code || scanLock.current || scanning || scannedCodesRef.current.has(code)) return;
 
     const now = Date.now();
-    if (lastScanRef.current && lastScanRef.current.code === code && now - lastScanRef.current.at < 300) {
+    if (
+      lastScanRef.current &&
+      lastScanRef.current.code === code &&
+      now - lastScanRef.current.at < SCAN_COOLDOWN_MS
+    ) {
       return;
     }
     lastScanRef.current = { code, at: now };
@@ -136,14 +147,39 @@ export default function ScanScreen() {
     setScanning(true);
     try {
       const res = await scanBarcodeToShelf(code);
-      const productId = String(res?.product?.id || res?.product_id || '');
-      await load();
+      const product = res?.product;
+      const productId = String(product?.id || res?.product_id || '');
+      if (product?.id) {
+        setProducts((prev) => {
+          if (prev.some((p) => p.id === product.id)) return prev;
+          return [
+            ...prev,
+            {
+              id: String(product.id),
+              product_name: String(product.product_name || 'Product'),
+              usage_time: product.usage_time,
+            },
+          ];
+        });
+      } else {
+        await load();
+      }
+      scannedCodesRef.current.add(code);
+      setTimeout(() => scannedCodesRef.current.delete(code), SCAN_COOLDOWN_MS);
       showToast('Product added to shelf', 'success');
       if (productId) {
         router.push(verdictHref(productId));
       }
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : 'Scan failed', 'error');
+      const msg = e instanceof Error ? e.message : 'Scan failed';
+      if (msg === 'product_not_found') {
+        showToast('Product not in our database — add it by name below', 'error');
+        setManualOpen(true);
+      } else if (msg.toLowerCase().includes('too many requests')) {
+        showToast('Too many requests — wait a moment, then try again', 'error');
+      } else {
+        showToast(msg, 'error');
+      }
     } finally {
       scanLock.current = false;
       setScanning(false);
@@ -178,28 +214,25 @@ export default function ScanScreen() {
     );
   }
 
+  const cameraReady = Platform.OS === 'web' || permission?.granted;
+
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Scan a product</Text>
-          <Text style={styles.shelfCount}>{products.length} in shelf</Text>
+          <Text style={styles.title}>Your products</Text>
+          <Text style={styles.shelfCount}>{products.length} added</Text>
         </View>
-        <Text style={styles.subtitle}>Point at a barcode to check compatibility with your routine.</Text>
+        <Text style={styles.subtitle}>Point at barcode · or search below</Text>
 
-        {evaluate?.graph_unavailable ? <GraphUnavailableBanner /> : null}
+        {evaluate?.graph_unavailable ? <GraphUnavailableBanner onRetry={() => void load()} /> : null}
 
         <View style={styles.scanFrame}>
-          {permission?.granted ? (
+          {cameraReady ? (
             <>
-              <CameraView
-                style={styles.camera}
-                facing="back"
-                barcodeScannerSettings={{ barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128'] }}
-                onBarcodeScanned={({ data }) => void handleBarcode(data)}
-              />
+              <ProductBarcodeScanner enabled={!scanning} onBarcode={(data) => void handleBarcode(data)} />
               <ViewfinderOverlay />
               <Animated.View style={[styles.scanLine, scanLineStyle]} />
               {scanning ? (
@@ -211,7 +244,7 @@ export default function ScanScreen() {
           ) : (
             <View style={styles.permissionBox}>
               <Text style={styles.permissionText}>Camera access needed to scan product barcodes.</Text>
-              <PrimaryButton label="Allow camera" onPress={() => requestPermission()} />
+              <ConsumerPrimaryButton label="Allow camera" onPress={() => requestPermission()} />
             </View>
           )}
         </View>
@@ -220,7 +253,7 @@ export default function ScanScreen() {
           <Text style={styles.searchLink}>or search by name</Text>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>Your shelf — today&apos;s lineup</Text>
+        <SectionLabel>Your shelf today</SectionLabel>
         {products.length === 0 ? (
           <Text style={styles.empty}>No products yet — scan or add one to get a verdict.</Text>
         ) : (
@@ -241,13 +274,9 @@ export default function ScanScreen() {
         )}
       </ScrollView>
 
-      <Pressable
-        style={styles.fab}
-        onPress={() => setManualOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Add product">
-        <Text style={styles.fabText}>Add product</Text>
-      </Pressable>
+      <View style={styles.fabWrap}>
+        <PrimaryFab label="Add product" onPress={() => setManualOpen(true)} />
+      </View>
 
       <Modal visible={manualOpen} animationType="slide" transparent>
         <View style={styles.modalBackdrop}>
@@ -260,7 +289,7 @@ export default function ScanScreen() {
               onChangeText={setManualName}
               autoFocus
             />
-            <PrimaryButton label={manualBusy ? 'Adding…' : 'Add to shelf'} onPress={() => void submitManual()} />
+            <ConsumerPrimaryButton label={manualBusy ? 'Adding…' : 'Add to shelf'} onPress={() => void submitManual()} />
             <Pressable onPress={() => setManualOpen(false)} style={{ marginTop: 12 }}>
               <Text style={styles.cancel}>Cancel</Text>
             </Pressable>
@@ -272,7 +301,7 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, paddingBottom: 100, gap: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   title: { fontFamily: JournalTokens.font.display, fontSize: 28, color: JournalTokens.color.ink },
@@ -285,7 +314,6 @@ const styles = StyleSheet.create({
     backgroundColor: ConflictTokens.photoBg,
     position: 'relative',
   },
-  camera: { flex: 1 },
   viewfinderOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
   corner: { position: 'absolute', borderColor: '#fff' },
   cornerTL: { top: 24, left: 24 },
@@ -310,18 +338,8 @@ const styles = StyleSheet.create({
   permissionBox: { flex: 1, padding: 20, justifyContent: 'center', gap: 12 },
   permissionText: { color: '#fff', textAlign: 'center' },
   searchLink: { color: JournalTokens.color.accent, fontWeight: '600', textAlign: 'center', marginVertical: 8 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginTop: 12 },
   empty: { color: JournalTokens.color.muted, fontSize: 14 },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    alignSelf: 'center',
-    backgroundColor: ConflictTokens.fabBg,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: 999,
-  },
-  fabText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  fabWrap: { position: 'absolute', bottom: 16, left: 0, right: 0 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: {
     backgroundColor: '#fff',

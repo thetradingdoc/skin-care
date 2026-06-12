@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OtpForm } from '@/components/OtpForm';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { completeOnboardingAfterSignup } from '@/lib/onboarding-complete';
 
@@ -16,7 +17,7 @@ export default function OnboardingSignupScreen() {
     try {
       await completeOnboardingAfterSignup();
       router.replace({
-        pathname: '/(tabs)/today',
+        pathname: '/(tabs)/home',
         params: { celebrate: '1', photo: '1' },
       });
     } catch {
@@ -48,7 +49,7 @@ export default function OnboardingSignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   wrap: { flex: 1, padding: JournalTokens.spacing.lg },
   brand: {
     fontFamily: JournalTokens.font.display,

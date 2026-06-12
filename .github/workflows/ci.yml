@@ -97,9 +97,25 @@ jobs:
             echo "No OpenAPI spec found, skipping validation"
           fi
       
+      - name: Consumer v3 Postgres migrate (optional)
+        if: matrix.node-version == '20.x' && env.POSTGRES_URL != ''
+        working-directory: ./middleware-platform
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+        run: npm run migrate:consumer-v3
+
       - name: Run Jest tests (middleware-platform)
         working-directory: ./middleware-platform
         run: npm test -- --runInBand --forceExit
+
+      - name: Consumer prod-ready gate (20.x)
+        if: matrix.node-version == '20.x'
+        run: |
+          npm ci --prefix patient-app
+          npm run typecheck --prefix patient-app
+          npm test --prefix patient-app
+          npm run build:consumer-hosting
+          npm run test:consumer-prod-ready --prefix middleware-platform
 
       - name: Voice inbound + booking smoke (Jest)
         working-directory: ./middleware-platform

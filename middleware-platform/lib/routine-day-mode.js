@@ -17,6 +17,21 @@ function todayIsoUtc() {
   return isoFromDate(new Date());
 }
 
+/**
+ * Prefer the patient's local calendar date from x-client-date when valid.
+ * @param {import('express').Request | { headers?: Record<string, string | string[] | undefined> }} req
+ * @returns {string}
+ */
+function resolveClientTodayIso(req) {
+  const raw = req?.headers?.['x-client-date'] ?? req?.headers?.['X-Client-Date'];
+  const header = Array.isArray(raw) ? raw[0] : raw;
+  const s = String(header || '').trim();
+  if (ISO_DATE_RE.test(s) && parseIsoDateOnly(s)) {
+    return s;
+  }
+  return todayIsoUtc();
+}
+
 function daysBetweenUtc(fromIso, toIso) {
   const a = parseIsoDateOnly(fromIso);
   const b = parseIsoDateOnly(toIso);
@@ -117,6 +132,7 @@ module.exports = {
   ISO_DATE_RE,
   parseIsoDateOnly,
   todayIsoUtc,
+  resolveClientTodayIso,
   daysBetweenUtc,
   resolveRoutineDayMode,
   isPurgeWindowPhase,

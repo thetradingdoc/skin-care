@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton, SecondaryButton } from '@/components/billing-ui';
+import { ConsumerPrimaryButton, ConsumerSecondaryButton } from '@/components/billing-ui';
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { ONBOARDING_CONCERNS_HREF, ONBOARDING_SCAN_HREF } from '@/constants/routes';
 import {
@@ -238,7 +239,7 @@ export default function OnboardingRevealScreen() {
                 </Text>
               ))}
             </View>
-            <PrimaryButton label="Scan again" onPress={() => void retake()} variant="consumer" />
+            <ConsumerPrimaryButton label="Scan again" onPress={() => void retake()} />
           </View>
         ) : null}
 
@@ -318,7 +319,7 @@ export default function OnboardingRevealScreen() {
                   placeholder="32"
                   style={styles.input}
                 />
-                <PrimaryButton label="Save" onPress={() => void saveAge()} variant="consumer" />
+                <ConsumerPrimaryButton label="Save" onPress={() => void saveAge()} />
               </View>
             ) : (
               <Pressable onPress={() => setEditingAge(true)} style={styles.realAgeRow}>
@@ -330,11 +331,10 @@ export default function OnboardingRevealScreen() {
               </Pressable>
             )}
 
-            <PrimaryButton label="Build my routine →" onPress={continueNext} variant="consumer" />
-            <SecondaryButton
+            <ConsumerPrimaryButton label="Build my routine →" onPress={continueNext} />
+            <ConsumerSecondaryButton
               label="That doesn't look right — scan again"
               onPress={() => void retake()}
-              variant="consumer"
             />
             <Text style={styles.disclaimer}>
               Wellness estimate from your photo — not a medical diagnosis.
@@ -359,7 +359,7 @@ export default function OnboardingRevealScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   scroll: { padding: JournalTokens.spacing.lg, paddingBottom: 32, gap: 10 },
   topbar: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
   tag: {

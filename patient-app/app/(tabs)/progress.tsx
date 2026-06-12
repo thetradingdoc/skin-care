@@ -1,3 +1,4 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -12,9 +13,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BarrierGrid8, ImprovementBar } from '@/components/conflict';
+import { EmptyStateCard, SectionLabel, SpotRowCard } from '@/components/v3';
 import { SessionImage } from '@/components/SessionImage';
-import { JournalTokens } from '@/constants/journalTokens';
-import { TIMELINE_HREF } from '@/constants/routes';
+import { AppTokens } from '@/constants/appTokens';
+import { HOME_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { listSpots, spotStatusLabel, type Spot } from '@/lib/spot-store';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import {
   fetchBarrierInsight,
@@ -56,6 +59,7 @@ export default function ProgressScreen() {
   const [insight, setInsight] = useState<BarrierInsight>(null);
   const [history, setHistory] = useState<VerdictHistoryDay[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
+  const [spots, setSpots] = useState<Spot[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,14 +69,16 @@ export default function ProgressScreen() {
       start.setUTCDate(start.getUTCDate() - 7);
       const startIso = start.toISOString().slice(0, 10);
 
-      const [progRes, insightRes, calRes, histRes] = await Promise.all([
+      const [progRes, insightRes, calRes, histRes, spotList] = await Promise.all([
         patientGet('/api/patient/home/progress-summary'),
         fetchBarrierInsight().catch(() => null),
         patientGet(
           `/api/patient/journal/calendar-range?start=${startIso}&end=${today}&include_empty_days=1`,
         ).catch(() => ({ days: [] })),
         fetchVerdictHistory(8).catch(() => []),
+        listSpots(),
       ]);
+      setSpots(spotList);
 
       setSummary(progRes?.summary || null);
       setImprovementMetrics(progRes?.improvement_metrics || null);
@@ -98,7 +104,7 @@ export default function ProgressScreen() {
   if (checking || !ready) {
     return (
       <SafeAreaView style={styles.root}>
-        <ActivityIndicator color={JournalTokens.color.accent} style={{ marginTop: 48 }} />
+        <ActivityIndicator color={AppTokens.color.accent} style={{ marginTop: 48 }} />
       </SafeAreaView>
     );
   }
@@ -111,25 +117,46 @@ export default function ProgressScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
-        <Text style={styles.title}>Your progress</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Your progress</Text>
+          {streak > 0 ? <Text style={styles.headerMeta}>{streak} days</Text> : null}
+        </View>
 
         {streak > 0 ? (
-          <View style={styles.streakBanner}>
-            <Text style={styles.streakValue}>🔥 {streak} day streak</Text>
-            {percentileCopy ? <Text style={styles.streakSub}>{percentileCopy}</Text> : null}
+          <View style={styles.streakRow}>
+            <Text style={styles.streakNumber}>{streak}</Text>
+            <View style={styles.streakCopy}>
+              <Text style={styles.streakTitle}>Day streak</Text>
+              {percentileCopy ? <Text style={styles.streakSub}>{percentileCopy}</Text> : null}
+            </View>
+            <MaterialIcons name="local-fire-department" size={22} color={AppTokens.color.barrierOk} />
           </View>
-        ) : null}
+        ) : (
+          <EmptyStateCard
+            title="Start your photo streak"
+            body="Take a daily progress photo on Home or log a spot on Track to build your progress story."
+            ctaLabel="Take today's photo"
+            onCta={() => router.push(`${HOME_HREF}?photo=1` as typeof HOME_HREF)}
+          />
+        )}
 
+        <SectionLabel>Barrier score — last 8 days</SectionLabel>
         <BarrierGrid8 days={history} />
 
         {insight?.message ? (
           <View style={styles.dipCard}>
             <Text style={styles.dipTitle}>{insight.title || 'What caused the dip'}</Text>
+            {insight.drop_points != null ? (
+              <Text style={styles.dipPoints}>Barrier dropped {insight.drop_points} points</Text>
+            ) : null}
             <Text style={styles.dipBody}>{insight.message}</Text>
+            {insight.pattern_count != null && insight.pattern_count > 1 ? (
+              <Text style={styles.dipPattern}>Seen {insight.pattern_count} times</Text>
+            ) : null}
           </View>
         ) : null}
 
-        <Text style={styles.sectionLabel}>Improvement metrics</Text>
+        <SectionLabel>Skin improvements</SectionLabel>
         {metrics?.clarity_pct != null ? (
           <ImprovementBar label="Clarity" value={metrics.clarity_pct} positiveIsGood />
         ) : null}
@@ -149,97 +176,134 @@ export default function ProgressScreen() {
           <Text style={styles.emptyMetrics}>Log progress photos to unlock improvement metrics.</Text>
         ) : null}
 
-        <Text style={styles.sectionLabel}>{days.length}-day photo timeline</Text>
-        <View style={styles.thumbGrid}>
-          {days.map((d, idx) => {
-            const logged = (d.completion_score || 0) >= 100 || d.has_media;
-            const isToday = d.date === localTodayIso();
-            const tagColor = d.verdict_overall
-              ? verdictTagColor(d.verdict_overall as 'safe' | 'caution' | 'avoid')
-              : null;
-            const dayLabel = isToday ? 'Today' : idx === 0 ? 'Day 1' : d.date.slice(8);
-            return (
-              <Pressable
-                key={d.date}
-                onPress={() => router.push({ pathname: '/(tabs)/timeline', params: { date: d.date } })}
-                style={[styles.thumb, logged && styles.thumbLogged, isToday && styles.thumbToday]}>
-                {tagColor ? <View style={[styles.thumbTag, { backgroundColor: tagColor }]} /> : null}
-                {d.thumbnail_url ? (
-                  <SessionImage uri={d.thumbnail_url} style={styles.thumbImage} contentFit="cover" />
-                ) : (
-                  <Text style={styles.thumbIcon}>{logged ? '📷' : isToday ? '📸' : '·'}</Text>
-                )}
-                <View style={styles.dayChip}>
-                  <Text style={styles.dayChipText}>{dayLabel}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
+        {days.length > 0 ? (
+          <>
+            <SectionLabel>{`${days.length}-day photo timeline`}</SectionLabel>
+            <View style={styles.thumbGrid}>
+              {days.map((d, idx) => {
+                const logged = (d.completion_score || 0) >= 100 || d.has_media;
+                const isToday = d.date === localTodayIso();
+                const tagColor = d.verdict_overall
+                  ? verdictTagColor(d.verdict_overall as 'safe' | 'caution' | 'avoid')
+                  : null;
+                const dayLabel = isToday ? 'Today' : idx === 0 ? 'Day 1' : d.date.slice(8);
+                return (
+                  <View key={d.date} style={styles.thumbCol}>
+                    <Pressable
+                      onPress={() =>
+                        router.push(`${HOME_HREF}?date=${d.date}` as typeof HOME_HREF)
+                      }
+                      style={[
+                        styles.thumb,
+                        logged ? styles.thumbLogged : styles.thumbEmpty,
+                        isToday && styles.thumbToday,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${dayLabel}`}>
+                      {tagColor && logged ? (
+                        <View style={[styles.thumbTag, { backgroundColor: tagColor }]}>
+                          <Text style={styles.thumbTagText}>{dayLabel}</Text>
+                        </View>
+                      ) : null}
+                      {d.thumbnail_url ? (
+                        <SessionImage uri={d.thumbnail_url} style={styles.thumbImage} contentFit="cover" />
+                      ) : logged ? (
+                        <MaterialIcons name="photo-camera" size={18} color="rgba(255,255,255,0.45)" />
+                      ) : null}
+                    </Pressable>
+                    <Text style={styles.thumbDayLabel}>{dayLabel}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
 
-        <Pressable
-          onPress={() => router.push(TIMELINE_HREF)}
-          style={styles.linkWrap}
-          accessibilityRole="button"
-          accessibilityLabel="Open journal timeline">
-          <Text style={styles.link}>Open journal timeline →</Text>
-        </Pressable>
+        <SectionLabel>Spot tracking</SectionLabel>
+        {spots.length === 0 ? (
+          <EmptyStateCard
+            title="No spots tracked yet"
+            body="Photograph a mole or mark on the Track tab. We'll help you watch it over time."
+            ctaLabel="Track a spot"
+            onCta={() => router.push(TRACK_HREF)}
+          />
+        ) : (
+          spots.map((spot) => (
+            <SpotRowCard
+              key={spot.id}
+              spot={spot}
+              statusLabel={spotStatusLabel(spot)}
+              onPress={() => router.push(spotHref(spot.id))}
+            />
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: JournalTokens.color.cream },
-  content: { padding: JournalTokens.spacing.lg, gap: 10 },
-  title: { fontFamily: JournalTokens.font.display, fontSize: 28, color: JournalTokens.color.ink },
-  streakBanner: {
-    backgroundColor: '#FAEEDA',
-    borderRadius: 12,
-    padding: 14,
+  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
+  content: { padding: AppTokens.spacing.lg, gap: 10, paddingBottom: 100 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  title: { fontSize: 14, fontWeight: '600', color: AppTokens.color.ink },
+  headerMeta: { fontSize: 11, color: AppTokens.color.muted },
+  streakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginBottom: 8,
   },
-  streakValue: { fontSize: 18, fontWeight: '800', color: '#633806' },
-  streakSub: { fontSize: 13, color: '#633806', marginTop: 4 },
-  emptyMetrics: { fontSize: 13, color: JournalTokens.color.muted, marginBottom: 8 },
+  streakNumber: { fontSize: 20, fontWeight: '600', color: AppTokens.color.ink },
+  streakCopy: { flex: 1 },
+  streakTitle: { fontSize: 12, fontWeight: '600', color: AppTokens.color.ink },
+  streakSub: { fontSize: 10, color: AppTokens.color.muted, marginTop: 2 },
+  emptyMetrics: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 8 },
   dipCard: {
-    backgroundColor: JournalTokens.color.card,
+    backgroundColor: AppTokens.color.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: JournalTokens.color.line,
+    borderColor: AppTokens.color.line,
     padding: 14,
     marginTop: 8,
   },
-  dipTitle: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  dipBody: { fontSize: 13, color: JournalTokens.color.muted, lineHeight: 20 },
-  sectionLabel: { fontSize: 12, color: JournalTokens.color.muted, marginTop: 8 },
+  dipTitle: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
+  dipPoints: { fontSize: 11, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 4 },
+  dipBody: { fontSize: 11, color: AppTokens.color.muted, lineHeight: 17 },
+  dipPattern: { fontSize: 10, color: AppTokens.color.muted, marginTop: 6, fontStyle: 'italic' },
   thumbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  thumbCol: { width: '22%', alignItems: 'center' },
   thumb: {
-    width: '22%',
+    width: '100%',
     aspectRatio: 1,
-    borderRadius: 10,
-    backgroundColor: JournalTokens.color.card,
-    borderWidth: 1,
-    borderColor: JournalTokens.color.line,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.5,
+    overflow: 'hidden',
     position: 'relative',
   },
-  thumbLogged: { backgroundColor: '#eef4ff', opacity: 1 },
-  thumbToday: { borderColor: JournalTokens.color.brandAccent, borderWidth: 2, opacity: 1 },
-  thumbTag: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, zIndex: 2 },
-  thumbImage: { ...StyleSheet.absoluteFillObject, borderRadius: 10 },
-  thumbIcon: { fontSize: 18 },
-  dayChip: {
+  thumbLogged: { backgroundColor: AppTokens.color.photoBg },
+  thumbEmpty: { backgroundColor: AppTokens.color.cream },
+  thumbToday: { borderWidth: 2, borderColor: AppTokens.color.ink },
+  thumbTag: {
     position: 'absolute',
     bottom: 4,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    left: 4,
     borderRadius: 4,
     paddingHorizontal: 4,
-    paddingVertical: 1,
+    paddingVertical: 2,
+    zIndex: 2,
   },
-  dayChipText: { color: '#fff', fontSize: 8, fontWeight: '700' },
-  linkWrap: { marginTop: 8 },
-  link: { color: JournalTokens.color.brandAccent, fontWeight: '700', fontSize: 14 },
+  thumbTagText: { color: '#fff', fontSize: 8, fontWeight: '600' },
+  thumbImage: { ...StyleSheet.absoluteFillObject, borderRadius: 8 },
+  thumbDayLabel: { fontSize: 9, color: AppTokens.color.muted, marginTop: 2, textAlign: 'center' },
 });

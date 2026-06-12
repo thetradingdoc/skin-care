@@ -149,6 +149,15 @@ export function todayIsoLocal(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Rolling window for calendar-range API (max 186 days server-side). */
+export function rollingJournalRange(maxDays = 180): { start: string; end: string } {
+  const end = todayIsoLocal();
+  const d = new Date(`${end}T12:00:00`);
+  d.setDate(d.getDate() - maxDays);
+  const start = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start, end };
+}
+
 export function formatUsd(cents: number): string {
   const n = Math.max(0, cents) / 100;
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

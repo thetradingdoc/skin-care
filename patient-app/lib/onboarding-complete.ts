@@ -1,4 +1,5 @@
 import { saveBioProfile } from '@/lib/conflict-api';
+import { syncOnboardingFlags } from '@/lib/journey-mode-storage';
 import { patientPost } from '@/lib/patient-api';
 import {
   getFaceRead,
@@ -52,4 +53,13 @@ export async function completeOnboardingAfterSignup(): Promise<void> {
 
   await setOnboardingDone();
   await setNeedsFirstPhoto();
+  try {
+    await syncOnboardingFlags({
+      onboarding_complete: true,
+      needs_first_photo: true,
+      bio_calibration_complete: mappedCondition != null && mappedCondition !== 'none',
+    });
+  } catch {
+    // server sync optional when offline
+  }
 }

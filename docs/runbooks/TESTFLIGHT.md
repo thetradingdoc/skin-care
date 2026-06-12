@@ -1,6 +1,6 @@
 # TestFlight — Skin & Care iOS (physical device)
 
-Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use production API `https://api.myskinandcare.com` (configured in `patient-app/eas.json` → `testflight` profile).
+Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use production API **`https://api.callsomo.com`** (see `patient-app/eas.json` → `testflight` profile). When DNS is live, **`https://api.myskinandcare.com`** is an alias to the same middleware.
 
 ## Prerequisites (one-time)
 
@@ -130,9 +130,9 @@ npx eas-cli build --platform ios --profile testflight --auto-submit
 Uses live API — no local middleware required.
 
 1. Open app → **Sign in** with email OTP (`/api/patient/auth/*`)
-2. Pick a concern → **Today** loads
+2. Journey choose → pick concern → **Home** loads
 3. Log a photo (camera permission)
-4. **Timeline** shows the logged day
+4. **Progress** shows the logged day
 5. **Account** → subscription flow (Stripe) optional
 
 If sign-in fails with network errors, confirm the build used `EXPO_PUBLIC_API_BASE_URL=https://api.myskinandcare.com` (see build logs on expo.dev).

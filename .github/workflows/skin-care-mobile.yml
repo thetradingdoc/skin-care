@@ -43,7 +43,7 @@ jobs:
         working-directory: ./patient-app
         run: npx tsc --noEmit
 
-      - name: Unit tests (patient-session)
+      - name: Unit tests (patient-app vitest)
         working-directory: ./patient-app
         run: npm test
 
@@ -65,11 +65,38 @@ jobs:
 
       - name: Run care-program billing tests
         working-directory: ./middleware-platform
-        run: npm test -- --testPathPattern=care-program-billing-service --runInBand
+        run: npm test -- --testPathPattern='care-program|stripe-webhook-care' --runInBand
+
+  consumer-prod-ready:
+    name: consumer prod-ready gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: middleware-platform/package-lock.json
+
+      - name: Install root + middleware + patient-app
+        run: |
+          npm ci
+          npm ci --prefix middleware-platform
+          npm ci --prefix patient-app
+
+      - name: Install Playwright Chromium
+        working-directory: ./middleware-platform
+        run: npx playwright install chromium
+
+      - name: Build consumer hosting + run test:consumer-prod-ready
+        run: |
+          npm run build:consumer-hosting
+          npm run test:consumer-prod-ready --prefix middleware-platform
 
   eas-preview:
     name: EAS iOS preview build
-    needs: [typecheck, care-program-api]
+    needs: [typecheck, care-program-api, consumer-prod-ready]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -88,4 +115,4 @@ jobs:
 
       - name: Trigger EAS preview build (internal device link)
         working-directory: ./patient-app
-        run: eas build --platform ios --profile preview --non-interactive --no-wait
+        run: npx eas-cli build --platform ios --profile preview --non-interactive --no-wait

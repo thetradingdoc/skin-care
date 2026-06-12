@@ -11,7 +11,7 @@ Minimal consumer marketing SPA for **Skin & Care** — served at `http://localho
 | `/quick-check` | Skin feel + routine habit (2 taps) |
 | `/reveal` | Findings + score row, or retry tips if vision empty |
 | `/concerns` | Pick concerns → funnel match |
-| `/patients/patient-login.html?intent=signup&from=skin-age-landing` | OTP signup → dashboard |
+| `/app/sign-in?intent=signup&from=skin-age-landing` | OTP signup → Expo web app |
 
 Pre-signup state lives in **`sessionStorage`** (`sc_onboarding_*` keys). After OTP, [`skin-age-journey.js`](../assets/js/skin-age-journey.js) activates the routine template and clears storage.
 

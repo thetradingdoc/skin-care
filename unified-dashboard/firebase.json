@@ -1,7 +1,8 @@
 {
   "hosting": {
+    "site": "somo-4ddf6",
     "public": "hosting-dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": ["firebase.json", "firebase.consumer.json", "**/.*", "**/node_modules/**"],
     "headers": [
       {
         "source": "/assets/**",
@@ -32,18 +33,11 @@
         "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
       }
     ],
-    "redirects": [
-      {
-        "source": "**",
-        "destination": "https://myskinandcare.com",
-        "type": 301,
-        "host": "www.myskinandcare.com"
-      }
-    ],
     "rewrites": [
       { "source": "/signup", "destination": "/signup.html" },
       { "source": "/login", "destination": "/login.html" },
       { "source": "/terms", "destination": "/terms.html" },
+      { "source": "/business/**", "destination": "/business/**" },
       { "source": "**", "destination": "/index.html" }
     ]
   }

@@ -1,10 +1,20 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { BillingTheme } from '@/constants/billingTheme';
 
 type BtnProps = { label: string; onPress?: () => void; variant?: 'billing' | 'consumer' };
+
+/** Black full-width CTA for patient app + consumer flows (not billing modals). */
+export function ConsumerPrimaryButton(props: Omit<BtnProps, 'variant'>) {
+  return <PrimaryButton {...props} variant="consumer" />;
+}
+
+export function ConsumerSecondaryButton(props: Omit<BtnProps, 'variant'>) {
+  return <SecondaryButton {...props} variant="consumer" />;
+}
 
 export function PrimaryButton({ label, onPress, variant = 'billing' }: BtnProps) {
   const isConsumer = variant === 'consumer';
@@ -12,7 +22,8 @@ export function PrimaryButton({ label, onPress, variant = 'billing' }: BtnProps)
     <Pressable
       style={[styles.primary, isConsumer && styles.primaryConsumer]}
       onPress={onPress}
-      accessibilityRole="button">
+      accessibilityRole="button"
+      accessibilityLabel={label}>
       <Text style={[styles.primaryText, isConsumer && styles.primaryTextConsumer]}>{label}</Text>
     </Pressable>
   );
@@ -24,7 +35,8 @@ export function SecondaryButton({ label, onPress, variant = 'billing' }: BtnProp
     <Pressable
       style={[styles.secondary, isConsumer && styles.secondaryConsumer]}
       onPress={onPress}
-      accessibilityRole="button">
+      accessibilityRole="button"
+      accessibilityLabel={label}>
       <Text style={[styles.secondaryText, isConsumer && styles.secondaryTextConsumer]}>{label}</Text>
     </Pressable>
   );
@@ -55,7 +67,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryConsumer: {
-    backgroundColor: '#111',
+    backgroundColor: AppTokens.color.fabBg,
     borderRadius: 16,
     width: '100%',
   },

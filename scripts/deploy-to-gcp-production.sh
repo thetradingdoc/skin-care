@@ -11,6 +11,8 @@ source "$ROOT/scripts/lib/cloudrun-deploy-env.sh"
 export DEPLOY_INTENT=production
 export CLOUDRUN_PROFILE=production
 export REQUIRE_EXPLICIT_PROFILE=1
+export GCS_DB_BUCKET="${GCS_DB_BUCKET:-somo-prod-db-somo-callsomo}"
+export CLOUDRUN_DB_PATH="${CLOUDRUN_DB_PATH:-/var/data/middleware-prod.db}"
 # Deploy to the service that currently owns api.callsomo.com when unset.
 if [[ -z "${CLOUDRUN_SERVICE_SET:-}" ]]; then
   API_HOST="${CLOUDRUN_API_HOST#https://}"
