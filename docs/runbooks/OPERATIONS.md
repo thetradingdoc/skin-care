@@ -2,7 +2,7 @@
 
 > **Note:** Internal GCP project names (`somo-callsomo`, `somo-middleware`, `somo-4ddf6`) are infrastructure identifiers. The user-facing consumer brand is **Skin & Care** (myskinandcare.com).
 
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-13
 
 ### Kelly Rails vs legacy agent
 
@@ -12,6 +12,41 @@
 | `0` | Legacy `kelly-agent-service.js` `processTurn` |
 
 Set on Cloud Run `somo-middleware`. See [`docs/architecture/LIVE.md`](../architecture/LIVE.md) for full routing diagram.
+
+---
+
+<a id="pause-resume-consumer"></a>
+
+## Pause / resume consumer stack (Skin & Care)
+
+Pause public API + website compute **without deleting** GCP/Firebase resources. Snapshot saved to `.gcp-pause-snapshot.json` (gitignored).
+
+| Resource | Pause action |
+|----------|--------------|
+| Cloud Run `somo-middleware`, `face-read-inference` | `min-instances=0`, `max-instances=1`, `ingress=internal` |
+| Firebase site `myskinandcare` (`somo-4ddf6`) | `hosting:disable` |
+| Cloud SQL (if any) | `activation-policy=NEVER` |
+| GitHub workflows | `deploy-staging.yml`, `deploy-journal-production.yml` disabled |
+
+**Pause:**
+
+```bash
+gcloud auth login
+firebase login --reauth
+./scripts/pause-skin-care-gcp.sh
+```
+
+**Resume** (restores pre-pause Cloud Run scaling from snapshot):
+
+```bash
+./scripts/resume-skin-care-gcp.sh
+# Optional: redeploy latest hosting bundle
+npm run deploy:consumer-hosting
+```
+
+**While paused:** TestFlight app and webhooks to `api.callsomo.com` will fail. Do not run `./scripts/deploy-to-gcp.sh` — it resets `min-instances=1`.
+
+**Last paused:** 2026-06-13 — Cloud SQL: none in project `somo-callsomo`.
 
 ---
 

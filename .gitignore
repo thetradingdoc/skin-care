@@ -26,6 +26,8 @@ local/*.db_.gstmp
 *.env.bak
 .env.bak2
 *.env.bak2
+.gcp-pause-snapshot.json
+middleware-platform/.env.production
 
 # Database files
 *.db
