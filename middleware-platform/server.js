@@ -127,7 +127,6 @@ const { fieldsFromSqlAggRow } = require('./lib/billing-calendar-agg');
 const { fetchBillingAggregatesByDay } = require('./lib/patient-calendar-billing-query');
 const { ensureRoutineTables } = require('./lib/patient-routine-db');
 const { ensureJournalTables } = require('./lib/patient-journal-db');
-const { ensureJournalTables } = require('./lib/patient-journal-db');
 const constants = require('./utils/constants');
 const PaymentOrchestrator = require('./services/payment-orchestrator');
 const PaymentFlowService = require('./services/payment-flow-service');
