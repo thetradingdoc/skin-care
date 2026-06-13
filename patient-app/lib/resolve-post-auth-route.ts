@@ -35,6 +35,7 @@ function resolveJourneyModes(
 async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
   const routineMode = modes.includes('routine');
   const watchMode = modes.includes('watch');
+  const spotMode = modes.includes('spot');
   const serverProfile = await fetchConsumerProfile().catch(() => null);
 
   const [spots, template, shelf, bio] = await Promise.all([
@@ -44,8 +45,12 @@ async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
     fetchBioProfile().catch(() => ({ profile_complete: false, conditions: [], prescriptions: [] })),
   ]);
 
+  if (spotMode && !watchMode && !routineMode) {
+    return TRACK_HREF;
+  }
+
   if (watchMode && !routineMode) {
-    return spots.length === 0 ? TRACK_HREF : HOME_HREF;
+    return HOME_HREF;
   }
 
   const products = Array.isArray(shelf?.products) ? shelf.products : [];
@@ -68,7 +73,7 @@ async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
     return SCAN_HREF;
   }
 
-  if (watchMode && spots.length === 0) {
+  if (spotMode && watchMode && spots.length === 0 && !hasTemplate) {
     return TRACK_HREF;
   }
 

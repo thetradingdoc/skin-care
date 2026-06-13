@@ -11,6 +11,7 @@ import type { JourneyMode } from '@/lib/journey-mode-storage';
 import { setJourneyProfile } from '@/lib/journey-mode-storage';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { useToast } from '@/components/billing-feedback';
+import { trackPortalEvent } from '@/lib/trackPortalEvent';
 
 export default function JourneyChooseScreen() {
   const router = useRouter();
@@ -34,7 +35,13 @@ export default function JourneyChooseScreen() {
     setBusy(true);
     try {
       const modes = Array.from(selected);
-      const primary = modes.includes('watch') ? 'watch' : 'routine';
+      const primary = modes.includes('watch')
+        ? 'watch'
+        : modes.includes('routine')
+          ? 'routine'
+          : modes.includes('spot')
+            ? 'spot'
+            : 'watch';
       const saved = await setJourneyProfile({
         modes,
         primary,
@@ -44,6 +51,7 @@ export default function JourneyChooseScreen() {
         showToast('Could not save your journey choice. Try again.', 'error');
         return;
       }
+      trackPortalEvent('journey_choose_completed', { modes: modes.join(',') });
       router.replace(await resolvePostAuthRoute({ journeyModes: modes }));
     } finally {
       setBusy(false);
@@ -56,27 +64,32 @@ export default function JourneyChooseScreen() {
         <View style={styles.header}>
           <BrandWordmark height={36} style={styles.logo} />
           <Text style={styles.title}>What brings you here?</Text>
-          <Text style={styles.sub}>We&apos;ll set up the right experience for you</Text>
+          <Text style={styles.sub}>Pick what fits — you can change it anytime.</Text>
         </View>
 
         <JourneyModeCard
           variant="watch"
-          title="Watch something on my skin"
-          subtitle="A spot, growth, mole, or mark I want to track over time"
+          title="Keep a skin diary"
+          subtitle={"One photo a day. See what's changing and find your triggers — no routine needed."}
           selected={selected.has('watch')}
           onPress={() => toggle('watch')}
         />
         <JourneyModeCard
           variant="routine"
           title="Improve my skin routine"
-          subtitle="Track acne, check if products clash, follow a program"
+          subtitle="Product conflicts and a guided 12-week program."
           selected={selected.has('routine')}
           onPress={() => toggle('routine')}
         />
+        <JourneyModeCard
+          variant="spot"
+          title="Watch a spot or mark"
+          subtitle="Track a mole, growth, or area of concern over time."
+          selected={selected.has('spot')}
+          onPress={() => toggle('spot')}
+        />
 
-        <Text style={styles.footer}>
-          You can use both at the same time.{'\n'}Most people do.
-        </Text>
+        <Text style={styles.footer}>You can enable more than one.</Text>
 
         <ConsumerPrimaryButton
           label={busy ? 'Setting up…' : 'Continue'}

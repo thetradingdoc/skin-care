@@ -53,8 +53,8 @@ describe('home next-actions', () => {
     await seedDefaultGoals(db, {
       sessionId,
       patientId: null,
-      journeyModes: ['watch'],
-      primaryMode: 'watch',
+      journeyModes: ['spot'],
+      primaryMode: 'spot',
     });
 
     const result = await getNextActions(db, {

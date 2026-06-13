@@ -13,6 +13,7 @@ export const KEYS = {
   SUGGESTED_CONCERNS: 'sc_onboarding_suggested_concerns',
   ZONE_BREAKDOWN: 'sc_onboarding_zone_breakdown',
   QUICK_CHECK_DONE: 'sc_onboarding_quick_check_done',
+  WATCH_ONLY: 'sc_onboarding_watch_only',
 };
 
 export function getFaceRead() {
@@ -198,4 +199,20 @@ export function clearJourney() {
 
 export function hasJourneyData() {
   return Boolean(getConcernId() || getFaceRead());
+}
+
+export function isWatchOnlyOnboarding() {
+  try {
+    return sessionStorage.getItem(KEYS.WATCH_ONLY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setWatchOnlyOnboarding(enabled) {
+  if (enabled) {
+    sessionStorage.setItem(KEYS.WATCH_ONLY, '1');
+  } else {
+    sessionStorage.removeItem(KEYS.WATCH_ONLY);
+  }
 }

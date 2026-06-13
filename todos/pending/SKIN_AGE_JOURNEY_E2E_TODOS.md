@@ -14,7 +14,7 @@
 
 
 
-**Decision:** Routines SSOT = [`middleware-platform/data/routines/concern-routines.json`](../../middleware-platform/data/routines/concern-routines.json) + [`concern-routine-service.js`](../../middleware-platform/services/concern-routine-service.js) (no separate `/api/skinrag/*`).
+**Decision (2026-06-12):** Do **not** merge RAG into `concern-routines.json`. Funnel/template SSOT = [`middleware-platform/routines/concern-routines.json`](../../middleware-platform/routines/concern-routines.json) + [`concern-routine-service.js`](../../middleware-platform/services/concern-routine-service.js). Rich display SSOT = [`middleware-platform/data/routines/all_routines.json`](../../middleware-platform/data/routines/all_routines.json) + `GET /api/skinrag/routine/:concern` (`FEATURE_SKINRAG_ROUTINES=1`). Deprecate static file for **display** only after all 6 concerns proven in prod.
 
 
 

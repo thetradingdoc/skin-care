@@ -27,7 +27,7 @@ module.exports = defineConfig({
     viewport: { width: 390, height: 844 },
   },
   webServer: {
-    command: `node "${ensureScript}" && node "${serveScript}" "${consumerRoot}" ${port}`,
+    command: `PW_FORCE_LOCAL_E2E_API=1 node "${ensureScript}" && node "${serveScript}" "${consumerRoot}" ${port}`,
     url: origin,
     reuseExistingServer: !process.env.CI,
     timeout: 600_000,

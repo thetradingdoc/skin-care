@@ -84,7 +84,7 @@ export default function OnboardingScanScreen() {
       <CameraView ref={camRef} style={StyleSheet.absoluteFill} facing="front" />
       <SafeAreaView style={styles.overlay} edges={['top', 'left', 'right', 'bottom']}>
         <Text style={styles.badge}>Your face is the data</Text>
-        <Text style={styles.headline}>Know your skin age in seconds</Text>
+        <Text style={styles.headline}>Check your skin</Text>
         <Text style={styles.hint}>Center your face in the oval</Text>
         <View style={styles.ovalWrap}>
           <View style={styles.oval} />

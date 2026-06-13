@@ -16,6 +16,7 @@ import {
   type JourneyMode,
 } from '@/lib/journey-mode-storage';
 import { patientGet, patientPost } from '@/lib/patient-api';
+import { trackPortalEvent } from '@/lib/trackPortalEvent';
 import { clearPatientSession, getStoredEmail } from '@/lib/patient-session';
 import { JOURNEY_CHOOSE_HREF, SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
 
@@ -94,6 +95,10 @@ export default function AccountScreen() {
   }, [load]);
 
   useEffect(() => {
+    if (!loading && signedIn) trackPortalEvent('account_viewed');
+  }, [loading, signedIn]);
+
+  useEffect(() => {
     const status = typeof params.subscription === 'string' ? params.subscription : '';
     if (status === 'success') {
       showToast('Subscription active — thank you!', 'success');
@@ -166,8 +171,8 @@ export default function AccountScreen() {
               <Text style={styles.cardBody}>Turn on the experiences you use. You can enable both.</Text>
               <JourneyModeCard
                 variant="watch"
-                title="Watch something on my skin"
-                subtitle="Track a spot, growth, or mark over time"
+                title="Keep a skin diary"
+                subtitle="Daily photos and notes to find your triggers"
                 selected={journeyModes.includes('watch')}
                 onPress={() =>
                   void toggleJourneyMode('watch', !journeyModes.includes('watch')).then((p) =>
@@ -182,6 +187,17 @@ export default function AccountScreen() {
                 selected={journeyModes.includes('routine')}
                 onPress={() =>
                   void toggleJourneyMode('routine', !journeyModes.includes('routine')).then((p) =>
+                    setJourneyModes(p.modes),
+                  )
+                }
+              />
+              <JourneyModeCard
+                variant="spot"
+                title="Watch a spot or mark"
+                subtitle="Track a mole, growth, or area over time"
+                selected={journeyModes.includes('spot')}
+                onPress={() =>
+                  void toggleJourneyMode('spot', !journeyModes.includes('spot')).then((p) =>
                     setJourneyModes(p.modes),
                   )
                 }

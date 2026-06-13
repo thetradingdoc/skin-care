@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { AppTokens } from '@/constants/appTokens';
 
 export default function TabLayout() {
@@ -13,7 +13,7 @@ export default function TabLayout() {
         initialRouteName="home"
         screenOptions={{
           tabBarActiveTintColor: AppTokens.color.brandAccent,
-          tabBarInactiveTintColor: '#94a3b8',
+          tabBarInactiveTintColor: AppTokens.color.hint,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: styles.tabBar,
@@ -24,35 +24,35 @@ export default function TabLayout() {
           name="home"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color }) => <IconSymbol size={22} name="house.fill" color={color} />,
+            tabBarIcon: ({ color }) => <AppIcon name="home" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="track"
           options={{
             title: 'Track',
-            tabBarIcon: ({ color }) => <IconSymbol size={22} name="camera.fill" color={color} />,
+            tabBarIcon: ({ color }) => <AppIcon name="camera" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="scan"
           options={{
             title: 'Scan',
-            tabBarIcon: ({ color }) => <IconSymbol size={24} name="barcode.viewfinder" color={color} />,
+            tabBarIcon: ({ color }) => <AppIcon name="scan" size={24} color={color} />,
           }}
         />
         <Tabs.Screen
           name="progress"
           options={{
             title: 'Progress',
-            tabBarIcon: ({ color }) => <IconSymbol size={22} name="chart.bar.fill" color={color} />,
+            tabBarIcon: ({ color }) => <AppIcon name="chart-bar" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="account"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.fill" color={color} />,
+            tabBarIcon: ({ color }) => <AppIcon name="user" size={22} color={color} />,
           }}
         />
         <Tabs.Screen name="timeline" options={{ href: null }} />

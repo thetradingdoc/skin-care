@@ -27,10 +27,13 @@
     "verify:agentic-checkout": "node ../scripts/verify-agentic-checkout.cjs"
   },
   "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/gloock": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
+    "@tabler/icons-react-native": "^3.44.0",
     "@zxing/browser": "^0.2.0",
     "expo": "~54.0.33",
     "expo-camera": "~16.1.6",

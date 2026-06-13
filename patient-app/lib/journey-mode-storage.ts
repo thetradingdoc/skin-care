@@ -5,7 +5,7 @@ import {
   patchConsumerProfile,
 } from '@/lib/consumer-profile-api';
 
-export type JourneyMode = 'watch' | 'routine';
+export type JourneyMode = 'watch' | 'routine' | 'spot';
 
 export type JourneyProfile = {
   modes: JourneyMode[];
@@ -64,6 +64,11 @@ export async function hasRoutineMode(): Promise<boolean> {
 export async function hasWatchMode(): Promise<boolean> {
   const p = await getJourneyProfile();
   return Boolean(p?.modes?.includes('watch'));
+}
+
+export async function hasSpotMode(): Promise<boolean> {
+  const p = await getJourneyProfile();
+  return Boolean(p?.modes?.includes('spot'));
 }
 
 export async function toggleJourneyMode(mode: JourneyMode, enabled: boolean): Promise<JourneyProfile> {

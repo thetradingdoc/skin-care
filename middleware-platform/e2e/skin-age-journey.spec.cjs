@@ -110,7 +110,7 @@ async function completeQuickCheck(page) {
 test.describe('Skin age journey (consumer hosting)', () => {
   test('E2E-01 Landing CTA → /scan', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /facial age checker/i }).click();
+    await page.getByRole('link', { name: /Check your skin/i }).click();
     await expect(page).toHaveURL(/\/scan/);
   });
 
@@ -218,8 +218,8 @@ test.describe('Skin age journey (consumer hosting)', () => {
     await expect(page.locator('.sc-finding-card')).toHaveCount(1);
     await expect(page.getByText(/uneven tone on cheeks/i)).toBeVisible();
     await expect(page.locator('.sc-real-age-row')).toBeVisible();
-    await expect(page.getByRole('button', { name: /build my routine/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /scan again/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /start your photo log|continue your journal/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /scan again|doesn't look right/i })).toBeVisible();
   });
 
   test('E2E-06 Reveal no longer shows legacy zone age row', async ({ page }) => {
@@ -269,7 +269,7 @@ test.describe('Skin age journey (consumer hosting)', () => {
     await expect(page.locator('.sc-score-row')).toHaveCount(0);
     await expect(page.getByText(/couldn't read your skin clearly/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /scan again/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /continue with quick-check/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /continue your journal/i })).toBeVisible();
   });
 
   test('E2E-17 poor_lighting finding shows State A not retry', async ({ page }) => {
@@ -323,7 +323,7 @@ test.describe('Skin age journey (consumer hosting)', () => {
     await page.reload();
     await expect(page.locator('.sc-concern-card')).toHaveCount(6);
     await expect(page.locator('.sc-concern-card--pick')).toBeVisible();
-    await expect(page.getByText(/pre-selected based on your scan/i)).toBeVisible();
+    await expect(page.getByText(/suggested from your scan/i)).toBeVisible();
   });
 
   test('E2E-15 Gate reject stays on scan with user message', async ({ page }) => {
@@ -352,7 +352,7 @@ test.describe('Skin age journey (consumer hosting)', () => {
       sessionStorage.setItem('sc_onboarding_quick_check_done', '1');
     });
     await page.reload();
-    await page.getByRole('button', { name: /start .* plan/i }).click();
+    await page.getByRole('button', { name: /continue your journal|build my care plan/i }).click();
     await expect(page).toHaveURL(/\/app\/sign-in/);
     await expect(page.url()).toMatch(/intent=signup/);
     await expect(page.url()).toMatch(/from=skin-age-landing/);
@@ -360,7 +360,7 @@ test.describe('Skin age journey (consumer hosting)', () => {
 
   test('E2E-09 Sign-in OTP page loads for funnel signup', async ({ page }) => {
     await page.goto('/app/sign-in?intent=signup&from=skin-age-landing');
-    await expect(page.getByText('Save your plan')).toBeVisible();
+    await expect(page.getByText('Save your journal')).toBeVisible();
   });
 
   test('E2E-10 Post-signup handoff clears sessionStorage keys', async ({ page }) => {

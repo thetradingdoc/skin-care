@@ -1,0 +1,95 @@
+name: Deploy Journal Production (myskinandcare.com)
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_smoke:
+        description: Skip post-deploy smoke
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: deploy-journal-production
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT: somo-callsomo
+  GCP_REGION: us-central1
+  CLOUDRUN_SERVICE: somo-middleware
+  JOURNAL_MODE_STANDALONE: '1'
+  TRIGGER_INSIGHTS_ENABLED: '1'
+  IMPROVEMENTS_API_ENABLED: '1'
+  FEATURE_V3_INSIGHTS: '1'
+  FEATURE_V3_INSIGHTS_LLM: '1'
+  LANGGRAPH_CONSUMER_EVAL_ROLLOUT_PCT: '1'
+  NEXT_GEN_PIPELINE: '1'
+
+jobs:
+  deploy:
+    name: Cloud Run prod + consumer hosting + smoke
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+
+      - name: Install deps
+        run: |
+          npm ci --prefix middleware-platform
+          npm ci --prefix patient-app
+          npm ci --prefix unified-dashboard/skin-care-landing
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Run (production + journal env)
+        env:
+          DEPLOY_INTENT: production
+          CLOUDRUN_PROFILE: production
+          REQUIRE_EXPLICIT_PROFILE: '1'
+          CLOUDRUN_PRESERVE_ENV: '0'
+          USE_GCP_SECRETS: '1'
+          GCS_DB_BUCKET: somo-prod-db-somo-callsomo
+          CLOUDRUN_DB_PATH: /var/data/middleware-prod.db
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          chmod +x scripts/deploy-to-gcp-production.sh scripts/deploy-to-gcp.sh
+          ARTIFACT_IMAGE="gcr.io/${GCP_PROJECT}/${CLOUDRUN_SERVICE}:${GIT_SHA}" ./scripts/deploy-to-gcp-production.sh
+
+      - name: Build consumer hosting
+        run: |
+          npm run build:consumer-hosting
+          node scripts/verify-consumer-hosting.cjs
+
+      - name: Deploy consumer Firebase Hosting
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          cd unified-dashboard && npx firebase-tools deploy --only hosting --config firebase.consumer.json --project somo-4ddf6 --token "$FIREBASE_TOKEN"
+
+      - name: Verify live consumer hosting
+        run: node scripts/verify-consumer-hosting.cjs --live https://myskinandcare.com
+
+      - name: Post-deploy smoke
+        if: ${{ github.event.inputs.skip_smoke != 'true' }}
+        run: |
+          cd middleware-platform
+          npm ci
+          npx playwright install chromium
+          CONSUMER_STAGING_LIVE=1 STAGING_API_BASE=https://api.myskinandcare.com npm run test:e2e:staging-smoke
+          npm run test:e2e:redesign-parity
+          npm run test:journal-ui-audit

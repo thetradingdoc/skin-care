@@ -20,11 +20,20 @@ import {
   severityLabel,
   zoneCentroids,
 } from '../lib/revealHelpers';
+import { CTAS } from '../content/landingContent';
+import {
+  getFunnelSegment,
+  getRevealCtaLabel,
+  isDiarySegment,
+} from '../lib/funnelSegment';
 import {
   getConfirmedAge,
   getFacePhotoUrl,
   getFaceRead,
+  getQuickCheck,
   isQuickCheckDone,
+  isWatchOnlyOnboarding,
+  setConcernId,
   setConfirmedAge,
   setFaceRead,
 } from '../lib/skinAgeStorage';
@@ -117,6 +126,19 @@ export default function RevealPage() {
   };
 
   const skinDelta = skinAge != null && faceAge != null ? skinAge - faceAge : 0;
+
+  const funnelSegment = getFunnelSegment(getQuickCheck(), isWatchOnlyOnboarding());
+  const revealCtaLabel = getRevealCtaLabel(funnelSegment);
+  const diaryPath = isDiarySegment(funnelSegment);
+
+  const continuePrimary = () => {
+    if (diaryPath) {
+      setConcernId('barrier_repair');
+      window.location.href = CTAS.signup;
+      return;
+    }
+    navigate('/concerns');
+  };
 
   return (
     <FunnelShell step={3}>
@@ -318,7 +340,7 @@ export default function RevealPage() {
             ) : (
               <button type="button" className="sc-real-age-row" onClick={() => setEditingAge(true)}>
                 <i className="ti ti-calendar" aria-hidden="true" />
-                <span className="sc-real-age-label">Add your real age for comparison</span>
+                <span className="sc-real-age-label">Add your age (optional)</span>
                 <span className="sc-real-age-action">
                   {confirmedAge ? `Age ${confirmedAge} · Edit` : 'Enter age →'}
                 </span>
@@ -326,11 +348,8 @@ export default function RevealPage() {
             )}
 
             <div className="sc-cta-block">
-              <button
-                type="button"
-                className="sc-btn-reveal-primary"
-                onClick={() => navigate('/concerns')}>
-                Build my routine →
+              <button type="button" className="sc-btn-reveal-primary" onClick={continuePrimary}>
+                {revealCtaLabel}
               </button>
               <button type="button" className="sc-btn-reveal-secondary" onClick={retake}>
                 That doesn&apos;t look right — scan again
@@ -348,8 +367,8 @@ export default function RevealPage() {
             <hr className="sc-reveal-divider" />
             <div className="sc-skip-row">
               Don&apos;t want to retry?{' '}
-              <button type="button" className="sc-link" onClick={() => navigate('/concerns')}>
-                Continue with quick-check →
+              <button type="button" className="sc-link" onClick={continuePrimary}>
+                Continue your journal →
               </button>
             </div>
             <p className="sc-reveal-disclaimer">Wellness estimate from your photo — not a diagnosis.</p>

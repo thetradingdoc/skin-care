@@ -16,6 +16,7 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { pathToFileURL } = require('url');
 
 const ROOT = path.join(__dirname, '..');
 const UD = path.join(ROOT, 'unified-dashboard');
@@ -131,7 +132,76 @@ function copyDir(src, dest, { merge = false } = {}) {
   }
 }
 
-function main() {
+const SITE_ORIGIN = 'https://myskinandcare.com';
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function patchIndexHtmlForForPage(html, page) {
+  const pageUrl = `${SITE_ORIGIN}${page.path}`;
+  const title = `${page.title} — MySkin&Care`;
+  const desc = page.metaDescription;
+
+  let next = html;
+  next = next.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`);
+  next = next.replace(
+    /<meta\s+name="description"\s+content="[\s\S]*?"\s*\/>/,
+    `<meta\n      name="description"\n      content="${escapeHtml(desc)}"\n    />`
+  );
+  next = next.replace(
+    /<meta property="og:url" content="[^"]*"\s*\/>/,
+    `<meta property="og:url" content="${pageUrl}" />`
+  );
+  next = next.replace(
+    /<meta property="og:title" content="[^"]*"\s*\/>/,
+    `<meta property="og:title" content="${escapeHtml(title)}" />`
+  );
+  next = next.replace(
+    /<meta\s+property="og:description"\s+content="[\s\S]*?"\s*\/>/,
+    `<meta\n      property="og:description"\n      content="${escapeHtml(desc)}"\n    />`
+  );
+  next = next.replace(
+    /<link rel="canonical" href="[^"]*"\s*\/>/,
+    `<link rel="canonical" href="${pageUrl}" />`
+  );
+  next = next.replace(
+    /<meta name="twitter:title" content="[^"]*"\s*\/>/,
+    `<meta name="twitter:title" content="${escapeHtml(title)}" />`
+  );
+  next = next.replace(
+    /<meta\s+name="twitter:description"\s+content="[\s\S]*?"\s*\/>/,
+    `<meta\n      name="twitter:description"\n      content="${escapeHtml(desc)}"\n    />`
+  );
+
+  const noscript = `    <noscript>\n      <article>\n        <h1>${escapeHtml(page.headline)}</h1>\n        <p>${escapeHtml(page.intro)}</p>\n      </article>\n    </noscript>\n`;
+  next = next.replace('    <div id="root"></div>', `${noscript}    <div id="root"></div>`);
+
+  return next;
+}
+
+async function generateForPageShells(outDir) {
+  const indexPath = path.join(outDir, 'index.html');
+  if (!fs.existsSync(indexPath)) {
+    console.warn('  skip for/* shells — missing index.html');
+    return;
+  }
+  const template = fs.readFileSync(indexPath, 'utf8');
+  const mod = await import(pathToFileURL(path.join(LANDING, 'src/content/forPagesContent.js')).href);
+  for (const page of Object.values(mod.FOR_PAGES)) {
+    const shellDir = path.join(outDir, 'for', page.slug);
+    mkdirp(shellDir);
+    const html = patchIndexHtmlForForPage(template, page);
+    fs.writeFileSync(path.join(shellDir, 'index.html'), html);
+  }
+  console.log(`  wrote ${Object.keys(mod.FOR_PAGES).length} for/* SEO shells`);
+}
+
+async function main() {
   const landingApiLabel = API_BASE || '(relative /api)';
   console.log(`Building skin-care-landing (VITE_API_BASE=${landingApiLabel})…`);
   const env = { ...process.env, VITE_API_BASE: API_BASE };
@@ -231,6 +301,8 @@ function main() {
 
   writeTulipFaviconIco(OUT);
 
+  await generateForPageShells(OUT);
+
   console.log(`\n✅ Consumer hosting bundle: ${OUT}`);
   if (path.basename(OUT) === 'hosting-dist-consumer-local') {
     console.log('   Serve: npm run dev:consumer-local');
@@ -241,4 +313,7 @@ function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

@@ -4,7 +4,7 @@
 
 **Status:** Patient signup → mobile app journey is **complete** (2026-06). See also [`docs/development/CODE_REVIEW_2026-06.md`](../development/CODE_REVIEW_2026-06.md).
 
-**Primary path (Skin Age Journey):** landing at `/` → **`/scan`** → **`/quick-check`** (tap) → **`/reveal`** (findings + score row, or retry tips if vision empty) → **`/concerns`** (pre-selected primary) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/home`** (via `resolvePostAuthRoute`). Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) activates template, funnel bridge, and `journey_modes: ['routine']` on web. **Native app:** cold start → sign-in; post-auth → journey-choose → routine gates → Home.
+**Primary path (Skincare Journal Journey):** landing at `/` → **`/scan`** (face check) → **`/quick-check`** → **`/reveal`** → **`/concerns`** *or* direct signup (diary segment) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/home`** or **`/(tabs)/track`** (via `resolvePostAuthRoute`). Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) sets `journey_modes` from funnel segment (`watch` for diary/reactive, `routine` for routine-ready) and activates template **only** for routine users. **Native app:** cold start → sign-in; post-auth → journey-choose → gates → Home/Track.
 
 Frictionless path (legacy): **optional age hook → intent (why you’re here) → match …** (see below; `/start` BiologicalAge funnel archived).
 
@@ -17,13 +17,13 @@ Frictionless path (legacy): **optional age hook → intent (why you’re here) �
 
 ## Skin Age Journey (web-first)
 
-1. **Landing** — `/`: headline *Track today. Glow tomorrow.*; CTA *Facial Age Checker* → `/scan`.
-2. **Scan** — `/scan`: camera shutter or upload → client MediaPipe gate on upload → `POST /api/public/face-read`; full `face_read` (age, findings, concern_scores, zone_polygons) in `sessionStorage`.
-3. **Quick check** — `/quick-check`: skin feel + routine habit (yes/sometimes/not really/starting fresh); if yes/sometimes, multi-select morning/evening/SPF/actives; stored as `sc_onboarding_quick_check` (`skin_feel`, `routine_habit`, `routine_times`).
-4. **Reveal** — `/reveal`: **State A** — score cards (face age, skin age gap, Fitzpatrick), finding cards with zone dots, positive observations → **Build my routine**; **State B** — dimmed photo + lighting retry tips (no age) when vision returns nothing.
-5. **Concerns** — `/concerns`: single primary concern pre-selected via `POST /api/public/funnel/match` (`suggested_concern_ids`) → **Start {plan} plan**.
-6. **Signup** — `/app/sign-in?intent=signup&from=skin-age-landing`: OTP → template + funnel bridge (skips `/routine/pick` when concern chosen).
-7. **Home loop** — `/(tabs)/home` with BFI ring, conflict metrics, check-in photo; **Scan** tab for barcode shelf + verdict; **Progress** for 8-day BFI grid and improvement bars.
+1. **Landing** — `/`: headline *The #1 Skincare Journal.*; CTA *Check your skin* → `/scan`. Positioning SSOT: [`docs/Brand/POSITIONING.md`](../Brand/POSITIONING.md).
+2. **Scan** — `/scan`: camera shutter or upload → client MediaPipe gate on upload → `POST /api/public/face-read`; full `face_read` in `sessionStorage`.
+3. **Quick check** — `/quick-check`: skin feel + routine habit + optional trigger (`recent_trigger`: Makeup / New product / Stress / Weather / Nothing); link *I just want to track my skin* sets `sc_onboarding_watch_only`.
+4. **Reveal** — `/reveal`: findings + branched CTA — diary segments → signup (`Continue tracking your skin` / `Start your photo log`); routine segment → `/concerns` (`Build my routine`).
+5. **Concerns** — `/concerns`: *What to watch* — optional for diary users (skip → signup); routine users → **Build my care plan**.
+6. **Signup** — OTP → funnel bridge with `user_goal: track_journal` or `track_program`; template activation **only** for `routine_ready`.
+7. **App loop** — watch-only → **Track** tab; routine → Home with BFI, Scan shelf, Progress timeline.
 
 ## Conflict Engine wedge (primary retention loop)
 
@@ -637,7 +637,7 @@ Deferred items after Reddit-gap Waves A–F. Not blocking V1 routine trust.
 - Extend backfill beyond 48 hours (product tradeoff vs data integrity)
 - Per-step “Why this?” bounded RAG on Today
 - Floating Kelly chat on Today (support liability — see `07-v1-product-decisions.md`)
-- ~~Funnel analytics: `auth_handoff_continue_web`, handoff reliability metrics~~ — shipped: `POST /api/patient/funnel/event`; see [12-funnel-qa-checklist.md](./12-funnel-qa-checklist.md)
+- ~~Funnel analytics: `auth_handoff_continue_web`, handoff reliability metrics~~ — shipped: `POST /api/patient/funnel/event`; see [§12 funnel QA](#12-funnel-qa-checklist) and [OBSERVABILITY_AND_UI_AUDIT.md](../security/OBSERVABILITY_AND_UI_AUDIT.md)
 - Weekly template item rotation in DB without breaking `frozen_steps` (see optional F2 in Reddit gap plan)
 
 

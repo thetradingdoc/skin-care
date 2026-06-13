@@ -40,7 +40,7 @@ export default function OnboardingSignupScreen() {
         <Text style={styles.brand}>Skin & Care</Text>
         <OtpForm
           headline="Create your account"
-          subtitle="Save your skin age estimate and start your daily track. Free to start."
+          subtitle="Save your journal and start logging daily photos. Free to start."
           onSuccess={() => onSuccess()}
         />
       </View>

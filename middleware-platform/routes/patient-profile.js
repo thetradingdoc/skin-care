@@ -236,13 +236,8 @@ app.post('/api/patient/analytics/event', (req, res, next) => apiLimiter(req, res
   try {
     const body = req.body && typeof req.body === 'object' ? req.body : {};
     const event = String(body.event || '').trim();
-    const allowedClient = new Set([
-      'home_summary_viewed',
-      'billing_first_scan_started',
-      'billing_review_completed',
-      'billing_event_tracked',
-      'billing_upgrade_prompt_shown'
-    ]);
+    const { ALLOWED_CLIENT_PORTAL_EVENTS } = require('../lib/portal-analytics-events');
+    const allowedClient = ALLOWED_CLIENT_PORTAL_EVENTS;
     if (!allowedClient.has(event)) {
       return res.status(400).json({ success: false, error_code: 'INVALID_EVENT', error: 'Unsupported analytics event.' });
     }

@@ -30,12 +30,27 @@ function isLocalWebHost(): boolean {
   return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
 }
 
+/** Same-origin /api on localhost when the bundle targets production (Playwright + dev:consumer-local). */
+export function getEffectiveApiBaseUrl(): string {
+  if (typeof window !== 'undefined' && isLocalWebHost()) {
+    try {
+      if (PROD_API_HOSTS.includes(new URL(API_BASE_URL).hostname)) {
+        return window.location.origin.replace(/\/$/, '');
+      }
+    } catch {
+      return window.location.origin.replace(/\/$/, '');
+    }
+  }
+  return API_BASE_URL;
+}
+
 /** Block local static UI from calling production API (CORS + data isolation). */
 export function getLocalhostProdApiIssue(): string | null {
   if (!isLocalWebHost()) return null;
-  if (!API_BASE_URL) return null;
+  const base = getEffectiveApiBaseUrl();
+  if (!base) return null;
   try {
-    const host = new URL(API_BASE_URL).hostname;
+    const host = new URL(base).hostname;
     if (PROD_API_HOSTS.includes(host)) {
       return (
         'This local build is pointed at the production API. ' +

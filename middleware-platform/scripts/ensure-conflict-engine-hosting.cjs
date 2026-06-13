@@ -21,6 +21,24 @@ function exists(file) {
   return fs.existsSync(file);
 }
 
+function bundleHasLocalhostApiFallback() {
+  const jsDir = path.join(OUT_APP, '_expo', 'static', 'js', 'web');
+  if (!exists(jsDir)) return false;
+  const entries = fs.readdirSync(jsDir).filter((f) => f.startsWith('entry-') && f.endsWith('.js'));
+  if (!entries.length) return false;
+  const sample = fs.readFileSync(path.join(jsDir, entries[0]), 'utf8');
+  return sample.includes('getEffectiveApiBaseUrl');
+}
+
+function v3RoutesPresent() {
+  return exists(HOME_HTML) && exists(TRACK_HTML) && exists(SCAN_HTML) && exists(VERDICT_HTML);
+}
+
+function needsLocalE2eRebuild() {
+  if (process.env.PW_FORCE_LOCAL_E2E_API !== '1') return false;
+  return !v3RoutesPresent() || !bundleHasLocalhostApiFallback();
+}
+
 function copyDir(src, dest) {
   if (!fs.existsSync(src)) {
     console.error(`Missing Expo export: ${src}`);
@@ -41,12 +59,16 @@ function main() {
     return;
   }
 
-  if (exists(HOME_HTML) && exists(TRACK_HTML) && exists(SCAN_HTML) && exists(VERDICT_HTML)) {
+  if (v3RoutesPresent() && !needsLocalE2eRebuild()) {
     console.log('ensure-conflict-engine-hosting: v3 routes present (home/track/scan/verdict)');
     return;
   }
 
-  console.log('ensure-conflict-engine-hosting: exporting Expo web (v3 routes missing)…');
+  if (needsLocalE2eRebuild()) {
+    console.log('ensure-conflict-engine-hosting: rebuilding Expo web for local Playwright hosting…');
+  } else {
+    console.log('ensure-conflict-engine-hosting: exporting Expo web (v3 routes missing)…');
+  }
   const apiBase = (process.env.PW_API_BASE || 'http://127.0.0.1:4000').replace(/\/$/, '');
   const env = {
     ...process.env,

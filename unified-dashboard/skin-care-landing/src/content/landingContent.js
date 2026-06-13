@@ -1,9 +1,9 @@
 export const HERO = {
-  titleLine1: 'Track today.',
-  titleLine2: 'Glow tomorrow.',
+  titleLine1: 'The #1',
+  titleLine2: 'Skincare Journal.',
   subtitle:
-    'Your personal skincare tracker to understand your skin, build better habits, and see real results over time.',
-  ctaLabel: 'Facial Age Checker',
+    'Start with a quick face check. Log one photo a day and see what changes — flares, products, reactions.',
+  ctaLabel: 'Check your skin',
 };
 
 export const NAV_LINKS = [
@@ -17,50 +17,55 @@ export const JOURNEY_STEPS = {
     {
       id: 'scan',
       num: '01',
-      title: 'Face scan → skin age',
-      bodyShort: 'One photo, seconds — no forms.',
+      title: 'Take a face photo',
+      bodyShort: 'One selfie — your baseline for the journal.',
     },
     {
       id: 'track',
       num: '02',
-      title: 'Tell us what to track',
-      bodyShort: 'Acne, dryness, lines — pick what matters.',
+      title: 'Tell us what to watch',
+      bodyShort: 'Breakouts, redness, dryness — pick what matters.',
     },
     {
       id: 'daily',
       num: '03',
-      title: 'One photo a day',
-      bodyShort: 'Timeline shows change over weeks.',
+      title: 'See what changed',
+      bodyShort: 'One photo a day — your timeline shows the story.',
     },
   ],
 };
 
 export const HOW_IT_WORKS = {
-  title: 'We help you look younger — one photo at a time.',
-  subtitle: 'Start with your face age. We’ll guide the rest.',
+  title: 'Skin diary that finds your triggers.',
+  subtitle: 'Start with a face check. Your journal builds from there.',
   items: [
     {
       id: 'check',
       icon: 'camera',
-      title: 'Check your face age',
-      body: 'One front-camera photo. See your skin age estimate in seconds — no signup, no forms.',
+      title: 'Take a face photo',
+      body: 'One front-camera photo. Your skin, your baseline — no signup to start.',
     },
     {
       id: 'plan',
       icon: 'target',
-      title: 'We personalize your track',
-      body: 'Lines, acne, dryness, redness — tell us what you want to improve and we shape your routine.',
+      title: 'Tell us what to watch',
+      body: 'Breakouts, redness, dryness — pick what matters to you. No routine required.',
     },
     {
       id: 'timeline',
       icon: 'trend',
-      title: 'Watch yourself improve',
-      body: 'One photo a day. Same light, same angle — your Timeline shows whether you’re looking fresher over weeks.',
+      title: 'See what changed',
+      body: 'One photo a day, same angle. Your timeline shows whether your skin is calming down — or reacting.',
     },
   ],
 };
 
-export const FOOTER_TAGLINE = 'Track today. Glow tomorrow.';
+export const CTA_SECTION = {
+  title: 'Start your skin journal',
+  subtitle: 'Create a free account with one photo — no routine or plan required.',
+};
+
+export const FOOTER_TAGLINE = 'The #1 Skincare Journal.';
 
 export const CTAS = {
   scan: '/scan',

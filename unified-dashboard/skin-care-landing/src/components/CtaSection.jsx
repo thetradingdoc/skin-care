@@ -1,4 +1,4 @@
-import { CTAS, iosAppUrl, isExternalAppUrl } from '../content/landingContent';
+import { CTA_SECTION, CTAS, iosAppUrl, isExternalAppUrl } from '../content/landingContent';
 
 export default function CtaSection() {
   const appUrl = iosAppUrl();
@@ -7,8 +7,8 @@ export default function CtaSection() {
   return (
     <section className="sc-section sc-cta" aria-labelledby="cta-title">
       <div className="sc-section-inner sc-cta-inner">
-        <h2 id="cta-title">Ready to start your routine?</h2>
-        <p>Create a free account with your email — no password required.</p>
+        <h2 id="cta-title">{CTA_SECTION.title}</h2>
+        <p>{CTA_SECTION.subtitle}</p>
         <div className="sc-hero-actions">
           <a href={CTAS.signup} className="sc-btn sc-btn-primary">
             Get started free

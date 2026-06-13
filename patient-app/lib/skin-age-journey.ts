@@ -1,6 +1,12 @@
 import { Platform } from 'react-native';
 
 import { patchConsumerProfile } from '@/lib/consumer-profile-api';
+import {
+  FUNNEL_SEGMENT,
+  getFunnelSegment,
+  getJourneyModesForSegment,
+  type QuickCheckAnswers,
+} from '@/lib/funnel-segment';
 import { setJourneyProfile } from '@/lib/journey-mode-storage';
 import { patientPost } from '@/lib/patient-api';
 
@@ -10,9 +16,12 @@ const KEYS = {
   CONCERN_ID: 'sc_onboarding_concern_id',
   MATCH_JSON: 'sc_onboarding_match_json',
   QUICK_CHECK: 'sc_onboarding_quick_check',
+  JOURNEY_ID: 'sc_onboarding_journey_id',
+  WATCH_ONLY: 'sc_onboarding_watch_only',
 } as const;
 
-const DEFAULT_CONCERN = 'anti_aging';
+const DEFAULT_CONCERN = 'barrier_repair';
+const ROUTINE_DEFAULT_CONCERN = 'anti_aging';
 
 function readSession(key: string): string | null {
   if (Platform.OS !== 'web' || typeof sessionStorage === 'undefined') return null;
@@ -52,14 +61,18 @@ function getMatchJson(): Record<string, unknown> | null {
   }
 }
 
-function getQuickCheck(): Record<string, unknown> | null {
+function getQuickCheck(): QuickCheckAnswers | null {
   const raw = readSession(KEYS.QUICK_CHECK);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as Record<string, unknown>;
+    return JSON.parse(raw) as QuickCheckAnswers;
   } catch {
     return null;
   }
+}
+
+function isWatchOnlyOnboarding(): boolean {
+  return readSession(KEYS.WATCH_ONLY) === '1';
 }
 
 export function hasSkinAgeJourneyData(): boolean {
@@ -76,25 +89,39 @@ export function clearSkinAgeJourney(): void {
 export async function completeSkinAgeJourney(sessionId: string): Promise<boolean> {
   if (!sessionId || !hasSkinAgeJourneyData()) return false;
 
-  const concernId = readSession(KEYS.CONCERN_ID) || DEFAULT_CONCERN;
+  const quickCheck = getQuickCheck();
+  const watchOnly = isWatchOnlyOnboarding();
+  const segment = getFunnelSegment(quickCheck, watchOnly);
+  const { modes, primary } = getJourneyModesForSegment(segment);
+  const routinePath = segment === FUNNEL_SEGMENT.ROUTINE_READY;
+
+  const concernId =
+    readSession(KEYS.CONCERN_ID) ||
+    (routinePath ? ROUTINE_DEFAULT_CONCERN : DEFAULT_CONCERN);
   const faceRead = getFaceRead();
   const matchJson = getMatchJson();
-  const quickCheck = getQuickCheck();
   const confirmedRaw = readSession(KEYS.CONFIRMED_AGE);
   const confirmedAge = confirmedRaw ? Number(confirmedRaw) : null;
   const hasBridgeData = Boolean(faceRead || matchJson || quickCheck);
+  const journeyId = readSession(KEYS.JOURNEY_ID);
+  const userGoal = routinePath ? 'track_program' : 'track_journal';
 
-  await patientPost('/api/patient/routine/template', { concern_id: concernId });
+  if (routinePath) {
+    await patientPost('/api/patient/routine/template', { concern_id: concernId });
+  }
 
-  if (hasBridgeData) {
+  if (hasBridgeData || journeyId) {
     try {
       await patientPost('/api/patient/funnel/bridge', {
         concern_id: concernId,
+        journey_id: journeyId || undefined,
         face_read: faceRead,
         match_result: matchJson,
         quick_check_answers: quickCheck,
         confirmed_age: Number.isFinite(confirmedAge) ? confirmedAge : undefined,
-        user_goal: 'track_program',
+        user_goal: userGoal,
+        journey_modes: modes,
+        primary_mode: primary,
       });
     } catch {
       /* bridge optional */
@@ -103,14 +130,14 @@ export async function completeSkinAgeJourney(sessionId: string): Promise<boolean
 
   const chosenAt = new Date().toISOString();
   await setJourneyProfile({
-    modes: ['routine'],
-    primary: 'routine',
+    modes,
+    primary,
     chosenAt,
   });
   try {
     await patchConsumerProfile({
-      journey_modes: ['routine'],
-      primary_mode: 'routine',
+      journey_modes: modes,
+      primary_mode: primary,
       chosen_at: chosenAt,
       bio_calibration_complete: hasBridgeData,
       onboarding_complete: true,

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /scan
+Allow: /for/
+Disallow: /app/
+Disallow: /patients/
+
+Sitemap: https://myskinandcare.com/sitemap.xml

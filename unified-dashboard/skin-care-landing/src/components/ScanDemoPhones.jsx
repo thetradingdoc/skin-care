@@ -10,30 +10,30 @@ export default function ScanDemoPhones() {
             </div>
             <div className="sc-scan-bottom">
               <div className="sc-scan-label">Position your face in the oval</div>
-              <div className="sc-scan-btn">Scan my skin age</div>
+              <div className="sc-scan-btn">Check your skin</div>
             </div>
           </div>
         </div>
-        <div className="sc-phone-label">1. Scan</div>
+        <div className="sc-phone-label">1. Face check</div>
       </div>
 
       <div className="sc-phone-col sc-phone-col-center">
         <div className="sc-phone">
           <div className="sc-phone-screen sc-screen-reveal">
             <div className="sc-reveal-top">
-              <div className="sc-reveal-label">Skin age estimate</div>
-              <div className="sc-big-num">29</div>
-              <div className="sc-reveal-sub">Based on your photo today</div>
+              <div className="sc-reveal-label">Today&apos;s baseline</div>
+              <div className="sc-big-num">Day 1</div>
+              <div className="sc-reveal-sub">First entry in your journal</div>
             </div>
             <div className="sc-reveal-compare">
               <div className="sc-compare-text">
-                Looks <strong>4 years younger</strong> than your real age
+                Track <strong>what changes</strong> over the next few weeks
               </div>
             </div>
             <div className="sc-reveal-btn">Continue</div>
           </div>
         </div>
-        <div className="sc-phone-label">2. Your number</div>
+        <div className="sc-phone-label">2. Your journal</div>
       </div>
 
       <div className="sc-phone-col">
@@ -54,8 +54,8 @@ export default function ScanDemoPhones() {
             </div>
             <div className="sc-score-row">
               <div className="sc-score-card">
-                <div className="sc-score-num">29</div>
-                <div className="sc-score-label">Skin age</div>
+                <div className="sc-score-num">12</div>
+                <div className="sc-score-label">Photos logged</div>
               </div>
               <div className="sc-score-card">
                 <div className="sc-score-num">94%</div>
@@ -65,7 +65,7 @@ export default function ScanDemoPhones() {
             <div className="sc-log-btn">Log today&apos;s photo</div>
           </div>
         </div>
-        <div className="sc-phone-label">3. Track daily</div>
+        <div className="sc-phone-label">3. Daily log</div>
       </div>
     </div>
   );

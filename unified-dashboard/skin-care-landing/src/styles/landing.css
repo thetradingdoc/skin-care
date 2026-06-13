@@ -682,6 +682,26 @@ a {
   color: var(--sc-muted);
 }
 
+.sc-footer-for {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sc-footer-for-label {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sc-muted);
+}
+
+.sc-footer-for-links {
+  gap: 0.75rem 1rem;
+}
+
 .sc-footer-tagline {
   margin: 0;
   font-family: var(--font-display);
@@ -1559,4 +1579,72 @@ a {
 .sc-concern-chip-active {
   border-color: var(--sc-accent);
   background: #e0f7fa;
+}
+
+.sc-for-page {
+  min-height: 100vh;
+  background: var(--sc-hero-bg, #fff);
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-for-main {
+  flex: 1;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.sc-for-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sc-muted);
+  margin: 0 0 0.75rem;
+}
+
+.sc-for-headline {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  line-height: 1.2;
+  color: var(--sc-ink);
+  margin: 0 0 1rem;
+}
+
+.sc-for-intro {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--sc-muted);
+  margin: 0 0 2rem;
+}
+
+.sc-for-section {
+  margin-bottom: 1.5rem;
+}
+
+.sc-for-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sc-ink);
+  margin: 0 0 0.5rem;
+}
+
+.sc-for-section p {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--sc-muted);
+  margin: 0;
+}
+
+.sc-for-cta-wrap {
+  margin-top: 2.5rem;
+  text-align: center;
+}
+
+.sc-for-cta-sub {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--sc-muted);
+  line-height: 1.5;
 }

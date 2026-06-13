@@ -8,7 +8,7 @@ const {
   resolveOwnerKey,
 } = require('../db/client');
 
-const VALID_TYPES = new Set(['watch_spot', 'improve_routine', 'reduce_conflicts']);
+const VALID_TYPES = new Set(['watch_spot', 'keep_journal', 'improve_routine', 'reduce_conflicts']);
 const VALID_STATUS = new Set(['active', 'completed', 'dismissed']);
 
 function goalId() {
@@ -140,6 +140,16 @@ async function seedDefaultGoals(sqliteDb, { patientId, sessionId, journeyModes }
 
   const created = [];
   if (modes.includes('watch')) {
+    created.push(
+      await createGoal(sqliteDb, {
+        patientId,
+        sessionId,
+        goalType: 'keep_journal',
+        source: 'onboarding',
+      }),
+    );
+  }
+  if (modes.includes('spot')) {
     created.push(
       await createGoal(sqliteDb, {
         patientId,

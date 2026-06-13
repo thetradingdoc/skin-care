@@ -23,7 +23,8 @@ const SCREENS = [
     readyText: /What brings you here/i,
     functions: ['Select watch vs routine journey mode', 'Dual-mode note'],
     buttons: [
-      { name: 'Watch something on my skin', action: 'toggle_watch', role: 'button' },
+      { name: 'Keep a skin diary', action: 'toggle_watch', role: 'button' },
+      { name: 'Watch a spot or mark', action: 'toggle_spot', role: 'button' },
       { name: 'Improve my skin routine', action: 'toggle_routine', role: 'button' },
       { name: 'Continue', action: 'navigate_after_choose', role: 'button', expectUrl: /\/(home|track)/ },
     ],
@@ -71,10 +72,10 @@ const SCREENS = [
     label: 'Today — Whoop-style',
     route: '/app/(tabs)/home',
     mockupRoute: '/app/(tabs)/home',
-    readyText: /Good morning|Barrier under stress|Tonight/i,
-    functions: ['BFI ring', 'Routine steps', 'Daily photo CTA'],
+    readyText: /Good morning|Log today's photo|How does your skin feel/i,
+    functions: ['Journal CTA', 'Condition chips', 'Trigger insight'],
     buttons: [
-      { name: /Take today's photo/i, action: 'routine_capture', expectUrl: /\/routine\/capture/ },
+      { name: /Take photo|Log today's photo/i, action: 'journal_capture', expectUrl: /\/journal\/capture/ },
       { name: 'Conflicts', action: 'open_scan', expectUrl: /\/scan/, optional: true },
     ],
   },
@@ -251,7 +252,7 @@ async function runSetup(page, screen, btn) {
     await page.waitForTimeout(300);
   }
   if (screen.id === 'journey-choose' && btn.action === 'navigate_after_choose') {
-    await page.getByText('Watch something on my skin').click();
+    await page.getByText('Keep a skin diary').click();
     await page.getByText('Improve my skin routine').click();
   }
   if (screen.id === 'track-capture' && btn.action === 'save_photo') {

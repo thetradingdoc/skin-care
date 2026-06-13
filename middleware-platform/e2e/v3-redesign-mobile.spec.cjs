@@ -58,6 +58,21 @@ async function stubPatientApis(page) {
         body: JSON.stringify({ success: true, summary: { streak_days: 0 }, improvement_metrics: {} }),
       });
     }
+    if (url.includes('/consumer-profile')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          profile: {
+            journey_modes: [],
+            primary_mode: null,
+            onboarding_complete: false,
+            bio_calibration_complete: false,
+          },
+        }),
+      });
+    }
     if (url.includes('/journal/calendar-range')) {
       return route.fulfill({
         status: 200,
@@ -126,14 +141,17 @@ test.describe('Patient app v3 redesign', () => {
   });
 
   test('journey chooser renders mode cards', async ({ page }) => {
+    await stubPatientApis(page);
     await page.goto('/app/onboarding/journey-choose', { waitUntil: 'domcontentloaded' });
     await expect(page.getByLabel('skin care')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText('What brings you here?')).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText('Watch something on my skin')).toBeVisible();
+    await expect(page.getByText('Keep a skin diary')).toBeVisible();
     await expect(page.getByText('Improve my skin routine')).toBeVisible();
+    await expect(page.getByText('Watch a spot or mark')).toBeVisible();
   });
 
   test('journey chooser Continue uses black consumer CTA', async ({ page }) => {
+    await stubPatientApis(page);
     await page.goto('/app/onboarding/journey-choose', { waitUntil: 'domcontentloaded' });
     const btn = page.getByRole('button', { name: 'Continue' });
     await expect(btn).toBeVisible({ timeout: 30_000 });

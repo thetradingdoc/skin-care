@@ -407,3 +407,70 @@ node scripts/build-consumer-hosting.cjs
 cd middleware-platform && npx playwright test --config playwright.redesign-parity.config.cjs
 node scripts/generate-redesign-audit-report.mjs
 ```
+
+---
+
+## Journal-first UI audit (2026-06-12)
+
+Automated via `middleware-platform/e2e/journal-first-ui-audit.spec.cjs` against consumer hosting.
+
+**Inventory:** `middleware-platform/playwright-report/journal-ui-audit-inventory.json`
+
+### Summary
+
+| Category | Passed | Failed |
+|----------|--------|--------|
+| Functional flows | 7 | 0 |
+| Design parity | 10 | 0 |
+
+### Functional (all pass)
+
+- Onboarding: 3 journey cards; diary Continue routes to Home
+- Diary Home: journal CTA, condition chips, trigger insight; no routine gate
+- Journal capture route loads
+- Tab bar: 5 tabs navigate
+- Progress: title + skin improvements when stubbed
+- Account: spot journey toggle visible
+
+### Design parity (all pass)
+
+- Gloock display typography on onboarding + progress titles
+- Progress subtitle "Small changes. Real results."
+- Cream polaroid streak hero (empty streak)
+- Calendar header button
+- 4 sparkline metric cards (Redness, Breakouts, Texture, Hydration)
+- Timeline "See all" link
+- Tab bar brand blue active state
+- Home recent photo strip for journal users
+- Continue CTA `#111`
+
+### Screenshots
+
+`middleware-platform/playwright-report/journal-ui-audit-screenshots/`
+
+### Re-run
+
+```bash
+cd middleware-platform && npm run test:journal-ui-audit
+cd middleware-platform && npm run test:e2e-v3-redesign
+```
+
+---
+
+## Live staging QA (journal-first deploy)
+
+**Automated local gate:** `bash scripts/verify-prod-ready.sh` — pass (2026-06-13).
+
+**Staging API pre-deploy probe:** `GET /api/patient/journal/trigger-insights` on `api.callsomo.com` returned **404 Endpoint not found** — journal routes require middleware deploy with migration `059` and env flags (`JOURNAL_MODE_STANDALONE=1`, etc.). Env SSOT verified via `generate-cloudrun-env-yaml.cjs` (staging profile).
+
+**Manual diary QA** (run after staging deploy on `https://myskinandcare.com/app`):
+
+| Step | Check | Status |
+|------|-------|--------|
+| 1 | Sign in → journey → **Keep a skin diary** → Home (not routine pick) | Pending deploy |
+| 2 | Log photo → no 503 | Pending deploy |
+| 3 | Condition chip + note saves | Pending deploy |
+| 4 | Progress → polaroid / sparklines / timeline | Pending deploy |
+| 5 | Trigger insight after 2+ entries | Pending deploy |
+
+**Deploy orchestration:** `./scripts/journal-first-deploy.sh` (requires `gcloud auth login` + `firebase login --reauth`).

@@ -240,7 +240,7 @@ test('02 — Choose journey modes (watch + routine)', async ({ page, context }) 
   await page.goto('/app/onboarding/journey-choose', { waitUntil: 'domcontentloaded' });
   await expect(page.getByText('What brings you here?')).toBeVisible({ timeout: 30_000 });
   await page.getByText('Improve my skin routine').click();
-  await page.getByText('Watch something on my skin').click();
+  await page.getByText('Keep a skin diary').click();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page).toHaveURL(/\/routine\/pick/, { timeout: 20_000 });
   await shot(page, '03-after-journey');

@@ -299,7 +299,13 @@ app.get('/api/patient/routine/phase', (req, res, next) => apiLimiter(req, res, n
       }
     }
     if (!program && template.concern_id) {
-      program = concernRoutineService.getConcernProgram(template.concern_id);
+      const skinragRoutineService = require('../services/skinrag-routine-service');
+      if (skinragRoutineService.isSkinragEnabled()) {
+        const rag = skinragRoutineService.getRoutineForConcern(template.concern_id);
+        program = rag || concernRoutineService.getConcernProgram(template.concern_id);
+      } else {
+        program = concernRoutineService.getConcernProgram(template.concern_id);
+      }
     }
     if (!program) {
       return res.status(400).json({ success: false, error_code: 'NO_PROGRAM_METADATA', error: 'Template has no care program metadata.' });
@@ -891,6 +897,24 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       day_mode: completion.dayMode,
     });
 
+    if (String(process.env.JOURNAL_MODE_STANDALONE || '0').trim() === '1') {
+      try {
+        const { ensureJournalTables } = require('../lib/patient-journal-db');
+        const { upsertEntry } = require('../repositories/patient-journal-repo');
+        ensureJournalTables(db.db);
+        upsertEntry(db.db, {
+          patientId,
+          sessionId,
+          entryDate: entry.entry_date,
+          photoStorageRef: storageRef,
+          conditionTags: symptomTags,
+          note: completion.assistantSummary || undefined,
+          source: 'routine_backfill',
+          routineDailyEntryId: dailyEntryId,
+        });
+      } catch (_) {}
+    }
+
     const photoDaysRow = db.db.prepare(`
       SELECT COUNT(DISTINCT entry_date) AS n
       FROM patient_routine_daily_entries
@@ -992,9 +1016,17 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
       LIMIT 1
     `).get(...tParams);
     if (!template) {
+      const { ensureJournalTables } = require('../lib/patient-journal-db');
+      const { getByDateRange } = require('../repositories/patient-journal-repo');
+      const { enrichCalendarDayFromJournal } = require('../lib/journal-timeline-merge');
+      ensureJournalTables(db.db);
+      const journalEntries = getByDateRange(db.db, { patientId, sessionId, startIso, endIso });
+      const journalByDate = new Map(journalEntries.map((e) => [e.entry_date, e]));
+      const issuePhoto = (ref) => (ref ? String(ref) : null);
+
       const days = includeEmptyDays
-        ? enumerateIsoDates(startIso, endIso).map((iso) =>
-            mergeBillingIntoDay(iso, {
+        ? enumerateIsoDates(startIso, endIso).map((iso) => {
+            const base = {
               date: iso,
               is_routine_day: false,
               has_entry: false,
@@ -1003,15 +1035,38 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
               thumbnail_url: null,
               patient_document_id: null,
               media_url: null,
-            })
-          )
-        : [];
+            };
+            const journalEntry = journalByDate.get(iso);
+            const enriched = journalEntry
+              ? enrichCalendarDayFromJournal(base, journalEntry, issuePhoto)
+              : base;
+            return mergeBillingIntoDay(iso, enriched);
+          })
+        : journalEntries.map((e) =>
+            mergeBillingIntoDay(e.entry_date, enrichCalendarDayFromJournal(
+              {
+                date: e.entry_date,
+                is_routine_day: false,
+                has_entry: true,
+                completion_score: e.photo_storage_ref ? 100 : 50,
+                has_media: Boolean(e.photo_storage_ref),
+                thumbnail_url: issuePhoto(e.photo_storage_ref),
+                patient_document_id: null,
+                media_url: issuePhoto(e.photo_storage_ref),
+                condition_tags: e.condition_tags,
+                note: e.note,
+              },
+              e,
+              issuePhoto,
+            )),
+          );
       return res.json({
         success: true,
         model_version: 2,
         billing_calendar_contract,
         timezone: tz,
         has_template: false,
+        journal_mode: true,
         template: null,
         range: { start: startIso, end: endIso, days: spanDays },
         days,
@@ -1062,6 +1117,14 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
     const { enrichRoutineCalendarDay } = require('../lib/routine-calendar-enrich');
     const concernId = String(template.concern_id || careProgram?.concern || '').trim() || null;
 
+    const { ensureJournalTables } = require('../lib/patient-journal-db');
+    const { getByDateRange } = require('../repositories/patient-journal-repo');
+    const { enrichCalendarDayFromJournal } = require('../lib/journal-timeline-merge');
+    ensureJournalTables(db.db);
+    const journalEntries = getByDateRange(db.db, { patientId, sessionId, startIso, endIso });
+    const journalByDate = new Map(journalEntries.map((je) => [je.entry_date, je]));
+    const issuePhoto = (ref) => (ref ? String(ref) : null);
+
     const days = enumerateIsoDates(startIso, endIso).map((iso) => {
       const d = localDateFromIso(iso);
       const inWindow = !!d && d >= tplStart && d <= tplEnd;
@@ -1090,7 +1153,11 @@ app.get('/api/patient/journal/calendar-range', (req, res, next) => apiLimiter(re
         concernId,
         entryRow: e || null,
       });
-      return mergeBillingIntoDay(iso, enriched);
+      const journalEntry = journalByDate.get(iso);
+      const withJournal = journalEntry && !enriched.has_media
+        ? enrichCalendarDayFromJournal(enriched, journalEntry, issuePhoto)
+        : enriched;
+      return mergeBillingIntoDay(iso, withJournal);
     });
 
     return res.json({
@@ -1132,19 +1199,35 @@ app.get('/api/patient/home/progress-summary', (req, res, next) => apiLimiter(req
       LIMIT 1
     `).get(...params);
     if (!template) {
+      const { ensureJournalTables } = require('../lib/patient-journal-db');
+      const { getEntryForDate, computeStreak, countLoggedDays } = require('../repositories/patient-journal-repo');
+      ensureJournalTables(db.db);
+      const todayIsoJournal = clientTodayIso(req);
+      const todayEntry = getEntryForDate(db.db, { patientId, sessionId, entryDate: todayIsoJournal });
+      const streakDays = computeStreak(db.db, { patientId, sessionId, todayIso: todayIsoJournal });
+      const loggedDays = countLoggedDays(db.db, { patientId, sessionId });
+      const todayLogged = Boolean(
+        todayEntry &&
+          (todayEntry.photo_storage_ref ||
+            (todayEntry.condition_tags && todayEntry.condition_tags.length) ||
+            (todayEntry.note && String(todayEntry.note).trim())),
+      );
       return res.json({
         success: true,
         has_template: false,
+        journal_mode: true,
         summary: {
           adherence_pct: 0,
           upcoming_checkins: 0,
           product_uses_logged: 0,
           in_progress: 0,
-          today_logged: false,
+          today_logged: todayLogged,
           upcoming: 0,
-          total_tasks: 0
+          total_tasks: 0,
+          streak_days: streakDays,
+          journal_days_logged: loggedDays,
         },
-        cards: []
+        cards: [],
       });
     }
     const concernRoutineService = require('../services/concern-routine-service');

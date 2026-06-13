@@ -31,6 +31,9 @@ const required = [
   { key: 'FEATURE_V3_INSIGHTS', expect: '1' },
   { key: 'LANGGRAPH_CONSUMER_EVAL_ROLLOUT_PCT', expect: '1' },
   { key: 'NEXT_GEN_PIPELINE', expect: '1' },
+  { key: 'JOURNAL_MODE_STANDALONE', expect: '1' },
+  { key: 'TRIGGER_INSIGHTS_ENABLED', expect: '1' },
+  { key: 'IMPROVEMENTS_API_ENABLED', expect: '1' },
   { key: 'STRIPE_PRICE_CARE_PROGRAM', minLen: 6 },
 ];
 

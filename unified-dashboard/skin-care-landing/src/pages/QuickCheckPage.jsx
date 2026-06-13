@@ -3,7 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import FunnelShell from '../components/FunnelShell';
 import { isLiveFaceRead } from '../lib/faceReadApi';
-import { getFaceRead, getQuickCheck, setQuickCheck } from '../lib/skinAgeStorage';
+import {
+  getFaceRead,
+  getQuickCheck,
+  setQuickCheck,
+  setWatchOnlyOnboarding,
+} from '../lib/skinAgeStorage';
 
 const SKIN_FEEL_OPTS = ['Tight / dry', 'Normal', 'Oily', 'Irritated'];
 
@@ -21,6 +26,8 @@ const ROUTINE_TIME_OPTS = [
   { id: 'actives', label: 'Actives' },
 ];
 
+const TRIGGER_OPTS = ['Makeup', 'New product', 'Stress', 'Weather', 'Nothing'];
+
 const HABITS_WITH_SUB = new Set(['yes_regularly', 'sometimes']);
 
 function restoreLegacyQuickCheck(saved) {
@@ -30,24 +37,26 @@ function restoreLegacyQuickCheck(saved) {
       skin_feel: saved.skin_feel || null,
       routine_habit: saved.routine_habit,
       routine_times: Array.isArray(saved.routine_times) ? saved.routine_times : [],
+      recent_trigger: saved.recent_trigger || null,
     };
   }
   const pm = String(saved.pm_routine || '').trim();
-  if (!pm) return { skin_feel: saved.skin_feel || null, routine_habit: null, routine_times: [] };
+  if (!pm) return { skin_feel: saved.skin_feel || null, routine_habit: null, routine_times: [], recent_trigger: null };
   if (pm === 'Skipped') {
-    return { skin_feel: saved.skin_feel || null, routine_habit: 'not_really', routine_times: [] };
+    return { skin_feel: saved.skin_feel || null, routine_habit: 'not_really', routine_times: [], recent_trigger: null };
   }
   if (pm === 'Partial') {
-    return { skin_feel: saved.skin_feel || null, routine_habit: 'sometimes', routine_times: [] };
+    return { skin_feel: saved.skin_feel || null, routine_habit: 'sometimes', routine_times: [], recent_trigger: null };
   }
   if (pm === 'Full routine') {
     return {
       skin_feel: saved.skin_feel || null,
       routine_habit: 'yes_regularly',
       routine_times: ['evening'],
+      recent_trigger: null,
     };
   }
-  return { skin_feel: saved.skin_feel || null, routine_habit: null, routine_times: [] };
+  return { skin_feel: saved.skin_feel || null, routine_habit: null, routine_times: [], recent_trigger: null };
 }
 
 export default function QuickCheckPage() {
@@ -55,6 +64,7 @@ export default function QuickCheckPage() {
   const [skinFeel, setSkinFeel] = useState(null);
   const [routineHabit, setRoutineHabit] = useState(null);
   const [routineTimes, setRoutineTimes] = useState([]);
+  const [recentTrigger, setRecentTrigger] = useState(null);
 
   useEffect(() => {
     const fr = getFaceRead();
@@ -66,6 +76,7 @@ export default function QuickCheckPage() {
     if (restored?.skin_feel) setSkinFeel(restored.skin_feel);
     if (restored?.routine_habit) setRoutineHabit(restored.routine_habit);
     if (restored?.routine_times?.length) setRoutineTimes(restored.routine_times);
+    if (restored?.recent_trigger) setRecentTrigger(restored.recent_trigger);
   }, [navigate]);
 
   const selectHabit = useCallback((id) => {
@@ -81,13 +92,26 @@ export default function QuickCheckPage() {
     );
   }, []);
 
-  const continueNext = () => {
-    setQuickCheck({
-      skin_feel: skinFeel,
-      routine_habit: routineHabit,
-      routine_times: HABITS_WITH_SUB.has(routineHabit) ? routineTimes : [],
-    });
-    navigate('/reveal');
+  const persistAndContinue = useCallback(
+    (watchOnly = false) => {
+      setWatchOnlyOnboarding(watchOnly);
+      setQuickCheck({
+        skin_feel: skinFeel,
+        routine_habit: watchOnly ? 'not_really' : routineHabit,
+        routine_times: HABITS_WITH_SUB.has(routineHabit) ? routineTimes : [],
+        recent_trigger: recentTrigger,
+        watch_only: watchOnly,
+      });
+      navigate('/reveal');
+    },
+    [navigate, recentTrigger, routineHabit, routineTimes, skinFeel],
+  );
+
+  const continueNext = () => persistAndContinue(false);
+
+  const trackOnly = () => {
+    if (!skinFeel) return;
+    persistAndContinue(true);
   };
 
   const needsSubChips = HABITS_WITH_SUB.has(routineHabit);
@@ -102,9 +126,9 @@ export default function QuickCheckPage() {
         </Link>
         <span className="sc-funnel-tag">Quick check</span>
         <h1 className="sc-funnel-title" style={{ fontSize: '1.15rem' }}>
-          Two quick questions
+          A few quick questions
         </h1>
-        <p className="sc-funnel-sub">Tap your answers — takes 5 seconds</p>
+        <p className="sc-funnel-sub">Tap your answers — takes a few seconds</p>
 
         <div className="sc-q-card">
           <div className="sc-q-title">
@@ -127,7 +151,7 @@ export default function QuickCheckPage() {
         <div className="sc-q-card">
           <div className="sc-q-title">
             <span aria-hidden="true">☀️</span>
-            <span>Do you follow a skincare routine?</span>
+            <span>Do you use a skincare routine?</span>
           </div>
           <p className="sc-q-hint">Morning, evening, or just getting started — no wrong answer.</p>
           <div className="sc-q-opts">
@@ -162,6 +186,25 @@ export default function QuickCheckPage() {
           ) : null}
         </div>
 
+        <div className="sc-q-card">
+          <div className="sc-q-title">
+            <span aria-hidden="true">🔍</span>
+            <span>Did something change recently?</span>
+          </div>
+          <p className="sc-q-hint">Optional — helps us understand your skin right now.</p>
+          <div className="sc-q-opts">
+            {TRIGGER_OPTS.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                className={`sc-q-opt${recentTrigger === opt ? ' sc-q-opt--sel' : ''}`}
+                onClick={() => setRecentTrigger(opt)}>
+                {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           type="button"
           className="sc-btn sc-btn-dark sc-btn-block"
@@ -169,6 +212,16 @@ export default function QuickCheckPage() {
           onClick={continueNext}>
           See my results →
         </button>
+
+        <p className="sc-funnel-sub" style={{ marginTop: '1rem', textAlign: 'center' }}>
+          <button
+            type="button"
+            className="sc-link"
+            disabled={!skinFeel}
+            onClick={trackOnly}>
+            I just want to track my skin — no routine
+          </button>
+        </p>
       </div>
     </FunnelShell>
   );

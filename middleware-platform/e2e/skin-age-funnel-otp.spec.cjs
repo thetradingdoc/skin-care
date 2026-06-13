@@ -1,13 +1,18 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
-const { stubRedesignApis, seedRedesignStorage } = require('./helpers/redesign-mock-stubs.cjs');
+const { stubRedesignApis } = require('./helpers/redesign-mock-stubs.cjs');
 
 const API_BASE = (process.env.PW_API_BASE || 'http://127.0.0.1:4000').replace(/\/$/, '');
 
 test.describe('skin age funnel OTP to home', () => {
   test('signup OTP completes and routes past sign-in', async ({ page, context }) => {
-    await seedRedesignStorage(context, API_BASE);
+    await context.addInitScript(({ api }) => {
+      localStorage.removeItem('patient_session_id');
+      localStorage.removeItem('patient_session_email');
+      localStorage.setItem('patient_api_base_url', api);
+      localStorage.setItem('api_base', api);
+    }, { api: API_BASE });
     await stubRedesignApis(page, API_BASE);
 
     await page.route('**/api/patient/verify/send', async (route) => {

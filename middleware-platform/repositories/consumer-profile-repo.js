@@ -8,11 +8,21 @@ const {
   resolveOwnerKey,
 } = require('../db/client');
 
-const VALID_MODES = new Set(['watch', 'routine']);
+const VALID_MODES = new Set(['watch', 'routine', 'spot', 'journal']);
 
 function normalizeModes(modes) {
   if (!Array.isArray(modes)) return [];
-  return [...new Set(modes.map((m) => String(m).trim()).filter((m) => VALID_MODES.has(m)))];
+  return [
+    ...new Set(
+      modes
+        .map((m) => {
+          const s = String(m).trim();
+          if (s === 'journal') return 'watch';
+          return s;
+        })
+        .filter((m) => m === 'watch' || m === 'routine' || m === 'spot'),
+    ),
+  ];
 }
 
 function rowToProfile(row) {

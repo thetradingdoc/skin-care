@@ -2,18 +2,21 @@
 
 Minimal consumer marketing SPA for **Skin & Care** — served at `http://localhost:4000/` and production consumer hosts.
 
-## Web-first skin age funnel
+## Web-first Skincare Journal funnel
+
+Positioning SSOT: [`docs/Brand/POSITIONING.md`](../../docs/Brand/POSITIONING.md) — *The #1 Skincare Journal.*
 
 | Route | Step |
 |-------|------|
-| `/` | Landing — split hero, brand nav, three feature columns |
+| `/` | Landing — journal hero, CTA *Check your skin* |
 | `/scan` | Camera / upload → face-read (no account) |
-| `/quick-check` | Skin feel + routine habit (2 taps) |
-| `/reveal` | Findings + score row, or retry tips if vision empty |
-| `/concerns` | Pick concerns → funnel match |
+| `/quick-check` | Skin feel + routine habit + optional trigger |
+| `/reveal` | Findings + branched CTA (diary → signup, routine → concerns) |
+| `/concerns` | What to watch (optional skip for diary users) |
+| `/for/:slug` | SEO landing pages (sensitive skin, flare log, etc.) |
 | `/app/sign-in?intent=signup&from=skin-age-landing` | OTP signup → Expo web app |
 
-Pre-signup state lives in **`sessionStorage`** (`sc_onboarding_*` keys). After OTP, [`skin-age-journey.js`](../assets/js/skin-age-journey.js) activates the routine template and clears storage.
+Pre-signup state lives in **`sessionStorage`** (`sc_onboarding_*` keys). After OTP, [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) sets `journey_modes` from funnel segment and activates routine template only for routine-ready users.
 
 **Native app:** returning users only (sign-in). New users start at `/scan` on the web.
 

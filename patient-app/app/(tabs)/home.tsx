@@ -20,13 +20,29 @@ import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { TimelineTokens } from '@/constants/timelineTokens';
-import { DailyPhotoCta, EmptyStateCard, MetricChipRow, NextActionCard, SectionLabel } from '@/components/v3';
-import { SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF, TRACK_HREF } from '@/constants/routes';
+import {
+  ConditionChipRow,
+  JournalLogCta,
+  JournalLoggedCard,
+  JournalNoteField,
+  TriggerInsightCard,
+} from '@/components/journal/JournalHomeBlocks';
+import { JournalRecentPhotos } from '@/components/journal/JournalRecentPhotos';
+import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
+import { DailyPhotoCta, MetricChipRow, NextActionCard, SectionLabel } from '@/components/v3';
+import { HOME_HREF, SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
+import {
+  fetchTriggerInsights,
+  patchJournalDailyEntry,
+  type JournalConditionTag,
+  type TriggerInsight,
+} from '@/lib/journal-api';
 import { hasRoutineMode, hasWatchMode } from '@/lib/journey-mode-storage';
 import { fetchBioProfile, fetchEvaluateLineup, fetchNextActions, type NextAction } from '@/lib/conflict-api';
 import type { BioProfile, EvaluateResult } from '@/lib/conflict-types';
 import { verdictTagColor, overallColor } from '@/lib/conflict-helpers';
 import { patientGet } from '@/lib/patient-api';
+import { trackPortalEvent } from '@/lib/trackPortalEvent';
 import type { SkinReportPayload } from '@/lib/routine-capture';
 import { localTodayIso, resolveRoutineDayMode, weekdayLabel, type RoutineDayMode } from '@/lib/routine-day-mode';
 import { buildGroupedRoutineSteps } from '@/lib/routine-steps-display';
@@ -90,20 +106,40 @@ export default function HomeScreen() {
   const [needsFirstPhoto, setNeedsFirstPhoto] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
   const [greetingName, setGreetingName] = useState('there');
-  const [photoThumbs, setPhotoThumbs] = useState<{ date: string; logged: boolean }[]>([]);
+  const [photoThumbs, setPhotoThumbs] = useState<
+    { date: string; logged: boolean; thumbnail_url?: string | null }[]
+  >([]);
   const [todayThumbnailUrl, setTodayThumbnailUrl] = useState<string | null>(null);
   const photoTriggeredRef = useRef(false);
   const [watchOnly, setWatchOnly] = useState(false);
+  const [journalMode, setJournalMode] = useState(false);
+  const [journalTags, setJournalTags] = useState<JournalConditionTag[]>([]);
+  const [journalNote, setJournalNote] = useState('');
+  const [journalLogged, setJournalLogged] = useState(false);
+  const [triggerInsights, setTriggerInsights] = useState<TriggerInsight[]>([]);
+  const [savingCheckin, setSavingCheckin] = useState(false);
   const [nextActions, setNextActions] = useState<NextAction[]>([]);
 
   const clientDayMode = resolveRoutineDayMode(selectedDate);
 
-  useEffect(() => {
-    void (async () => {
-      const [watch, routine] = await Promise.all([hasWatchMode(), hasRoutineMode()]);
-      setWatchOnly(watch && !routine);
-    })();
-  }, []);
+  const saveJournalCheckin = useCallback(
+    async (tags: JournalConditionTag[], note: string) => {
+      if (dayMode !== 'today' || savingCheckin) return;
+      setSavingCheckin(true);
+      try {
+        await patchJournalDailyEntry({
+          entryDate: selectedDate,
+          conditionTags: tags,
+          note: note.trim() || null,
+        });
+      } catch (e: unknown) {
+        showToast(e instanceof Error ? e.message : 'Could not save check-in', 'error');
+      } finally {
+        setSavingCheckin(false);
+      }
+    },
+    [dayMode, savingCheckin, selectedDate, showToast],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,7 +150,7 @@ export default function HomeScreen() {
       thumbStart.setUTCDate(thumbStart.getUTCDate() - 4);
       const thumbStartIso = thumbStart.toISOString().slice(0, 10);
 
-      const [templateRes, dailyRes, phaseRes, progressRes, calRes, nextRes] = await Promise.all([
+      const [templateRes, dailyRes, phaseRes, progressRes, calRes, nextRes, insightsRes] = await Promise.all([
         patientGet('/api/patient/routine/template'),
         patientGet(`/api/patient/routine/daily?date=${selectedDate}`),
         patientGet(`/api/patient/routine/phase?date=${selectedDate}`).catch(() => null),
@@ -129,8 +165,14 @@ export default function HomeScreen() {
           );
           return [] as NextAction[];
         }),
+        fetchTriggerInsights().catch(() => ({ ready: false, insights: [] })),
       ]);
       setNextActions(nextRes);
+      setTriggerInsights(Array.isArray(insightsRes?.insights) ? insightsRes.insights : []);
+      if (progressRes) {
+        trackPortalEvent('home_summary_viewed');
+        trackPortalEvent('home_viewed');
+      }
       setStreakDays(Number(progressRes?.summary?.streak_days) || 0);
       const metrics = progressRes?.improvement_metrics;
       if (metrics?.skin_age_delta != null) {
@@ -145,16 +187,32 @@ export default function HomeScreen() {
       if (nick) setGreetingName(nick.charAt(0).toUpperCase() + nick.slice(1));
       const calDays = Array.isArray(calRes?.days) ? calRes.days : [];
       const todayCal = calDays.find((d: { date: string }) => d.date === todayIso);
+      const todayTags = Array.isArray(todayCal?.condition_tags)
+        ? (todayCal.condition_tags as JournalConditionTag[])
+        : [];
+      setJournalTags(todayTags);
+      setJournalNote(typeof todayCal?.note === 'string' ? todayCal.note : '');
+      const todayHasJournal =
+        Boolean(todayCal?.has_media) ||
+        todayTags.length > 0 ||
+        Boolean(todayCal?.note && String(todayCal.note).trim());
+      setJournalLogged(todayHasJournal);
       setTodayThumbnailUrl(
         todayCal?.thumbnail_url && typeof todayCal.thumbnail_url === 'string' ? todayCal.thumbnail_url : null,
       );
       setPhotoThumbs(
-        calDays.slice(-5).map((d: { date: string; completion_score?: number; has_media?: boolean }) => ({
+        calDays.slice(-5).map((d: { date: string; completion_score?: number; has_media?: boolean; thumbnail_url?: string }) => ({
           date: d.date,
           logged: (d.completion_score || 0) >= 100 || Boolean(d.has_media),
+          thumbnail_url: d.thumbnail_url ?? null,
         })),
       );
-      setHasTemplate(Boolean(templateRes?.has_template));
+      const templateActive = Boolean(templateRes?.has_template);
+      setHasTemplate(templateActive);
+      const [watch, routine] = await Promise.all([hasWatchMode(), hasRoutineMode()]);
+      const isJournalFirst = (watch && !routine) || !templateActive;
+      setWatchOnly(watch && !routine);
+      setJournalMode(isJournalFirst);
       const score = dailyRes?.daily_entry?.completion_score;
       const scoreNum = Number.isFinite(Number(score)) ? Number(score) : null;
       setCompletionScore(scoreNum);
@@ -250,11 +308,11 @@ export default function HomeScreen() {
 
   const openCapture = useCallback(() => {
     if (!allowsPhoto) return;
-    router.push({
-      pathname: '/routine/capture',
-      params: { date: selectedDate },
-    });
-  }, [allowsPhoto, router, selectedDate]);
+    const capturePath = journalMode && !hasTemplate ? '/journal/capture' : '/routine/capture';
+    router.push({ pathname: capturePath, params: { date: selectedDate } } as Parameters<
+      typeof router.push
+    >[0]);
+  }, [allowsPhoto, hasTemplate, journalMode, router, selectedDate]);
 
   const pickFromLibrary = useCallback(async () => {
     if (!allowsPhoto) return;
@@ -267,11 +325,11 @@ export default function HomeScreen() {
     if (picked.canceled || !picked.assets?.[0]?.uri) return;
     const asset = picked.assets[0];
     setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
-    router.push({
-      pathname: '/routine/capture',
-      params: { date: selectedDate, library: '1' },
-    });
-  }, [allowsPhoto, router, selectedDate]);
+    const capturePath = journalMode && !hasTemplate ? '/journal/capture' : '/routine/capture';
+    router.push({ pathname: capturePath, params: { date: selectedDate, library: '1' } } as Parameters<
+      typeof router.push
+    >[0]);
+  }, [allowsPhoto, hasTemplate, journalMode, router, selectedDate]);
 
   const loggedForDay = completionScore != null && completionScore >= 100;
 
@@ -284,10 +342,11 @@ export default function HomeScreen() {
   }, [loggedForDay]);
 
   useEffect(() => {
-    if (params.photo !== '1' || photoTriggeredRef.current || loading || !hasTemplate || !allowsPhoto) return;
+    if (params.photo !== '1' || photoTriggeredRef.current || loading || !allowsPhoto) return;
+    if (!journalMode && !hasTemplate) return;
     photoTriggeredRef.current = true;
     openCapture();
-  }, [params.photo, loading, hasTemplate, allowsPhoto, openCapture]);
+  }, [params.photo, loading, hasTemplate, journalMode, allowsPhoto, openCapture]);
 
   useEffect(() => {
     if (params.celebrate === '1') setShowCelebrate(true);
@@ -310,7 +369,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <Modal visible={needsFirstPhoto && hasTemplate && !loggedForDay} animationType="slide" transparent>
+      <Modal
+        visible={needsFirstPhoto && (hasTemplate || journalMode) && !loggedForDay && !journalLogged}
+        animationType="slide"
+        transparent>
         <View style={styles.overlayBackdrop}>
           <View style={styles.overlayCard}>
             <Text style={styles.overlayTitle}>Day 1 — log today&apos;s photo</Text>
@@ -324,14 +386,16 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
-        {hasTemplate && dayMode === 'today' ? (
+        {(hasTemplate || journalMode) && dayMode === 'today' ? (
           <View style={styles.todayHeader}>
             <View>
               <Text allowFontScaling style={styles.greeting}>
                 Good morning, {greetingName}
               </Text>
               <Text allowFontScaling style={styles.daySub}>
-                Day {Math.max(1, (programWeek - 1) * 7 + 1)} · Week {programWeek} of {totalWeeks}
+                {hasTemplate
+                  ? `Day ${Math.max(1, (programWeek - 1) * 7 + 1)} · Week ${programWeek} of ${totalWeeks}`
+                  : `Day ${Math.max(1, streakDays || 1)} · ${selectedDate}`}
               </Text>
             </View>
             {streakDays > 0 ? (
@@ -375,13 +439,55 @@ export default function HomeScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {watchOnly ? (
-          <EmptyStateCard
-            title="Watch a spot on your skin"
-            body="Use the Track tab to photograph a mole, mark, or growth and see how it changes over time."
-            ctaLabel="Go to Track"
-            onCta={() => router.push(TRACK_HREF)}
-          />
+        {journalMode && dayMode === 'today' ? (
+          <>
+            {journalLogged && todayThumbnailUrl ? (
+              <JournalLoggedCard
+                conditionLabel={journalTags[0]?.replace(/_/g, ' ') || null}
+                note={journalNote || null}
+                thumbnailUrl={todayThumbnailUrl}
+              />
+            ) : journalLogged ? (
+              <JournalLoggedCard
+                conditionLabel={journalTags[0]?.replace(/_/g, ' ') || null}
+                note={journalNote || null}
+              />
+            ) : (
+              <JournalLogCta onPress={openCapture} />
+            )}
+            <SectionLabel>How does your skin feel today?</SectionLabel>
+            <ConditionChipRow
+              selected={journalTags}
+              disabled={dayMode !== 'today'}
+              onChange={(tags) => {
+                setJournalTags(tags);
+                void saveJournalCheckin(tags, journalNote);
+              }}
+            />
+            <JournalNoteField
+              value={journalNote}
+              disabled={dayMode !== 'today'}
+              onChange={setJournalNote}
+              onBlur={() => void saveJournalCheckin(journalTags, journalNote)}
+            />
+            {triggerInsights.length > 0 ? (
+              <>
+                <SectionLabel>Trigger insight</SectionLabel>
+                {triggerInsights.map((insight) => (
+                  <TriggerInsightCard key={insight.keyword || insight.label} insight={insight} />
+                ))}
+              </>
+            ) : null}
+            {photoThumbs.length > 0 ? (
+              <JournalRecentPhotos
+                thumbs={photoThumbs}
+                onSeeAll={() => router.push(PROGRESS_HREF)}
+                onOpenDay={(date) =>
+                  router.push(`${HOME_HREF}?date=${date}` as typeof HOME_HREF)
+                }
+              />
+            ) : null}
+          </>
         ) : null}
 
         {hasTemplate && bioProfile && !bioProfile.profile_complete && dayMode === 'today' ? (
@@ -439,16 +545,6 @@ export default function HomeScreen() {
               ]}
             />
           </>
-        ) : null}
-
-        {!hasTemplate && !error ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Choose your routine</Text>
-            <Text style={styles.emptyBody}>
-              Pick a guided program. Your daily check-in is one progress photo — we track change over time.
-            </Text>
-            <ConsumerPrimaryButton label="Choose a routine" onPress={() => router.push('/routine/pick')} />
-          </View>
         ) : null}
 
         {hasTemplate && weekKicker && dayMode !== 'today' ? (
@@ -664,15 +760,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: JournalTokens.spacing.sm,
   },
-  greeting: { fontFamily: JournalTokens.font.display, fontSize: 22, color: JournalTokens.color.ink },
+  greeting: {
+    fontFamily: AppFontFamilies.display,
+    fontSize: 36,
+    color: JournalTokens.color.ink,
+    lineHeight: 40,
+  },
   daySub: { color: JournalTokens.color.muted, fontSize: 12, marginTop: 2 },
   streakPill: {
-    backgroundColor: '#faeeda',
+    backgroundColor: AppTokens.color.watchAmber,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#E9C46A',
   },
-  streakText: { fontSize: 12, fontWeight: '700', color: '#633806' },
+  streakText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: AppTokens.color.watchAmberText,
+    fontFamily: AppFontFamilies.bodySemiBold,
+  },
   bioBanner: {
     backgroundColor: ConflictTokens.cardAmber,
     borderRadius: 12,

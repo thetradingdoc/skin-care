@@ -9,6 +9,7 @@ export const AppTokens = {
     card: '#FFFDF9',
     ink: '#1F2937',
     muted: '#6B7280',
+    hint: '#9CA3AF',
     line: '#E9E2D6',
     brandBlue: '#314DB6',
     brandAccent: '#314DB6',

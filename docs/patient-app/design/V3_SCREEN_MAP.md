@@ -12,17 +12,19 @@ Two journeys, one app, shared photo loop:
 | User A — spot/growth watcher | `watch` | 3 taps max, plain language |
 | User B — routine/conflict tracker | `routine` | BFI ring, scan shelf, program steps |
 
-App positioning (in-app copy only; landing deferred): *Notice the change before it becomes the problem.*
+App positioning SSOT: **The #1 Skincare Journal.** Face check = hook; daily photo log = product. See [`docs/Brand/POSITIONING.md`](../../Brand/POSITIONING.md).
 
 ## Tab bar (5 tabs)
 
-| Tab | Route | Icon |
+| Tab | Route | Icon (Tabler outline) |
 |-----|-------|------|
-| Home | `/(tabs)/home` | house.fill |
-| Track | `/(tabs)/track` | camera.fill |
-| Scan | `/(tabs)/scan` | barcode.viewfinder |
-| Progress | `/(tabs)/progress` | chart.bar.fill |
-| Profile | `/(tabs)/account` | person.fill |
+| Home | `/(tabs)/home` | `ti-home` |
+| Track | `/(tabs)/track` | `ti-camera` |
+| Scan | `/(tabs)/scan` | `ti-scan` |
+| Progress | `/(tabs)/progress` | `ti-chart-bar` |
+| Profile | `/(tabs)/account` | `ti-user` |
+
+Typography: **Gloock** (display) + **DM Sans** (body) via `AppFontsProvider`.
 
 ## Route map
 
@@ -86,10 +88,11 @@ App positioning (in-app copy only; landing deferred): *Notice the change before 
 
 ### Journey chooser
 - Title: "What brings you here?"
-- Sub: "We'll set up the right experience for you"
-- Watch card: "Watch something on my skin" / "A spot, growth, mole, or mark I want to track over time"
-- Routine card: "Improve my skin routine" / "Track acne, check if products clash, follow a program"
-- Footer: "You can use both at the same time. Most people do."
+- Sub: "Pick what fits — you can change it anytime."
+- Diary card: "Keep a skin diary" / "One photo a day. See what's changing and find your triggers — no routine needed."
+- Routine card: "Improve my skin routine" / "Product conflicts and a guided 12-week program."
+- Spot card: "Watch a spot or mark" / "Track a mole, growth, or area of concern over time."
+- Footer: "You can enable more than one."
 
 ### Track hub
 - Title: "Track a spot"

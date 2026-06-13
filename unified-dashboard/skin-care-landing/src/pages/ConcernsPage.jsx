@@ -1,20 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import FunnelShell from '../components/FunnelShell';
 import { CTAS } from '../content/landingContent';
+import {
+  FUNNEL_SEGMENT,
+  getFunnelSegment,
+  isDiarySegment,
+} from '../lib/funnelSegment';
 import { publicGet, publicPost } from '../lib/publicApi';
+import { trackUIEvent } from '../lib/trackUIEvent.js';
 import {
   getConfirmedAge,
   getFaceRead,
   getQuickCheck,
   getSuggestedConcerns,
+  isWatchOnlyOnboarding,
   setConcernId,
   setMatchJson,
   setSuggestedConcerns,
 } from '../lib/skinAgeStorage';
 
-const DEFAULT_CONCERN = 'anti_aging';
+const DEFAULT_CONCERN = 'barrier_repair';
 
 const CONCERN_ICONS = {
   anti_aging: '✨',
@@ -34,6 +41,13 @@ export default function ConcernsPage() {
   const [preselectNote, setPreselectNote] = useState('');
   const [suggestedIds, setSuggestedIds] = useState([]);
 
+  const funnelSegment = useMemo(
+    () => getFunnelSegment(getQuickCheck(), isWatchOnlyOnboarding()),
+    [],
+  );
+  const diaryPath = isDiarySegment(funnelSegment);
+  const userGoal = diaryPath ? 'track_journal' : 'track_program';
+
   useEffect(() => {
     void (async () => {
       try {
@@ -44,12 +58,12 @@ export default function ConcernsPage() {
         const faceRead = getFaceRead();
         const quickCheck = getQuickCheck();
         const confirmedAge = getConfirmedAge();
-        let primary = DEFAULT_CONCERN;
+        let primary = diaryPath ? DEFAULT_CONCERN : 'anti_aging';
         let suggested = getSuggestedConcerns();
 
         try {
           const matchRes = await publicPost('/api/public/funnel/match', {
-            user_goal: 'track_program',
+            user_goal: userGoal,
             face_read: faceRead,
             confirmed_age: confirmedAge,
             quick_check_answers: quickCheck,
@@ -68,7 +82,7 @@ export default function ConcernsPage() {
         if (list.some((c) => c.id === primary)) {
           setSelected(primary);
           const label = list.find((c) => c.id === primary)?.label || primary;
-          setPreselectNote(`${label} pre-selected based on your scan`);
+          setPreselectNote(`${label} suggested from your scan`);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Could not load concerns.');
@@ -76,41 +90,55 @@ export default function ConcernsPage() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [diaryPath, userGoal]);
 
-  const goSignup = useCallback(async (primary) => {
-    setBusy(true);
-    setError(null);
-    try {
-      setConcernId(primary);
-      const faceRead = getFaceRead();
-      const confirmedAge = getConfirmedAge();
-      const quickCheck = getQuickCheck();
+  const goSignup = useCallback(
+    async (primary) => {
+      setBusy(true);
+      setError(null);
       try {
-        const match = await publicPost('/api/public/funnel/match', {
-          user_goal: 'track_program',
-          face_read: faceRead,
-          confirmed_age: confirmedAge,
-          concern_chip: primary,
-          concern_chips: [primary],
-          quick_check_answers: quickCheck,
-        });
-        setMatchJson(match?.match || match || null);
-      } catch {
-        /* keep prior match */
+        setConcernId(primary);
+        trackUIEvent('concern_selected', { concern_id: primary });
+        trackUIEvent('signup_cta', { concern_id: primary });
+        const faceRead = getFaceRead();
+        const confirmedAge = getConfirmedAge();
+        const quickCheck = getQuickCheck();
+        try {
+          const match = await publicPost('/api/public/funnel/match', {
+            user_goal: userGoal,
+            face_read: faceRead,
+            confirmed_age: confirmedAge,
+            concern_chip: primary,
+            concern_chips: [primary],
+            quick_check_answers: quickCheck,
+          });
+          setMatchJson(match?.match || match || null);
+        } catch {
+          /* keep prior match */
+        }
+        window.location.href = CTAS.signup;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+        setBusy(false);
       }
-      window.location.href = CTAS.signup;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
-      setBusy(false);
-    }
-  }, []);
+    },
+    [userGoal],
+  );
 
   const continueNext = useCallback(() => {
     void goSignup(selected || DEFAULT_CONCERN);
   }, [goSignup, selected]);
 
+  const skipToJournal = useCallback(() => {
+    void goSignup(DEFAULT_CONCERN);
+  }, [goSignup]);
+
   const selectedRow = concerns.find((c) => c.id === selected);
+  const primaryCta = diaryPath
+    ? 'Continue your journal'
+    : funnelSegment === FUNNEL_SEGMENT.ROUTINE_READY
+      ? 'Build my care plan'
+      : 'Continue your journal';
 
   if (loading) {
     return (
@@ -128,11 +156,11 @@ export default function ConcernsPage() {
         <Link to="/reveal" className="sc-funnel-back">
           ← Back
         </Link>
-        <span className="sc-funnel-tag">Your plan</span>
+        <span className="sc-funnel-tag">What to watch</span>
         <h1 className="sc-funnel-title" style={{ fontSize: '1.15rem' }}>
-          {suggestedIds.length >= 2 ? 'We spotted two things' : 'Choose your focus'}
+          {suggestedIds.length >= 2 ? 'We spotted two things' : 'What should we watch?'}
         </h1>
-        <p className="sc-funnel-sub">Pick your primary concern to focus on first</p>
+        <p className="sc-funnel-sub">Pick what matters — you can change this anytime</p>
 
         {error ? <p className="sc-funnel-error">{error}</p> : null}
 
@@ -149,7 +177,11 @@ export default function ConcernsPage() {
                   {CONCERN_ICONS[c.id] || '•'}
                 </span>
                 <span className="sc-concern-card-name">{c.label}</span>
-                <span className="sc-concern-card-dur">{c.total_weeks || 12} weeks</span>
+                {!diaryPath ? (
+                  <span className="sc-concern-card-dur">{c.total_weeks || 12} weeks</span>
+                ) : (
+                  <span className="sc-concern-card-dur">optional program</span>
+                )}
               </button>
             );
           })}
@@ -158,10 +190,16 @@ export default function ConcernsPage() {
         {preselectNote ? <p className="sc-concern-hint">{preselectNote}</p> : null}
 
         <button type="button" className="sc-btn sc-btn-dark sc-btn-block" disabled={busy} onClick={continueNext}>
-          {busy
-            ? 'Saving…'
-            : `Start ${selectedRow?.label?.toLowerCase() || 'plan'} plan`}
+          {busy ? 'Saving…' : primaryCta}
         </button>
+
+        {diaryPath ? (
+          <p className="sc-funnel-sub" style={{ marginTop: '1rem', textAlign: 'center' }}>
+            <button type="button" className="sc-link" disabled={busy} onClick={skipToJournal}>
+              Skip — just track my skin
+            </button>
+          </p>
+        ) : null}
       </div>
     </FunnelShell>
   );

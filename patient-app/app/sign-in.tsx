@@ -68,8 +68,8 @@ export default function SignInScreen() {
   const copy = useMemo(() => {
     if (isSignupIntent && fromSkinAgeLanding) {
       return {
-        headline: 'Save your plan',
-        subtitle: 'Enter your email to save your skin age and 12-week track.',
+        headline: 'Save your journal',
+        subtitle: 'Enter your email to save your face check and daily photo log.',
         showWebCta: false,
       };
     }

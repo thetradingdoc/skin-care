@@ -345,6 +345,8 @@ After a **successful** progress summary load, the portal may call:
 
 `POST /api/patient/analytics/event` with body `{ "event": "home_summary_viewed" }` (session header/cookie as for other patient APIs).
 
+Whitelisted events and PHI rules: [`docs/security/ANALYTICS_EVENT_CATALOG.md`](../security/ANALYTICS_EVENT_CATALOG.md). Client helper: `patient-app/lib/trackPortalEvent.ts`.
+
 Server also records template/daily/media events on the corresponding POST routes (see backend routes doc).
 
 ---

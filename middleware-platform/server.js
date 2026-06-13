@@ -126,6 +126,8 @@ const fhirIds = require('./lib/fhir-brand-identifiers');
 const { fieldsFromSqlAggRow } = require('./lib/billing-calendar-agg');
 const { fetchBillingAggregatesByDay } = require('./lib/patient-calendar-billing-query');
 const { ensureRoutineTables } = require('./lib/patient-routine-db');
+const { ensureJournalTables } = require('./lib/patient-journal-db');
+const { ensureJournalTables } = require('./lib/patient-journal-db');
 const constants = require('./utils/constants');
 const PaymentOrchestrator = require('./services/payment-orchestrator');
 const PaymentFlowService = require('./services/payment-flow-service');
@@ -1881,15 +1883,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'x-session-id',
-    'x-journey-id',
-    'idempotency-key',
-    'ngrok-skip-browser-warning'
-  ],
+  allowedHeaders: require('./lib/cors-allowed-headers'),
   exposedHeaders: ['Set-Cookie']
 };
 
@@ -2633,6 +2627,7 @@ const patientRouteDeps = createBasePatientRouteDeps({
   resolvePatientIdFromSession,
   recordPatientPortalEvent,
   ensureRoutineTables,
+  ensureJournalTables,
   ensureBillingTables,
   parseBillingDocumentUpload,
   safeParseJsonArray,

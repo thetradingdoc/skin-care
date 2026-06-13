@@ -82,10 +82,67 @@ async function verifyLocalDist() {
     fail(`Missing ${indexPath}. Run: npm run build:consumer-hosting`);
   }
   const html = fs.readFileSync(indexPath, 'utf8');
-  if (!/Track today|Facial Age Checker/i.test(html)) {
-    fail('index.html missing Skin & Care hero copy');
+  if (!/Skincare Journal|Check your skin/i.test(html)) {
+    fail('index.html missing journal positioning hero copy');
   }
-  ok('index.html has landing hero');
+  if (!/SoftwareApplication/i.test(html)) {
+    fail('index.html missing SoftwareApplication JSON-LD');
+  }
+  ok('index.html has journal hero + structured data');
+
+  if (!/og:image/i.test(html)) {
+    fail('index.html missing og:image meta tag');
+  }
+  if (!/rel="canonical"/i.test(html)) {
+    fail('index.html missing canonical link');
+  }
+  if (!/twitter:card/i.test(html)) {
+    fail('index.html missing twitter:card meta tag');
+  }
+  ok('index.html has og:image, canonical, twitter:card');
+
+  const ogImagePath = path.join(HOSTING_DIST, 'og-image.jpg');
+  if (!fs.existsSync(ogImagePath)) {
+    fail('Missing og-image.jpg in bundle root');
+  }
+  ok('og-image.jpg');
+
+  const contactHtml = fs.readFileSync(path.join(HOSTING_DIST, 'contact.html'), 'utf8');
+  if (/Track today\. Glow tomorrow\./i.test(contactHtml)) {
+    fail('contact.html still contains banned tagline "Track today. Glow tomorrow."');
+  }
+  ok('contact.html journal footer tagline');
+
+  const forSlugs = [
+    'sensitive-skin',
+    'makeup-reactions',
+    'derm-visit',
+    'dark-skin',
+    'flare-tracking',
+  ];
+  for (const slug of forSlugs) {
+    const shellPath = path.join(HOSTING_DIST, 'for', slug, 'index.html');
+    if (!fs.existsSync(shellPath)) {
+      fail(`Missing for/${slug}/index.html SEO shell`);
+    }
+    const shellHtml = fs.readFileSync(shellPath, 'utf8');
+    const canonical = `https://myskinandcare.com/for/${slug}`;
+    if (!shellHtml.includes(`href="${canonical}"`)) {
+      fail(`for/${slug}/index.html missing canonical ${canonical}`);
+    }
+    if (!/<title>[\s\S]*?<\/title>/i.test(shellHtml)) {
+      fail(`for/${slug}/index.html missing title`);
+    }
+    ok(`for/${slug}/index.html SEO shell`);
+  }
+
+  for (const seoFile of ['sitemap.xml', 'robots.txt']) {
+    const p = path.join(HOSTING_DIST, seoFile);
+    if (!fs.existsSync(p)) {
+      fail(`Missing ${seoFile}. Ensure skin-care-landing/public/ is in Vite build.`);
+    }
+    ok(seoFile);
+  }
 
   for (const rel of [
     'about.html',
@@ -148,6 +205,10 @@ async function verifyLocalDist() {
   } else {
     ok('landing JS bundle present');
   }
+  if (!jsText.includes('sensitive-skin')) {
+    fail('Landing JS bundle missing /for/sensitive-skin SEO route');
+  }
+  ok('landing JS includes /for/* SEO routes');
 
   const iconFont = findMaterialIconsFont(HOSTING_DIST);
   if (!iconFont) {
@@ -161,8 +222,32 @@ async function verifyLive(base) {
   const res = await fetch(`${url}/`);
   const html = await res.text();
   if (res.status < 200 || res.status >= 400) fail(`Live ${url}/ status=${res.status}`);
-  if (!/Track today|Facial Age Checker/i.test(html)) fail('Live site missing hero copy');
+  if (!/Skincare Journal|Check your skin/i.test(html)) fail('Live site missing journal hero copy');
   ok(`Live ${url}/`);
+
+  for (const seoPath of ['/sitemap.xml', '/robots.txt']) {
+    const seoRes = await fetch(`${url}${seoPath}`);
+    if (seoRes.status < 200 || seoRes.status >= 400) {
+      fail(`Live ${url}${seoPath} status=${seoRes.status}`);
+    }
+    ok(`Live ${url}${seoPath}`);
+  }
+
+  const forRes = await fetch(`${url}/for/sensitive-skin`);
+  const forHtml = await forRes.text();
+  if (forRes.status < 200 || forRes.status >= 400) {
+    fail(`Live ${url}/for/sensitive-skin status=${forRes.status}`);
+  }
+  if (!/sensitive skin|Skincare Journal/i.test(forHtml)) {
+    fail('Live /for/sensitive-skin missing expected SEO content');
+  }
+  if (!forHtml.includes('https://myskinandcare.com/for/sensitive-skin')) {
+    fail('Live /for/sensitive-skin missing canonical URL in HTML');
+  }
+  if (!/journal, not another product push|sensitive skin deserves/i.test(forHtml)) {
+    fail('Live /for/sensitive-skin missing SEO headline in HTML shell');
+  }
+  ok(`Live ${url}/for/sensitive-skin`);
 
   const signInRes = await fetch(`${url}/app/sign-in`);
   const signInHtml = await signInRes.text();

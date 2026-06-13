@@ -72,6 +72,15 @@ function registerFaceReadPublicRoute(app, { apiLimiter }) {
       const mime = req.file.mimetype || 'image/jpeg';
       const buffer = Buffer.isBuffer(req.file.buffer) ? req.file.buffer : Buffer.from(req.file.buffer);
 
+      const AntivirusService = require('../services/antivirus-service');
+      const avResult = await AntivirusService.scanBuffer(buffer);
+      if (!avResult.safe) {
+        return res.status(403).json({
+          success: false,
+          error: avResult.error || AntivirusService.BLOCKED_MESSAGE,
+        });
+      }
+
       let cvResult;
       try {
         cvResult = await proxyToInference(base, buffer, mime, req.file.originalname);

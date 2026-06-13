@@ -280,13 +280,96 @@ async function stubRedesignApis(page) {
         d.setDate(d.getDate() - i);
         days.push({
           date: d.toISOString().slice(0, 10),
-          has_media: i === 0,
-          completion_score: i === 0 ? 0 : 100,
+          has_media: i <= 2,
+          thumbnail_url: i <= 2 ? PLACEHOLDER_URI : null,
+          condition_tags: i === 0 ? ['calm'] : [],
+          note: i === 0 ? 'Slept well' : null,
+          completion_score: i <= 2 ? 100 : 0,
           verdict_overall: i === 1 ? 'caution' : 'safe',
           barrier_friction_index: [82, 88, 61, 74, 85, 91, 62, null][7 - i] ?? 75,
         });
       }
       return route.fulfill(json({ success: true, days }));
+    }
+
+    if (url.includes('/journal/timeline') && method === 'GET') {
+      const days = [];
+      for (let i = 7; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({
+          date: d.toISOString().slice(0, 10),
+          photo_url: i <= 2 ? PLACEHOLDER_URI : null,
+          thumbnail_url: i <= 2 ? PLACEHOLDER_URI : null,
+          condition_tags: i === 0 ? ['calm'] : [],
+          primary_condition: i === 0 ? 'Calm' : null,
+          note: null,
+          has_photo: i <= 2,
+        });
+      }
+      return route.fulfill(json({ success: true, days }));
+    }
+
+    if (url.includes('/journal/trigger-insights')) {
+      return route.fulfill(
+        json({
+          success: true,
+          ready: true,
+          entry_count: 12,
+          insights: [
+            {
+              label: 'Dairy may trigger breakouts',
+              body: 'Breakouts appeared after dairy-heavy meals in your notes.',
+              confidence: 0.72,
+              type: 'negative',
+              keyword: 'dairy',
+            },
+          ],
+        }),
+      );
+    }
+
+    if (url.includes('/journal/improvements')) {
+      return route.fulfill(
+        json({
+          success: true,
+          ready: true,
+          metrics: {
+            redness_pct: -28,
+            breakouts_pct: -36,
+            texture_pct: 35,
+            hydration_pct: 42,
+          },
+        }),
+      );
+    }
+
+    if (url.includes('/journal/daily-photo') && method === 'POST') {
+      const today = new Date().toISOString().slice(0, 10);
+      return route.fulfill(
+        json({
+          success: true,
+          entry_id: 'je_stub_1',
+          entry_date: today,
+          photo_url: PLACEHOLDER_URI,
+          condition_tags: [],
+          has_photo: true,
+        }),
+      );
+    }
+
+    if (url.includes('/journal/daily-entry') && method === 'PATCH') {
+      const today = new Date().toISOString().slice(0, 10);
+      return route.fulfill(
+        json({
+          success: true,
+          entry_id: 'je_stub_1',
+          entry_date: today,
+          condition_tags: ['calm'],
+          note: 'Test',
+          has_photo: false,
+        }),
+      );
     }
 
     if (url.includes('/shelf/products/') && url.includes('/insight') && method === 'GET') {

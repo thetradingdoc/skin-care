@@ -47,29 +47,32 @@ Support email (also on privacy page): `support@skinandcare.com`
 ### Promotional Text (optional, 170 chars max)
 
 ```
-Log one photo a day, follow a phased skincare routine, and see your progress on a visual timeline. Built for real skin—not generic templates.
+The skincare journal for daily photo tracking. Log one photo a day, see flares and reactions over time—no routine required to start.
 ```
 
 ### Description (required, 4,000 chars max)
 
 ```
-Skin & Care helps you track your skin over time with daily progress photos and structured, concern-based routines.
+Skin & Care is your skincare journal—track your skin with one photo a day and see what changes over time.
+
+Track your skin with one photo a day. See what's causing flares, reactions, or breakouts—without adding a single new product. Your skin diary, not a routine plan.
 
 HOW IT WORKS
-• Pick what you want to track—acne, hyperpigmentation, anti-aging, barrier repair, or rosacea
-• Follow a phased 8–24 week care plan that ramps actives gradually
-• Log one photo a day to build a visual timeline of your skin
-• See today’s routine steps, weekly phase guidance, and your journey over time
+• Start with a quick face check—your baseline photo for the journal
+• Log one photo a day, same angle, to build a visual timeline
+• Note what to watch—redness, breakouts, dryness, or sensitive-skin reactions
+• Optional: follow a phased care plan or scan products before you try them
 
 KEY FEATURES
-• Concern-based care programs with week-by-week AM/PM steps
 • Daily photo journal and timeline
-• Product shelf to track what you use
+• Face check to start your log
+• Product shelf and ingredient safety scan
+• Optional concern-based care programs (8–24 weeks)
 • Email sign-in—no password to remember
 • Wellness tracking only—not a medical diagnosis
 
 WHO IT’S FOR
-Skin & Care is for anyone who wants a calmer, more consistent way to follow a skincare routine and actually see whether it’s working. We focus on measurement and habit—not hype.
+Anyone whose skin reacts easily—or anyone who wants a reliable record of how their skin changes day to day. Measurement and journaling, not hype.
 
 IMPORTANT
 Skin & Care is a wellness tracking tool. It does not provide medical advice, diagnosis, or emergency services. Always consult a qualified professional for medical decisions.
@@ -79,13 +82,34 @@ Terms: https://myskinandcare.com/patients/legal/terms.html
 Support: https://myskinandcare.com/contact.html
 ```
 
+### Subtitle (30 chars max)
+
+```
+Find your skin triggers
+```
+
 ### Keywords (required, 100 chars max, comma-separated, no spaces after commas)
 
 ```
-skincare,routine,acne,hyperpigmentation,skin tracker,photo journal,rosacea,anti-aging,wellness
+skincare journal,skin tracker,acne diary,skin diary,flare log,reactive skin,sensitive skin
 ```
 
-(Character count: ~95 — adjust if ASC rejects.)
+(Character count: ~90 — adjust if ASC rejects.)
+
+### Category
+
+**Health & Fitness** (not Lifestyle or Self Care).
+
+### Screenshots (6.7" iPhone — recommended order)
+
+1. **Home** — “Log today’s photo” CTA, condition chips, trigger insight card  
+2. **Progress** — streak hero + photo timeline + trigger tags  
+3. **Onboarding** — three journey cards (diary default)  
+4. **Track** — spot watch empty state  
+5. **Scan** — product shelf with verdict badges  
+6. **Profile** — journey toggles (diary / routine / spot)
+
+Capture from journal-first build after `JOURNAL_MODE_STANDALONE=1` is enabled on API.
 
 ### Support URL (required)
 
@@ -276,7 +300,7 @@ Typical for this app: **4+** or **12+** depending on questionnaire answers about
 | Item | Value |
 |------|-------|
 | Display name | Skin & Care |
-| Subtitle (optional, 30 chars) | `Daily skin routine tracker` |
+| Subtitle (optional, 30 chars) | `Skincare journal & photo log` |
 | Category (primary) | Health & Fitness |
 | Category (secondary) | Lifestyle |
 | Bundle ID | com.skinandcare.app |

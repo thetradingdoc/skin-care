@@ -28,6 +28,7 @@ import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { addProductManual, fetchEvaluateLineup, scanBarcodeToShelf } from '@/lib/conflict-api';
 import type { EvaluateResult, ProductStatus } from '@/lib/conflict-types';
 import { patientGet } from '@/lib/patient-api';
+import { trackPortalEvent } from '@/lib/trackPortalEvent';
 
 type ShelfRow = {
   id: string;
@@ -94,6 +95,10 @@ export default function ScanScreen() {
   useEffect(() => {
     scanLine.value = withRepeat(withTiming(1, { duration: 1800 }), -1, true);
   }, [scanLine]);
+
+  useEffect(() => {
+    if (ready) trackPortalEvent('scan_tab_opened');
+  }, [ready]);
 
   const scanLineStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: scanLine.value * 120 }],

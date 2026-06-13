@@ -9,6 +9,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { BillingFeedbackProvider } from '@/components/billing-feedback';
+import { AppFontsProvider } from '@/components/ui/AppFontsProvider';
 import { SkinCareNavigationTheme } from '@/constants/navigationTheme';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
@@ -83,6 +84,7 @@ export default function RootLayout() {
   }, []);
 
   return (
+    <AppFontsProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : SkinCareNavigationTheme}>
       <BillingFeedbackProvider>
         <Stack>
@@ -109,5 +111,6 @@ export default function RootLayout() {
         <StatusBar style="auto" />
       </BillingFeedbackProvider>
     </ThemeProvider>
+    </AppFontsProvider>
   );
 }

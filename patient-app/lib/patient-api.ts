@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { getEffectiveApiBaseUrl } from '@/config';
 import { handleExpiredPatientSession, isPatientSessionAuthError } from '@/lib/patient-auth';
 import { getPatientSessionId } from '@/lib/patient-session';
 import { localTodayIso } from '@/lib/routine-day-mode';
@@ -33,14 +33,14 @@ async function ensurePatientOk<T extends { success?: boolean; error?: string }>(
 
 export async function patientGet(path: string) {
   const headers = await withSessionHeaders();
-  const res = await fetch(`${API_BASE_URL}${path}`, { headers });
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, { headers });
   const data = await parseJson(res);
   return ensurePatientOk(res, data);
 }
 
 export async function patientPatch(path: string, body: unknown) {
   const headers = await withSessionHeaders();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
     method: 'PATCH',
     headers,
     body: JSON.stringify(body ?? {}),
@@ -51,7 +51,7 @@ export async function patientPatch(path: string, body: unknown) {
 
 export async function patientPost(path: string, body: unknown) {
   const headers = await withSessionHeaders();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body ?? {}),
@@ -64,7 +64,7 @@ export async function patientPost(path: string, body: unknown) {
 export async function patientUploadForm(path: string, form: FormData) {
   const sid = await getPatientSessionId();
   if (!sid) throw new Error('Sign in required.');
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: {
       'x-session-id': sid,
@@ -78,7 +78,7 @@ export async function patientUploadForm(path: string, form: FormData) {
 }
 
 export async function publicGet(path: string) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
     headers: { 'ngrok-skip-browser-warning': 'true' },
   });
   const data = await parseJson(res);
@@ -87,7 +87,7 @@ export async function publicGet(path: string) {
 }
 
 export async function patientPostPublic(path: string, body: unknown) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
     method: 'POST',
     headers: API_HEADERS,
     body: JSON.stringify(body ?? {}),

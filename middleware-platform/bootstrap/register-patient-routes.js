@@ -4,6 +4,7 @@ const { registerFaceReadPublicRoute } = require('../routes/public-face-read');
 const { registerPublicRoutineRoutes } = require('../routes/public-routines');
 const { registerPublicFunnelMatchRoutes } = require('../routes/public-funnel-match');
 const { registerPublicFunnelJourneyRoutes } = require('../routes/public-funnel-journey');
+const { registerSkinragRoutineRoutes } = require('../routes/skinrag-routines');
 const { registerPublicFunnelIntakeRoutes } = require('../routes/public-funnel-intake');
 const { registerPublicFunnelSpecialistRoutes } = require('../routes/public-funnel-specialists');
 const { registerPatientFunnelBridgeRoutes } = require('../routes/patient-funnel-bridge');
@@ -11,6 +12,7 @@ const { registerPublicProductScanRoutes } = require('../routes/public-product-sc
 const { registerPublicRoutineEvaluateRoutes } = require('../routes/public-routine-evaluate');
 const { registerPatientCheckoutChatRoutes } = require('../routes/patient-checkout-chat');
 const { registerPatientRoutineRoutes } = require('../routes/patient-routine');
+const { registerPatientJournalRoutes } = require('../routes/patient-journal');
 const { registerPatientShelfRoutes } = require('../routes/patient-shelf');
 const { registerPatientBioProfileRoutes } = require('../routes/patient-bio-profile');
 const { registerPatientConsumerProfileRoutes } = require('../routes/patient-consumer-profile');
@@ -52,6 +54,7 @@ function registerConsumerFunnelRoutes(app, deps) {
   registerPublicRoutineRoutes(app, { apiLimiter });
   registerPublicFunnelMatchRoutes(app, { apiLimiter });
   registerPublicFunnelJourneyRoutes(app, { apiLimiter, db });
+  registerSkinragRoutineRoutes(app, { apiLimiter });
   registerPublicFunnelIntakeRoutes(app, { apiLimiter });
   registerPublicFunnelSpecialistRoutes(app, { apiLimiter });
 
@@ -100,6 +103,7 @@ function registerPatientPortalRoutes(app, deps) {
   } = deps;
 
   registerPatientRoutineRoutes(app, patientRouteDeps);
+  registerPatientJournalRoutes(app, patientRouteDeps);
   registerPatientBioProfileRoutes(app, patientRouteDeps);
   registerPatientConsumerProfileRoutes(app, patientRouteDeps);
   registerPatientSpotsRoutes(app, patientRouteDeps);

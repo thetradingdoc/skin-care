@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/config';
+import { getEffectiveApiBaseUrl } from '@/config';
 import type { FaceReadPayload } from '@/lib/onboarding-storage';
 
 const MOCK_MODEL_IDS = new Set(['mock', 'fallback_mock', 'dev']);
@@ -74,7 +74,7 @@ export async function postFaceRead(imageUri: string): Promise<FaceReadPayload> {
     type: 'image/jpeg',
   } as unknown as Blob);
 
-  const res = await fetch(`${API_BASE_URL}/api/public/face-read`, {
+  const res = await fetch(`${getEffectiveApiBaseUrl()}/api/public/face-read`, {
     method: 'POST',
     body: form,
     headers: { 'ngrok-skip-browser-warning': 'true' },

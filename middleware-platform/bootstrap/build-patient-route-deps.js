@@ -120,6 +120,7 @@ function createBasePatientRouteDeps(ctx) {
     resolvePatientIdFromSession: ctx.resolvePatientIdFromSession,
     recordPatientPortalEvent: ctx.recordPatientPortalEvent,
     ensureRoutineTables: ctx.ensureRoutineTables,
+    ensureJournalTables: ctx.ensureJournalTables,
     ensureBillingTables: ctx.ensureBillingTables,
     ensurePatientShelfInventoryColumns: shelfApi.ensurePatientShelfInventoryColumns,
     loadPatientShelfProductRows: shelfApi.loadPatientShelfProductRows,

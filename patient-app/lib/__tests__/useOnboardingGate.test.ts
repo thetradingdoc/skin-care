@@ -143,9 +143,14 @@ describe('resolvePostAuthRoute', () => {
     await expect(resolvePostAuthRoute()).resolves.toBe(HOME_HREF);
   });
 
-  it('watch-only with no spots routes to track', async () => {
+  it('watch-only with no spots routes to home (journal first)', async () => {
     mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['watch'] });
     mockListSpots.mockResolvedValue([]);
+    await expect(resolvePostAuthRoute()).resolves.toBe(HOME_HREF);
+  });
+
+  it('spot-only routes to track', async () => {
+    mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['spot'] });
     await expect(resolvePostAuthRoute()).resolves.toBe(TRACK_HREF);
   });
 
@@ -163,11 +168,11 @@ describe('resolvePostAuthRoute', () => {
     await expect(resolvePostAuthRoute()).resolves.toBe(HOME_HREF);
   });
 
-  it('watch+routine with no spots routes to track after routine gates', async () => {
+  it('watch+routine with no spots routes to home after routine gates', async () => {
     mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['watch', 'routine'] });
     mockRoutineReady();
     mockListSpots.mockResolvedValue([]);
-    await expect(resolvePostAuthRoute()).resolves.toBe(TRACK_HREF);
+    await expect(resolvePostAuthRoute()).resolves.toBe(HOME_HREF);
   });
 
   it('falls back to home on transient API errors when journey is known locally', async () => {

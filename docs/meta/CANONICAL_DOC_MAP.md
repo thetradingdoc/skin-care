@@ -16,6 +16,7 @@ Use this table to find the **one** doc to edit per topic. Each folder keeps at m
 | **Routes & call paths** | [`architecture/LIVE.md`](../architecture/LIVE.md#runtime-entrypoints-and-route-ownership) | [`middleware-platform/server.js`](../../middleware-platform/server.js) |
 | **Environment variables** | [`setup/README.md`](../setup/README.md) | Former `ENVIRONMENT_VARIABLES_BY_SURFACE` merged into setup README |
 | **Brand / logo / email HTML** | [`Brand/SKIN_AND_CARE_GUIDELINES.md`](../Brand/SKIN_AND_CARE_GUIDELINES.md) | [`Brand/README.md`](../Brand/README.md) |
+| **Consumer positioning / copy SSOT** | [`Brand/POSITIONING.md`](../Brand/POSITIONING.md) | [`user-journey/JOURNEY.md`](../user-journey/JOURNEY.md) |
 | **Provider portal shell** | [`design/PROVIDER_PORTAL_SHELL.md`](../design/PROVIDER_PORTAL_SHELL.md) | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) (Today layout) |
 | **Provider Today UI** | [`design/PROVIDER_TODAY_PAGE.md`](../design/PROVIDER_TODAY_PAGE.md) | [`todos/pending/PROVIDER_TODAY_UI_TODOS.md`](../../todos/pending/PROVIDER_TODAY_UI_TODOS.md) |
 | **Staging profile** | [`meta/README.md`](./README.md#staging-profile) | [`testing/README.md`](../testing/README.md) |
@@ -32,6 +33,7 @@ Use this table to find the **one** doc to edit per topic. Each folder keeps at m
 | **Voice prompts (runtime paths)** | [`voice-agent/README.md`](../voice-agent/README.md) | `voice-agent/prompts/*.md` (loaded by `configure-retell.js`; exempt from 2-file rule) |
 | **Middleware depth** | [`middleware-platform/README.md`](../middleware-platform/README.md) | TOC anchors — do not duplicate |
 | **Testing / E2E** | [`testing/README.md`](../testing/README.md) | Playwright scripts in `middleware-platform/package.json` |
+| **Security SSOT** | [`security/README.md`](../security/README.md) | [OBSERVABILITY_AND_UI_AUDIT.md](../security/OBSERVABILITY_AND_UI_AUDIT.md), [ANALYTICS_EVENT_CATALOG.md](../security/ANALYTICS_EVENT_CATALOG.md) |
 | **Active work** | [`todos/pending/`](../../todos/pending/) | Do not copy long checklists into product docs |
 
 ## Middleware consolidated README

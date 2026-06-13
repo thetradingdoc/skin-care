@@ -1,8 +1,8 @@
 # User journey (source of truth)
 
-**Last updated:** 2026-05-21 — photo-first loop: pick → Today (phase card + `/photo`) → Timeline; Step 1 funnel on `/start`.
+**Last updated:** 2026-06-11 — **Skincare Journal Journey** (web `/scan` funnel); positioning SSOT [`docs/Brand/POSITIONING.md`](../Brand/POSITIONING.md).
 
-This folder defines **what we ship** for the routine tracker product. When code, copy, or URLs disagree with these docs, **update the code to match the journey** (or update these docs in the same PR with explicit rationale).
+This folder defines **what we ship** for the consumer journal product (photo diary primary; routine optional). When code, copy, or URLs disagree with these docs, **update the code to match the journey** (or update these docs in the same PR with explicit rationale).
 
 | Doc | Purpose |
 |-----|---------|
@@ -21,4 +21,4 @@ This folder defines **what we ship** for the routine tracker product. When code,
 
 **Supersedes:** scattered care-funnel notes in `docs/consumer/` (see redirect there).
 
-**Canonical routine data:** `middleware-platform/data/routines/concern-routines.json` (same schema as `all_routines.json`); patient app bundles a copy under `patient-app/assets/data/all_routines.json`.
+**Routine data (dual path during migration):** Funnel + template activation use `middleware-platform/routines/concern-routines.json` via `concern-routine-service.js`. Rich RAG display uses `middleware-platform/data/routines/all_routines.json` via `GET /api/skinrag/routine/:concern` when `FEATURE_SKINRAG_ROUTINES=1`. Do not merge RAG into `concern-routines.json`.

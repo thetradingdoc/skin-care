@@ -1,32 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-
-const _dbg = (hypothesisId, location, message, data = {}) => {
-  fetch('http://127.0.0.1:7305/ingest/f9cb3960-7315-4ebc-b907-ebcee7ad8a07', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'f7004c' },
-    body: JSON.stringify({
-      sessionId: 'f7004c',
-      hypothesisId,
-      location,
-      message,
-      data: { ...data, perfMs: Math.round(performance.now()), sinceBoot: Math.round(performance.now() - (window.__scPerf0 || 0)) },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-};
 import { Link, useNavigate } from 'react-router-dom';
 
 import FunnelShell from '../components/FunnelShell';
 import { CTAS } from '../content/landingContent';
 import { validateUploadHasFace } from '../lib/faceDetectUpload';
 import { postFaceRead } from '../lib/faceReadApi';
-import { publicPost } from '../lib/publicApi';
+import { ensureJourneyId, flushQueuedEvents, trackUIEvent } from '../lib/trackUIEvent.js';
+import { getVisitorId } from '../lib/visitorId.js';
 import {
-  getJourneyId,
   hasPhotoAnalysisConsent,
   setFacePhotoUrl,
   setFaceRead,
-  setJourneyId,
   setPhotoAnalysisConsent,
 } from '../lib/skinAgeStorage';
 import { useFaceGuide } from '../lib/useFaceGuide';
@@ -54,26 +38,9 @@ export default function ScanPage() {
 
   const guide = useFaceGuide(videoRef, ready && consentOk);
 
-  // #region agent log
-  useEffect(() => {
-    _dbg('H3', 'ScanPage.jsx:mount', 'scan_page_mount', {
-      consentOk,
-      ready,
-      guideStatus: guide.status,
-    });
-  }, []);
-  useEffect(() => {
-    _dbg('H5', 'ScanPage.jsx:guide', 'guide_state', { status: guide.status, canScan: guide.canScan, ready, consentOk });
-  }, [guide.status, guide.canScan, ready, consentOk]);
-  // #endregion
-
   useEffect(() => {
     if (!consentOk) return undefined;
     let cancelled = false;
-    // #region agent log
-    const camStart = performance.now();
-    _dbg('H2', 'ScanPage.jsx:camera', 'getUserMedia_start', {});
-    // #endregion
     void (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -90,17 +57,7 @@ export default function ScanPage() {
           await videoRef.current.play();
         }
         setReady(true);
-        // #region agent log
-        _dbg('H2', 'ScanPage.jsx:camera', 'getUserMedia_ready', {
-          ms: Math.round(performance.now() - camStart),
-        });
-        // #endregion
       } catch {
-        // #region agent log
-        _dbg('H2', 'ScanPage.jsx:camera', 'getUserMedia_denied', {
-          ms: Math.round(performance.now() - camStart),
-        });
-        // #endregion
         setDenied(true);
       }
     })();
@@ -139,6 +96,7 @@ export default function ScanPage() {
   );
 
   const capture = useCallback(async () => {
+    trackUIEvent('click_shutter', { camera_type: 'front' });
     const video = videoRef.current;
     if (!video || busy) return;
     const w = video.videoWidth || 640;
@@ -160,6 +118,7 @@ export default function ScanPage() {
     async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      trackUIEvent('click_upload', { source: 'file_picker' });
       if (!hasPhotoAnalysisConsent()) {
         setError('Please agree to photo analysis before uploading.');
         return;
@@ -180,19 +139,12 @@ export default function ScanPage() {
 
   const acceptConsent = () => {
     if (!consentChecked) return;
-    // #region agent log
-    _dbg('H2', 'ScanPage.jsx:consent', 'consent_accepted', {});
-    // #endregion
     setPhotoAnalysisConsent();
     setConsentOk(true);
+    trackUIEvent('consent_accepted', { visitor_id: getVisitorId() });
     void (async () => {
-      if (getJourneyId()) return;
-      try {
-        const res = await publicPost('/api/public/funnel/journey', {});
-        if (res?.journey_id) setJourneyId(res.journey_id);
-      } catch {
-        /* optional server journey */
-      }
+      await ensureJourneyId();
+      await flushQueuedEvents();
     })();
   };
 
