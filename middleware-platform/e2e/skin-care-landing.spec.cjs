@@ -132,7 +132,7 @@ test.describe('landing navigation and buttons', () => {
     await expect(badge).toHaveAttribute('href', '/waitlist.html');
     await badge.click();
     await expect(page).toHaveURL(/\/waitlist\.html$/);
-    await expect(page.getByRole('heading', { name: /Join the Skin.*Care waitlist/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Join the waitlist/i })).toBeVisible();
   });
 
   test('Google Play badge links to waitlist', async ({ page }) => {
@@ -244,16 +244,16 @@ test.describe('contact and waitlist forms', () => {
     await page.locator('#name').fill('Waitlist User');
     await page.locator('#email').fill('waitlist@example.com');
     await page.locator('#note').fill('Interested in beta access');
-    await page.getByRole('button', { name: 'Request Access' }).click();
+    await page.getByRole('button', { name: 'Request access' }).click();
 
-    await expect(page.locator('#statusMsg')).toHaveText(/Success/i);
+    await expect(page.locator('#statusMsg')).toHaveText(/on the list/i);
     expect(body.source).toBe('web_waitlist_page');
     expect(body.product).toBe('Interested in beta access');
   });
 
   test('waitlist Back to Home returns landing', async ({ page }) => {
     await page.goto('/waitlist.html');
-    await page.getByRole('link', { name: 'Back to Home' }).click();
+    await page.getByRole('link', { name: 'Back to home' }).click();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { name: /Track today\./i })).toBeVisible();
   });

@@ -343,3 +343,174 @@ button.sc-btn-dark {
     width: 100%;
   }
 }
+
+/* ——— Waitlist ——— */
+
+.sc-waitlist-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.sc-waitlist-hero-brand {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  text-decoration: none;
+  color: var(--sc-ink);
+}
+
+.sc-waitlist-hero-brand:hover {
+  opacity: 0.88;
+}
+
+.sc-waitlist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.sc-waitlist-intro h1 {
+  font-family: var(--font-display, Gloock, serif);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  margin: 0 0 0.75rem;
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.sc-waitlist-eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sc-muted);
+}
+
+.sc-waitlist-intro p {
+  color: var(--sc-muted);
+  margin: 0 0 1rem;
+  line-height: 1.65;
+}
+
+.sc-waitlist-benefits {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sc-waitlist-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--sc-ink);
+}
+
+.sc-waitlist-benefit-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--sc-cream);
+  border: 1px solid rgba(26, 26, 26, 0.06);
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+}
+
+.sc-waitlist-benefit-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--sc-brand-blue);
+  fill: none;
+  stroke-width: 1.75;
+}
+
+.sc-waitlist-alt {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+  font-size: 0.875rem;
+  color: var(--sc-muted);
+}
+
+.sc-waitlist-alt a {
+  color: var(--sc-brand-blue);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.sc-waitlist-alt a:hover {
+  text-decoration: underline;
+}
+
+.sc-waitlist-form {
+  background: #ffffff;
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: 20px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.sc-waitlist-form-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.sc-waitlist-form-sub {
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.sc-waitlist-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.sc-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 14px 24px;
+  background: transparent;
+  color: var(--sc-ink);
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border: 1px solid rgba(26, 26, 26, 0.14);
+  transition: background 0.15s ease;
+}
+
+.sc-btn-outline:hover {
+  background: rgba(26, 26, 26, 0.04);
+}
+
+.sc-waitlist-form .sc-field input,
+.sc-waitlist-form .sc-field textarea {
+  border-radius: 999px;
+}
+
+.sc-waitlist-form .sc-field textarea {
+  border-radius: 16px;
+  min-height: 96px;
+}
+
+@media (max-width: 960px) {
+  .sc-waitlist-grid {
+    grid-template-columns: 1fr;
+  }
+}
