@@ -12,6 +12,7 @@ export const HOME_HREF = '/(tabs)/home' as Href;
 export const TODAY_HREF = HOME_HREF;
 export const TRACK_HREF = '/(tabs)/track' as Href;
 export const PROGRESS_HREF = '/(tabs)/progress' as Href;
+export const COMPARE_HREF = '/compare' as Href;
 export const SCAN_HREF = '/(tabs)/scan' as Href;
 export const ROUTINE_PICK_HREF = '/routine/pick' as Href;
 export const BIO_CALIBRATION_HREF = '/onboarding/bio-calibration' as Href;

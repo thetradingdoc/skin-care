@@ -1,7 +1,8 @@
+// BLOCK 2 branding & UI — 2026-07-12
 import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useToast } from '@/components/billing-feedback';
 import { ConsumerPrimaryButton, SecondaryButton } from '@/components/billing-ui';
@@ -19,6 +20,10 @@ import { patientGet, patientPost } from '@/lib/patient-api';
 import { trackPortalEvent } from '@/lib/trackPortalEvent';
 import { clearPatientSession, getStoredEmail } from '@/lib/patient-session';
 import { JOURNEY_CHOOSE_HREF, SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
+
+const TOUCHE_SKIN_COLLECTION_URL =
+  'https://trytouche.com/collections/skin-by-touche-labs?utm_source=app&utm_medium=profile&utm_campaign=skin';
+const TOUCHE_HOME_URL = 'https://trytouche.com';
 
 type PlanTier = 'free' | 'care_program' | 'plus';
 
@@ -241,6 +246,17 @@ export default function AccountScreen() {
               />
             </View>
 
+            <View style={styles.shopSection}>
+              <Text style={styles.shopSectionLabel}>touche labs™</Text>
+              <Pressable
+                onPress={() => void Linking.openURL(TOUCHE_SKIN_COLLECTION_URL)}
+                accessibilityRole="button"
+                accessibilityLabel="Shop Skin Collection"
+                style={styles.shopLink}>
+                <Text style={styles.shopLinkText}>Shop Skin Collection →</Text>
+              </Pressable>
+            </View>
+
             <View style={styles.card}>
               <View style={styles.rowBetween}>
                 <Text style={styles.cardTitle}>Program subscription</Text>
@@ -258,6 +274,9 @@ export default function AccountScreen() {
                   </Text>
                 </View>
               </View>
+              <Text style={styles.subscriptionNote}>
+                Journal subscription · separate from product orders
+              </Text>
               <Text style={styles.cardBody}>
                 {planTier === 'care_program'
                   ? 'Your guided skin program subscription is active.'
@@ -294,6 +313,16 @@ export default function AccountScreen() {
               Sessions stay signed in on this device for up to 24 hours, or until 60 minutes of inactivity.
             </Text>
 
+            <View style={styles.footerSection}>
+              <Text style={styles.poweredBy}>Powered by touche labs™</Text>
+              <Pressable
+                onPress={() => void Linking.openURL(TOUCHE_HOME_URL)}
+                accessibilityRole="link"
+                accessibilityLabel="Open trytouche.com">
+                <Text style={styles.poweredByLink}>trytouche.com</Text>
+              </Pressable>
+            </View>
+
             <Text style={styles.disclaimer}>
               Not a diagnosis. See a dermatologist if your symptoms worsen or you are unsure.
             </Text>
@@ -329,6 +358,52 @@ const styles = StyleSheet.create({
   badgeTextActive: { color: '#166534' },
   badgeTextNeutral: { color: '#64748b' },
   pricingMeta: { fontSize: 13, color: AppTokens.color.muted },
+  shopSection: {
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: AppTokens.color.line,
+  },
+  shopSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AppTokens.color.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  shopLink: {
+    paddingVertical: 10,
+  },
+  shopLinkText: {
+    fontSize: 15,
+    color: AppTokens.color.brandBlue,
+    fontWeight: '500',
+  },
+  subscriptionNote: {
+    fontSize: 12,
+    color: AppTokens.color.muted,
+    marginBottom: 8,
+    lineHeight: 17,
+  },
+  footerSection: {
+    alignItems: 'center',
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: AppTokens.color.line,
+  },
+  poweredBy: {
+    fontSize: 11,
+    color: AppTokens.color.muted,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  poweredByLink: {
+    fontSize: 11,
+    color: AppTokens.color.brandBlue,
+    textAlign: 'center',
+  },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',

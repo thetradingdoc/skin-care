@@ -1,4 +1,5 @@
 // PR1 soft-launch safety — 2026-07-12
+// BLOCK 2 branding & UI — 2026-07-12
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,6 +18,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarrierScoreRing, GraphUnavailableBanner, RoutineStepRow } from '@/components/conflict';
 import { SessionImage } from '@/components/SessionImage';
 import { ConsumerPrimaryButton, SecondaryButton } from '@/components/billing-ui';
+import { AppIcon } from '@/components/ui/AppIcon';
+import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
@@ -29,7 +32,6 @@ import {
   TriggerInsightCard,
 } from '@/components/journal/JournalHomeBlocks';
 import { JournalRecentPhotos } from '@/components/journal/JournalRecentPhotos';
-import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { DailyPhotoCta, MetricChipRow, NextActionCard, SectionLabel } from '@/components/v3';
 import { HOME_HREF, SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF, ROUTINE_PICK_HREF } from '@/constants/routes';
 import {
@@ -73,6 +75,41 @@ function friendlyLoadError(raw: unknown): string | null {
   return 'We had trouble loading your routine. Pull to refresh.';
 }
 
+/** Short concern names for honest timeline copy (UX-2). */
+const CONCERN_RESULT_LABELS: Record<string, string> = {
+  acne: 'Acne',
+  anti_aging: 'Anti-aging',
+  hyperpigmentation: 'Hyperpigmentation',
+  hyperpigmentation_dark_skin: 'Dark spots',
+  barrier_repair: 'Barrier repair',
+  rosacea: 'Rosacea',
+};
+
+function concernResultsLabel(concernId: string | null, templateName?: string | null): string {
+  if (concernId && CONCERN_RESULT_LABELS[concernId]) return CONCERN_RESULT_LABELS[concernId];
+  const fromName = String(templateName || '')
+    .replace(/\s+care plan$/i, '')
+    .trim();
+  return fromName || 'Your skin';
+}
+
+/** UX-6: next-actions that duplicate DailyPhotoCta (home progress photo). */
+function isDailyPhotoNextAction(action: {
+  type?: string;
+  title?: string;
+  message?: string;
+  route?: string;
+}): boolean {
+  const blob = `${action.type || ''} ${action.title || ''} ${action.message || ''} ${action.route || ''}`.toLowerCase();
+  return (
+    /daily.?photo|log\s*(today'?s?\s*)?photo|take\s*(today'?s?\s*)?photo|progress\s*photo|today'?s?\s*photo/.test(
+      blob,
+    ) ||
+    (action.route || '').includes('photo=1') ||
+    (action.route || '').includes('/routine/capture')
+  );
+}
+
 export default function HomeScreen() {
   const { ready, checking } = useRequirePatientSession();
   const { showToast } = useToast();
@@ -85,6 +122,8 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasTemplate, setHasTemplate] = useState(false);
+  const [concernId, setConcernId] = useState<string | null>(null);
+  const [templateName, setTemplateName] = useState<string | null>(null);
   const [completionScore, setCompletionScore] = useState<number | null>(null);
   const [phaseItems, setPhaseItems] = useState<PhaseItem[]>([]);
   const [programWeek, setProgramWeek] = useState(1);
@@ -96,7 +135,6 @@ export default function HomeScreen() {
   const [phaseNotesOpen, setPhaseNotesOpen] = useState(false);
   const [redFlags, setRedFlags] = useState<string[]>([]);
   const [assistantSummary, setAssistantSummary] = useState<string | null>(null);
-  const [frozenSkinReport, setFrozenSkinReport] = useState<SkinReportPayload | null>(null);
   const [dayMode, setDayMode] = useState<RoutineDayMode>('today');
   const [allowsPhoto, setAllowsPhoto] = useState(true);
   const [layeringWarning, setLayeringWarning] = useState<string | null>(null);
@@ -212,6 +250,16 @@ export default function HomeScreen() {
       );
       const templateActive = Boolean(templateRes?.has_template);
       setHasTemplate(templateActive);
+      setConcernId(
+        templateActive && templateRes?.template?.concern_id
+          ? String(templateRes.template.concern_id)
+          : null,
+      );
+      setTemplateName(
+        templateActive && templateRes?.template?.name
+          ? String(templateRes.template.name)
+          : null,
+      );
       const [watch, routine] = await Promise.all([hasWatchMode(), hasRoutineMode()]);
       const isJournalFirst = (watch && !routine) || !templateActive;
       setWatchOnly(watch && !routine);
@@ -227,7 +275,6 @@ export default function HomeScreen() {
       );
 
       const parsedReport = dailyRes?.daily_entry?.skin_report_parsed as SkinReportPayload | null;
-      setFrozenSkinReport(parsedReport || null);
       if (parsedReport?.assistant_summary && apiMode === 'historical') {
         setAssistantSummary(parsedReport.assistant_summary);
         if (parsedReport.program_week) setProgramWeek(Number(parsedReport.program_week));
@@ -278,14 +325,10 @@ export default function HomeScreen() {
           if (evalRes?.graph_unavailable) {
             setLayeringWarning(null);
           } else {
+            // UX-7: only surface specific conflict notes — no generic barrier copy
             const conflicts = Array.isArray(evalRes?.conflicts) ? evalRes.conflicts : [];
-            if (conflicts.length) {
-              setLayeringWarning(conflicts[0]?.notes || 'Check layering before combining actives.');
-            } else if (evalRes?.overall && evalRes.overall !== 'safe') {
-              setLayeringWarning('Your routine may need spacing between actives.');
-            } else {
-              setLayeringWarning(null);
-            }
+            const notes = String(conflicts[0]?.notes || '').trim();
+            setLayeringWarning(notes || null);
           }
         } catch {
           setLayeringWarning(null);
@@ -396,7 +439,38 @@ export default function HomeScreen() {
     : null;
   const phaseSnippet = phaseExpect || phaseFocus || null;
   const showStepsHero = hasTemplate && phaseItems.length > 0 && dayMode !== 'historical';
-  const showDayOneEmpty = hasTemplate && dayMode === 'today' && !loggedForDay && programWeek <= 1;
+  // UX-2: honest timeline — require known week counts (phase API sets both)
+  const displayProgramWeek = Math.max(1, programWeek ?? 1);
+  const showHonestTimeline =
+    hasTemplate &&
+    dayMode === 'today' &&
+    Number.isFinite(totalWeeks) &&
+    totalWeeks >= 1 &&
+    Number.isFinite(programWeek) &&
+    programWeek >= 0;
+  const honestTimelineCopy = showHonestTimeline
+    ? `${concernResultsLabel(concernId, templateName)} results: ${totalWeeks} weeks of daily photos. You're on week ${displayProgramWeek}.`
+    : null;
+
+  // UX-6: when DailyPhotoCta is visible, drop photo-log next actions
+  const showDailyPhotoCta =
+    !watchOnly && hasTemplate && allowsPhoto && dayMode === 'today' && !loggedForDay;
+  const filteredNextActions = showDailyPhotoCta
+    ? nextActions.filter((a) => !isDailyPhotoNextAction(a))
+    : nextActions;
+
+  // UX-7: one barrier status line — hero copy OR ring barrier_label, not both
+  const showHeroBarrierCopy = Boolean(evaluate?.hero_title || evaluate?.hero_subtitle);
+  const barrierRingSubtitle =
+    !showHeroBarrierCopy && evaluate?.barrier_label
+      ? `Barrier: ${evaluate.barrier_label}`
+      : undefined;
+  const showLayeringCard =
+    Boolean(layeringWarning) &&
+    showStepsHero &&
+    !evaluate?.graph_unavailable &&
+    layeringWarning !== evaluate?.hero_subtitle &&
+    layeringWarning !== evaluate?.hero_title;
 
   if (checking || !ready) {
     return (
@@ -444,7 +518,8 @@ export default function HomeScreen() {
             </View>
             {streakDays > 0 ? (
               <View style={styles.streakPill}>
-                <Text style={styles.streakText}>🔥 {streakDays} day streak</Text>
+                <AppIcon name="flame" size={12} color={AppTokens.color.watchAmberText} />
+                <Text style={styles.streakText}>{streakDays} day streak</Text>
               </View>
             ) : null}
           </View>
@@ -458,6 +533,12 @@ export default function HomeScreen() {
             </Text>
           </>
         )}
+
+        {honestTimelineCopy ? (
+          <View style={styles.honestTimelineBanner} accessibilityRole="text">
+            <Text style={styles.honestTimelineText}>{honestTimelineCopy}</Text>
+          </View>
+        ) : null}
 
         {showCelebrate && loggedForDay ? (
           <View style={styles.celebrateBanner}>
@@ -555,15 +636,15 @@ export default function HomeScreen() {
           </Pressable>
         ) : null}
 
-        {!watchOnly && hasTemplate && nextActions.length > 0 && dayMode === 'today' ? (
-          <NextActionCard actions={nextActions} />
+        {!watchOnly && hasTemplate && filteredNextActions.length > 0 && dayMode === 'today' ? (
+          <NextActionCard actions={filteredNextActions} />
         ) : null}
 
         {!watchOnly && hasTemplate && evaluate && dayMode === 'today' ? (
           <>
             <BarrierScoreRing
               bfi={evaluate.barrier_friction_index ?? 0}
-              subtitle={evaluate.barrier_label ? `Barrier: ${evaluate.barrier_label}` : undefined}
+              subtitle={barrierRingSubtitle}
             />
             {evaluate.hero_title ? (
               <Text style={styles.heroTitle}>{evaluate.hero_title}</Text>
@@ -574,7 +655,7 @@ export default function HomeScreen() {
             <MetricChipRow
               chips={[
                 {
-                  label: 'conflicts',
+                  label: (evaluate?.conflicts?.length ?? 0) === 1 ? 'conflict' : 'conflicts',
                   value: String(evaluate.conflicts?.length ?? 0),
                   color: overallColor(evaluate.overall),
                   onPress: () => router.push(SCAN_HREF),
@@ -704,6 +785,15 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        {hasTemplate && phaseLabel && dayMode === 'today' ? (
+          <View style={styles.recoPlaceholder}>
+            <Text style={styles.recoPlaceholderLabel}>Recommended for this phase</Text>
+            <Text style={styles.recoPlaceholderBody}>
+              touche labs™ product recommendations coming soon.
+            </Text>
+          </View>
+        ) : null}
+
         {hasTemplate && allowsPhoto && dayMode !== 'today' ? (
           <View style={styles.photoActions}>
             {loggedForDay ? (
@@ -739,7 +829,19 @@ export default function HomeScreen() {
                   <View
                     key={t.date}
                     style={[styles.thumb, t.logged && styles.thumbLogged, isToday && styles.thumbToday]}>
-                    <Text style={styles.thumbEmoji}>{t.logged ? '📷' : isToday ? '📸' : '·'}</Text>
+                    {t.logged || isToday ? (
+                      <AppIcon
+                        name="camera"
+                        size={14}
+                        color={
+                          t.logged
+                            ? JournalTokens.color.brandAccent
+                            : JournalTokens.color.muted
+                        }
+                      />
+                    ) : (
+                      <View style={styles.thumbDot} />
+                    )}
                     <Text style={styles.thumbDay}>{isToday ? 'Today' : t.date.slice(8)}</Text>
                   </View>
                 );
@@ -755,7 +857,7 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {layeringWarning && showStepsHero && !evaluate?.graph_unavailable ? (
+        {showLayeringCard ? (
           <View style={styles.layerCard}>
             <Text style={styles.layerTitle}>Layering note</Text>
             <Text style={styles.layerBody}>{layeringWarning}</Text>
@@ -821,6 +923,9 @@ const styles = StyleSheet.create({
   },
   daySub: { color: JournalTokens.color.muted, fontSize: 12, marginTop: 2 },
   streakPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: AppTokens.color.watchAmber,
     borderRadius: 999,
     paddingHorizontal: 10,
@@ -926,6 +1031,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     gap: 6,
   },
+  honestTimelineBanner: {
+    backgroundColor: AppTokens.color.infoBlue,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.line,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 4,
+  },
+  honestTimelineText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: AppTokens.color.infoBlueText,
+    fontFamily: JournalTokens.font.body,
+  },
   phaseProgressTitle: {
     fontFamily: JournalTokens.font.body,
     fontWeight: '700',
@@ -944,6 +1064,26 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: JournalTokens.color.brandAccent,
     borderRadius: 3,
+  },
+  recoPlaceholder: {
+    backgroundColor: AppTokens.color.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
+    padding: 14,
+    marginTop: 4,
+  },
+  recoPlaceholderLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: AppTokens.color.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  recoPlaceholderBody: {
+    fontSize: 13,
+    color: AppTokens.color.muted,
   },
   checkinCard: {
     flexDirection: 'row',
@@ -986,7 +1126,12 @@ const styles = StyleSheet.create({
   },
   thumbLogged: { backgroundColor: '#eef4ff', opacity: 1 },
   thumbToday: { borderColor: JournalTokens.color.brandAccent, borderWidth: 2, opacity: 1 },
-  thumbEmoji: { fontSize: 18 },
+  thumbDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: JournalTokens.color.line,
+  },
   thumbDay: { position: 'absolute', bottom: 3, fontSize: 9, color: JournalTokens.color.muted },
   weekKicker: { fontWeight: '700', color: JournalTokens.color.ink, fontSize: 15, marginBottom: 4 },
   celebrateBanner: {

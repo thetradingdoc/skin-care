@@ -1,6 +1,7 @@
 // PR1 soft-launch safety — 2026-07-12
+// BLOCK 2 branding & UI — 2026-07-12
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,7 +21,8 @@ import { SessionImage } from '@/components/SessionImage';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { AppTokens } from '@/constants/appTokens';
-import { HOME_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { COMPARE_HREF, HOME_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { rollingJournalRange } from '@/components/journal/journalTypes';
 import { listSpots, spotStatusLabel, type Spot } from '@/lib/spot-store';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import {
@@ -37,6 +39,7 @@ import { localTodayIso } from '@/lib/routine-day-mode';
 
 type Summary = {
   streak_days?: number;
+  journal_days_logged?: number;
   baseline_skin_age?: number | null;
   latest_skin_age?: number | null;
   improvement_metrics?: {
@@ -78,6 +81,10 @@ function bfiLabel(score: number): string {
   return 'Poor';
 }
 
+function isLoggedPhotoDay(d: CalendarDay): boolean {
+  return Boolean(d.has_media) || (d.completion_score ?? 0) >= 100;
+}
+
 export default function ProgressScreen() {
   const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
@@ -88,6 +95,8 @@ export default function ProgressScreen() {
   const [insight, setInsight] = useState<BarrierInsight>(null);
   const [history, setHistory] = useState<VerdictHistoryDay[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
+  /** Full calendar window (up to 180d) for Compare CTA — not the 8-day timeline strip. */
+  const [photoHistory, setPhotoHistory] = useState<CalendarDay[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [triggerTags, setTriggerTags] = useState<string[]>([]);
   const [journalMetrics, setJournalMetrics] = useState<{
@@ -105,9 +114,8 @@ export default function ProgressScreen() {
     setLoading(true);
     try {
       const today = localTodayIso();
-      const start = new Date(`${today}T12:00:00.000Z`);
-      start.setUTCDate(start.getUTCDate() - 7);
-      const startIso = start.toISOString().slice(0, 10);
+      // UX-1: wide range for true first photo + total photo days (timeline still uses last 8)
+      const { start: startIso } = rollingJournalRange(180);
 
       const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes] =
         await Promise.all([
@@ -131,6 +139,7 @@ export default function ProgressScreen() {
       setInsight(insightRes);
       setHistory(histRes);
       const calDays: CalendarDay[] = Array.isArray(calRes?.days) ? calRes.days : [];
+      setPhotoHistory(calDays);
       setDays(calDays.slice(-8));
 
       const streak = Number(progRes?.summary?.streak_days) || 0;
@@ -153,6 +162,21 @@ export default function ProgressScreen() {
     }, [ready, load]),
   );
 
+  // UX-1: first logged photo across 180d history (not the 8-day strip)
+  const earliestPhotoDate = useMemo(() => {
+    if (!photoHistory.length) return null;
+    const logged = photoHistory
+      .filter(isLoggedPhotoDay)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return logged.length > 0 ? logged[0].date : null;
+  }, [photoHistory]);
+
+  const countedPhotoDays = useMemo(
+    () => photoHistory.filter(isLoggedPhotoDay).length,
+    [photoHistory],
+  );
+  const todayIso = localTodayIso();
+
   if (checking || !ready) {
     return (
       <SafeAreaView style={styles.root}>
@@ -163,8 +187,15 @@ export default function ProgressScreen() {
 
   const metrics = improvementMetrics;
   const streak = summary?.streak_days ?? 0;
+  // Prefer API total when present (journal mode); else count from 180d calendar
+  const totalPhotoDays =
+    summary?.journal_days_logged != null
+      ? Number(summary.journal_days_logged) || 0
+      : countedPhotoDays;
   const bfi = latestBfi(history);
   const openPhoto = () => router.push(`${HOME_HREF}?photo=1` as typeof HOME_HREF);
+  const showCompareCta =
+    totalPhotoDays >= 7 && Boolean(earliestPhotoDate) && earliestPhotoDate !== todayIso;
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
@@ -174,15 +205,8 @@ export default function ProgressScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             <Text style={styles.title}>Your progress</Text>
-            <Text style={styles.subtitle}>Small changes. Real results.</Text>
+            <Text style={styles.subtitle}>Your skin data. Your proof.</Text>
           </View>
-          <Pressable
-            style={styles.calendarBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open calendar"
-            onPress={() => router.push(HOME_HREF)}>
-            <AppIcon name="calendar" size={20} color={AppTokens.color.ink} />
-          </Pressable>
         </View>
 
         {streak === 0 ? (
@@ -197,9 +221,24 @@ export default function ProgressScreen() {
               </View>
               {percentileCopy ? <Text style={styles.streakHeroSub}>{percentileCopy}</Text> : null}
             </View>
-            <AppIcon name="flame" size={28} color="#F59E0B" />
+            <AppIcon name="flame" size={28} color={AppTokens.color.watchAmberText} />
           </View>
         )}
+        {showCompareCta ? (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: COMPARE_HREF as '/compare',
+                // LEFT Earlier = dateB, RIGHT Later = dateA (see compare.tsx)
+                params: { dateA: todayIso, dateB: earliestPhotoDate! },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Compare day 1 to today"
+            style={styles.compareCta}>
+            <Text style={styles.compareCtaText}>See day 1 vs today →</Text>
+          </Pressable>
+        ) : null}
 
         <SectionLabel>Barrier score — last 8 days</SectionLabel>
         <View style={styles.barrierCard}>
@@ -214,6 +253,9 @@ export default function ProgressScreen() {
             ) : null}
           </View>
           <BarrierGrid8 days={history} />
+          {history.length === 0 ? (
+            <Text style={styles.bfiEmptyText}>Log photos to unlock barrier insights</Text>
+          ) : null}
         </View>
 
         {insight?.message ? (
@@ -277,7 +319,7 @@ export default function ProgressScreen() {
               </Pressable>
             </View>
             <View style={styles.thumbGrid}>
-              {days.map((d, idx) => {
+              {days.map((d) => {
                 const logged = (d.completion_score || 0) >= 100 || d.has_media;
                 const isToday = d.date === localTodayIso();
                 const tagColor = d.verdict_overall
@@ -287,7 +329,17 @@ export default function ProgressScreen() {
                   d.condition_tags?.[0] && CONDITION_DOT[d.condition_tags[0]]
                     ? CONDITION_DOT[d.condition_tags[0]]
                     : null;
-                const dayLabel = isToday ? 'Today' : idx === 0 ? 'Day 1' : d.date.slice(8);
+                const dayLabel = (() => {
+                  if (isToday) return 'Today';
+                  const daysAgo = Math.round(
+                    (new Date(`${todayIso}T12:00:00`).getTime() -
+                      new Date(`${d.date}T12:00:00`).getTime()) /
+                      86400000,
+                  );
+                  if (daysAgo === 1) return 'Yesterday';
+                  if (daysAgo > 1) return `${daysAgo}d ago`;
+                  return d.date.slice(5);
+                })();
                 return (
                   <View key={d.date} style={styles.thumbCol}>
                     <Pressable
@@ -367,16 +419,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppTokens.color.muted,
   },
-  calendarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-    backgroundColor: AppTokens.color.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   streakHero: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -396,8 +438,25 @@ const styles = StyleSheet.create({
   },
   streakHeroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   streakHeroNum: { fontSize: 42, fontWeight: '700', color: '#fff', lineHeight: 44 },
-  streakHeroUnit: { fontSize: 16, fontWeight: '600', color: '#F59E0B' },
+  streakHeroUnit: { fontSize: 16, fontWeight: '600', color: AppTokens.color.watchAmberText },
   streakHeroSub: { fontSize: 12, color: AppTokens.color.hint, marginTop: 4 },
+  compareCta: {
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignSelf: 'center',
+    marginTop: 4,
+    marginBottom: 4,
+    borderWidth: 1.5,
+    borderColor: AppTokens.color.ink,
+  },
+  compareCtaText: {
+    color: AppTokens.color.ink,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   barrierCard: {
     backgroundColor: AppTokens.color.card,
     borderRadius: 14,
@@ -417,6 +476,13 @@ const styles = StyleSheet.create({
     fontFamily: AppFontFamilies.bodySemiBold,
     color: AppTokens.color.ink,
     flex: 1,
+  },
+  bfiEmptyText: {
+    fontSize: 12,
+    color: AppTokens.color.muted,
+    textAlign: 'center',
+    marginTop: 8,
+    fontFamily: AppFontFamilies.body,
   },
   bfiBadge: {
     backgroundColor: '#E6F1FB',

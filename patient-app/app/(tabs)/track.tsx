@@ -67,7 +67,7 @@ export default function TrackScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Track a spot</Text>
         <Text style={styles.sub}>
-          Take a photo. We&apos;ll measure and watch it with you.{'\n'}
+          Log photos and compare over time.{'\n'}
           No forms. No medical words.
         </Text>
 
