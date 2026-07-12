@@ -1,5 +1,7 @@
 'use strict';
 
+// PR1 soft-launch safety — 2026-07-12
+
 function registerPatientJournalRoutes(app, deps) {
   const {
     apiLimiter,
@@ -19,6 +21,11 @@ function registerPatientJournalRoutes(app, deps) {
   }
 
   function journalStandaloneEnabled() {
+    // SOFT-LAUNCH GATE: client (patient-app) hides journal capture UI until
+    // JOURNAL_MODE_STANDALONE=1 is confirmed in prod Cloud Run env.
+    // Do not remove this server gate without coordinating with patient-app
+    // PR1 flag flip (JOURNAL_CAPTURE_ENABLED in constants/feature-flags.ts).
+    // See: todos/pending/MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md ENV-1
     return String(process.env.JOURNAL_MODE_STANDALONE || '0').trim() === '1';
   }
 

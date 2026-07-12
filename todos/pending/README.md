@@ -1,9 +1,10 @@
 # Pending todo lists
 
-**Last updated:** June 9, 2026  
+**Last updated:** July 12, 2026  
 **Start here** for active work. Completed checklists live in [`../archive/`](../archive/README.md).
 
-**Also done (code, not a todo file):** P0+P1 codebase hardening — [`docs/development/CODE_REVIEW_2026-06.md`](../../docs/development/CODE_REVIEW_2026-06.md).
+**Soft-launch SSOT:** [`MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md`](MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md) — **171** individual todos (166 pending, 5 done). Cursor plan: `pr1_soft-launch_safety_2208da17`.  
+**Brand SSOT:** [`MYSKINANDCARE_BRAND_CONSISTENCY.md`](MYSKINANDCARE_BRAND_CONSISTENCY.md) — 6 rules + touchpoint map.
 
 ---
 
@@ -11,6 +12,15 @@
 
 | File | Focus |
 |------|--------|
+| [`MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md`](MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md) | **SSOT master** — **171** one-by-one todos (OPS→PR1→UX→brand rules→TF→PR2→PR3→users) |
+| [`MYSKINANDCARE_BRAND_CONSISTENCY.md`](MYSKINANDCARE_BRAND_CONSISTENCY.md) | **Brand architecture** — 6 rules + touchpoint map (myskinandcare ↔ touche labs™) |
+| [`MYSKINANDCARE_PR1_AND_UI_EXECUTION.md`](MYSKINANDCARE_PR1_AND_UI_EXECUTION.md) | PR1a/PR1b detail notes — defer to master checklist for status |
+| [`MYSKINANDCARE_UI_UX_AUDIT.md`](MYSKINANDCARE_UI_UX_AUDIT.md) | **Playwright + visual UI/UX audit** — live host 404, Home/Progress/Track findings, proof/touche gaps, task checklist + screenshots |
+| [`MYSKINANDCARE_CODEBASE_AUDIT.md`](MYSKINANDCARE_CODEBASE_AUDIT.md) | **Critical analysis** — file findings, CRITICAL/HIGH gaps, concern→serum matrix, 10 human questions, first 3 PRs |
+| [`MYSKINANDCARE_CODEBASE_FILE_MAP.md`](MYSKINANDCARE_CODEBASE_FILE_MAP.md) | **As-is file map** — every patient-app source file + consumer middleware + landing/inference; platform folders summarized |
+| [`MYSKINANDCARE_TOUCHELABS_SOFT_LAUNCH_TODOS.md`](MYSKINANDCARE_TOUCHELABS_SOFT_LAUNCH_TODOS.md) | **SSOT soft launch** — Shopify catalog (live GIDs), iOS TestFlight, serum→routine, face-check later, Body recs, agent/library |
+| [`IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md`](IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md) | Skin & Care iOS TestFlight — auth, tracking, care_program subscription |
+| [`SKIN_AGE_JOURNEY_E2E_TODOS.md`](SKIN_AGE_JOURNEY_E2E_TODOS.md) | Web funnel → sign-in → Today/Progress; face scan (**fix after iOS** per soft-launch plan) |
 | [`PROVIDER_UI_RCM_IMPROVEMENT_TODOS.md`](PROVIDER_UI_RCM_IMPROVEMENT_TODOS.md) | Provider visibility — Kelly feed, roster chips, nav, collection resend (**completed**) |
 | [`REVENUE_HUB_REDESIGN_TODOS.md`](REVENUE_HUB_REDESIGN_TODOS.md) | Revenue hub — 4-tab shell, UI audit fixes, legacy redirects (**completed**) |
 | [`KELLY_CONVERSATION_RAILS_TODOS.md`](KELLY_CONVERSATION_RAILS_TODOS.md) | Short backlog — **SSOT:** [`docs/architecture/KELLY_AGENTIC_RAILS_TARGET_AND_BUILD_PLAN.md`](../../docs/architecture/KELLY_AGENTIC_RAILS_TARGET_AND_BUILD_PLAN.md) |
@@ -18,8 +28,6 @@
 | [`AGENTIC_CHECKOUT_UI_AND_BACKEND_TODOS.md`](AGENTIC_CHECKOUT_UI_AND_BACKEND_TODOS.md) | Open checkout debt (#2, #4–#7, #9–#10, #12) |
 | [`Step10-LangChain-LangGraph-LangSmith-todos.md`](Step10-LangChain-LangGraph-LangSmith-todos.md) | Step 10 LangGraph + guardrails (blocked on checkout payment-rail prereqs) |
 | [`DERM_PATIENT_QA_REDDIT_PIPELINE_TODOS.md`](DERM_PATIENT_QA_REDDIT_PIPELINE_TODOS.md) | Derm Q&A UI (Phase 8), eval/CI (Phase 6), ops (Phase 7) |
-| [`IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md`](IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md) | Skin & Care iOS TestFlight — auth, tracking, care_program subscription |
-| [`SKIN_AGE_JOURNEY_E2E_TODOS.md`](SKIN_AGE_JOURNEY_E2E_TODOS.md) | **P0** Web funnel → sign-in → Today/Progress; face scan, routines, consent, E2E |
 | [`CODE_REVIEW_REFACTOR_TODOS.md`](CODE_REVIEW_REFACTOR_TODOS.md) | **Done (2026-06-10)** — patient repo, server bootstrap, journal split, Vitest, docs |
 
 ---

@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -30,7 +31,7 @@ import {
 import { JournalRecentPhotos } from '@/components/journal/JournalRecentPhotos';
 import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { DailyPhotoCta, MetricChipRow, NextActionCard, SectionLabel } from '@/components/v3';
-import { HOME_HREF, SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
+import { HOME_HREF, SCAN_HREF, PROGRESS_HREF, BIO_CALIBRATION_HREF, ROUTINE_PICK_HREF } from '@/constants/routes';
 import {
   fetchTriggerInsights,
   patchJournalDailyEntry,
@@ -56,6 +57,7 @@ import { getNeedsFirstPhoto } from '@/lib/onboarding-storage';
 import { getStoredEmail } from '@/lib/patient-session';
 import { setPendingCaptureUri } from '@/lib/pending-capture-uri';
 import { mimeTypeFromImagePickerAsset } from '@/lib/upload-uri';
+import { JOURNAL_CAPTURE_ENABLED } from '@/constants/feature-flags';
 
 type PhaseItem = {
   product_name?: string;
@@ -75,7 +77,7 @@ export default function HomeScreen() {
   const { ready, checking } = useRequirePatientSession();
   const { showToast } = useToast();
   const router = useRouter();
-  const params = useLocalSearchParams<{ date?: string; photo?: string; celebrate?: string }>();
+  const params = useLocalSearchParams<{ date?: string; photo?: string; celebrate?: string; refresh?: string }>();
   const selectedDate =
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
@@ -124,6 +126,7 @@ export default function HomeScreen() {
 
   const saveJournalCheckin = useCallback(
     async (tags: JournalConditionTag[], note: string) => {
+      if (!JOURNAL_CAPTURE_ENABLED) return;
       if (dayMode !== 'today' || savingCheckin) return;
       setSavingCheckin(true);
       try {
@@ -308,14 +311,43 @@ export default function HomeScreen() {
 
   const openCapture = useCallback(() => {
     if (!allowsPhoto) return;
-    const capturePath = journalMode && !hasTemplate ? '/journal/capture' : '/routine/capture';
-    router.push({ pathname: capturePath, params: { date: selectedDate } } as Parameters<
+    if (JOURNAL_CAPTURE_ENABLED && journalMode && !hasTemplate) {
+      router.push({ pathname: '/journal/capture', params: { date: selectedDate } } as unknown as Parameters<
+        typeof router.push
+      >[0]);
+      return;
+    }
+    if (!hasTemplate) {
+      router.push(ROUTINE_PICK_HREF);
+      return;
+    }
+    router.push({ pathname: '/routine/capture', params: { date: selectedDate } } as Parameters<
       typeof router.push
     >[0]);
   }, [allowsPhoto, hasTemplate, journalMode, router, selectedDate]);
 
   const pickFromLibrary = useCallback(async () => {
     if (!allowsPhoto) return;
+    if (JOURNAL_CAPTURE_ENABLED && journalMode && !hasTemplate) {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setError('Photo library access is required.');
+        return;
+      }
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+      if (picked.canceled || !picked.assets?.[0]?.uri) return;
+      const asset = picked.assets[0];
+      await setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
+      router.push({
+        pathname: '/journal/capture',
+        params: { date: selectedDate, library: '1' },
+      } as unknown as Parameters<typeof router.push>[0]);
+      return;
+    }
+    if (!hasTemplate) {
+      router.push(ROUTINE_PICK_HREF);
+      return;
+    }
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       setError('Photo library access is required.');
@@ -324,11 +356,11 @@ export default function HomeScreen() {
     const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
     if (picked.canceled || !picked.assets?.[0]?.uri) return;
     const asset = picked.assets[0];
-    setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
-    const capturePath = journalMode && !hasTemplate ? '/journal/capture' : '/routine/capture';
-    router.push({ pathname: capturePath, params: { date: selectedDate, library: '1' } } as Parameters<
-      typeof router.push
-    >[0]);
+    await setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
+    router.push({
+      pathname: '/routine/capture',
+      params: { date: selectedDate, library: '1' },
+    } as Parameters<typeof router.push>[0]);
   }, [allowsPhoto, hasTemplate, journalMode, router, selectedDate]);
 
   const loggedForDay = completionScore != null && completionScore >= 100;
@@ -352,6 +384,13 @@ export default function HomeScreen() {
     if (params.celebrate === '1') setShowCelebrate(true);
   }, [params.celebrate]);
 
+  // PR1-4: refresh Home data after photo upload
+  useEffect(() => {
+    if (params.refresh === '1') {
+      void load();
+    }
+  }, [params.refresh, load]);
+
   const weekKicker = hasTemplate
     ? `Week ${programWeek} of ${totalWeeks}${phaseLabel ? ` · ${phaseLabel}` : ''}`
     : null;
@@ -370,7 +409,12 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <Modal
-        visible={needsFirstPhoto && (hasTemplate || journalMode) && !loggedForDay && !journalLogged}
+        visible={
+          needsFirstPhoto &&
+          (hasTemplate || (JOURNAL_CAPTURE_ENABLED && journalMode)) &&
+          !loggedForDay &&
+          !journalLogged
+        }
         animationType="slide"
         transparent>
         <View style={styles.overlayBackdrop}>
@@ -439,7 +483,7 @@ export default function HomeScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {journalMode && dayMode === 'today' ? (
+        {JOURNAL_CAPTURE_ENABLED && journalMode && dayMode === 'today' ? (
           <>
             {journalLogged && todayThumbnailUrl ? (
               <JournalLoggedCard
@@ -488,6 +532,15 @@ export default function HomeScreen() {
               />
             ) : null}
           </>
+        ) : null}
+
+        {!JOURNAL_CAPTURE_ENABLED && !hasTemplate ? (
+          <Pressable
+            onPress={() => router.push(ROUTINE_PICK_HREF)}
+            style={{ marginTop: 16 }}
+            accessibilityRole="button">
+            <Text style={styles.celebrateLink}>Start your skin routine →</Text>
+          </Pressable>
         ) : null}
 
         {hasTemplate && bioProfile && !bioProfile.profile_complete && dayMode === 'today' ? (

@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -8,7 +9,14 @@ import { AppTokens } from '@/constants/appTokens';
 import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
-import { HOME_HREF, LANDING_CONCERNS_HREF, LANDING_HOME_HREF, LANDING_ORIGIN, LANDING_SCAN_HREF } from '@/constants/routes';
+import {
+  HOME_HREF,
+  INDEX_HREF,
+  LANDING_CONCERNS_HREF,
+  LANDING_HOME_HREF,
+  LANDING_ORIGIN,
+  LANDING_SCAN_HREF,
+} from '@/constants/routes';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
 import { patientGet, patientPost } from '@/lib/patient-api';
@@ -44,23 +52,29 @@ function signInBackUrl(intent?: string, from?: string): string {
 }
 
 function useSignInQueryParams() {
-  const params = useLocalSearchParams<{ intent?: string; from?: string }>();
+  const params = useLocalSearchParams<{ intent?: string; from?: string; error?: string }>();
   return useMemo(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const q = new URLSearchParams(window.location.search);
       return {
         intent: (params.intent as string | undefined) ?? q.get('intent') ?? undefined,
         from: (params.from as string | undefined) ?? q.get('from') ?? undefined,
+        error: (params.error as string | undefined) ?? q.get('error') ?? undefined,
       };
     }
-    return { intent: params.intent as string | undefined, from: params.from as string | undefined };
-  }, [params.intent, params.from]);
+    return {
+      intent: params.intent as string | undefined,
+      from: params.from as string | undefined,
+      error: params.error as string | undefined,
+    };
+  }, [params.intent, params.from, params.error]);
 }
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { intent, from } = useSignInQueryParams();
+  const { intent, from, error: errorParam } = useSignInQueryParams();
   const [checkingSession, setCheckingSession] = useState(true);
+  const showConnectionError = errorParam === 'connection';
 
   const isSignupIntent = intent === 'signup';
   const fromSkinAgeLanding = from === 'skin-age-landing';
@@ -100,6 +114,10 @@ export default function SignInScreen() {
     void Linking.openURL(url);
   }, [intent, from, router]);
 
+  const onRetryConnection = useCallback(() => {
+    router.replace(INDEX_HREF);
+  }, [router]);
+
   useEffect(() => {
     void (async () => {
       try {
@@ -114,7 +132,8 @@ export default function SignInScreen() {
           router.replace(await resolvePostAuthRoute());
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '';
-          if (isPatientSessionAuthError(401, msg)) {
+          // Message-only auth check (do not hardcode status 401)
+          if (isPatientSessionAuthError(0, msg)) {
             await clearPatientSession();
           }
         }
@@ -180,6 +199,20 @@ export default function SignInScreen() {
           <MaterialIcons name="arrow-back" size={20} color={JournalTokens.color.muted} />
           <Text style={styles.backText}>Back</Text>
         </Pressable>
+        {showConnectionError ? (
+          <View style={styles.connectionBanner}>
+            <Text style={styles.connectionText}>
+              Connection error — check your network and try again.
+            </Text>
+            <Pressable
+              onPress={onRetryConnection}
+              style={styles.retryBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Retry connection">
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {copy.showWebCta ? (
           <>
             <Text style={styles.newUser}>
@@ -221,6 +254,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: JournalTokens.color.muted,
+  },
+  connectionBanner: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: AppTokens.color.pageBg,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.muted,
+  },
+  connectionText: {
+    color: JournalTokens.color.ink,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  retryText: {
+    color: JournalTokens.color.brandAccent,
+    fontWeight: '700',
+    fontSize: 14,
   },
   newUser: {
     color: JournalTokens.color.muted,

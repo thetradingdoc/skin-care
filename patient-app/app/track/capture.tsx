@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,15 +18,25 @@ export default function TrackCaptureScreen() {
   const { showToast } = useToast();
   const router = useRouter();
   const params = useLocalSearchParams<{ libraryUri?: string; spotId?: string }>();
-  const pendingLibrary = consumePendingCaptureUri();
   const [region, setRegion] = useState<BodyRegion>('neck');
   const [uri, setUri] = useState<string | null>(
-    pendingLibrary?.uri ||
-      (typeof params.libraryUri === 'string' ? params.libraryUri : null),
+    typeof params.libraryUri === 'string' ? params.libraryUri : null,
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraDenied, setCameraDenied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pending = await consumePendingCaptureUri();
+      if (cancelled || !pending?.uri) return;
+      setUri((prev) => prev || pending.uri);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const capturePhoto = useCallback(async () => {
     setError(null);

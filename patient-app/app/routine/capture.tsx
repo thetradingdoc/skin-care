@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -38,17 +39,16 @@ export default function RoutineCaptureScreen() {
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
       : localTodayIso();
-  const pendingLibrary = consumePendingCaptureUri();
-  const libraryUri =
-    pendingLibrary?.uri ||
-    (typeof params.libraryUri === 'string' ? params.libraryUri : null);
-  const libraryMimeType = pendingLibrary?.mimeType;
+  const paramLibraryUri =
+    typeof params.libraryUri === 'string' ? params.libraryUri : null;
+  const [libraryUri, setLibraryUri] = useState<string | null>(paramLibraryUri);
+  const [libraryMimeType, setLibraryMimeType] = useState<string | undefined>(undefined);
 
   const [permission, requestPermission] = useCameraPermissions();
   const camRef = useRef<CameraView>(null);
   const [ghostUrl, setGhostUrl] = useState<string | null>(null);
   const [ghostPriorDate, setGhostPriorDate] = useState<string | null>(null);
-  const [capturedUri, setCapturedUri] = useState<string | null>(libraryUri);
+  const [capturedUri, setCapturedUri] = useState<string | null>(paramLibraryUri);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [symptomsOpen, setSymptomsOpen] = useState(false);
@@ -58,6 +58,21 @@ export default function RoutineCaptureScreen() {
 
   const dayMode = resolveRoutineDayMode(entryDate);
   const allowsPhoto = dayMode.allows_photo;
+
+  // PR1-13: load pending library URI async (SecureStore) instead of sync consume at render
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pending = await consumePendingCaptureUri();
+      if (cancelled || !pending?.uri) return;
+      setLibraryUri(pending.uri);
+      setLibraryMimeType(pending.mimeType);
+      setCapturedUri((prev) => prev || pending.uri);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!allowsPhoto) {
@@ -108,7 +123,7 @@ export default function RoutineCaptureScreen() {
       if (verdictLine) showToast(verdictLine, 'success');
       router.replace({
         pathname: '/(tabs)/home',
-        params: { date: entryDate, celebrate: '1' },
+        params: { date: entryDate, celebrate: '1', refresh: '1' },
       });
     },
     [entryDate, router, showToast],

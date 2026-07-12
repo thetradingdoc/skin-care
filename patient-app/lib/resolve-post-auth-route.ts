@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import type { Href } from 'expo-router';
 
 import {
@@ -100,14 +101,15 @@ export async function resolvePostAuthRoute(hints?: PostAuthRouteHints): Promise<
 
     return resolveWithModes(modes);
   } catch {
+    // PR1-21/22: fallback — check local profile before sending to home
     const local = await getJourneyProfile().catch(() => null);
     if (local?.modes?.length) {
       try {
         return await resolveWithModes(local.modes);
       } catch {
-        return HOME_HREF;
+        return HOME_HREF; // has modes but resolve failed
       }
     }
-    return HOME_HREF;
+    return JOURNEY_CHOOSE_HREF; // was HOME_HREF — PR1 soft-launch 2026-07-12
   }
 }

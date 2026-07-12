@@ -1,4 +1,5 @@
-import { useRouter } from 'expo-router';
+// PR1 soft-launch safety — 2026-07-12
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -144,9 +145,13 @@ export default function ProgressScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    if (ready) void load();
-  }, [ready, load]);
+  // PR1-15: reload on tab focus (covers initial mount when ready — replaces ready+load useEffect)
+  useFocusEffect(
+    useCallback(() => {
+      if (!ready) return;
+      void load();
+    }, [ready, load]),
+  );
 
   if (checking || !ready) {
     return (

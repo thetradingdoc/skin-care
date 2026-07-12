@@ -46,7 +46,7 @@ export default function TrackScreen() {
     const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
     if (picked.canceled || !picked.assets?.[0]?.uri) return;
     const asset = picked.assets[0];
-    setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
+    await setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
     router.push(TRACK_CAPTURE_HREF);
   }, [router]);
 

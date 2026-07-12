@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -16,7 +17,8 @@ import { trackPortalEvent } from '@/lib/trackPortalEvent';
 export default function JourneyChooseScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [selected, setSelected] = useState<Set<JourneyMode>>(new Set(['watch']));
+  // soft-launch default: routine. Revert when JOURNAL_MODE_STANDALONE=1 confirmed in prod.
+  const [selected, setSelected] = useState<Set<JourneyMode>>(new Set(['routine']));
   const [busy, setBusy] = useState(false);
 
   const toggle = (mode: JourneyMode) => {

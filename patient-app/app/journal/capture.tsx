@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -20,7 +21,8 @@ import { useToast } from '@/components/billing-feedback';
 import { ConsumerPrimaryButton } from '@/components/billing-ui';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { AppTokens } from '@/constants/appTokens';
-import { HOME_HREF } from '@/constants/routes';
+import { JOURNAL_CAPTURE_ENABLED } from '@/constants/feature-flags';
+import { HOME_HREF, ROUTINE_PICK_HREF } from '@/constants/routes';
 import { postJournalDailyPhoto, type JournalConditionTag } from '@/lib/journal-api';
 import { setFirstPhotoLogged } from '@/lib/onboarding-storage';
 import { consumePendingCaptureUri } from '@/lib/pending-capture-uri';
@@ -35,18 +37,37 @@ export default function JournalCaptureScreen() {
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
       : localTodayIso();
-  const pendingLibrary = consumePendingCaptureUri();
-  const libraryUri = pendingLibrary?.uri || null;
 
   const [permission, requestPermission] = useCameraPermissions();
   const camRef = useRef<CameraView>(null);
-  const [capturedUri, setCapturedUri] = useState<string | null>(libraryUri);
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [conditionTags, setConditionTags] = useState<JournalConditionTag[]>([]);
   const [note, setNote] = useState('');
 
   const dayMode = resolveRoutineDayMode(entryDate);
   const allowsPhoto = dayMode.allows_photo;
+
+  // PR1: soft-launch guard — redirect if journal capture is disabled
+  useEffect(() => {
+    if (!JOURNAL_CAPTURE_ENABLED) {
+      router.replace(ROUTINE_PICK_HREF);
+    }
+  }, [router]);
+
+  // PR1-24: load pending library URI async (not sync at render)
+  useEffect(() => {
+    if (!JOURNAL_CAPTURE_ENABLED) return;
+    let cancelled = false;
+    void (async () => {
+      const pending = await consumePendingCaptureUri();
+      if (cancelled || !pending?.uri) return;
+      setCapturedUri((prev) => prev || pending.uri);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const save = useCallback(async () => {
     if (!capturedUri) return;
@@ -64,7 +85,8 @@ export default function JournalCaptureScreen() {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (_) {}
       }
-      router.replace(`${HOME_HREF}?celebrate=1` as typeof HOME_HREF);
+      // PR1-25: celebrate + refresh Home after photo
+      router.replace(`${HOME_HREF}?celebrate=1&refresh=1` as typeof HOME_HREF);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Could not save photo', 'error');
     } finally {
@@ -79,6 +101,14 @@ export default function JournalCaptureScreen() {
   }, [allowsPhoto]);
 
   if (checking || !ready) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <ActivityIndicator color={AppTokens.color.accent} style={{ marginTop: 48 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!JOURNAL_CAPTURE_ENABLED) {
     return (
       <SafeAreaView style={styles.root}>
         <ActivityIndicator color={AppTokens.color.accent} style={{ marginTop: 48 }} />
