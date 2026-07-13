@@ -160,26 +160,22 @@ a {
 .sc-hero-split {
   position: relative;
   background: #ffffff;
-  overflow: hidden;
+  /* Never compress below content — fixed 100vh was clipping pills/badges into features */
   min-height: 100vh;
   height: auto;
   display: flex;
   flex-direction: column;
-}
-
-@media (min-width: 961px) {
-  .sc-hero-split {
-    height: 100vh;
-    min-height: 700px;
-  }
+  overflow: visible;
 }
 
 .sc-hero-split-media {
   position: absolute;
   top: 0;
   right: 0;
+  bottom: 0;
   width: 62%;
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   background: #ffffff;
   overflow: hidden;
 }
@@ -197,21 +193,23 @@ a {
   z-index: 2;
   width: 38%;
   min-width: 0;
-  height: 100%;
+  min-height: 100vh;
+  height: auto;
   display: flex;
   flex-direction: column;
-  padding: 80px 0 0 48px;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 88px 0 0 48px;
   background: #ffffff;
   box-sizing: border-box;
 }
 
-/* Top-align copy; badges live below features so they are never clipped */
+/* Natural-height copy — do not flex-shrink (that caused overflow under features) */
 .sc-hero-split-copy-wrap {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
-  min-height: 0;
-  padding: 32px 32px 16px 0;
+  padding: 40px 32px 28px 0;
   overflow: visible;
 }
 
@@ -234,7 +232,7 @@ a {
 .sc-hero-headline {
   margin: 0 0 16px;
   font-family: var(--font-display);
-  font-size: clamp(48px, 4.6vw, 72px);
+  font-size: clamp(44px, 4.2vw, 68px);
   font-weight: 400;
   line-height: 1.06;
   letter-spacing: -0.02em;
@@ -290,10 +288,14 @@ a {
   align-items: center;
 }
 
-/* Store badges sit under 01–03 (matches intended desktop + mobile layout) */
+/* Store badges under 01–03 with clear gap — never overlapping step copy */
 .sc-badges--after-features {
   flex: 0 0 auto;
-  padding: 16px 32px 36px 0;
+  margin-top: 20px;
+  padding: 0 32px 40px 0;
+  position: relative;
+  z-index: 2;
+  background: #ffffff;
 }
 
 .sc-badge {
@@ -359,10 +361,11 @@ a {
   position: relative;
   flex: 0 0 auto;
   background: #ffffff;
-  padding: 20px 32px 0 0;
+  padding: 24px 32px 0 0;
   border-top: 1px solid rgba(26, 26, 26, 0.1);
-  margin-top: 0;
+  margin-top: auto; /* push block to bottom when viewport is tall */
   z-index: 1;
+  overflow: visible;
 }
 
 .sc-hero-features-inner {
@@ -500,6 +503,7 @@ a {
   .sc-hero-features {
     order: 3;
     width: 100%;
+    margin-top: 0;
     padding: 0 1.25rem 0;
     border-top: 1px solid rgba(26, 26, 26, 0.08);
   }
@@ -507,6 +511,7 @@ a {
   .sc-badges--after-features {
     order: 4;
     width: 100%;
+    margin-top: 0;
     padding: 1rem 1.25rem 2.5rem;
   }
 
