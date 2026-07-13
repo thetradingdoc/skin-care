@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "patientapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.skinandcare.app",
