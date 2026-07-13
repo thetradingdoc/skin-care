@@ -67,8 +67,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true,
-      "baseUrl": "/app"
+      "reactCompiler": true
     },
     "extra": {
       "router": {},
