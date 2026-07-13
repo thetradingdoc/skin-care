@@ -441,6 +441,41 @@ a {
   background: #ffffff;
 }
 
+/* Short desktop viewports: keep pills + 01–03 + badges in first screen */
+@media (min-width: 961px) and (max-height: 820px) {
+  .sc-hero-split-body {
+    padding-top: 72px;
+  }
+
+  .sc-hero-split-copy-wrap {
+    padding: 20px 32px 16px 0;
+  }
+
+  .sc-hero-headline {
+    font-size: clamp(40px, 3.8vw, 56px);
+    margin-bottom: 12px;
+  }
+
+  .sc-hero-split-sub {
+    margin-bottom: 14px;
+    font-size: 15px;
+  }
+
+  .sc-hero-cta {
+    padding: 14px 28px;
+    margin-bottom: 12px;
+  }
+
+  .sc-hero-features {
+    padding-top: 16px;
+  }
+
+  .sc-badges--after-features {
+    margin-top: 12px;
+    padding-bottom: 24px;
+  }
+}
+
 @media (max-width: 960px) {
   .sc-site-header-inner {
     grid-template-columns: 1fr auto;
