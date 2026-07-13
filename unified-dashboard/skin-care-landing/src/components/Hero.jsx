@@ -130,11 +130,10 @@ export default function Hero() {
                 Understand your skin
               </span>
             </div>
-            <StoreBadges className="sc-badges--desktop" />
           </div>
         </div>
         <HeroFeatures />
-        <StoreBadges className="sc-badges--mobile" />
+        <StoreBadges className="sc-badges--after-features" />
       </div>
     </section>
   );

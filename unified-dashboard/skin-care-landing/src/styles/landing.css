@@ -161,10 +161,17 @@ a {
   position: relative;
   background: #ffffff;
   overflow: hidden;
-  height: 100vh;
-  min-height: 640px;
+  min-height: 100vh;
+  height: auto;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 961px) {
+  .sc-hero-split {
+    height: 100vh;
+    min-height: 700px;
+  }
 }
 
 .sc-hero-split-media {
@@ -198,14 +205,14 @@ a {
   box-sizing: border-box;
 }
 
-/* Top-align copy (do NOT vertical-center — that overflows onto features) */
+/* Top-align copy; badges live below features so they are never clipped */
 .sc-hero-split-copy-wrap {
   flex: 1 1 auto;
   display: flex;
   align-items: flex-start;
   min-height: 0;
-  padding: 32px 32px 24px 0;
-  overflow: hidden;
+  padding: 32px 32px 16px 0;
+  overflow: visible;
 }
 
 .sc-hero-split-copy {
@@ -283,13 +290,10 @@ a {
   align-items: center;
 }
 
-.sc-badges--desktop {
-  margin-top: 18px;
-  padding: 0;
-}
-
-.sc-badges--mobile {
-  display: none;
+/* Store badges sit under 01–03 (matches intended desktop + mobile layout) */
+.sc-badges--after-features {
+  flex: 0 0 auto;
+  padding: 16px 32px 36px 0;
 }
 
 .sc-badge {
@@ -355,7 +359,7 @@ a {
   position: relative;
   flex: 0 0 auto;
   background: #ffffff;
-  padding: 24px 32px 36px 0;
+  padding: 20px 32px 0 0;
   border-top: 1px solid rgba(26, 26, 26, 0.1);
   margin-top: 0;
   z-index: 1;
@@ -496,19 +500,14 @@ a {
   .sc-hero-features {
     order: 3;
     width: 100%;
-    padding: 0 1.25rem 1.25rem;
+    padding: 0 1.25rem 0;
     border-top: 1px solid rgba(26, 26, 26, 0.08);
   }
 
-  .sc-badges--desktop {
-    display: none;
-  }
-
-  .sc-badges--mobile {
-    display: flex;
+  .sc-badges--after-features {
     order: 4;
     width: 100%;
-    padding: 0 1.25rem 2.5rem;
+    padding: 1rem 1.25rem 2.5rem;
   }
 
   .sc-hero-split-copy {
