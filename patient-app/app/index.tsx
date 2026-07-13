@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { JournalTokens } from '@/constants/journalTokens';
+import { SIGN_IN_HREF } from '@/constants/routes';
 import { resolveInitialRoute } from '@/hooks/useOnboardingGate';
 
 export default function IndexScreen() {
@@ -10,8 +11,18 @@ export default function IndexScreen() {
 
   useEffect(() => {
     void (async () => {
-      const route = await resolveInitialRoute();
-      router.replace(route);
+      try {
+        const route = await resolveInitialRoute();
+        router.replace(route);
+      } catch (e) {
+        // Avoid unhandled rejection → RCTFatal; fall back to sign-in.
+        console.error('[index] resolveInitialRoute/replace failed', e);
+        try {
+          router.replace(SIGN_IN_HREF);
+        } catch (navErr) {
+          console.error('[index] fallback replace failed', navErr);
+        }
+      }
     })();
   }, [router]);
 

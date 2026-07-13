@@ -1,6 +1,7 @@
 'use strict';
 
 const { registerFaceReadPublicRoute } = require('../routes/public-face-read');
+const { registerPublicClientFatalRoutes } = require('../routes/public-client-fatal');
 const { registerPublicRoutineRoutes } = require('../routes/public-routines');
 const { registerPublicFunnelMatchRoutes } = require('../routes/public-funnel-match');
 const { registerPublicFunnelJourneyRoutes } = require('../routes/public-funnel-journey');
@@ -51,6 +52,7 @@ function registerConsumerFunnelRoutes(app, deps) {
   } = deps;
 
   registerFaceReadPublicRoute(app, { apiLimiter });
+  registerPublicClientFatalRoutes(app, { apiLimiter, express });
   registerPublicRoutineRoutes(app, { apiLimiter });
   registerPublicFunnelMatchRoutes(app, { apiLimiter });
   registerPublicFunnelJourneyRoutes(app, { apiLimiter, db });
