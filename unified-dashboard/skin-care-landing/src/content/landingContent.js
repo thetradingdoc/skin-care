@@ -1,6 +1,8 @@
 export const HERO = {
+  eyebrow: 'Acne & Skin Photo Diary',
   titleLine1: 'The #1',
-  titleLine2: 'Skincare Journal.',
+  titleLine2a: 'Skincare',
+  titleLine2b: 'Journal.',
   subtitle:
     'Start with a quick face check. Log one photo a day and see what changes — flares, products, reactions.',
   ctaLabel: 'Check your skin',
@@ -68,7 +70,7 @@ export const CTA_SECTION = {
 export const FOOTER_TAGLINE = 'The #1 Skincare Journal.';
 
 export const CTAS = {
-  scan: '/scan',
+  scan: 'https://apps.apple.com/app/id6778105762',
   signup: '/app/sign-in?intent=signup&from=skin-age-landing',
   signin: '/app/sign-in',
   privacy: '/patients/legal/privacy.html',

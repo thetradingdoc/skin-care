@@ -12,12 +12,12 @@ function TulipSvg({ className, width, height, title }) {
       aria-hidden={title ? undefined : true}
       role={title ? 'img' : undefined}>
       {title ? <title>{title}</title> : null}
-      <path fill="#000000" d={TULIP_PATH} />
+      <path fill="currentColor" d={TULIP_PATH} />
     </svg>
   );
 }
 
-/** Brand tulip — pixel-traced SVG, solid black fill. */
+/** Brand tulip — pixel-traced SVG, inherits wordmark color. */
 export function LogoMark({ className, title }) {
   return <TulipSvg className={className} title={title} />;
 }
@@ -28,22 +28,19 @@ export default function DoveIcon({ className, width = 44, height, title }) {
   return <TulipSvg className={className} width={width} height={resolvedHeight} title={title} />;
 }
 
-/** Live wordmark — Be Vietnam Pro italic "skin" + tulip + bold "care". */
+/** Live wordmark — tulip + bold "touche" (mark only in footer copyright). */
 export function LogoWordmark({ className, height = 52 }) {
   return (
     <span
       className={`sc-logo-wordmark${className ? ` ${className}` : ''}`}
       style={{ '--logo-height': `${height}px` }}
       role="img"
-      aria-label="skin care">
-      <span className="sc-logo-skin" aria-hidden="true">
-        skin
-      </span>
+      aria-label="touche">
       <span className="sc-logo-mark-slot" aria-hidden="true">
         <LogoMark className="sc-logo-mark" />
       </span>
       <span className="sc-logo-care" aria-hidden="true">
-        care
+        touche
       </span>
     </span>
   );

@@ -98,7 +98,7 @@ export const FOR_PAGES = {
       },
       {
         heading: 'Research-led, consumer-first',
-        body: 'Skin & Care studies how skin changes on people of color. Your journal supports that work while giving you a personal record.',
+        body: 'touche studies how skin changes on people of color. Your journal supports that work while giving you a personal record.',
       },
     ],
     cta: 'Check your skin',

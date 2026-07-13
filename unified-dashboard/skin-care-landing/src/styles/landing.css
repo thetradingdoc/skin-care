@@ -78,7 +78,7 @@ a {
   display: block;
   max-height: none;
   object-fit: contain;
-  color: #000000;
+  color: #f7591f;
 }
 
 .sc-brand-logo.sc-logo-wordmark {
@@ -211,6 +211,15 @@ a {
   max-width: 520px;
 }
 
+.sc-hero-subtitle {
+  color: #f7591f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
 .sc-hero-headline {
   margin: 0 0 20px;
   font-family: var(--font-display);
@@ -231,6 +240,10 @@ a {
 
 .sc-hero-headline em {
   font-style: italic;
+}
+
+.sc-hero-headline-journal {
+  color: #f7591f;
 }
 
 .sc-hero-split-sub {
@@ -288,6 +301,20 @@ a {
 
 .sc-badge-static {
   cursor: default;
+}
+
+.sc-badge-android-soon {
+  background: #f3f3f3;
+  color: #999999;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 10px 16px;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: default;
+  pointer-events: none;
 }
 
 .sc-badge-inner {
@@ -370,7 +397,7 @@ a {
   font-family: var(--font-display);
   font-size: 1.75rem;
   line-height: 1;
-  color: var(--sc-ink);
+  color: #e8593c;
   margin-bottom: 2px;
 }
 
@@ -706,7 +733,7 @@ a {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1rem;
-  color: var(--sc-ink);
+  color: #f7591f;
   max-width: 28rem;
 }
 
@@ -771,6 +798,45 @@ a {
   opacity: 0.88;
   background: #111111;
   border-color: #111111;
+}
+
+/* Hero primary CTA only — touche orange */
+.sc-btn-dark.sc-hero-cta {
+  background: #f7591f;
+  border-color: #f7591f;
+}
+
+.sc-btn-dark.sc-hero-cta:hover {
+  background: #d94c17;
+  border-color: #d94c17;
+  opacity: 1;
+}
+
+.sc-hero-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.sc-hero-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #444;
+  font-weight: 500;
+}
+
+.sc-hero-pill svg {
+  flex-shrink: 0;
+}
+
+.sc-hero-divider {
+  color: #ccc;
+  font-size: 12px;
 }
 
 .sc-hero-cta-sub {
@@ -1031,6 +1097,10 @@ a {
   font-weight: 500;
   line-height: 1.2;
   color: var(--sc-ink);
+}
+
+.sc-steps-how-lead {
+  color: #e8593c;
 }
 
 .sc-steps-how-accent {
