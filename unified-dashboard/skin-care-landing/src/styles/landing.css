@@ -355,6 +355,13 @@ a {
   fill: currentColor;
 }
 
+/* Features + badges stay together at the bottom of tall viewports */
+.sc-hero-bottom {
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: #ffffff;
+}
+
 /* ——— Hero features row ——— */
 
 .sc-hero-features {
@@ -363,7 +370,7 @@ a {
   background: #ffffff;
   padding: 24px 32px 0 0;
   border-top: 1px solid rgba(26, 26, 26, 0.1);
-  margin-top: auto; /* push block to bottom when viewport is tall */
+  margin-top: 0;
   z-index: 1;
   overflow: visible;
 }
@@ -541,6 +548,10 @@ a {
     margin-top: 0;
     padding: 0 1.25rem 0;
     border-top: 1px solid rgba(26, 26, 26, 0.08);
+  }
+
+  .sc-hero-bottom {
+    display: contents;
   }
 
   .sc-badges--after-features {

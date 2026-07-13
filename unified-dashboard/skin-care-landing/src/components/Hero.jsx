@@ -132,8 +132,10 @@ export default function Hero() {
             </div>
           </div>
         </div>
-        <HeroFeatures />
-        <StoreBadges className="sc-badges--after-features" />
+        <div className="sc-hero-bottom">
+          <HeroFeatures />
+          <StoreBadges className="sc-badges--after-features" />
+        </div>
       </div>
     </section>
   );
