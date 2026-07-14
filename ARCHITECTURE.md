@@ -9,7 +9,7 @@
 
 | Item | Value |
 |------|-------|
-| **What the project is** | Consumer skincare tracking platform: Expo iOS app + web funnel on shared Somo middleware API (Cloud Run). Daily photos, spot tracking, routine/conflict engine, barcode shelf scan, optional `care_program` subscription. |
+| **What the project is** | Consumer skincare tracking platform: Expo app + web funnel on shared Somo middleware API (Cloud Run). Camera-first **Check** sole home (see `docs/product/TOUCHE_CAMERA_FIRST.md`); daily photos, spot tracking, routine/conflict engine, barcode shelf; Shopify product commerce. Optional Stripe `care_program` is buried / legacy journal entitlement — not primary monetization. |
 | **Files analyzed** | **~1,999 tracked files** (glob cap; repo is ~2,000 files including docs, Knowledge ICD data, scripts, tests) |
 | **Unclear / incomplete areas** | Production middleware deploy runs from `somo-platform` only; some legacy Azure/Railway references in OpenAPI; large `database.js` (~20k lines) has tables not fully enumerated here; Kelly/LangGraph rollout is flag-driven and environment-specific |
 
@@ -348,21 +348,20 @@ Full spec: `middleware-platform/openapi.yaml`. Route registration split across `
 
 **Router:** expo-router with tab navigator at `(tabs)/`.
 
-**Tab IA (v3):**
+**Tab IA (v3) — historical:** Camera-first rebuild hides the tab bar; **Check** is sole home ([`docs/product/TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md)). The five tabs below remain mounted routes but are **not** the primary shell.
 - **Home** — BFI ring, routine steps, daily photo CTA
 - **Track** — Spot watcher (journey A)
 - **Scan** — Barcode + shelf (journey B)
 - **Progress** — Photo grid, history
-- **Profile (account)** — Goals, journey toggle, Stripe subscribe
+- **Profile (account)** — Goals, journey toggle; Stripe `care_program` buried below primary actions
 
-**Post-auth routing** (`resolvePostAuthRoute`, `useOnboardingGate`):
-1. No journey → `/onboarding/journey-choose`
+**Post-auth routing** — **current default:** authenticated → `/check`. Historical v3 gate order (`resolvePostAuthRoute` legacy branches may still exist):
+1. No journey → `/onboarding/journey-choose` (historical)
 2. Watch mode, no spots → track tab
 3. Routine, no template → `/routine/pick`
 4. Incomplete bio → `/onboarding/bio-calibration`
 5. Empty shelf → scan tab
-6. Default → home
-
+6. Default → home (superseded by Check for camera-first)
 **Session:** `expo-secure-store` + `x-session-id` header on all API calls (`lib/patient-session.ts`, `lib/patient-api.ts`). SecureStore get/set/delete are raced with a short timeout so a hung keychain call cannot blank the cold-start UI forever.
 
 **Deep links:** `auth?ticket=`, `subscription/success|cancel`, `routine/setup?concern=`. Requires embedded `EXConstants.bundle/app.config` (scheme `patientapp`) — see §7.1.1.

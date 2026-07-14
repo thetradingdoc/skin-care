@@ -1,8 +1,10 @@
 # Local development architecture
 
-**Last reviewed:** 2026-06-06
+**Last reviewed:** 2026-07-14
 
 Skin & Care local dev runs the shared middleware API on port **4000**, with optional Vite landing on **5180** and Expo on **8081**.
+
+Product SSOT: [`docs/product/TOUCHE_CAMERA_FIRST.md`](product/TOUCHE_CAMERA_FIRST.md). Middleware CORS includes `app.trytouche.com` (TOUCH-038).
 
 ## Architecture
 
@@ -24,7 +26,7 @@ flowchart LR
 # Mobile app
 cd patient-app
 cp .env.example .env
-npm ci
+npm ci   # includes @react-native-async-storage/async-storage
 npx expo start
 
 # Full stack (API + consumer landing on :4000)

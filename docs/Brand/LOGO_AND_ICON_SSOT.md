@@ -1,13 +1,26 @@
 # Logo, icon, and favicon — single source of truth
 
-> **Last reviewed:** 2026-06-10
+> **Last reviewed:** 2026-07-14
 
-The **landing page wordmark** is the single source of truth for all header logos and email branding.
+The **landing page wordmark** (skin + tulip + care) remains the SSOT for **marketing / funnel / email** headers. **Camera-first Check chrome** uses a different mark: compact orange **touche** (`ToucheMarkCompact`, `#F7591F`) — see [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) and [`docs/product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
 
 | Mark | Surface | Doc section |
 |------|---------|-------------|
 | **Tulip wordmark** | Landing, funnel, sign-in, static pages, B2B auth, provider sidebar, all emails | [Consumer wordmark](#consumer-wordmark-lockup) |
+| **touche compact** | Check + spot chrome (camera-first) | [Camera-first Check mark](#camera-first-check-mark) |
 | **Panda mark** | Checkout chat assistant avatar only | [Panda mark](#panda-mark) |
+
+---
+
+## Camera-first Check mark
+
+| Property | Spec |
+|----------|------|
+| Component | [`patient-app/components/ToucheMarkCompact.tsx`](../../patient-app/components/ToucheMarkCompact.tsx) |
+| Text | `touche` (lowercase) + tulip path |
+| Color | `#F7591F` |
+| Surfaces (shipped) | Check, bottle, spot capture |
+| Do not use | `BrandWordmark` / skin‧care lockup on these surfaces |
 
 ---
 

@@ -1,8 +1,8 @@
 # Wordmark by surface
 
-> **Last reviewed:** 2026-06-10
+> **Last reviewed:** 2026-07-14
 
-Use this guide when adding a new page, email, or export so the **skin + tulip + care** lockup stays consistent and solid **#000000**.
+Use this guide when adding a new page, email, or export. **Landing / marketing** still use the **skin + tulip + care** lockup (solid **#000000**). **Camera-first Check chrome** uses the compact orange **touche** mark — not the skin‧care lockup.
 
 ## Quick reference
 
@@ -10,7 +10,8 @@ Use this guide when adding a new page, email, or export so the **skin + tulip + 
 |---------|----------------|--------------|
 | **SSOT (landing)** | Live HTML wordmark | [`logo-wordmark.css`](../../unified-dashboard/assets/css/logo-wordmark.css) + [`LogoWordmark`](../../unified-dashboard/skin-care-landing/src/components/DoveIcon.jsx) |
 | Funnel, sign-in, about, contact, B2B auth, provider sidebar | Same lockup as landing | [`wordmark-snippet.html`](../../unified-dashboard/assets/brand/wordmark-snippet.html) or [`wordmark-html.js`](../../unified-dashboard/assets/js/wordmark-html.js) + `logo-wordmark.css` |
-| Expo app (web + native) | Same lockup | [`BrandWordmark`](../../patient-app/components/BrandWordmark.web.tsx) / [`BrandWordmark.tsx`](../../patient-app/components/BrandWordmark.tsx) — imports [`tulip-path.js`](../../unified-dashboard/assets/brand/tulip-path.js) |
+| Expo app — marketing / non-Check surfaces | skin‧care lockup where still used | [`BrandWordmark`](../../patient-app/components/BrandWordmark.web.tsx) / [`BrandWordmark.tsx`](../../patient-app/components/BrandWordmark.tsx) — imports [`tulip-path.js`](../../unified-dashboard/assets/brand/tulip-path.js) |
+| **Expo Check / bottle / spot chrome (camera-first)** | Compact **touche** mark `#F7591F` | [`ToucheMarkCompact`](../../patient-app/components/ToucheMarkCompact.tsx) — **do not** use `BrandWordmark` here (TOUCH-009 / product SSOT) |
 | Transactional email (all templates) | Raster composite PNG (layout mirrors landing CSS) | [`email-wordmark.png`](../../unified-dashboard/assets/brand/email-wordmark.png) via [`skin-care-email-layout.js`](../../middleware-platform/lib/skin-care-email-layout.js) |
 | Favicon (consumer) | Tulip on white | [`favicon.svg`](../../unified-dashboard/skin-care-landing/public/favicon.svg) |
 | Checkout chat assistant avatar only | Panda illustration (not header wordmark) | [`logo-panda.svg`](../../unified-dashboard/assets/images/logo-panda.svg) |
@@ -19,6 +20,7 @@ Use this guide when adding a new page, email, or export so the **skin + tulip + 
 
 | Asset / pattern | Why |
 |-----------------|-----|
+| `BrandWordmark` / skin‧care lockup on Check / spot chrome | Superseded by `ToucheMarkCompact` (camera-first) |
 | `assets/images/logo-wordmark.png` | Deprecated compositor — **serif italic** `skin` + old dove, not Be Vietnam Pro + tulip |
 | `build-logo-wordmark.py` / `build-logo-wordmark-portable.py` | Removed — use landing SSOT + `brand:email-wordmark` |
 | `favicon.svg` upscaled as email logo | Wrong crop; blurry |

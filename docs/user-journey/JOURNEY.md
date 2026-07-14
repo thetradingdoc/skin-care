@@ -1,10 +1,10 @@
 # JOURNEY
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-07-14
 
-**Status:** Patient signup → mobile app journey is **complete** (2026-06). See also [`docs/development/CODE_REVIEW_2026-06.md`](../development/CODE_REVIEW_2026-06.md).
+**Status:** Facial-age / skin-age **web funnel** paths below remain for marketing discoverability. **In-app primary loop is camera-first** — see [`docs/product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md): cold entry try-verdict → Check sole home (**no tab bar**). Do not treat journey-choose → Home/Track as the current default shell.
 
-**Primary path (Skincare Journal Journey):** landing at `/` → **`/scan`** (face check) → **`/quick-check`** → **`/reveal`** → **`/concerns`** *or* direct signup (diary segment) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → **`/(tabs)/home`** or **`/(tabs)/track`** (via `resolvePostAuthRoute`). Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) sets `journey_modes` from funnel segment (`watch` for diary/reactive, `routine` for routine-ready) and activates template **only** for routine users. **Native app:** cold start → sign-in; post-auth → journey-choose → gates → Home/Track.
+**Historical primary path (Skincare Journal / face check funnel):** landing at `/` → **`/scan`** (face check) → **`/quick-check`** → **`/reveal`** → **`/concerns`** *or* direct signup (diary segment) → **`/app/sign-in?intent=signup&from=skin-age-landing`** → historically `/(tabs)/home` or `/(tabs)/track`. Session data in `sessionStorage` until OTP; [`skin-age-journey.ts`](../../patient-app/lib/skin-age-journey.ts) sets `journey_modes`. **Native app (current):** cold start without session → try-verdict; post-auth → **Check** (not journey-choose as default).
 
 Frictionless path (legacy): **optional age hook → intent (why you’re here) → match …** (see below; `/start` BiologicalAge funnel archived).
 
@@ -35,7 +35,7 @@ After signup, the app centers on **ingredient conflict detection**:
 4. **Bio profile** — conditions + prescriptions (`PUT /api/patient/bio-profile`); incomplete profile shows partial verdict banner; bootstrap routes to bio-calibration or Scan when shelf empty / conflicts present.
 5. **Public funnel** — `POST /api/public/routine/evaluate` (max 2 products, rate-limited); full detail gated on bio profile.
 
-Tab bar: **Home | Track | Scan | Progress | Profile** (v3 redesign — see `docs/patient-app/design/V3_SCREEN_MAP.md`).
+Tab bar: **Home | Track | Scan | Progress | Profile** — **historical v3** (see `docs/archive/pre-rebuild/V3_SCREEN_MAP.md`). Current lock: **no tab bar**; Check sole home ([`TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md)).
 
 Valid `concern_id` values: `anti_aging`, `acne`, `hyperpigmentation`, `hyperpigmentation_dark_skin`, `barrier_repair`, `rosacea` (skip path defaults to `anti_aging`).
 

@@ -1,20 +1,22 @@
 # Patient App v3 Screen Map
 
 **Source mock:** [v3-redesign-source.html](./v3-redesign-source.html)  
-**Last updated:** 2026-06-12
+**Last updated:** 2026-07-14
+
+> **Historical / superseded:** This 5-tab map (Home / Track / Scan / Progress / Profile) and journey-choose post-auth gate describe the **pre–camera-first** IA. Current product SSOT: [`../../product/TOUCHE_CAMERA_FIRST.md`](../../product/TOUCHE_CAMERA_FIRST.md) — **no tab bar**, Check sole home, try-verdict cold entry.
 
 ## Product framing
 
-Two journeys, one app, shared photo loop:
+Two journeys, one app, shared photo loop (v3 framing — retained for archaeology):
 
 | Persona | Journey | UX bar |
 |---------|---------|--------|
 | User A — spot/growth watcher | `watch` | 3 taps max, plain language |
 | User B — routine/conflict tracker | `routine` | BFI ring, scan shelf, program steps |
 
-App positioning SSOT: **The #1 Skincare Journal.** Face check = hook; daily photo log = product. See [`docs/Brand/POSITIONING.md`](../../Brand/POSITIONING.md).
+App positioning SSOT: **The #1 Skincare Journal.** Face check = hook; daily photo log = product. See [`docs/Brand/POSITIONING.md`](../../Brand/POSITIONING.md). Camera-first rebuild uses Check (not this tab bar) as sole home.
 
-## Tab bar (5 tabs)
+## Tab bar (5 tabs) — historical
 
 | Tab | Route | Icon (Tabler outline) |
 |-----|-------|------|
@@ -30,7 +32,7 @@ Typography: **Gloock** (display) + **DM Sans** (body) via `AppFontsProvider`.
 
 | Screen ID | Route | Journey | v3 mock label |
 |-----------|-------|---------|-----------------|
-| journey-choose | `/onboarding/journey-choose` | both | Step 1 — choose your journey |
+| journey-choose | `/onboarding/journey-choose` | both | Step 1 — choose your journey (historical gate; camera-first defaults to Check) |
 | home | `/(tabs)/home` | B (primary) | Today — Whoop-style |
 | track-hub | `/(tabs)/track` | A | Journey A — ATM-simple |
 | track-capture | `/track/capture` | A | Photo capture + body map |
@@ -43,6 +45,8 @@ Typography: **Gloock** (display) + **DM Sans** (body) via `AppFontsProvider`.
 | timeline | `/(tabs)/timeline` | both | Internal (hidden tab) |
 
 ## Post-auth routing
+
+> **Historical v3 gate order.** Current default: authenticated → `/check` (`resolve-post-auth-route.ts`).
 
 1. No journey mode → `/onboarding/journey-choose`
 2. `watch` only, no spots → `/(tabs)/track`

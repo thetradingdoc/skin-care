@@ -1,8 +1,10 @@
 # Mobile app architecture
 
-**Last reviewed:** 2026-07-13
+**Last reviewed:** 2026-07-14
 
 Skin & Care iOS app (`com.skinandcare.app`) is an Expo/React Native app in [patient-app/](../patient-app/).
+
+**Product SSOT:** [docs/product/TOUCHE_CAMERA_FIRST.md](./product/TOUCHE_CAMERA_FIRST.md) — Check sole home, no tab bar. Consumer web shell: `app.trytouche.com` (CORS TOUCH-038).
 
 Cold-start / SIGABRT runbook: [patient-app/IOS_COLD_START_CRASH.md](./patient-app/IOS_COLD_START_CRASH.md).
 
@@ -12,10 +14,10 @@ Cold-start / SIGABRT runbook: [patient-app/IOS_COLD_START_CRASH.md](./patient-ap
 flowchart LR
   app[iOS app TestFlight]
   api[api.myskinandcare.com]
-  web[myskinandcare.com/scan]
+  web[app.trytouche.com / myskinandcare.com]
 
   app -->|HTTPS API| api
-  app -->|web signup link| web
+  app -->|web signup / app host| web
   web --> api
 ```
 
@@ -28,7 +30,8 @@ flowchart LR
 | Apple Team | `33PP5ZAK59` |
 | EAS project | `16b5d1d9-a703-4035-b41a-be2401f95c68` |
 | Production API | `https://api.myskinandcare.com` |
-| Web signup URL | `https://myskinandcare.com/scan` |
+| Camera-first web host | `https://app.trytouche.com` |
+| Web signup URL (legacy funnel) | `https://myskinandcare.com/scan` |
 
 ## Quick start
 
@@ -39,7 +42,7 @@ npm ci
 npx expo start
 ```
 
-Local API (simulator): set `EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:4000` in `.env`.
+`npm ci` installs `@react-native-async-storage/async-storage` (required — Expo web Check fails to bundle without it). Local API (simulator): set `EXPO_PUBLIC_API_BASE_URL=http://127.0.0.1:4000` in `.env`.
 
 ## EAS build profiles
 

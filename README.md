@@ -1,15 +1,17 @@
 # Skin & Care — daily skin tracking app
 
-**Last reviewed:** 2026-07-13
+**Last reviewed:** 2026-07-14
 
 **GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care)  
 **Consumer domain:** [myskinandcare.com](https://myskinandcare.com) (marketing + web funnel)  
+**Camera-first app host:** `app.trytouche.com` (TOUCH-038 CORS)  
 **Consumer API:** `https://api.myskinandcare.com` (shared middleware on Cloud Run)  
 **Legacy API:** `https://api.callsomo.com` (same stack — shared infra identifier)
 
+**Product SSOT (current):** [`docs/product/TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md) — Check = sole home, no tab bar, Shopify commerce only.  
 **Architecture:** [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md) · [iOS cold-start crash](docs/patient-app/IOS_COLD_START_CRASH.md)
 
-Skin & Care is a consumer iOS app for daily photo tracking, concern-based routines (acne, anti-aging, hyperpigmentation, barrier repair, rosacea), and optional `care_program` subscription.
+Skin & Care ships a consumer Expo app (camera journal / Check home) plus concern-based routines. Optional Stripe `care_program` exists as a **buried** journal subscription, not primary monetization (product commerce is Shopify).
 
 This is a **standalone workspace** — not a branch mirror of somo. Platform fixes are ported from `somo-platform` `main` when needed (cherry-pick or manual merge).
 
@@ -24,7 +26,7 @@ npm ci
 npx expo start
 ```
 
-Production API is set in `.env.example` and EAS profiles (`preview` / `production`).
+`npm ci` installs Expo deps including `@react-native-async-storage/async-storage` (required for Check / web bundle). Production API is set in `.env.example` and EAS profiles (`preview` / `production`).
 
 ## Push workflow
 
@@ -43,7 +45,7 @@ See [`docs/Brand/SKIN_AND_CARE_REPO.md`](docs/Brand/SKIN_AND_CARE_REPO.md) for p
 | Step | Command / doc |
 |------|----------------|
 | EAS profiles | `patient-app/eas.json` |
-| Launch checklist | `todos/pending/IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md` |
+| Launch checklist | `docs/archive/pre-rebuild/todos/IOS_SKINCARE_TRACKER_LAUNCH_TODOS.md` (archived) |
 | Preview build | `cd patient-app && eas build --platform ios --profile preview` |
 | App Store submit | `eas submit --platform ios --profile production` (after ASC setup) |
 
@@ -57,6 +59,8 @@ Local API for development:
 npm ci --prefix middleware-platform
 npm start --prefix middleware-platform
 ```
+
+CORS allowlist includes `https://app.trytouche.com` and `*.trytouche.com` (TOUCH-038). See `middleware-platform/server.js`.
 
 **Do not deploy middleware from this repo.** Production API deploy runs on **somo-platform** `main` only.
 
