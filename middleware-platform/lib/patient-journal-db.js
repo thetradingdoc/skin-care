@@ -3,9 +3,9 @@
 const db = require('../database');
 
 function ensureJournalTables(sqliteDb) {
-  const migration = require('../migrations/059_patient_journal');
   const target = sqliteDb || db.db;
-  if (migration?.up) migration.up(target);
+  require('../migrations/059_patient_journal').up(target);
+  require('../migrations/060_journal_severity_levels').up(target);
 }
 
 module.exports = {

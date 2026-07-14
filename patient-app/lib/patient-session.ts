@@ -40,7 +40,12 @@ async function secureGet(key: string): Promise<string | null> {
     if (web) return web;
   }
   try {
-    const value = await SecureStore.getItemAsync(key);
+    const value = await Promise.race([
+      SecureStore.getItemAsync(key),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), 2000);
+      }),
+    ]);
     if (value) return value;
   } catch {
     /* expo-secure-store web shim may be unavailable in static export */
@@ -51,7 +56,12 @@ async function secureGet(key: string): Promise<string | null> {
 async function secureSet(key: string, value: string): Promise<void> {
   writeWebStorage(key, value);
   try {
-    await SecureStore.setItemAsync(key, value);
+    await Promise.race([
+      SecureStore.setItemAsync(key, value),
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 2000);
+      }),
+    ]);
   } catch {
     /* web static bundle — localStorage is the source of truth */
   }
@@ -60,7 +70,12 @@ async function secureSet(key: string, value: string): Promise<void> {
 async function secureDelete(key: string): Promise<void> {
   removeWebStorage(key);
   try {
-    await SecureStore.deleteItemAsync(key);
+    await Promise.race([
+      SecureStore.deleteItemAsync(key),
+      new Promise<void>((resolve) => {
+        setTimeout(() => resolve(), 2000);
+      }),
+    ]);
   } catch {
     /* ignore */
   }

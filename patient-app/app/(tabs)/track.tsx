@@ -46,7 +46,7 @@ export default function TrackScreen() {
     const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
     if (picked.canceled || !picked.assets?.[0]?.uri) return;
     const asset = picked.assets[0];
-    setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
+    await setPendingCaptureUri(asset.uri, mimeTypeFromImagePickerAsset(asset));
     router.push(TRACK_CAPTURE_HREF);
   }, [router]);
 
@@ -67,7 +67,7 @@ export default function TrackScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Track a spot</Text>
         <Text style={styles.sub}>
-          Take a photo. We&apos;ll measure and watch it with you.{'\n'}
+          Log photos and compare over time.{'\n'}
           No forms. No medical words.
         </Text>
 

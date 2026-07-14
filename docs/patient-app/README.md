@@ -1,8 +1,9 @@
 # patient-app - Unified Architecture and System Design
-> Last reviewed: 2026-06-12
+> Last reviewed: 2026-07-14
 
-**Last Updated:** 2026-06-12
+**Last Updated:** 2026-07-14
 
+> **Superseded for product IA:** Camera-first rebuild is current. See [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md) — **Check = sole home, no tab bar**, Shopify commerce, `patientapp://`. Sections below that describe the v3 **5-tab** Home/Track/Scan/Progress/Profile IA or Explore/checkout as the primary shell are **historical**.
 
 **Canonical map:** [CANONICAL_DOC_MAP.md](../meta/CANONICAL_DOC_MAP.md) — read here first to avoid duplicating documentation.
 
@@ -10,25 +11,31 @@
 
 This document is the single source of truth for this subfolder. It consolidates architecture, system design, operational behavior, and implementation notes previously split across multiple markdown files.
 
-## Current product direction (routine tracker + billing)
+## Current product direction
 
-For the active consumer v3 app, start here:
+**Active SSOT:** [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
 
-- **[`design/V3_SCREEN_MAP.md`](./design/V3_SCREEN_MAP.md)** — routes, tabs, post-auth gates (source of truth).
-- **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — web skin-age funnel + native sign-in paths.
-- **[`../runbooks/WEB_CONSUMER_SMOKE.md`](../runbooks/WEB_CONSUMER_SMOKE.md)** — web release smoke checklist.
+Setup: `cd patient-app && cp .env.example .env && npm ci && npx expo start` (`npm ci` includes `@react-native-async-storage/async-storage`). Web host for camera-first consumer: `app.trytouche.com` (CORS TOUCH-038).
+
+### Historical — v3 tab IA (superseded by camera-first)
+
+For the retired v3 consumer tab map (kept for archaeology only):
+
+- **[`../../archive/pre-rebuild/V3_SCREEN_MAP.md`](../../archive/pre-rebuild/V3_SCREEN_MAP.md)** — historical 5-tab routes (archived).
+- **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — includes facial-age / skin-age funnel paths; primary app loop is now Check.
+- **[`../../archive/pre-rebuild/WEB_CONSUMER_SMOKE.md`](../../archive/pre-rebuild/WEB_CONSUMER_SMOKE.md)** — archived web release smoke checklist.
+- **[`IOS_COLD_START_CRASH.md`](./IOS_COLD_START_CRASH.md)** — native iOS launch SIGABRT / blank screen (EXConstants, linking, hostname).
 - [`design/CONSUMER_AGENTIC_ARCHITECTURE.md`](./design/CONSUMER_AGENTIC_ARCHITECTURE.md) — LangGraph eval, insights, env flags.
 
-**v3 tab IA (Expo web at `/app`):**
+**v3 tab IA (historical — not current):**
 
-- **Home** (default) — BFI ring, routine steps, daily photo
+- **Home** — BFI ring, routine steps, daily photo
 - **Track** — spot watcher journey
 - **Scan** — barcode shelf + verdict
 - **Progress** — photo grid, BFI history
 - **Profile** (`account`) — goals, journey toggle, subscribe
 
-Hosted at `myskinandcare.com/app` (static export). Session: `localStorage` + `x-session-id` header; client date via `x-client-date`.
-
+Hosted historically at `myskinandcare.com/app` (static export). Camera-first targets `app.trytouche.com`. Session: `localStorage` / SecureStore + `x-session-id` header; client date via `x-client-date`.
 
 ## Scope
 

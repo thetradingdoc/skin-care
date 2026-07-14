@@ -36,7 +36,7 @@ export default function StepsSection() {
   return (
     <section id="how" className="sc-steps" aria-labelledby="sc-how-title">
       <h2 id="sc-how-title" className="sc-steps-how-title">
-        How it{' '}
+        <span className="sc-steps-how-lead">How it</span>{' '}
         <span className="sc-steps-how-accent">
           <svg className="sc-steps-how-swoosh" viewBox="0 0 240 56" aria-hidden="true">
             <path

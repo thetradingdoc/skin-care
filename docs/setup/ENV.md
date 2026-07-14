@@ -32,10 +32,12 @@ Quick reference. Full narrative: [`docs/setup/README.md`](./README.md). Copy fro
 | Payor ingest | `PAYOR_*`, `NPPES_*` | CMS NPPES pipeline, resolver flags |
 | Stripe / Twilio | `STRIPE_*`, `TWILIO_*` | Payments and voice webhooks |
 | RCM patient pay | `PUBLIC_PAY_BASE_URL`, `RCM_E2E_STRIPE_LIVE`, `RCM_E2E_USDC_LIVE`, `RCM_PAY_PROBE_CIRCLE_BALANCE`, `CIRCLE_*` | Kelly pay link + Stripe/USDC rails — [RCM_PATIENT_PAY_GATEWAY.md](../RCM/RCM_PATIENT_PAY_GATEWAY.md) |
-| Commerce | `PUBLIC_CATALOG_*`, `COMMERCE_*`, `CATALOG_MASTER_SYNC_*` | Public catalog and checkout |
+| Commerce | `PUBLIC_CATALOG_*`, `COMMERCE_*`, `COMMERCE_CTAS_ENABLED`, `CATALOG_MASTER_SYNC_*` | Public catalog and checkout. `COMMERCE_CTAS_ENABLED` is authoritative when set (`0`/`1`); see product SSOT. |
 | OpenAI | `OPENAI_API_KEY` | Embeddings (semantic search, Pinecone query embed) |
 
-See also: [Medical Coding OPERATIONS](../Medical%20Coding/OPERATIONS.md), [RENDER_PRODUCTION_CHECKLIST](../deployment/RENDER_PRODUCTION_CHECKLIST.md).
+CORS origins (not env vars — hardcoded allowlist in `middleware-platform/server.js`): includes `https://app.trytouche.com` and `*.trytouche.com` (TOUCH-038), plus myskinandcare / callsomo / localhost.
+
+See also: [Medical Coding OPERATIONS](../Medical%20Coding/OPERATIONS.md), [RENDER_PRODUCTION_CHECKLIST](../deployment/RENDER_PRODUCTION_CHECKLIST.md), [TOUCHE_CAMERA_FIRST.md](../product/TOUCHE_CAMERA_FIRST.md).
 
 ## Skin & Care landing (`unified-dashboard/skin-care-landing/.env.development`)
 

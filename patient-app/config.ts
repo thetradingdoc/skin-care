@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // API base for the patient app — must be reachable from the device running Expo Go.
 //
@@ -25,14 +26,16 @@ export const API_BASE_URL = resolveApiBaseUrl();
 const PROD_API_HOSTS = ['api.callsomo.com', 'api.myskinandcare.com'];
 
 function isLocalWebHost(): boolean {
-  if (typeof window === 'undefined') return false;
+  // RN may define `window` without `location` — never touch `.hostname` on native.
+  if (Platform.OS !== 'web') return false;
+  if (typeof window === 'undefined' || !window.location) return false;
   const host = window.location.hostname;
   return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
 }
 
 /** Same-origin /api on localhost when the bundle targets production (Playwright + dev:consumer-local). */
 export function getEffectiveApiBaseUrl(): string {
-  if (typeof window !== 'undefined' && isLocalWebHost()) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && isLocalWebHost()) {
     try {
       if (PROD_API_HOSTS.includes(new URL(API_BASE_URL).hostname)) {
         return window.location.origin.replace(/\/$/, '');
@@ -72,14 +75,6 @@ export const WEB_SIGNUP_URL = (
 /** Optional: pre-fill login email (e.g. same as appointment row in middleware). */
 export const DEMO_PATIENT_EMAIL =
   (process.env.EXPO_PUBLIC_DEMO_PATIENT_EMAIL || '').trim();
-
-/** Default product id for Explore → checkout-chat deep link (must exist in merchant catalog). */
-export const DEMO_CHECKOUT_PRODUCT_ID = (
-  process.env.EXPO_PUBLIC_DEMO_PRODUCT_ID || 'prod-vitamin-c-serum-antioxidant-pro-shield'
-).trim();
-
-/** Optional merchant/provider id for public catalog API when opening checkout chat from the app. */
-export const DEMO_PROVIDER_ID = (process.env.EXPO_PUBLIC_MERCHANT_ID || '').trim();
 
 /**
  * On a real device, localhost/127.0.0.1 points at the phone — every fetch fails with "Network request failed".

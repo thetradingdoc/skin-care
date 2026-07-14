@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -8,16 +9,29 @@ import { AppTokens } from '@/constants/appTokens';
 import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
-import { HOME_HREF, LANDING_CONCERNS_HREF, LANDING_HOME_HREF, LANDING_ORIGIN, LANDING_SCAN_HREF } from '@/constants/routes';
+import {
+  CHECK_HREF,
+  GET_THE_APP_HREF,
+  HOME_HREF,
+  INDEX_HREF,
+  TRY_VERDICT_HREF,
+} from '@/constants/routes';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
 import { patientGet, patientPost } from '@/lib/patient-api';
 import { isPatientSessionAuthError } from '@/lib/patient-auth';
+import { shouldShowGetTheAppInterstitial } from '@/lib/ios-web-gate';
 import {
   clearPendingRoutineConcern,
   getPendingRoutineConcern,
 } from '@/lib/routine-session';
 import { completeSkinAgeJourney, hasSkinAgeJourneyData } from '@/lib/skin-age-journey';
+import {
+  clearPendingAllergens,
+  clearPendingTryProduct,
+  getPendingAllergens,
+  getPendingTryProduct,
+} from '@/lib/try-verdict-session';
 
 function webSignupLabel(url: string): string {
   try {
@@ -29,38 +43,30 @@ function webSignupLabel(url: string): string {
   }
 }
 
-function getSignInBackHref(intent?: string, from?: string): string {
-  if (intent === 'signup' && from === 'skin-age-landing') return LANDING_CONCERNS_HREF;
-  if (intent === 'signup') return LANDING_SCAN_HREF;
-  return LANDING_HOME_HREF;
-}
-
-function signInBackUrl(intent?: string, from?: string): string {
-  const path = getSignInBackHref(intent, from);
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${LANDING_ORIGIN}${path}`;
-  }
-  return `${LANDING_ORIGIN}${path}`;
-}
-
 function useSignInQueryParams() {
-  const params = useLocalSearchParams<{ intent?: string; from?: string }>();
+  const params = useLocalSearchParams<{ intent?: string; from?: string; error?: string }>();
   return useMemo(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const q = new URLSearchParams(window.location.search);
       return {
         intent: (params.intent as string | undefined) ?? q.get('intent') ?? undefined,
         from: (params.from as string | undefined) ?? q.get('from') ?? undefined,
+        error: (params.error as string | undefined) ?? q.get('error') ?? undefined,
       };
     }
-    return { intent: params.intent as string | undefined, from: params.from as string | undefined };
-  }, [params.intent, params.from]);
+    return {
+      intent: params.intent as string | undefined,
+      from: params.from as string | undefined,
+      error: params.error as string | undefined,
+    };
+  }, [params.intent, params.from, params.error]);
 }
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { intent, from } = useSignInQueryParams();
+  const { intent, from, error: errorParam } = useSignInQueryParams();
   const [checkingSession, setCheckingSession] = useState(true);
+  const showConnectionError = errorParam === 'connection';
 
   const isSignupIntent = intent === 'signup';
   const fromSkinAgeLanding = from === 'skin-age-landing';
@@ -87,20 +93,32 @@ export default function SignInScreen() {
     };
   }, [isSignupIntent, fromSkinAgeLanding]);
 
+  /**
+   * TOUCH-004/005 + Phase 1: stay in-app forever on web.
+   * Prefer try-verdict (Screen 3) over marketing Safari dump.
+   */
   const onBack = useCallback(() => {
-    const url = signInBackUrl(intent, from);
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.assign(url);
+    if (Platform.OS === 'web') {
+      router.replace(TRY_VERDICT_HREF);
       return;
     }
     if (router.canGoBack()) {
       router.back();
       return;
     }
-    void Linking.openURL(url);
-  }, [intent, from, router]);
+    router.replace(TRY_VERDICT_HREF);
+  }, [router]);
+
+  const onRetryConnection = useCallback(() => {
+    router.replace(INDEX_HREF);
+  }, [router]);
 
   useEffect(() => {
+    let cancelled = false;
+    const failSafe = setTimeout(() => {
+      if (!cancelled) setCheckingSession(false);
+    }, 3000);
+
     void (async () => {
       try {
         const storedBase = await getStoredApiBase();
@@ -111,28 +129,73 @@ export default function SignInScreen() {
         if (!sid) return;
         try {
           await patientGet('/api/patient/me');
+          if (cancelled) return;
           router.replace(await resolvePostAuthRoute());
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '';
-          if (isPatientSessionAuthError(401, msg)) {
+          // Message-only auth check (do not hardcode status 401)
+          if (isPatientSessionAuthError(0, msg)) {
             await clearPatientSession();
           }
         }
       } catch {
         // stay on sign-in
       } finally {
-        setCheckingSession(false);
+        if (!cancelled) setCheckingSession(false);
+        clearTimeout(failSafe);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(failSafe);
+    };
   }, [router]);
 
   async function finishWithSession(sessionId?: string) {
+    // TOUCH-018 — persist pre-signup allergen exclusions to profile.
+    try {
+      const allergens = await getPendingAllergens();
+      if (allergens.length) {
+        await patientPost('/api/patient/allergens', { allergens });
+        await clearPendingAllergens();
+      }
+    } catch {
+      /* non-blocking — user can re-edit later */
+    }
+
+    // TOUCH-026 — pending anonymous product → shelf after verify.
+    try {
+      const pending = await getPendingTryProduct();
+      if (pending && (pending.product_name || pending.query || pending.barcode)) {
+        if (pending.barcode && pending.barcode !== 'scan_pending') {
+          await patientPost('/api/patient/shelf/products/scan', { barcode: pending.barcode }).catch(
+            async () => {
+              await patientPost('/api/patient/shelf/products', {
+                product_name: pending.product_name || pending.query || pending.barcode,
+                barcode: pending.barcode,
+                ingredients_text: pending.ingredients_text,
+              });
+            },
+          );
+        } else {
+          await patientPost('/api/patient/shelf/products', {
+            product_name: pending.product_name || pending.query || 'Tried product',
+            ingredients_text: pending.ingredients_text,
+          });
+        }
+        await clearPendingTryProduct();
+      }
+    } catch {
+      /* shelf restore best-effort */
+    }
+
     if (fromSkinAgeLanding && Platform.OS === 'web' && hasSkinAgeJourneyData() && sessionId) {
       const completed = await completeSkinAgeJourney(sessionId);
       if (completed) {
         const route = await resolvePostAuthRoute({ journeyModes: ['routine'] });
-        if (route === HOME_HREF) {
-          router.replace({ pathname: HOME_HREF, params: { celebrate: '1' } } as Href);
+        if (route === HOME_HREF || route === CHECK_HREF) {
+          router.replace(CHECK_HREF);
         } else {
           router.replace(route);
         }
@@ -145,20 +208,17 @@ export default function SignInScreen() {
       try {
         await patientPost('/api/patient/routine/template', { concern_id: pendingConcern });
         await clearPendingRoutineConcern();
-        router.replace(await resolvePostAuthRoute());
-        return;
       } catch {
         await clearPendingRoutineConcern();
-        router.replace({
-          pathname: '/routine/pick',
-          params: { concern: pendingConcern },
-        } as Href);
-        return;
       }
     }
 
-    const route = await resolvePostAuthRoute();
-    router.replace(route);
+    // TOUCH-027/028/030 — iOS web → 6c; Android/desktop → Check.
+    if (shouldShowGetTheAppInterstitial()) {
+      router.replace(GET_THE_APP_HREF);
+      return;
+    }
+    router.replace(CHECK_HREF);
   }
 
   if (checkingSession) {
@@ -180,6 +240,20 @@ export default function SignInScreen() {
           <MaterialIcons name="arrow-back" size={20} color={JournalTokens.color.muted} />
           <Text style={styles.backText}>Back</Text>
         </Pressable>
+        {showConnectionError ? (
+          <View style={styles.connectionBanner}>
+            <Text style={styles.connectionText}>
+              Connection error — check your network and try again.
+            </Text>
+            <Pressable
+              onPress={onRetryConnection}
+              style={styles.retryBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Retry connection">
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {copy.showWebCta ? (
           <>
             <Text style={styles.newUser}>
@@ -221,6 +295,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: JournalTokens.color.muted,
+  },
+  connectionBanner: {
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: AppTokens.color.pageBg,
+    borderWidth: 1,
+    borderColor: JournalTokens.color.muted,
+  },
+  connectionText: {
+    color: JournalTokens.color.ink,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  retryBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  retryText: {
+    color: JournalTokens.color.brandAccent,
+    fontWeight: '700',
+    fontSize: 14,
   },
   newUser: {
     color: JournalTokens.color.muted,

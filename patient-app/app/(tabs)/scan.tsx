@@ -13,19 +13,24 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GraphUnavailableBanner, ProductBarcodeScanner, ShelfProductRow } from '@/components/conflict';
 import { useToast } from '@/components/billing-feedback';
 import { ConsumerPrimaryButton } from '@/components/billing-ui';
 import { PrimaryFab, SectionLabel } from '@/components/v3';
+import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
-import { addProductManual, fetchEvaluateLineup, scanBarcodeToShelf } from '@/lib/conflict-api';
+import {
+  addProductManual,
+  fetchEvaluateLineup,
+  scanBarcodeToShelf,
+  shelfVerdictAction,
+} from '@/lib/conflict-api';
 import type { EvaluateResult, ProductStatus } from '@/lib/conflict-types';
 import { patientGet } from '@/lib/patient-api';
 import { trackPortalEvent } from '@/lib/trackPortalEvent';
@@ -90,19 +95,10 @@ export default function ScanScreen() {
   const lastScanRef = useRef<{ code: string; at: number } | null>(null);
   const scannedCodesRef = useRef<Set<string>>(new Set());
   const SCAN_COOLDOWN_MS = 8000;
-  const scanLine = useSharedValue(0);
-
-  useEffect(() => {
-    scanLine.value = withRepeat(withTiming(1, { duration: 1800 }), -1, true);
-  }, [scanLine]);
 
   useEffect(() => {
     if (ready) trackPortalEvent('scan_tab_opened');
   }, [ready]);
-
-  const scanLineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scanLine.value * 120 }],
-  }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -226,6 +222,7 @@ export default function ScanScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
+        <ToucheMarkCompact height={20} style={styles.mark} />
         <View style={styles.headerRow}>
           <Text style={styles.title}>Your products</Text>
           <Text style={styles.shelfCount}>{products.length} added</Text>
@@ -239,7 +236,7 @@ export default function ScanScreen() {
             <>
               <ProductBarcodeScanner enabled={!scanning} onBarcode={(data) => void handleBarcode(data)} />
               <ViewfinderOverlay />
-              <Animated.View style={[styles.scanLine, scanLineStyle]} />
+              <View style={styles.scanLine} />
               {scanning ? (
                 <View style={styles.scanOverlay}>
                   <ActivityIndicator color="#fff" size="large" />
@@ -265,15 +262,41 @@ export default function ScanScreen() {
           products.map((p) => {
             const st = statusFor(p.id);
             return (
-              <ShelfProductRow
-                key={p.id}
-                shelf_product_id={p.id}
-                product_name={p.product_name || st.product_name}
-                usage_time={p.usage_time || st.usage_time}
-                status={st.status}
-                note={st.note}
-                onPress={() => router.push(verdictHref(p.id))}
-              />
+              <View key={p.id}>
+                <ShelfProductRow
+                  shelf_product_id={p.id}
+                  product_name={p.product_name || st.product_name}
+                  usage_time={p.usage_time || st.usage_time}
+                  status={st.status}
+                  note={st.note}
+                  onPress={() => router.push(verdictHref(p.id))}
+                />
+                {/* TOUCH-111 — Keep / Don't use via shared verdict-action */}
+                <View style={styles.keepRow}>
+                  <Pressable
+                    onPress={() => {
+                      void shelfVerdictAction(p.id, 'remove')
+                        .then(() => load())
+                        .catch((e: unknown) =>
+                          showToast(e instanceof Error ? e.message : 'Failed', 'error'),
+                        );
+                    }}
+                    testID={`shelf-dont-use-${p.id}`}>
+                    <Text style={styles.keepDont}>Don&apos;t use</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      void shelfVerdictAction(p.id, 'keep')
+                        .then(() => showToast('Kept on shelf', 'success'))
+                        .catch((e: unknown) =>
+                          showToast(e instanceof Error ? e.message : 'Failed', 'error'),
+                        );
+                    }}
+                    testID={`shelf-keep-${p.id}`}>
+                    <Text style={styles.keepYes}>Keep</Text>
+                  </Pressable>
+                </View>
+              </View>
             );
           })
         )}
@@ -308,6 +331,7 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: JournalTokens.spacing.lg, paddingBottom: 100, gap: 8 },
+  mark: { alignSelf: 'flex-start' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   title: { fontFamily: JournalTokens.font.display, fontSize: 28, color: JournalTokens.color.ink },
   shelfCount: { fontSize: 13, fontWeight: '700', color: JournalTokens.color.muted },
@@ -344,6 +368,15 @@ const styles = StyleSheet.create({
   permissionText: { color: '#fff', textAlign: 'center' },
   searchLink: { color: JournalTokens.color.accent, fontWeight: '600', textAlign: 'center', marginVertical: 8 },
   empty: { color: JournalTokens.color.muted, fontSize: 14 },
+  keepRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    paddingBottom: 10,
+    marginTop: -4,
+  },
+  keepDont: { color: AppTokens.color.hardNo, fontWeight: '600', fontSize: 13 },
+  keepYes: { color: AppTokens.color.safe, fontWeight: '600', fontSize: 13 },
   fabWrap: { position: 'absolute', bottom: 16, left: 0, right: 0 },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalCard: {

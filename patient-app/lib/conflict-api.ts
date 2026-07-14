@@ -1,4 +1,4 @@
-import { patientGet, patientPost, patientPostPublic } from '@/lib/patient-api';
+import { patientGet, patientPatch, patientPost, patientPostPublic } from '@/lib/patient-api';
 import type {
   BarrierInsight,
   BioProfile,
@@ -94,7 +94,38 @@ export async function fetchEvaluatePair(productId: string): Promise<EvaluateResu
 
 export async function publicEvaluateProducts(
   products: Array<{ product_name?: string; barcode?: string; ingredients_text?: string }>,
-  bioProfile?: Partial<BioProfile>
+  bioProfile?: Partial<BioProfile>,
+  allergens?: Array<{ allergen_class: string; label?: string }>,
 ) {
-  return patientPostPublic('/api/public/routine/evaluate', { products, bio_profile: bioProfile });
+  return patientPostPublic('/api/public/routine/evaluate', {
+    products,
+    bio_profile: bioProfile,
+    allergens: allergens || [],
+  });
+}
+
+export async function patchShelfProduct(
+  productId: string,
+  body: {
+    cost_per_use?: number | null;
+    price_usd?: number | null;
+    expiry_date?: string | null;
+    opened_date?: string | null;
+    pao_months?: number | null;
+  },
+) {
+  return patientPatch(`/api/patient/shelf/products/${encodeURIComponent(productId)}`, body);
+}
+
+export async function fetchPatientAlerts() {
+  return patientGet('/api/patient/alerts');
+}
+
+export async function fetchAlertsCount(): Promise<number> {
+  const data = await patientGet('/api/patient/alerts/count');
+  return Number(data?.count) || 0;
+}
+
+export async function fetchCheckSafeMode() {
+  return patientGet('/api/patient/check/safe-mode');
 }

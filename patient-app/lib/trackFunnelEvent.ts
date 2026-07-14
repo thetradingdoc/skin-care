@@ -4,6 +4,7 @@ export type FunnelEventDetail = {
   route?: string;
   concern_id?: string;
   user_goal?: string;
+  surface?: string;
 };
 
 /** Signed-in funnel handoff events — whitelist in patient-funnel-bridge.js */

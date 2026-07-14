@@ -27,7 +27,7 @@ export default function Footer() {
           </div>
         </div>
         <p className="sc-footer-tagline">{FOOTER_TAGLINE}</p>
-        <p className="sc-footer-copy">&copy; {new Date().getFullYear()} Skin&amp;Care</p>
+        <p className="sc-footer-copy">&copy; touche labs™ 2026. All rights reserved.</p>
       </div>
     </footer>
   );

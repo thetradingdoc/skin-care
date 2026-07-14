@@ -1,3 +1,4 @@
+// PR1 soft-launch safety — 2026-07-12
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhotoAlignPreview } from '@/components/PhotoAlignPreview';
+import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { useToast } from '@/components/billing-feedback';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { AppTokens } from '@/constants/appTokens';
@@ -38,17 +40,16 @@ export default function RoutineCaptureScreen() {
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
       : localTodayIso();
-  const pendingLibrary = consumePendingCaptureUri();
-  const libraryUri =
-    pendingLibrary?.uri ||
-    (typeof params.libraryUri === 'string' ? params.libraryUri : null);
-  const libraryMimeType = pendingLibrary?.mimeType;
+  const paramLibraryUri =
+    typeof params.libraryUri === 'string' ? params.libraryUri : null;
+  const [libraryUri, setLibraryUri] = useState<string | null>(paramLibraryUri);
+  const [libraryMimeType, setLibraryMimeType] = useState<string | undefined>(undefined);
 
   const [permission, requestPermission] = useCameraPermissions();
   const camRef = useRef<CameraView>(null);
   const [ghostUrl, setGhostUrl] = useState<string | null>(null);
   const [ghostPriorDate, setGhostPriorDate] = useState<string | null>(null);
-  const [capturedUri, setCapturedUri] = useState<string | null>(libraryUri);
+  const [capturedUri, setCapturedUri] = useState<string | null>(paramLibraryUri);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [symptomsOpen, setSymptomsOpen] = useState(false);
@@ -58,6 +59,21 @@ export default function RoutineCaptureScreen() {
 
   const dayMode = resolveRoutineDayMode(entryDate);
   const allowsPhoto = dayMode.allows_photo;
+
+  // PR1-13: load pending library URI async (SecureStore) instead of sync consume at render
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pending = await consumePendingCaptureUri();
+      if (cancelled || !pending?.uri) return;
+      setLibraryUri(pending.uri);
+      setLibraryMimeType(pending.mimeType);
+      setCapturedUri((prev) => prev || pending.uri);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!allowsPhoto) {
@@ -107,8 +123,8 @@ export default function RoutineCaptureScreen() {
       void setFirstPhotoLogged();
       if (verdictLine) showToast(verdictLine, 'success');
       router.replace({
-        pathname: '/(tabs)/home',
-        params: { date: entryDate, celebrate: '1' },
+        pathname: '/check',
+        params: { date: entryDate, celebrate: '1', refresh: '1' },
       });
     },
     [entryDate, router, showToast],
@@ -300,6 +316,7 @@ export default function RoutineCaptureScreen() {
         ) : null}
         <View style={styles.guideFrame} pointerEvents="none" />
         <SafeAreaView edges={['top']} style={styles.hintBar}>
+          <ToucheMarkCompact height={18} style={styles.captureMark} />
           {preflight ? <Text style={styles.preflightBanner}>{preflight}</Text> : null}
           <Text style={styles.hintText}>
             {ghostUrl && ghostPriorDate
@@ -357,6 +374,7 @@ const styles = StyleSheet.create({
     margin: 24,
   },
   hintBar: { position: 'absolute', top: 0, left: 0, right: 0, padding: 16, gap: 8 },
+  captureMark: { alignSelf: 'flex-start' },
   preflightBanner: {
     backgroundColor: 'rgba(239,159,39,0.9)',
     color: '#fff',

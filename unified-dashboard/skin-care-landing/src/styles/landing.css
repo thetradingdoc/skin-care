@@ -78,7 +78,7 @@ a {
   display: block;
   max-height: none;
   object-fit: contain;
-  color: #000000;
+  color: #f7591f;
 }
 
 .sc-brand-logo.sc-logo-wordmark {
@@ -160,19 +160,22 @@ a {
 .sc-hero-split {
   position: relative;
   background: #ffffff;
-  overflow: hidden;
-  height: 100vh;
-  min-height: 640px;
+  /* Never compress below content — fixed 100vh was clipping pills/badges into features */
+  min-height: 100vh;
+  height: auto;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .sc-hero-split-media {
   position: absolute;
   top: 0;
   right: 0;
+  bottom: 0;
   width: 62%;
-  height: 100%;
+  height: auto;
+  min-height: 100%;
   background: #ffffff;
   overflow: hidden;
 }
@@ -190,18 +193,24 @@ a {
   z-index: 2;
   width: 38%;
   min-width: 0;
-  height: 100%;
-  display: grid;
-  grid-template-rows: 1fr auto;
-  padding: 80px 0 0 48px;
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 88px 0 0 48px;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
+/* Natural-height copy — do not flex-shrink (that caused overflow under features) */
 .sc-hero-split-copy-wrap {
+  flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  min-height: 0;
-  padding-right: 32px;
+  align-items: flex-start;
+  padding: 40px 32px 28px 0;
+  overflow: visible;
 }
 
 .sc-hero-split-copy {
@@ -211,10 +220,19 @@ a {
   max-width: 520px;
 }
 
+.sc-hero-subtitle {
+  color: #f7591f;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
 .sc-hero-headline {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   font-family: var(--font-display);
-  font-size: clamp(56px, 5.5vw, 84px);
+  font-size: clamp(44px, 4.2vw, 68px);
   font-weight: 400;
   line-height: 1.06;
   letter-spacing: -0.02em;
@@ -233,10 +251,14 @@ a {
   font-style: italic;
 }
 
+.sc-hero-headline-journal {
+  color: #f7591f;
+}
+
 .sc-hero-split-sub {
-  margin: 0 0 36px;
+  margin: 0 0 20px;
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--sc-muted);
   max-width: 380px;
 }
@@ -248,7 +270,7 @@ a {
   font-size: 16px;
   font-weight: 400;
   border-radius: 999px;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .sc-hero-cta svg {
@@ -266,8 +288,14 @@ a {
   align-items: center;
 }
 
-.sc-badges--mobile {
-  display: none;
+/* Store badges under 01–03 with clear gap — never overlapping step copy */
+.sc-badges--after-features {
+  flex: 0 0 auto;
+  margin-top: 20px;
+  padding: 0 32px 40px 0;
+  position: relative;
+  z-index: 2;
+  background: #ffffff;
 }
 
 .sc-badge {
@@ -288,6 +316,20 @@ a {
 
 .sc-badge-static {
   cursor: default;
+}
+
+.sc-badge-android-soon {
+  background: #f3f3f3;
+  color: #999999;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 10px 16px;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: default;
+  pointer-events: none;
 }
 
 .sc-badge-inner {
@@ -313,14 +355,24 @@ a {
   fill: currentColor;
 }
 
+/* Features + badges stay together at the bottom of tall viewports */
+.sc-hero-bottom {
+  flex: 0 0 auto;
+  margin-top: auto;
+  background: #ffffff;
+}
+
 /* ——— Hero features row ——— */
 
 .sc-hero-features {
   position: relative;
-  background: transparent;
-  padding: 28px 32px 40px 0;
+  flex: 0 0 auto;
+  background: #ffffff;
+  padding: 24px 32px 0 0;
   border-top: 1px solid rgba(26, 26, 26, 0.1);
   margin-top: 0;
+  z-index: 1;
+  overflow: visible;
 }
 
 .sc-hero-features-inner {
@@ -370,7 +422,7 @@ a {
   font-family: var(--font-display);
   font-size: 1.75rem;
   line-height: 1;
-  color: var(--sc-ink);
+  color: #e8593c;
   margin-bottom: 2px;
 }
 
@@ -394,6 +446,41 @@ a {
 .sc-funnel-shell {
   min-height: 100vh;
   background: #ffffff;
+}
+
+/* Short desktop viewports: keep pills + 01–03 + badges in first screen */
+@media (min-width: 961px) and (max-height: 820px) {
+  .sc-hero-split-body {
+    padding-top: 72px;
+  }
+
+  .sc-hero-split-copy-wrap {
+    padding: 20px 32px 16px 0;
+  }
+
+  .sc-hero-headline {
+    font-size: clamp(40px, 3.8vw, 56px);
+    margin-bottom: 12px;
+  }
+
+  .sc-hero-split-sub {
+    margin-bottom: 14px;
+    font-size: 15px;
+  }
+
+  .sc-hero-cta {
+    padding: 14px 28px;
+    margin-bottom: 12px;
+  }
+
+  .sc-hero-features {
+    padding-top: 16px;
+  }
+
+  .sc-badges--after-features {
+    margin-top: 12px;
+    padding-bottom: 24px;
+  }
 }
 
 @media (max-width: 960px) {
@@ -429,6 +516,9 @@ a {
     width: 100%;
     max-width: none;
     min-height: auto;
+    flex: none;
+    overflow: visible;
+    align-items: stretch;
     padding: 1.25rem 1.25rem 1.5rem;
   }
 
@@ -455,19 +545,20 @@ a {
   .sc-hero-features {
     order: 3;
     width: 100%;
-    padding: 0 1.25rem 1.25rem;
+    margin-top: 0;
+    padding: 0 1.25rem 0;
     border-top: 1px solid rgba(26, 26, 26, 0.08);
   }
 
-  .sc-badges--desktop {
-    display: none;
+  .sc-hero-bottom {
+    display: contents;
   }
 
-  .sc-badges--mobile {
-    display: flex;
+  .sc-badges--after-features {
     order: 4;
     width: 100%;
-    padding: 0 1.25rem 2.5rem;
+    margin-top: 0;
+    padding: 1rem 1.25rem 2.5rem;
   }
 
   .sc-hero-split-copy {
@@ -706,7 +797,7 @@ a {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1rem;
-  color: var(--sc-ink);
+  color: #f7591f;
   max-width: 28rem;
 }
 
@@ -771,6 +862,45 @@ a {
   opacity: 0.88;
   background: #111111;
   border-color: #111111;
+}
+
+/* Hero primary CTA only — touche orange */
+.sc-btn-dark.sc-hero-cta {
+  background: #f7591f;
+  border-color: #f7591f;
+}
+
+.sc-btn-dark.sc-hero-cta:hover {
+  background: #d94c17;
+  border-color: #d94c17;
+  opacity: 1;
+}
+
+.sc-hero-pills {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.sc-hero-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #444;
+  font-weight: 500;
+}
+
+.sc-hero-pill svg {
+  flex-shrink: 0;
+}
+
+.sc-hero-divider {
+  color: #ccc;
+  font-size: 12px;
 }
 
 .sc-hero-cta-sub {
@@ -1031,6 +1161,10 @@ a {
   font-weight: 500;
   line-height: 1.2;
   color: var(--sc-ink);
+}
+
+.sc-steps-how-lead {
+  color: #e8593c;
 }
 
 .sc-steps-how-accent {

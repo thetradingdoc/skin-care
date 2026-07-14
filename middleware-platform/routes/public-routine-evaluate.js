@@ -1,10 +1,14 @@
 'use strict';
 
 const express = require('express');
-const { evaluatePatientLineup } = require('../services/patient-routine-evaluate-service');
-const { buildBioProfileContext } = require('../services/patient-bio-profile-service');
 const { resolveProductIdentityFromBarcode } = require('../services/product-identity-resolver');
-const { extractActivesFromText, persistCanonicalIds } = require('../services/patient-lineup-resolver-service');
+const { extractActivesFromText } = require('../services/patient-lineup-resolver-service');
+const {
+  normalizeBodyAllergens,
+  detectAllergenHardNos,
+  isAcrylateFree,
+  applyHardNoOverall,
+} = require('../services/allergen-hard-no-service');
 
 function registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard, db }) {
   const rateKey = new Map();
@@ -42,20 +46,26 @@ function registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard, db }) 
 
         const bio = body.bio_profile && typeof body.bio_profile === 'object' ? body.bio_profile : null;
         const profileComplete = bio && Array.isArray(bio.conditions) && bio.conditions.length > 0;
+        const exclusions = normalizeBodyAllergens(body.allergens);
 
         const steps = [];
+        const labels = [];
+        let ingredientsJoined = '';
         for (let i = 0; i < products.length; i += 1) {
           const p = products[i] || {};
           const text = [p.product_name, p.ingredients_text, p.barcode].filter(Boolean).join(' ');
+          ingredientsJoined += ` ${text}`;
           let ids = extractActivesFromText(text);
           if (p.barcode) {
             try {
               const resolved = await resolveProductIdentityFromBarcode(String(p.barcode).trim());
               if (resolved.success && resolved.normalized?.ingredients_text) {
                 ids = extractActivesFromText(resolved.normalized.ingredients_text);
+                ingredientsJoined += ` ${resolved.normalized.ingredients_text}`;
               }
             } catch (_) {}
           }
+          labels.push(p.product_name || '');
           steps.push({
             order: i,
             product_name: p.product_name || `Product ${i + 1}`,
@@ -73,16 +83,48 @@ function registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard, db }) 
         }
 
         const verdict = graph.evaluateRoutine(slots);
-        const conflictCount = (verdict.conflicts || []).length;
+        const hardNos = detectAllergenHardNos({
+          exclusions,
+          slots,
+          productLabels: labels,
+          ingredientsText: ingredientsJoined,
+        });
+        let overall = applyHardNoOverall(verdict.overall, hardNos);
+        const conflictCount = (verdict.conflicts || []).length + hardNos.length;
+        const evidence_snippets = [];
+        for (const c of [...(verdict.conflicts || []), ...hardNos]) {
+          const line = c.notes || c.reason || c.summary || c.message || c.title;
+          if (line) evidence_snippets.push(String(line));
+        }
+        if (!evidence_snippets.length) {
+          evidence_snippets.push(
+            conflictCount > 0
+              ? `${conflictCount} potential conflict${conflictCount === 1 ? '' : 's'} found`
+              : 'No major conflicts detected',
+          );
+        }
+
+        const acrylate_free_verified = isAcrylateFree({
+          slots,
+          productLabels: labels,
+          ingredientsText: ingredientsJoined,
+        });
+
         const teaser = {
           success: true,
           teaser: true,
           conflict_count: conflictCount,
-          overall: verdict.overall,
+          overall,
+          hard_no: overall === 'hard_no',
+          hard_no_hits: hardNos,
+          acrylate_free_verified,
           message:
-            conflictCount > 0
-              ? `${conflictCount} potential conflict${conflictCount === 1 ? '' : 's'} found`
-              : 'No major conflicts detected',
+            overall === 'hard_no'
+              ? hardNos[0]?.notes || 'Hard no — allergen match'
+              : conflictCount > 0
+                ? `${conflictCount} potential conflict${conflictCount === 1 ? '' : 's'} found`
+                : 'No major conflicts detected',
+          evidence_snippets,
           signup_required_for_detail: !profileComplete,
         };
 
@@ -92,13 +134,14 @@ function registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard, db }) 
 
         const { detectClassOverloads, computeBarrierMetrics } = require('../services/barrier-load-calculator');
         const classOverloads = detectClassOverloads(slots, products.map((p) => p.product_name || ''));
-        const allConflicts = [...(verdict.conflicts || []), ...classOverloads];
+        const allConflicts = [...(verdict.conflicts || []), ...classOverloads, ...hardNos];
         const barrier = computeBarrierMetrics(slots, allConflicts);
 
         return res.json({
           ...teaser,
           teaser: false,
-          compatibility_score: verdict.overall === 'avoid' ? 24 : verdict.overall === 'caution' ? 55 : 85,
+          compatibility_score:
+            overall === 'hard_no' || overall === 'avoid' ? 18 : overall === 'caution' ? 55 : 85,
           barrier_friction_index: barrier.barrier_friction_index,
           conflicts: allConflicts,
           suggested_split: verdict.suggested_split,
@@ -106,7 +149,7 @@ function registerPublicRoutineEvaluateRoutes(app, { apiLimiter, botGuard, db }) 
       } catch (e) {
         return res.status(500).json({ success: false, error: e.message });
       }
-    }
+    },
   );
 }
 

@@ -1,20 +1,22 @@
 # Brand documentation index
 
-> **Last reviewed:** 2026-06-08
+> **Last reviewed:** 2026-07-14
 
 ## Unified brand: Skin & Care
 
 One user-facing brand for **consumer** (app, marketing, patient web) and **provider** (signup, portal, voice billing). Hostnames like `callsomo.com` and `api.callsomo.com` are **infrastructure identifiers only** until DNS cutover.
 
+**Camera-first product:** Check chrome uses compact orange **touche** (`ToucheMarkCompact`), not skin‧care lockup — product SSOT [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md); surface map [`WORDMARK_BY_SURFACE.md`](./WORDMARK_BY_SURFACE.md).
+
 | Doc | Purpose |
 |-----|---------|
 | [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, journal palette, typography, tokens |
 | [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, **myskinandcare.com**, EAS/TestFlight, DNS cutover |
-| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, favicon, panda mark — paths and code SSOT |
-| [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) | Web vs email wordmark — what to use and what to avoid |
+| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, Check touche mark, favicon, panda — paths and code SSOT |
+| [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) | Which mark per surface (landing vs Check chrome vs email) |
 | [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) | Trademarks, Be Vietnam Pro OFL, logo build-script archive |
 
-**Product name:** Skin & Care (not "MySkinAndCare").
+**Product name:** Skin & Care (not "MySkinAndCare"). Marketing host `myskinandcare.com`; camera-first app host `app.trytouche.com`.
 
 ## Domains (user-facing vs infra)
 

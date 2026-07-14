@@ -1,9 +1,15 @@
 # Middleware platform documentation (consolidated)
-> Last reviewed: 2026-06-10
+> Last reviewed: 2026-07-14
 
-**Last Updated:** 2026-06-10
+**Last Updated:** 2026-07-14
+
+**Setup (local):** `cd middleware-platform && cp .env.example .env && npm ci && npm start` (port 4000). Dev DB SSOT: [`../Database/ENV_AND_DB_SSOT.md`](../Database/ENV_AND_DB_SSOT.md).
+
+**CORS (TOUCH-038):** allowlist in `server.js` includes `https://app.trytouche.com`, `https://trytouche.com`, and `*.trytouche.com`, plus myskinandcare / callsomo hosts and localhost. Commerce kill-switch: `COMMERCE_CTAS_ENABLED` (authoritative when set).
 
 **Skin & Care consumer landing** at `/` is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/) (active). Legacy **littlelab** CRA funnel was removed from this repo; historical references below describe archived behavior (see git history).
+
+**Camera-first product SSOT:** [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
 
 **Voice runtime (2026):** [`services/voice-agent-runtime.js`](../../middleware-platform/services/voice-agent-runtime.js), migrations `053`/`054`, [VOICE_PROMPT_SSOT.md](../architecture/VOICE_PROMPT_SSOT.md), [voice-inbound troubleshooting](../runbooks/voice-inbound-troubleshooting.md).
 

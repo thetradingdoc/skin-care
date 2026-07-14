@@ -2,13 +2,13 @@ export const SITE_ORIGIN = 'https://myskinandcare.com';
 export const OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg`;
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
-export const SITE_NAME = 'MySkin&Care';
+export const SITE_NAME = 'touche';
 
-export const DEFAULT_OG_TITLE = 'MySkin&Care — The #1 Skincare Journal';
+export const DEFAULT_OG_TITLE = 'touche — The #1 Skincare Journal';
 export const DEFAULT_OG_DESCRIPTION =
-  'Log one photo a day. Track how your skin changes — before you add another product.';
+  'Log one photo a day and see what changes.';
 export const DEFAULT_META_DESCRIPTION =
-  'The skincare journal for daily photo tracking. See flares, reactions, and changes over time. Start with one face check. Free on iOS and Android.';
+  'Log one photo a day and see what changes.';
 
 export function absoluteUrl(path = '/') {
   if (!path || path === '/') return `${SITE_ORIGIN}/`;

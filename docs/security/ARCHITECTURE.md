@@ -1,8 +1,8 @@
 # Security architecture
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-07-14
 
-Defense-in-depth for Skin & Care consumer + middleware (`api.callsomo.com`).
+Defense-in-depth for Skin & Care consumer + middleware (`api.callsomo.com` / `api.myskinandcare.com`).
 
 ## Rings
 
@@ -15,7 +15,7 @@ Defense-in-depth for Skin & Care consumer + middleware (`api.callsomo.com`).
 
 ## CORS
 
-Allowed origins: `myskinandcare.com`, `callsomo.com` subdomains, dev localhost. Custom headers include `x-session-id`, `x-client-date` ([`lib/cors-allowed-headers.js`](../../middleware-platform/lib/cors-allowed-headers.js)).
+Allowed origins include: `myskinandcare.com`, `callsomo.com` subdomains, **`https://app.trytouche.com`** and `*.trytouche.com` (TOUCH-038), `trytouche.com` store origins, and dev localhost. Custom headers include `x-session-id`, `x-client-date` ([`lib/cors-allowed-headers.js`](../../middleware-platform/lib/cors-allowed-headers.js)). Allowlist lives in [`middleware-platform/server.js`](../../middleware-platform/server.js).
 
 ## Input sanitization
 

@@ -1,5 +1,7 @@
-import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+// PR1 soft-launch safety — 2026-07-12
+// BLOCK 2 branding & UI — 2026-07-12
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -19,7 +21,8 @@ import { SessionImage } from '@/components/SessionImage';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { AppTokens } from '@/constants/appTokens';
-import { HOME_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { COMPARE_HREF, CHECK_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { rollingJournalRange } from '@/components/journal/journalTypes';
 import { listSpots, spotStatusLabel, type Spot } from '@/lib/spot-store';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import {
@@ -36,6 +39,7 @@ import { localTodayIso } from '@/lib/routine-day-mode';
 
 type Summary = {
   streak_days?: number;
+  journal_days_logged?: number;
   baseline_skin_age?: number | null;
   latest_skin_age?: number | null;
   improvement_metrics?: {
@@ -77,6 +81,10 @@ function bfiLabel(score: number): string {
   return 'Poor';
 }
 
+function isLoggedPhotoDay(d: CalendarDay): boolean {
+  return Boolean(d.has_media) || (d.completion_score ?? 0) >= 100;
+}
+
 export default function ProgressScreen() {
   const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
@@ -87,6 +95,8 @@ export default function ProgressScreen() {
   const [insight, setInsight] = useState<BarrierInsight>(null);
   const [history, setHistory] = useState<VerdictHistoryDay[]>([]);
   const [days, setDays] = useState<CalendarDay[]>([]);
+  /** Full calendar window (up to 180d) for Compare CTA — not the 8-day timeline strip. */
+  const [photoHistory, setPhotoHistory] = useState<CalendarDay[]>([]);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [triggerTags, setTriggerTags] = useState<string[]>([]);
   const [journalMetrics, setJournalMetrics] = useState<{
@@ -96,6 +106,10 @@ export default function ProgressScreen() {
     hydration_pct?: number;
   } | null>(null);
 
+  const [severityHistory, setSeverityHistory] = useState<
+    Array<{ date: string; dryness_rank?: number | null; breakout_rank?: number | null }>
+  >([]);
+
   useEffect(() => {
     if (ready) trackPortalEvent('progress_viewed');
   }, [ready]);
@@ -104,11 +118,10 @@ export default function ProgressScreen() {
     setLoading(true);
     try {
       const today = localTodayIso();
-      const start = new Date(`${today}T12:00:00.000Z`);
-      start.setUTCDate(start.getUTCDate() - 7);
-      const startIso = start.toISOString().slice(0, 10);
+      // UX-1: wide range for true first photo + total photo days (timeline still uses last 8)
+      const { start: startIso } = rollingJournalRange(180);
 
-      const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes] =
+      const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes, sevRes] =
         await Promise.all([
           patientGet('/api/patient/home/progress-summary'),
           fetchBarrierInsight().catch(() => null),
@@ -119,6 +132,7 @@ export default function ProgressScreen() {
           listSpots(),
           fetchTriggerInsights().catch(() => ({ insights: [] })),
           fetchJournalImprovements().catch(() => ({ ready: false, metrics: null })),
+          patientGet('/api/patient/journal/severity/history?days=14').catch(() => ({ days: [] })),
         ]);
       setSpots(spotList);
       setTriggerTags(
@@ -129,7 +143,9 @@ export default function ProgressScreen() {
       setImprovementMetrics(progRes?.improvement_metrics || null);
       setInsight(insightRes);
       setHistory(histRes);
+      setSeverityHistory(Array.isArray(sevRes?.days) ? sevRes.days : []);
       const calDays: CalendarDay[] = Array.isArray(calRes?.days) ? calRes.days : [];
+      setPhotoHistory(calDays);
       setDays(calDays.slice(-8));
 
       const streak = Number(progRes?.summary?.streak_days) || 0;
@@ -144,9 +160,43 @@ export default function ProgressScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    if (ready) void load();
-  }, [ready, load]);
+  // PR1-15: reload on tab focus (covers initial mount when ready — replaces ready+load useEffect)
+  useFocusEffect(
+    useCallback(() => {
+      if (!ready) return;
+      void load();
+    }, [ready, load]),
+  );
+
+  // UX-1: first logged photo across 180d history (not the 8-day strip)
+  const earliestPhotoDate = useMemo(() => {
+    if (!photoHistory.length) return null;
+    const logged = photoHistory
+      .filter(isLoggedPhotoDay)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    return logged.length > 0 ? logged[0].date : null;
+  }, [photoHistory]);
+
+  const countedPhotoDays = useMemo(
+    () => photoHistory.filter(isLoggedPhotoDay).length,
+    [photoHistory],
+  );
+  const todayIso = localTodayIso();
+  const [showBackfillPicker, setShowBackfillPicker] = useState(false);
+
+  const backfillDates = useMemo(() => {
+    const today = localTodayIso();
+    const out: string[] = [];
+    for (let d = 1; d <= 2; d += 1) {
+      const dt = new Date(`${today}T12:00:00.000Z`);
+      dt.setUTCDate(dt.getUTCDate() - d);
+      const iso = dt.toISOString().slice(0, 10);
+      const day = photoHistory.find((p) => p.date === iso);
+      const logged = day ? isLoggedPhotoDay(day) : false;
+      if (!logged) out.push(iso);
+    }
+    return out;
+  }, [photoHistory]);
 
   if (checking || !ready) {
     return (
@@ -158,32 +208,36 @@ export default function ProgressScreen() {
 
   const metrics = improvementMetrics;
   const streak = summary?.streak_days ?? 0;
+  // Prefer API total when present (journal mode); else count from 180d calendar
+  const totalPhotoDays =
+    summary?.journal_days_logged != null
+      ? Number(summary.journal_days_logged) || 0
+      : countedPhotoDays;
   const bfi = latestBfi(history);
-  const openPhoto = () => router.push(`${HOME_HREF}?photo=1` as typeof HOME_HREF);
+
+  const openPhoto = () => router.push(CHECK_HREF);
+  const showCompareCta =
+    totalPhotoDays >= 7 && Boolean(earliestPhotoDate) && earliestPhotoDate !== todayIso;
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']} testID="proof-screen">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Your progress</Text>
-            <Text style={styles.subtitle}>Small changes. Real results.</Text>
+            <Text style={styles.title}>Proof</Text>
+            <Text style={styles.subtitle}>Your skin data. Your proof.</Text>
           </View>
-          <Pressable
-            style={styles.calendarBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Open calendar"
-            onPress={() => router.push(HOME_HREF)}>
-            <AppIcon name="calendar" size={20} color={AppTokens.color.ink} />
+          <Pressable onPress={() => router.replace(CHECK_HREF)} accessibilityRole="button">
+            <Text style={styles.seeAll}>Check</Text>
           </Pressable>
         </View>
 
         {streak === 0 ? (
           <PhotoStreakHero onTakePhoto={openPhoto} />
         ) : (
-          <View style={styles.streakHero}>
+          <View style={styles.streakHero} testID="proof-streak">
             <View>
               <Text style={styles.streakHeroLabel}>Current streak</Text>
               <View style={styles.streakHeroRow}>
@@ -192,9 +246,101 @@ export default function ProgressScreen() {
               </View>
               {percentileCopy ? <Text style={styles.streakHeroSub}>{percentileCopy}</Text> : null}
             </View>
-            <AppIcon name="flame" size={28} color="#F59E0B" />
+            <AppIcon name="flame" size={28} color={AppTokens.color.watchAmberText} />
           </View>
         )}
+        {bfi != null ? (
+          <Text style={styles.subtitle} testID="proof-barrier">
+            Barrier {bfiLabel(bfi)} · {bfi}/100
+          </Text>
+        ) : null}
+        {showCompareCta ? (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: COMPARE_HREF as '/compare',
+                params: { dateA: todayIso, dateB: earliestPhotoDate! },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel="Compare day 1 to today"
+            style={styles.compareCta}
+            testID="proof-compare-cta">
+            <Text style={styles.compareCtaText}>See day 1 vs today →</Text>
+          </Pressable>
+        ) : null}
+
+        <Pressable
+          style={styles.compareCta}
+          onPress={() => setShowBackfillPicker((v) => !v)}
+          testID="proof-add-past-day"
+          accessibilityRole="button"
+          accessibilityLabel="Add past day">
+          <Text style={styles.compareCtaText}>
+            {showBackfillPicker ? 'Choose a day below' : 'Add past day →'}
+          </Text>
+        </Pressable>
+        {showBackfillPicker ? (
+          <View style={styles.backfillPicker} testID="proof-backfill-picker">
+            <Text style={styles.subtitle}>
+              Photos can be backfilled for the last 48 hours only.
+            </Text>
+            {backfillDates.length === 0 ? (
+              <Text style={styles.bfiEmptyText}>No empty days in the backfill window.</Text>
+            ) : (
+              backfillDates.map((iso) => (
+                <Pressable
+                  key={iso}
+                  style={styles.backfillDay}
+                  testID={`proof-backfill-${iso}`}
+                  onPress={() => {
+                    setShowBackfillPicker(false);
+                    router.push({
+                      pathname: '/journal/capture' as never,
+                      params: { date: iso, library: '1' },
+                    } as never);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Backfill ${iso}`}>
+                  <Text style={styles.compareCtaText}>{iso} · upload photo →</Text>
+                </Pressable>
+              ))
+            )}
+          </View>
+        ) : null}
+
+        {/* TOUCH-048 — severity rank bars */}
+        <SectionLabel>Severity — last 2 weeks</SectionLabel>
+        <View style={styles.barrierCard} testID="proof-severity-charts">
+          {severityHistory.length === 0 ? (
+            <Text style={styles.bfiEmptyText}>Log severity after Check to unlock bars</Text>
+          ) : (
+            severityHistory.slice(-8).map((d) => (
+              <View key={d.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <Text style={{ width: 72, fontSize: 11, color: AppTokens.color.muted }}>{d.date.slice(5)}</Text>
+                <View
+                  style={{
+                    height: 10,
+                    width: Math.max(8, (Number(d.dryness_rank) || 0) * 28),
+                    backgroundColor: AppTokens.color.brandBlue,
+                    borderRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    height: 10,
+                    width: Math.max(8, (Number(d.breakout_rank) || 0) * 28),
+                    backgroundColor: AppTokens.color.terracotta,
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+            ))
+          )}
+          <Text style={{ fontSize: 11, color: AppTokens.color.hint, marginTop: 4 }}>
+            Blue = dry rank · Terracotta = breakout rank (1–3)
+          </Text>
+        </View>
 
         <SectionLabel>Barrier score — last 8 days</SectionLabel>
         <View style={styles.barrierCard}>
@@ -209,6 +355,9 @@ export default function ProgressScreen() {
             ) : null}
           </View>
           <BarrierGrid8 days={history} />
+          {history.length === 0 ? (
+            <Text style={styles.bfiEmptyText}>Log photos to unlock barrier insights</Text>
+          ) : null}
         </View>
 
         {insight?.message ? (
@@ -267,12 +416,12 @@ export default function ProgressScreen() {
           <>
             <View style={styles.timelineHeader}>
               <SectionLabel>{`${days.length}-day photo timeline`}</SectionLabel>
-              <Pressable onPress={() => router.push(HOME_HREF)} accessibilityRole="button">
+              <Pressable onPress={() => router.push(CHECK_HREF)} accessibilityRole="button">
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
             <View style={styles.thumbGrid}>
-              {days.map((d, idx) => {
+              {days.map((d) => {
                 const logged = (d.completion_score || 0) >= 100 || d.has_media;
                 const isToday = d.date === localTodayIso();
                 const tagColor = d.verdict_overall
@@ -282,12 +431,22 @@ export default function ProgressScreen() {
                   d.condition_tags?.[0] && CONDITION_DOT[d.condition_tags[0]]
                     ? CONDITION_DOT[d.condition_tags[0]]
                     : null;
-                const dayLabel = isToday ? 'Today' : idx === 0 ? 'Day 1' : d.date.slice(8);
+                const dayLabel = (() => {
+                  if (isToday) return 'Today';
+                  const daysAgo = Math.round(
+                    (new Date(`${todayIso}T12:00:00`).getTime() -
+                      new Date(`${d.date}T12:00:00`).getTime()) /
+                      86400000,
+                  );
+                  if (daysAgo === 1) return 'Yesterday';
+                  if (daysAgo > 1) return `${daysAgo}d ago`;
+                  return d.date.slice(5);
+                })();
                 return (
                   <View key={d.date} style={styles.thumbCol}>
                     <Pressable
                       onPress={() =>
-                        router.push(`${HOME_HREF}?date=${d.date}` as typeof HOME_HREF)
+                        router.push(`${CHECK_HREF}?date=${d.date}` as typeof CHECK_HREF)
                       }
                       style={[
                         styles.thumb,
@@ -362,16 +521,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: AppTokens.color.muted,
   },
-  calendarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-    backgroundColor: AppTokens.color.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   streakHero: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,8 +540,42 @@ const styles = StyleSheet.create({
   },
   streakHeroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
   streakHeroNum: { fontSize: 42, fontWeight: '700', color: '#fff', lineHeight: 44 },
-  streakHeroUnit: { fontSize: 16, fontWeight: '600', color: '#F59E0B' },
+  streakHeroUnit: { fontSize: 16, fontWeight: '600', color: AppTokens.color.watchAmberText },
   streakHeroSub: { fontSize: 12, color: AppTokens.color.hint, marginTop: 4 },
+  compareCta: {
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignSelf: 'center',
+    marginTop: 4,
+    marginBottom: 4,
+    borderWidth: 1.5,
+    borderColor: AppTokens.color.ink,
+  },
+  compareCtaText: {
+    color: AppTokens.color.ink,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  backfillPicker: {
+    backgroundColor: AppTokens.color.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
+    padding: 14,
+    gap: 10,
+    marginBottom: 8,
+  },
+  backfillDay: {
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
+  },
   barrierCard: {
     backgroundColor: AppTokens.color.card,
     borderRadius: 14,
@@ -412,6 +595,13 @@ const styles = StyleSheet.create({
     fontFamily: AppFontFamilies.bodySemiBold,
     color: AppTokens.color.ink,
     flex: 1,
+  },
+  bfiEmptyText: {
+    fontSize: 12,
+    color: AppTokens.color.muted,
+    textAlign: 'center',
+    marginTop: 8,
+    fontFamily: AppFontFamilies.body,
   },
   bfiBadge: {
     backgroundColor: '#E6F1FB',

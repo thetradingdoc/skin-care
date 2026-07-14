@@ -34,6 +34,8 @@ function registerPatientBioProfileRoutes(app, deps) {
       const sessionId = req.patientSessionId;
       const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
       const body = req.body && typeof req.body === 'object' ? req.body : {};
+      // TOUCH-100/101 — procedure_* (and progressive budget/climate) must reach upsertBioProfile;
+      // account saveBioProfile posts them; dropping them left safe-mode seed/save dead.
       const profile = bio.upsertBioProfile(db.db, {
         sessionId,
         patientId,
@@ -43,6 +45,11 @@ function registerPatientBioProfileRoutes(app, deps) {
           sensitivity: body.sensitivity,
           fitzpatrick: body.fitzpatrick,
           zip: body.zip,
+          procedure_date: body.procedure_date,
+          procedure_type: body.procedure_type,
+          procedure_recovery_days: body.procedure_recovery_days,
+          budget_band: body.budget_band,
+          climate_zone: body.climate_zone,
           profile_complete: body.profile_complete,
         },
       });

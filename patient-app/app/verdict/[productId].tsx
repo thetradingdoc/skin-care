@@ -8,6 +8,7 @@ import {
   Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,8 +29,14 @@ import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { SCAN_HREF } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
-import { fetchEvaluatePair, fetchProductInsight, shelfVerdictAction } from '@/lib/conflict-api';
+import {
+  fetchEvaluatePair,
+  fetchProductInsight,
+  patchShelfProduct,
+  shelfVerdictAction,
+} from '@/lib/conflict-api';
 import type { EvaluateResult, ProductInsight } from '@/lib/conflict-types';
+import { patientGet } from '@/lib/patient-api';
 
 export default function VerdictScreen() {
   const { ready, checking } = useRequirePatientSession();
@@ -40,6 +47,9 @@ export default function VerdictScreen() {
   const [busy, setBusy] = useState(false);
   const [evaluate, setEvaluate] = useState<EvaluateResult | null>(null);
   const [productInsight, setProductInsight] = useState<ProductInsight | null>(null);
+  const [costPerUse, setCostPerUse] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [shelfBusy, setShelfBusy] = useState(false);
   const scoreCardRef = useRef<View>(null);
 
   const load = useCallback(async () => {
@@ -48,6 +58,18 @@ export default function VerdictScreen() {
     try {
       const res = await fetchEvaluatePair(String(productId));
       setEvaluate(res);
+      try {
+        const shelf = await patientGet('/api/patient/shelf/products');
+        const row = (Array.isArray(shelf?.products) ? shelf.products : []).find(
+          (p: { id?: string }) => String(p.id) === String(productId),
+        );
+        if (row) {
+          if (row.cost_per_use != null) setCostPerUse(String(row.cost_per_use));
+          if (row.expiry_date) setExpiryDate(String(row.expiry_date));
+        }
+      } catch {
+        /* optional */
+      }
       try {
         const insightRes = await fetchProductInsight(String(productId));
         if (insightRes.featureEnabled && !insightRes.insight) {
@@ -86,12 +108,39 @@ export default function VerdictScreen() {
     setBusy(true);
     try {
       await shelfVerdictAction(String(productId), action);
-      showToast(action === 'remove' ? 'Removed from shelf' : 'Kept on shelf', 'success');
+      showToast(action === 'remove' ? "Don't use — removed" : 'Kept on shelf', 'success');
       router.replace(SCAN_HREF);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Action failed', 'error');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const saveShelfFields = async () => {
+    if (!productId) return;
+    setShelfBusy(true);
+    try {
+      const patch: { cost_per_use?: number | null; expiry_date?: string | null } = {};
+      if (costPerUse.trim() === '') patch.cost_per_use = null;
+      else {
+        const n = Number(costPerUse);
+        if (!Number.isFinite(n) || n < 0) throw new Error('Cost per use must be a number');
+        patch.cost_per_use = n;
+      }
+      if (expiryDate.trim() === '') patch.expiry_date = null;
+      else {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryDate.trim())) {
+          throw new Error('Expiry must be YYYY-MM-DD');
+        }
+        patch.expiry_date = expiryDate.trim();
+      }
+      await patchShelfProduct(String(productId), patch);
+      showToast('Shelf details saved', 'success');
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Could not save', 'error');
+    } finally {
+      setShelfBusy(false);
     }
   };
 
@@ -192,6 +241,34 @@ export default function VerdictScreen() {
           </>
         ) : null}
 
+        <Text style={styles.section}>Shelf details</Text>
+        <View style={styles.shelfFields} testID="shelf-inventory-fields">
+          <Text style={styles.fieldLabel}>Cost per use (USD)</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            value={costPerUse}
+            onChangeText={setCostPerUse}
+            placeholder="e.g. 0.45"
+            testID="shelf-cost-per-use"
+          />
+          <Text style={styles.fieldLabel}>Expiry (YYYY-MM-DD)</Text>
+          <TextInput
+            style={styles.input}
+            value={expiryDate}
+            onChangeText={setExpiryDate}
+            placeholder="2027-01-15"
+            testID="shelf-expiry-date"
+          />
+          <Pressable
+            style={styles.saveShelf}
+            disabled={shelfBusy}
+            onPress={() => void saveShelfFields()}
+            testID="shelf-save-fields">
+            <Text style={styles.saveShelfText}>{shelfBusy ? 'Saving…' : 'Save shelf fields'}</Text>
+          </Pressable>
+        </View>
+
         <VerdictActions onRemove={() => void onAction('remove')} onKeep={() => void onAction('keep')} busy={busy} />
       </ScrollView>
     </SafeAreaView>
@@ -205,4 +282,22 @@ const styles = StyleSheet.create({
   productName: { fontSize: 20, fontWeight: '700', flex: 1 },
   share: { color: JournalTokens.color.accent, fontWeight: '600' },
   section: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginTop: 16, marginBottom: 8 },
+  shelfFields: { gap: 8, marginBottom: 8 },
+  fieldLabel: { fontSize: 12, color: AppTokens.color.muted, fontFamily: AppTokens.font.body },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppTokens.color.line,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: AppTokens.font.body,
+  },
+  saveShelf: {
+    alignSelf: 'flex-start',
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  saveShelfText: { fontWeight: '600', color: AppTokens.color.ink },
 });

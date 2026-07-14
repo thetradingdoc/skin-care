@@ -17,7 +17,7 @@ export default function OnboardingSignupScreen() {
     try {
       await completeOnboardingAfterSignup();
       router.replace({
-        pathname: '/(tabs)/home',
+        pathname: '/check',
         params: { celebrate: '1', photo: '1' },
       });
     } catch {

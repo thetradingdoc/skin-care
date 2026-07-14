@@ -2,59 +2,26 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { AppIcon } from '@/components/ui/AppIcon';
 import { AppTokens } from '@/constants/appTokens';
 
+/**
+ * TOUCH-032 — No persistent tab bar. Screens remain addressable via router.
+ * Proof/Profile via Check gear / contextual navigation only.
+ */
 export default function TabLayout() {
   return (
-    <View style={styles.root}>
+    <View style={styles.root} testID="auth-shell-no-tab-bar">
       <Tabs
-        initialRouteName="home"
+        initialRouteName="track"
         screenOptions={{
-          tabBarActiveTintColor: AppTokens.color.brandAccent,
-          tabBarInactiveTintColor: AppTokens.color.hint,
           headerShown: false,
-          tabBarButton: HapticTab,
-          tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabLabel,
+          tabBarStyle: { display: 'none', height: 0 },
           sceneStyle: { backgroundColor: AppTokens.color.pageBg },
         }}>
-        <Tabs.Screen
-          name="home"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ color }) => <AppIcon name="home" size={22} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="track"
-          options={{
-            title: 'Track',
-            tabBarIcon: ({ color }) => <AppIcon name="camera" size={22} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="scan"
-          options={{
-            title: 'Scan',
-            tabBarIcon: ({ color }) => <AppIcon name="scan" size={24} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="progress"
-          options={{
-            title: 'Progress',
-            tabBarIcon: ({ color }) => <AppIcon name="chart-bar" size={22} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="account"
-          options={{
-            title: 'Profile',
-            tabBarIcon: ({ color }) => <AppIcon name="user" size={22} color={color} />,
-          }}
-        />
+        <Tabs.Screen name="track" options={{ href: null }} />
+        <Tabs.Screen name="scan" options={{ href: null }} />
+        <Tabs.Screen name="progress" options={{ href: null }} />
+        <Tabs.Screen name="account" options={{ href: null }} />
         <Tabs.Screen name="timeline" options={{ href: null }} />
         <Tabs.Screen name="money" options={{ href: null }} />
         <Tabs.Screen name="shelf" options={{ href: null }} />
@@ -69,16 +36,5 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: AppTokens.color.pageBg,
-  },
-  tabBar: {
-    height: 72,
-    paddingBottom: 10,
-    backgroundColor: AppTokens.color.card,
-    borderTopColor: AppTokens.color.line,
-  },
-  tabLabel: {
-    fontFamily: AppTokens.font.body,
-    fontSize: 12,
-    marginBottom: 2,
   },
 });

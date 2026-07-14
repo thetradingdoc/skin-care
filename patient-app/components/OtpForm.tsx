@@ -133,7 +133,7 @@ export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: 
             />
             <PrimaryButton
               variant={btnVariant}
-              label={loading ? 'Verifying…' : 'Continue'}
+              label={loading ? 'Verifying…' : 'Verify'}
               onPress={() => void confirmCode()}
             />
             <View style={{ height: 12 }} />

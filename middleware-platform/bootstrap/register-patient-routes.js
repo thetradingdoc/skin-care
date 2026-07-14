@@ -1,6 +1,7 @@
 'use strict';
 
 const { registerFaceReadPublicRoute } = require('../routes/public-face-read');
+const { registerPublicClientFatalRoutes } = require('../routes/public-client-fatal');
 const { registerPublicRoutineRoutes } = require('../routes/public-routines');
 const { registerPublicFunnelMatchRoutes } = require('../routes/public-funnel-match');
 const { registerPublicFunnelJourneyRoutes } = require('../routes/public-funnel-journey');
@@ -24,6 +25,10 @@ const { registerPatientBookingRoutes } = require('../routes/patient-booking');
 const { registerPublicLandingAssistantRoutes } = require('../routes/public-landing-assistant');
 const { registerPatientProfileRoutes } = require('../routes/patient-profile');
 const { registerPatientAuthRoutes } = require('../routes/patient-auth');
+const { registerPatientAllergenRoutes } = require('../routes/patient-allergens');
+const { registerPatientAlertsRoutes } = require('../routes/patient-alerts');
+const { registerPatientCommerceRoutes } = require('../routes/patient-commerce');
+const { registerPatientDeviceRoutes } = require('../routes/patient-devices');
 const { registerPatientDocumentsRoutes } = require('../routes/patient-documents');
 const { registerPatientWalletRoutes } = require('../routes/patient-wallet');
 const { registerPatientRcmRoutes } = require('../routes/patient-rcm');
@@ -51,6 +56,7 @@ function registerConsumerFunnelRoutes(app, deps) {
   } = deps;
 
   registerFaceReadPublicRoute(app, { apiLimiter });
+  registerPublicClientFatalRoutes(app, { apiLimiter, express });
   registerPublicRoutineRoutes(app, { apiLimiter });
   registerPublicFunnelMatchRoutes(app, { apiLimiter });
   registerPublicFunnelJourneyRoutes(app, { apiLimiter, db });
@@ -69,9 +75,10 @@ function registerConsumerFunnelRoutes(app, deps) {
   app.get(/^\/consumer(\/.*)?$/, (req, res) => {
     const sub = String(req.path || '').replace(/^\/consumer\/?/, '');
     if (sub.includes('get-app') || sub.includes('join')) {
-      return res.redirect(302, '/app/sign-in?intent=signup');
+      return res.redirect(302, '/app/try-handoff');
     }
-    return res.redirect(302, '/start');
+    // TOUCH-013: never default to face-age /start funnel.
+    return res.redirect(302, '/app/try-verdict');
   });
 
   registerPublicProductScanRoutes(app, { apiLimiter });
@@ -125,6 +132,10 @@ function registerPatientPortalRoutes(app, deps) {
 
   registerPatientProfileRoutes(app, patientPortalDeps);
   registerPatientAuthRoutes(app, patientPortalDeps);
+  registerPatientAllergenRoutes(app, patientPortalDeps);
+  registerPatientAlertsRoutes(app, patientPortalDeps);
+  registerPatientCommerceRoutes(app, { ...patientPortalDeps, requireAdminAuth });
+  registerPatientDeviceRoutes(app, patientPortalDeps);
   registerPatientDocumentsRoutes(app, patientPortalDeps);
   registerPatientWalletRoutes(app, patientPortalDeps);
   registerPatientRcmRoutes(app, patientPortalDeps);

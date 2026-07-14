@@ -20,7 +20,7 @@ export default function SiteHeader({ minimal = false, overlay = false, hideBrand
         {hideBrand ? (
           <div className="sc-brand-lockup sc-brand-lockup--empty" aria-hidden="true" />
         ) : (
-          <Link to="/" className="sc-brand-lockup" aria-label="skin care home">
+          <Link to="/" className="sc-brand-lockup" aria-label="touche home">
             <LogoWordmark className="sc-brand-logo" height={52} />
           </Link>
         )}

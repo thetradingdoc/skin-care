@@ -16,6 +16,7 @@ describe('conflict-helpers', () => {
   });
 
   it('productPillLabel maps shelf status', () => {
+    expect(productPillLabel('hard_no')).toBe('Hard no');
     expect(productPillLabel('conflict')).toBe('Conflict');
     expect(productPillLabel('safe')).toBe('Safe');
   });

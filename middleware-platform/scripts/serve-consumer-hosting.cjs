@@ -94,11 +94,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Expo web entry is /app (baseUrl). /app/index is not a valid client route — redirect.
+  if (urlPath === '/app/index' || urlPath === '/app/index.html') {
+    res.writeHead(302, { Location: '/app', 'Cache-Control': 'no-store' });
+    res.end();
+    return;
+  }
+
   const relPath = urlPath === '/' ? 'index.html' : urlPath.replace(/^\//, '');
 
   if (trySend(safeJoin(root, relPath), res)) return;
 
-  if (urlPath.startsWith('/app/')) {
+  // Directory-style /app or /app/foo with no static file → SPA shell (Expo router).
+  if (urlPath === '/app' || urlPath === '/app/' || urlPath.startsWith('/app/')) {
     if (trySend(safeJoin(root, 'app/index.html'), res)) return;
   }
 

@@ -8,7 +8,7 @@ import { ConsumerPrimaryButton } from '@/components/billing-ui';
 import { AppTokens } from '@/constants/appTokens';
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
-import { HOME_HREF } from '@/constants/routes';
+import { CHECK_HREF } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { fetchBioProfile, saveBioProfile } from '@/lib/conflict-api';
 
@@ -87,7 +87,7 @@ export default function BioCalibrationScreen() {
         prescriptions: noneRx ? [] : prescriptions,
         profile_complete: true,
       });
-      router.replace(HOME_HREF);
+      router.replace(CHECK_HREF);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not save profile');
     } finally {

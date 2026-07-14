@@ -1,19 +1,20 @@
 {
   "expo": {
-    "name": "Skin & Care",
+    "name": "touche — Skin Journal",
     "slug": "skin-care",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "patientapp",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.skinandcare.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Skin & Care uses the camera for daily progress photos so you can track changes in your skin over time.",
-        "NSPhotoLibraryUsageDescription": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo.",
+        "CFBundleDisplayName": "touche",
+        "NSCameraUsageDescription": "touche uses the camera for daily progress photos so you can track changes in your skin over time.",
+        "NSPhotoLibraryUsageDescription": "touche can save progress photos from your library when you choose to upload instead of taking a new photo.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -40,7 +41,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Skin & Care uses the camera for daily progress photos so you can track changes in your skin over time.",
+          "cameraPermission": "touche uses the camera for daily progress photos so you can track changes in your skin over time.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -48,7 +49,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Skin & Care can save progress photos from your library when you choose to upload instead of taking a new photo."
+          "photosPermission": "touche can save progress photos from your library when you choose to upload instead of taking a new photo."
         }
       ],
       [
@@ -59,21 +60,21 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#ffffff"
           }
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true,
-      "baseUrl": "/app"
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
       "eas": {
         "projectId": "16b5d1d9-a703-4035-b41a-be2401f95c68"
-      }
+      },
+      "privacyPolicyUrl": "https://myskinandcare.com/patients/legal/privacy.html",
+      "supportUrl": "https://trytouche.com/pages/contact"
     }
   }
 }

@@ -18,6 +18,14 @@ const {
   buildContraindicationAlerts,
   buildEvidenceSnippets,
 } = require('./patient-routine-evaluate-service');
+const {
+  loadAllergenExclusions,
+  detectAllergenHardNos,
+  isAcrylateFree,
+  applyHardNoOverall,
+} = require('./allergen-hard-no-service');
+const { classMatchesBlob } = require('../lib/allergen-class-catalog');
+const { computeSafeMode, applySafeModeToSlots } = require('./safe-mode-service');
 
 function buildSuggestedFix(verdict, contraindicationAlerts) {
   const split = verdict.suggested_split;
@@ -114,49 +122,108 @@ function barrierMetricsNode(state) {
   const { sessionId, patientId, lineup, highlightRow, bioContext, verdict, allConflicts, overall } =
     state;
 
-  const barrier = computeBarrierMetrics(lineup.slots, allConflicts);
+  // TOUCH-100 — mute actives while recovery window is open.
+  const safeMode = computeSafeMode(bioContext || {});
+  let evalSlots = lineup.slots;
+  let suppressed_steps = [];
+  if (safeMode.active) {
+    const applied = applySafeModeToSlots(lineup.slots, safeMode);
+    evalSlots = applied.slots;
+    suppressed_steps = applied.suppressed_steps;
+  }
+
+  const barrier = computeBarrierMetrics(evalSlots, allConflicts);
   let contraindicationAlerts = bioContext.profile_complete
-    ? buildContraindicationAlerts(bioContext, lineup.slots)
+    ? buildContraindicationAlerts(bioContext, evalSlots)
     : [];
+
+  // TOUCH-054 — allergen exclusions → hard_no (distinct from caution).
+  const exclusions =
+    state.allergenExclusions ||
+    loadAllergenExclusions(db, { sessionId, patientId });
+  const productLabels = (lineup.productRows || []).map(
+    (r) =>
+      `${r.custom_product_name || ''} ${r.key_ingredients || ''} ${r.ingredients_text || ''} ${r.catalog_product_id || ''}`,
+  );
+  const hardNos = detectAllergenHardNos({
+    exclusions,
+    slots: evalSlots,
+    productLabels,
+  });
+  let conflicts = [...allConflicts, ...hardNos];
 
   let resolvedOverall = overall;
   if (contraindicationAlerts.some((a) => a.severity === 'high') && resolvedOverall === 'safe') {
     resolvedOverall = 'caution';
   }
+  resolvedOverall = applyHardNoOverall(resolvedOverall, hardNos);
 
-  let conflicts = allConflicts;
   if (highlightRow) {
-    const filtered = filterForHighlight(allConflicts, contraindicationAlerts, highlightRow);
-    conflicts = filtered.conflicts.length ? filtered.conflicts : allConflicts;
+    const filtered = filterForHighlight(conflicts, contraindicationAlerts, highlightRow);
+    conflicts = filtered.conflicts.length ? filtered.conflicts : conflicts;
     contraindicationAlerts = filtered.contraindication_alerts;
     if (filtered.conflicts.length) {
-      resolvedOverall = filtered.conflicts.some(
-        (c) => c.verdict === 'avoid' || c.severity === 'critical',
-      )
-        ? 'avoid'
-        : 'caution';
+      if (filtered.conflicts.some((c) => c.verdict === 'hard_no')) {
+        resolvedOverall = 'hard_no';
+      } else {
+        resolvedOverall = filtered.conflicts.some(
+          (c) => c.verdict === 'avoid' || c.severity === 'critical',
+        )
+          ? 'avoid'
+          : 'caution';
+      }
     }
   }
+
+  const acrylate_free_verified = isAcrylateFree({
+    slots: evalSlots,
+    productLabels,
+  });
 
   const compatibility_score = overallToScore(resolvedOverall, barrier.barrier_friction_index);
   const routine_step_states = buildRoutineStepStates(db, {
     sessionId,
     patientId,
-    slots: lineup.slots,
+    slots: evalSlots,
     conflicts,
     bfi: barrier.barrier_friction_index,
+  }).map((st) => {
+    if (!safeMode.active) return st;
+    if (st.state === 'todo' || st.state === 'warn') {
+      const name = String(st.product_name || st.label || '');
+      if (suppressed_steps.some((s) => s.product_name === name)) {
+        return { ...st, state: 'skip', sub: 'Paused · safe mode' };
+      }
+    }
+    return st;
   });
 
-  const product_statuses = (lineup.productRows || []).map((row) => ({
-    shelf_product_id: row.id,
-    product_name: row.custom_product_name || row.catalog_product_id,
-    status: perProductStatus({ conflicts }, row),
-    usage_time: row.usage_time,
-    note:
-      String(row.id) === String(state.highlight_product_id) && conflicts[0]?.notes
-        ? conflicts[0].notes
-        : undefined,
-  }));
+  const product_statuses = (lineup.productRows || []).map((row) => {
+    let status = perProductStatus({ conflicts }, row);
+    // Allergen hard_no conflicts use class / patient_exclusion IDs, not shelf INCI ids —
+    // mark the matching product so status language matches overall + Alerts (TOUCH-054).
+    const rowBlob = `${row.custom_product_name || ''} ${row.key_ingredients || ''} ${row.ingredients_text || ''} ${row.catalog_product_id || ''}`;
+    const allergenHard = conflicts.some(
+      (c) =>
+        c.verdict === 'hard_no' &&
+        c.interaction_type === 'allergen_exclusion' &&
+        classMatchesBlob(String(c.allergen_class || c.ingredient_a || ''), rowBlob),
+    );
+    if (allergenHard) status = 'hard_no';
+    return {
+      shelf_product_id: row.id,
+      product_name: row.custom_product_name || row.catalog_product_id,
+      status,
+      usage_time: row.usage_time,
+      note:
+        String(row.id) === String(state.highlight_product_id) && conflicts[0]?.notes
+          ? conflicts[0].notes
+          : allergenHard
+            ? conflicts.find((c) => c.verdict === 'hard_no' && c.interaction_type === 'allergen_exclusion')
+                ?.notes
+            : undefined,
+    };
+  });
 
   return {
     barrier,
@@ -166,6 +233,10 @@ function barrierMetricsNode(state) {
     compatibility_score,
     routine_step_states,
     product_statuses,
+    hard_no_hits: hardNos,
+    acrylate_free_verified,
+    safe_mode: safeMode,
+    suppressed_steps,
   };
 }
 
@@ -194,12 +265,18 @@ function formatEvaluateResponse(state) {
   const productName =
     highlightRow?.custom_product_name || highlightRow?.catalog_product_id || null;
 
+  const hard_no_hits = state.hard_no_hits || [];
+  const acrylate_free_verified = Boolean(state.acrylate_free_verified);
+  const safe_mode = state.safe_mode || { active: false };
+
   let heroTitle =
-    overall === 'avoid'
-      ? 'High conflict for you'
-      : overall === 'caution'
-        ? 'Barrier under stress'
-        : 'Looking good';
+    overall === 'hard_no'
+      ? 'Hard no for you'
+      : overall === 'avoid'
+        ? 'High conflict for you'
+        : overall === 'caution'
+          ? 'Barrier under stress'
+          : 'Looking good';
   let heroSub =
     overall === 'safe'
       ? 'Your current lineup is compatible.'
@@ -207,15 +284,24 @@ function formatEvaluateResponse(state) {
 
   if (highlightRow && productName) {
     heroTitle =
-      overall === 'avoid'
-        ? 'High conflict for you'
-        : overall === 'caution'
-          ? 'Use with caution'
-          : 'Looks compatible';
+      overall === 'hard_no'
+        ? 'Hard no for you'
+        : overall === 'avoid'
+          ? 'High conflict for you'
+          : overall === 'caution'
+            ? 'Use with caution'
+            : 'Looks compatible';
     heroSub =
       overall === 'safe'
         ? `${productName} fits your current routine.`
-        : `${productName} may clash with actives already on your shelf.`;
+        : overall === 'hard_no'
+          ? `${productName} hits an allergen you ruled out.`
+          : `${productName} may clash with actives already on your shelf.`;
+  }
+
+  if (safe_mode.active) {
+    heroTitle = 'Safe mode · recovery';
+    heroSub = safe_mode.ambient_copy || 'Actives paused while you heal.';
   }
 
   return {
@@ -224,6 +310,11 @@ function formatEvaluateResponse(state) {
       has_lineup: (lineup.slots || []).length > 0,
       source: lineup.source,
       overall,
+      hard_no: overall === 'hard_no',
+      hard_no_hits,
+      acrylate_free_verified,
+      safe_mode,
+      suppressed_steps: state.suppressed_steps || [],
       compatibility_score,
       barrier_friction_index: barrier.barrier_friction_index,
       barrier_label: barrier.barrier_label,

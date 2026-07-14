@@ -1828,6 +1828,9 @@ const allowedOrigins = [
   'https://myskinandcare.com',
   'https://www.myskinandcare.com',
   'https://api.myskinandcare.com',
+  'https://trytouche.com',
+  'https://www.trytouche.com',
+  'https://app.trytouche.com',
   'https://callsomo.com',
   'https://www.callsomo.com',
   'https://api.callsomo.com',
@@ -1862,6 +1865,10 @@ const corsOptions = {
       return callback(null, true);
     }
     if (/^https?:\/\/([a-z0-9-]+\.)*myskinandcare\.com$/i.test(origin)) {
+      return callback(null, true);
+    }
+    // TOUCH-038 — app.trytouche.com (+ subdomains) for auth + evaluate CORS
+    if (/^https?:\/\/([a-z0-9-]+\.)*trytouche\.com$/i.test(origin)) {
       return callback(null, true);
     }
     // Allow ngrok domains (for HTTPS testing: https://xxxx.ngrok-free.app)
@@ -1903,6 +1910,9 @@ const { stripeWebhookRouter } = require('./routes/stripe-webhook-handler');
 app.use('/webhooks/stripe', stripeWebhookRouter);
 const { stediWebhookRouter } = require('./routes/stedi-webhooks');
 app.use('/webhooks/stedi', stediWebhookRouter);
+// TOUCH-073 — Shopify orders/create (raw body before express.json)
+const { createShopifyWebhookRouter } = require('./routes/shopify-webhooks');
+app.use('/webhooks/shopify', createShopifyWebhookRouter(db));
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -2265,14 +2275,14 @@ for (const legacyPath of LEGACY_LANDING_PATHS) {
   app.get(legacyPath, (req, res) => redirectLegacyLandingPath(req, res));
 }
 
-// Funnel signup / join CTAs → patient web login (email + 6-digit code), not the legacy Expo bridge.
-function redirectToPatientAuth(req, res, defaultIntent = 'signup') {
+// Funnel signup / join CTAs → try-verdict (TOUCH-013), not face-age or forced sign-in.
+function redirectToPatientTry(req, res) {
   const params = new URLSearchParams(req.query);
-  if (!params.get('intent')) params.set('intent', defaultIntent);
   const qs = params.toString();
-  return res.redirect(302, `/app/sign-in${qs ? `?${qs}` : ''}`);
+  return res.redirect(302, `/app/try-verdict${qs ? `?${qs}` : ''}`);
 }
-app.get(['/app', '/join'], (req, res) => redirectToPatientAuth(req, res, 'signup'));
+app.get('/join', (req, res) => redirectToPatientTry(req, res));
+// `/app` is served as Expo SPA shell (TOUCH-002/013) — do not intercept with a sign-in redirect.
 
 const { registerStaticHosting } = require('./bootstrap/static-hosting');
 registerStaticHosting(app, {

@@ -1,13 +1,14 @@
 {
   "name": "patient-app",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "1.0.0",
   "scripts": {
+    "postinstall": "bash scripts/ensure-exconstants-app-config.sh",
     "start": "expo start",
     "start:tunnel": "expo start --tunnel",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
@@ -30,6 +31,7 @@
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/gloock": "^0.4.2",
     "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
@@ -44,6 +46,7 @@
     "expo-image": "~3.0.11",
     "expo-image-picker": "~16.1.4",
     "expo-linking": "~8.0.11",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-splash-screen": "~31.0.13",
@@ -55,14 +58,21 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-reanimated": "~4.1.1",
+    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "^15.11.0",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.5.1",
     "swr": "^2.3.0"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react-native-reanimated@~4.0.1",
+        "react-native-reanimated@~4.1.1"
+      ]
+    }
   },
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",

@@ -113,6 +113,30 @@ app.get('/api/patient/routine/template', (req, res, next) => apiLimiter(req, res
         }))
       : [];
 
+    // TOUCH-100 — suppress actives on template list while recovery window is open.
+    const { getBioProfile } = require('../services/patient-bio-profile-service');
+    const { computeSafeMode, isActiveStep } = require('../services/safe-mode-service');
+    const bio = getBioProfile(db.db, { sessionId, patientId }) || {};
+    const safeMode = computeSafeMode(bio);
+    const itemsWithSafeMode = items.map((it) => {
+      const name = String(it.product_name || '');
+      const roleGuess = /cleanser|wash|moisturizer|cream|spf|sunscreen/i.test(name)
+        ? 'cleanser'
+        : 'treatment';
+      const suppressed =
+        safeMode.active &&
+        isActiveStep({
+          product_name: name,
+          ingredient_ids: [],
+          role: roleGuess,
+        });
+      return {
+        ...it,
+        safe_mode_suppressed: suppressed,
+        safe_mode_note: suppressed ? 'Paused during post-procedure recovery' : undefined,
+      };
+    });
+
     const shelfProducts = loadPatientShelfProductRows(sessionId).map((r) => formatShelfProductApiRow(r));
 
     let metadata = null;
@@ -127,6 +151,7 @@ app.get('/api/patient/routine/template', (req, res, next) => apiLimiter(req, res
     return res.json({
       success: true,
       has_template: !!template,
+      safe_mode: safeMode,
       template: template ? {
         ...template,
         duration_days: Number(template.duration_days) > 0 ? Number(template.duration_days) : 28,
@@ -134,7 +159,7 @@ app.get('/api/patient/routine/template', (req, res, next) => apiLimiter(req, res
         repeat_days_of_week: safeParseJsonArray(template.repeat_days_of_week_json),
         concern_id: template.concern_id || null,
         metadata,
-        items
+        items: itemsWithSafeMode
       } : null,
       shelf_products: shelfProducts
     });
@@ -515,6 +540,8 @@ app.get('/api/patient/routine/daily/:date/lineup-preview', (req, res, next) => a
         conflict_count: (result.conflicts || []).length,
         barrier_friction_index: result.barrier_friction_index,
         hero_subtitle: result.hero_subtitle,
+        safe_mode: result.safe_mode || { active: false },
+        suppressed_steps: result.suppressed_steps || [],
       },
     });
   } catch (e) {
