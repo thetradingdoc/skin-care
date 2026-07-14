@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // API base for the patient app — must be reachable from the device running Expo Go.
 //
@@ -25,14 +26,16 @@ export const API_BASE_URL = resolveApiBaseUrl();
 const PROD_API_HOSTS = ['api.callsomo.com', 'api.myskinandcare.com'];
 
 function isLocalWebHost(): boolean {
-  if (typeof window === 'undefined') return false;
+  // RN may define `window` without `location` — never touch `.hostname` on native.
+  if (Platform.OS !== 'web') return false;
+  if (typeof window === 'undefined' || !window.location) return false;
   const host = window.location.hostname;
   return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
 }
 
 /** Same-origin /api on localhost when the bundle targets production (Playwright + dev:consumer-local). */
 export function getEffectiveApiBaseUrl(): string {
-  if (typeof window !== 'undefined' && isLocalWebHost()) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && isLocalWebHost()) {
     try {
       if (PROD_API_HOSTS.includes(new URL(API_BASE_URL).hostname)) {
         return window.location.origin.replace(/\/$/, '');

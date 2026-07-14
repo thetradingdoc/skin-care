@@ -119,6 +119,11 @@ export default function SignInScreen() {
   }, [router]);
 
   useEffect(() => {
+    let cancelled = false;
+    const failSafe = setTimeout(() => {
+      if (!cancelled) setCheckingSession(false);
+    }, 3000);
+
     void (async () => {
       try {
         const storedBase = await getStoredApiBase();
@@ -129,6 +134,7 @@ export default function SignInScreen() {
         if (!sid) return;
         try {
           await patientGet('/api/patient/me');
+          if (cancelled) return;
           router.replace(await resolvePostAuthRoute());
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '';
@@ -140,9 +146,15 @@ export default function SignInScreen() {
       } catch {
         // stay on sign-in
       } finally {
-        setCheckingSession(false);
+        if (!cancelled) setCheckingSession(false);
+        clearTimeout(failSafe);
       }
     })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(failSafe);
+    };
   }, [router]);
 
   async function finishWithSession(sessionId?: string) {

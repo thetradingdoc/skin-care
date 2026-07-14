@@ -8,8 +8,7 @@ import {
   DMSans_600SemiBold,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect } from 'react';
 
 type Props = { children: React.ReactNode };
 
@@ -21,8 +20,9 @@ export const AppFontFamilies = {
   bodyBold: 'DMSans_700Bold',
 } as const;
 
+/** Never gate first paint on fonts — load in background. */
 export function AppFontsProvider({ children }: Props) {
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     Gloock_400Regular,
     DMSans_400Regular,
     DMSans_500Medium,
@@ -30,9 +30,10 @@ export function AppFontsProvider({ children }: Props) {
     DMSans_700Bold,
   });
 
-  if (!loaded) {
-    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
-  }
+  useEffect(() => {
+    if (error) console.warn('[AppFontsProvider] font load error', error);
+    if (loaded) console.log('[AppFontsProvider] fonts ready');
+  }, [loaded, error]);
 
   return <>{children}</>;
 }

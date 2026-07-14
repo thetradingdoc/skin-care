@@ -1,12 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 
 import { ConflictTokens } from '@/constants/conflictTokens';
 import { bfiColor, barrierLabel } from '@/lib/conflict-helpers';
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type Props = {
   bfi: number;
@@ -14,20 +11,14 @@ type Props = {
   size?: number;
 };
 
+/** Static ring — Reanimated + SVG animatedProps was aborting cold start (SIGABRT / RCTFatal). */
 export function BarrierScoreRing({ bfi, subtitle, size = 180 }: Props) {
   const strokeWidth = 12;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const progress = useSharedValue(0);
+  const clamped = Math.min(Math.max(bfi, 0), 100) / 100;
   const color = bfiColor(bfi);
-
-  useEffect(() => {
-    progress.value = withTiming(Math.min(Math.max(bfi, 0), 100) / 100, { duration: 900 });
-  }, [bfi, progress]);
-
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: circumference - progress.value * circumference,
-  }));
+  const strokeDashoffset = circumference - clamped * circumference;
 
   return (
     <View style={styles.container}>
@@ -40,15 +31,15 @@ export function BarrierScoreRing({ bfi, subtitle, size = 180 }: Props) {
           r={radius}
           strokeWidth={strokeWidth}
         />
-        <AnimatedCircle
+        <Circle
           stroke={color}
           fill="none"
           cx={size / 2}
           cy={size / 2}
           r={radius}
           strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          animatedProps={animatedProps}
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
           rotation={-90}
           origin={`${size / 2}, ${size / 2}`}

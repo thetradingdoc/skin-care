@@ -1,8 +1,5 @@
 /**
- * Capture fatal JS exceptions before RCTFatal aborts.
- * Sync HTTPS POST so the payload can leave the device before abort().
- *
- * IMPORTANT: only fatals are posted (sync XHR on every warning would stall cold start).
+ * Secondary ErrorUtils capture (boot hook is primary: lib/capture-fatal-boot.js).
  */
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
@@ -27,29 +24,29 @@ function syncPostFatal(payload: Record<string, unknown>) {
     xhr.setRequestHeader('Accept', 'application/json');
     xhr.send(JSON.stringify(payload));
   } catch {
-    /* best effort before abort */
+    /* best effort */
   }
 }
 
-export function installCaptureFatal() {
-  if (installed) return;
-  installed = true;
-
+function tryInstallOnce(): boolean {
   const g = globalThis as typeof globalThis & {
     ErrorUtils?: {
       getGlobalHandler?: () => ((e: Error, isFatal?: boolean) => void) | undefined;
       setGlobalHandler?: (handler: (e: Error, isFatal?: boolean) => void) => void;
+      __skincareWrapped?: boolean;
     };
+    __SKINCARE_LAST_FATAL__?: { message: string; stack: string; at: number };
   };
 
   const ErrorUtils = g.ErrorUtils;
-  if (!ErrorUtils?.setGlobalHandler) return;
+  if (!ErrorUtils?.setGlobalHandler || ErrorUtils.__skincareWrapped) return !!ErrorUtils?.__skincareWrapped;
 
   const prev = ErrorUtils.getGlobalHandler?.();
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
       const message = error?.message || String(error);
       const stack = error?.stack || '';
+      g.__SKINCARE_LAST_FATAL__ = { message, stack, at: Date.now() };
       const expoConfig = Constants.expoConfig;
       syncPostFatal({
         isFatal: true,
@@ -66,8 +63,31 @@ export function installCaptureFatal() {
         at: Date.now(),
       });
     }
+    // Never swallow — silent swallow left a black empty root on device.
     prev?.(error, isFatal);
   });
+  ErrorUtils.__skincareWrapped = true;
+  return true;
+}
+
+export function installCaptureFatal() {
+  if (installed) return;
+  if (!tryInstallOnce()) {
+    let attempts = 0;
+    const t = setInterval(() => {
+      attempts += 1;
+      if (installed || attempts > 40) {
+        clearInterval(t);
+        return;
+      }
+      if (tryInstallOnce()) {
+        installed = true;
+        clearInterval(t);
+      }
+    }, 50);
+    return;
+  }
+  installed = true;
 }
 
 installCaptureFatal();

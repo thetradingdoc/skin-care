@@ -13,7 +13,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GraphUnavailableBanner, ProductBarcodeScanner, ShelfProductRow } from '@/components/conflict';
@@ -90,19 +89,10 @@ export default function ScanScreen() {
   const lastScanRef = useRef<{ code: string; at: number } | null>(null);
   const scannedCodesRef = useRef<Set<string>>(new Set());
   const SCAN_COOLDOWN_MS = 8000;
-  const scanLine = useSharedValue(0);
-
-  useEffect(() => {
-    scanLine.value = withRepeat(withTiming(1, { duration: 1800 }), -1, true);
-  }, [scanLine]);
 
   useEffect(() => {
     if (ready) trackPortalEvent('scan_tab_opened');
   }, [ready]);
-
-  const scanLineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scanLine.value * 120 }],
-  }));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -239,7 +229,7 @@ export default function ScanScreen() {
             <>
               <ProductBarcodeScanner enabled={!scanning} onBarcode={(data) => void handleBarcode(data)} />
               <ViewfinderOverlay />
-              <Animated.View style={[styles.scanLine, scanLineStyle]} />
+              <View style={styles.scanLine} />
               {scanning ? (
                 <View style={styles.scanOverlay}>
                   <ActivityIndicator color="#fff" size="large" />
