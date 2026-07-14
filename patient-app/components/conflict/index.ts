@@ -1,4 +1,3 @@
-export { BarrierScoreRing } from './BarrierScoreRing';
 export { CompatibilityScoreCard } from './CompatibilityScoreCard';
 export { ConflictCard, ContraindicationCard } from './ConflictCard';
 export { SuggestedFixCard } from './SuggestedFixCard';

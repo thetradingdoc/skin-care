@@ -76,14 +76,6 @@ export const WEB_SIGNUP_URL = (
 export const DEMO_PATIENT_EMAIL =
   (process.env.EXPO_PUBLIC_DEMO_PATIENT_EMAIL || '').trim();
 
-/** Default product id for Explore → checkout-chat deep link (must exist in merchant catalog). */
-export const DEMO_CHECKOUT_PRODUCT_ID = (
-  process.env.EXPO_PUBLIC_DEMO_PRODUCT_ID || 'prod-vitamin-c-serum-antioxidant-pro-shield'
-).trim();
-
-/** Optional merchant/provider id for public catalog API when opening checkout chat from the app. */
-export const DEMO_PROVIDER_ID = (process.env.EXPO_PUBLIC_MERCHANT_ID || '').trim();
-
 /**
  * On a real device, localhost/127.0.0.1 points at the phone — every fetch fails with "Network request failed".
  */

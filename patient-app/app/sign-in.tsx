@@ -10,22 +10,28 @@ import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
 import {
+  CHECK_HREF,
+  GET_THE_APP_HREF,
   HOME_HREF,
   INDEX_HREF,
-  LANDING_CONCERNS_HREF,
-  LANDING_HOME_HREF,
-  LANDING_ORIGIN,
-  LANDING_SCAN_HREF,
+  TRY_VERDICT_HREF,
 } from '@/constants/routes';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
 import { patientGet, patientPost } from '@/lib/patient-api';
 import { isPatientSessionAuthError } from '@/lib/patient-auth';
+import { shouldShowGetTheAppInterstitial } from '@/lib/ios-web-gate';
 import {
   clearPendingRoutineConcern,
   getPendingRoutineConcern,
 } from '@/lib/routine-session';
 import { completeSkinAgeJourney, hasSkinAgeJourneyData } from '@/lib/skin-age-journey';
+import {
+  clearPendingAllergens,
+  clearPendingTryProduct,
+  getPendingAllergens,
+  getPendingTryProduct,
+} from '@/lib/try-verdict-session';
 
 function webSignupLabel(url: string): string {
   try {
@@ -35,20 +41,6 @@ function webSignupLabel(url: string): string {
   } catch {
     return 'Open web signup';
   }
-}
-
-function getSignInBackHref(intent?: string, from?: string): string {
-  if (intent === 'signup' && from === 'skin-age-landing') return LANDING_CONCERNS_HREF;
-  if (intent === 'signup') return LANDING_SCAN_HREF;
-  return LANDING_HOME_HREF;
-}
-
-function signInBackUrl(intent?: string, from?: string): string {
-  const path = getSignInBackHref(intent, from);
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${LANDING_ORIGIN}${path}`;
-  }
-  return `${LANDING_ORIGIN}${path}`;
 }
 
 function useSignInQueryParams() {
@@ -101,18 +93,21 @@ export default function SignInScreen() {
     };
   }, [isSignupIntent, fromSkinAgeLanding]);
 
+  /**
+   * TOUCH-004/005 + Phase 1: stay in-app forever on web.
+   * Prefer try-verdict (Screen 3) over marketing Safari dump.
+   */
   const onBack = useCallback(() => {
-    const url = signInBackUrl(intent, from);
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.location.assign(url);
+    if (Platform.OS === 'web') {
+      router.replace(TRY_VERDICT_HREF);
       return;
     }
     if (router.canGoBack()) {
       router.back();
       return;
     }
-    void Linking.openURL(url);
-  }, [intent, from, router]);
+    router.replace(TRY_VERDICT_HREF);
+  }, [router]);
 
   const onRetryConnection = useCallback(() => {
     router.replace(INDEX_HREF);
@@ -158,12 +153,49 @@ export default function SignInScreen() {
   }, [router]);
 
   async function finishWithSession(sessionId?: string) {
+    // TOUCH-018 — persist pre-signup allergen exclusions to profile.
+    try {
+      const allergens = await getPendingAllergens();
+      if (allergens.length) {
+        await patientPost('/api/patient/allergens', { allergens });
+        await clearPendingAllergens();
+      }
+    } catch {
+      /* non-blocking — user can re-edit later */
+    }
+
+    // TOUCH-026 — pending anonymous product → shelf after verify.
+    try {
+      const pending = await getPendingTryProduct();
+      if (pending && (pending.product_name || pending.query || pending.barcode)) {
+        if (pending.barcode && pending.barcode !== 'scan_pending') {
+          await patientPost('/api/patient/shelf/products/scan', { barcode: pending.barcode }).catch(
+            async () => {
+              await patientPost('/api/patient/shelf/products', {
+                product_name: pending.product_name || pending.query || pending.barcode,
+                barcode: pending.barcode,
+                ingredients_text: pending.ingredients_text,
+              });
+            },
+          );
+        } else {
+          await patientPost('/api/patient/shelf/products', {
+            product_name: pending.product_name || pending.query || 'Tried product',
+            ingredients_text: pending.ingredients_text,
+          });
+        }
+        await clearPendingTryProduct();
+      }
+    } catch {
+      /* shelf restore best-effort */
+    }
+
     if (fromSkinAgeLanding && Platform.OS === 'web' && hasSkinAgeJourneyData() && sessionId) {
       const completed = await completeSkinAgeJourney(sessionId);
       if (completed) {
         const route = await resolvePostAuthRoute({ journeyModes: ['routine'] });
-        if (route === HOME_HREF) {
-          router.replace({ pathname: HOME_HREF, params: { celebrate: '1' } } as Href);
+        if (route === HOME_HREF || route === CHECK_HREF) {
+          router.replace(CHECK_HREF);
         } else {
           router.replace(route);
         }
@@ -176,20 +208,17 @@ export default function SignInScreen() {
       try {
         await patientPost('/api/patient/routine/template', { concern_id: pendingConcern });
         await clearPendingRoutineConcern();
-        router.replace(await resolvePostAuthRoute());
-        return;
       } catch {
         await clearPendingRoutineConcern();
-        router.replace({
-          pathname: '/routine/pick',
-          params: { concern: pendingConcern },
-        } as Href);
-        return;
       }
     }
 
-    const route = await resolvePostAuthRoute();
-    router.replace(route);
+    // TOUCH-027/028/030 — iOS web → 6c; Android/desktop → Check.
+    if (shouldShowGetTheAppInterstitial()) {
+      router.replace(GET_THE_APP_HREF);
+      return;
+    }
+    router.replace(CHECK_HREF);
   }
 
   if (checkingSession) {

@@ -345,7 +345,7 @@ export default function JournalScreen() {
                   style={styles.modalLink}
                   onPress={() => {
                     setDaySheetIso(null);
-                    router.push({ pathname: '/(tabs)/home', params: { date: daySheetIso || '' } });
+                    router.push({ pathname: '/check', params: { date: daySheetIso || '' } });
                   }}>
                   <Text style={styles.modalLinkText}>Open routine for this day →</Text>
                 </Pressable>
@@ -382,7 +382,7 @@ export default function JournalScreen() {
               style={styles.modalLink}
               onPress={() => {
                 setRoutineSheetIso(null);
-                router.push({ pathname: '/(tabs)/home', params: { date: routineSheetIso || '' } });
+                router.push({ pathname: '/check', params: { date: routineSheetIso || '' } });
               }}>
               <Text style={styles.modalLinkText}>Open full day →</Text>
             </Pressable>

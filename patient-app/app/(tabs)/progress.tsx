@@ -21,7 +21,7 @@ import { SessionImage } from '@/components/SessionImage';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { AppTokens } from '@/constants/appTokens';
-import { COMPARE_HREF, HOME_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
+import { COMPARE_HREF, CHECK_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
 import { rollingJournalRange } from '@/components/journal/journalTypes';
 import { listSpots, spotStatusLabel, type Spot } from '@/lib/spot-store';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
@@ -106,6 +106,10 @@ export default function ProgressScreen() {
     hydration_pct?: number;
   } | null>(null);
 
+  const [severityHistory, setSeverityHistory] = useState<
+    Array<{ date: string; dryness_rank?: number | null; breakout_rank?: number | null }>
+  >([]);
+
   useEffect(() => {
     if (ready) trackPortalEvent('progress_viewed');
   }, [ready]);
@@ -117,7 +121,7 @@ export default function ProgressScreen() {
       // UX-1: wide range for true first photo + total photo days (timeline still uses last 8)
       const { start: startIso } = rollingJournalRange(180);
 
-      const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes] =
+      const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes, sevRes] =
         await Promise.all([
           patientGet('/api/patient/home/progress-summary'),
           fetchBarrierInsight().catch(() => null),
@@ -128,6 +132,7 @@ export default function ProgressScreen() {
           listSpots(),
           fetchTriggerInsights().catch(() => ({ insights: [] })),
           fetchJournalImprovements().catch(() => ({ ready: false, metrics: null })),
+          patientGet('/api/patient/journal/severity/history?days=14').catch(() => ({ days: [] })),
         ]);
       setSpots(spotList);
       setTriggerTags(
@@ -138,6 +143,7 @@ export default function ProgressScreen() {
       setImprovementMetrics(progRes?.improvement_metrics || null);
       setInsight(insightRes);
       setHistory(histRes);
+      setSeverityHistory(Array.isArray(sevRes?.days) ? sevRes.days : []);
       const calDays: CalendarDay[] = Array.isArray(calRes?.days) ? calRes.days : [];
       setPhotoHistory(calDays);
       setDays(calDays.slice(-8));
@@ -176,6 +182,21 @@ export default function ProgressScreen() {
     [photoHistory],
   );
   const todayIso = localTodayIso();
+  const [showBackfillPicker, setShowBackfillPicker] = useState(false);
+
+  const backfillDates = useMemo(() => {
+    const today = localTodayIso();
+    const out: string[] = [];
+    for (let d = 1; d <= 2; d += 1) {
+      const dt = new Date(`${today}T12:00:00.000Z`);
+      dt.setUTCDate(dt.getUTCDate() - d);
+      const iso = dt.toISOString().slice(0, 10);
+      const day = photoHistory.find((p) => p.date === iso);
+      const logged = day ? isLoggedPhotoDay(day) : false;
+      if (!logged) out.push(iso);
+    }
+    return out;
+  }, [photoHistory]);
 
   if (checking || !ready) {
     return (
@@ -193,26 +214,30 @@ export default function ProgressScreen() {
       ? Number(summary.journal_days_logged) || 0
       : countedPhotoDays;
   const bfi = latestBfi(history);
-  const openPhoto = () => router.push(`${HOME_HREF}?photo=1` as typeof HOME_HREF);
+
+  const openPhoto = () => router.push(CHECK_HREF);
   const showCompareCta =
     totalPhotoDays >= 7 && Boolean(earliestPhotoDate) && earliestPhotoDate !== todayIso;
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']} testID="proof-screen">
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Your progress</Text>
+            <Text style={styles.title}>Proof</Text>
             <Text style={styles.subtitle}>Your skin data. Your proof.</Text>
           </View>
+          <Pressable onPress={() => router.replace(CHECK_HREF)} accessibilityRole="button">
+            <Text style={styles.seeAll}>Check</Text>
+          </Pressable>
         </View>
 
         {streak === 0 ? (
           <PhotoStreakHero onTakePhoto={openPhoto} />
         ) : (
-          <View style={styles.streakHero}>
+          <View style={styles.streakHero} testID="proof-streak">
             <View>
               <Text style={styles.streakHeroLabel}>Current streak</Text>
               <View style={styles.streakHeroRow}>
@@ -224,21 +249,98 @@ export default function ProgressScreen() {
             <AppIcon name="flame" size={28} color={AppTokens.color.watchAmberText} />
           </View>
         )}
+        {bfi != null ? (
+          <Text style={styles.subtitle} testID="proof-barrier">
+            Barrier {bfiLabel(bfi)} · {bfi}/100
+          </Text>
+        ) : null}
         {showCompareCta ? (
           <Pressable
             onPress={() =>
               router.push({
                 pathname: COMPARE_HREF as '/compare',
-                // LEFT Earlier = dateB, RIGHT Later = dateA (see compare.tsx)
                 params: { dateA: todayIso, dateB: earliestPhotoDate! },
               })
             }
             accessibilityRole="button"
             accessibilityLabel="Compare day 1 to today"
-            style={styles.compareCta}>
+            style={styles.compareCta}
+            testID="proof-compare-cta">
             <Text style={styles.compareCtaText}>See day 1 vs today →</Text>
           </Pressable>
         ) : null}
+
+        <Pressable
+          style={styles.compareCta}
+          onPress={() => setShowBackfillPicker((v) => !v)}
+          testID="proof-add-past-day"
+          accessibilityRole="button"
+          accessibilityLabel="Add past day">
+          <Text style={styles.compareCtaText}>
+            {showBackfillPicker ? 'Choose a day below' : 'Add past day →'}
+          </Text>
+        </Pressable>
+        {showBackfillPicker ? (
+          <View style={styles.backfillPicker} testID="proof-backfill-picker">
+            <Text style={styles.subtitle}>
+              Photos can be backfilled for the last 48 hours only.
+            </Text>
+            {backfillDates.length === 0 ? (
+              <Text style={styles.bfiEmptyText}>No empty days in the backfill window.</Text>
+            ) : (
+              backfillDates.map((iso) => (
+                <Pressable
+                  key={iso}
+                  style={styles.backfillDay}
+                  testID={`proof-backfill-${iso}`}
+                  onPress={() => {
+                    setShowBackfillPicker(false);
+                    router.push({
+                      pathname: '/journal/capture' as never,
+                      params: { date: iso, library: '1' },
+                    } as never);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Backfill ${iso}`}>
+                  <Text style={styles.compareCtaText}>{iso} · upload photo →</Text>
+                </Pressable>
+              ))
+            )}
+          </View>
+        ) : null}
+
+        {/* TOUCH-048 — severity rank bars */}
+        <SectionLabel>Severity — last 2 weeks</SectionLabel>
+        <View style={styles.barrierCard} testID="proof-severity-charts">
+          {severityHistory.length === 0 ? (
+            <Text style={styles.bfiEmptyText}>Log severity after Check to unlock bars</Text>
+          ) : (
+            severityHistory.slice(-8).map((d) => (
+              <View key={d.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <Text style={{ width: 72, fontSize: 11, color: AppTokens.color.muted }}>{d.date.slice(5)}</Text>
+                <View
+                  style={{
+                    height: 10,
+                    width: Math.max(8, (Number(d.dryness_rank) || 0) * 28),
+                    backgroundColor: AppTokens.color.brandBlue,
+                    borderRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    height: 10,
+                    width: Math.max(8, (Number(d.breakout_rank) || 0) * 28),
+                    backgroundColor: AppTokens.color.terracotta,
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+            ))
+          )}
+          <Text style={{ fontSize: 11, color: AppTokens.color.hint, marginTop: 4 }}>
+            Blue = dry rank · Terracotta = breakout rank (1–3)
+          </Text>
+        </View>
 
         <SectionLabel>Barrier score — last 8 days</SectionLabel>
         <View style={styles.barrierCard}>
@@ -314,7 +416,7 @@ export default function ProgressScreen() {
           <>
             <View style={styles.timelineHeader}>
               <SectionLabel>{`${days.length}-day photo timeline`}</SectionLabel>
-              <Pressable onPress={() => router.push(HOME_HREF)} accessibilityRole="button">
+              <Pressable onPress={() => router.push(CHECK_HREF)} accessibilityRole="button">
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
@@ -344,7 +446,7 @@ export default function ProgressScreen() {
                   <View key={d.date} style={styles.thumbCol}>
                     <Pressable
                       onPress={() =>
-                        router.push(`${HOME_HREF}?date=${d.date}` as typeof HOME_HREF)
+                        router.push(`${CHECK_HREF}?date=${d.date}` as typeof CHECK_HREF)
                       }
                       style={[
                         styles.thumb,
@@ -456,6 +558,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  backfillPicker: {
+    backgroundColor: AppTokens.color.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
+    padding: 14,
+    gap: 10,
+    marginBottom: 8,
+  },
+  backfillDay: {
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
   },
   barrierCard: {
     backgroundColor: AppTokens.color.card,

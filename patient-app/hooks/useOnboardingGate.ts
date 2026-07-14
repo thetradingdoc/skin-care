@@ -1,7 +1,7 @@
 // PR1 soft-launch safety — 2026-07-12
 import type { Href } from 'expo-router';
 
-import { SIGN_IN_HREF } from '@/constants/routes';
+import { SIGN_IN_HREF, TRY_VERDICT_HREF } from '@/constants/routes';
 import { isPatientSessionAuthError } from '@/lib/patient-auth';
 import { patientGet } from '@/lib/patient-api';
 import { clearPatientSession, getPatientSessionId } from '@/lib/patient-session';
@@ -19,7 +19,8 @@ export const SIGN_IN_CONNECTION_HREF = '/sign-in?error=connection' as Href;
 export async function resolveInitialRoute(): Promise<InitialRoute> {
   const sessionId = await getPatientSessionId();
   if (!sessionId) {
-    return SIGN_IN_HREF;
+    // TOUCH-013: fresh load → try-verdict, not face-age funnel / bare sign-in.
+    return TRY_VERDICT_HREF;
   }
   try {
     await patientGet('/api/patient/me');

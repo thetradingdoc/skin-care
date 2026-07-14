@@ -65,6 +65,21 @@ function useAppDeepLinks() {
         return;
       }
 
+      // TOUCH-077 — patientapp://order-confirmation
+      if (path === 'order-confirmation' || path.includes('order-confirmation')) {
+        const orderId =
+          typeof parsed.queryParams?.orderId === 'string'
+            ? parsed.queryParams.orderId
+            : typeof parsed.queryParams?.id === 'string'
+              ? parsed.queryParams.id
+              : null;
+        router.push({
+          pathname: '/order-confirmation',
+          params: orderId ? { orderId } : {},
+        } as never);
+        return;
+      }
+
       if (path !== 'routine/setup' && !path.includes('routine/setup')) return;
       const concern = typeof parsed.queryParams?.concern === 'string' ? parsed.queryParams.concern : 'acne';
       router.push({ pathname: '/routine/setup', params: { concern } });
@@ -117,7 +132,6 @@ export default function RootLayout() {
                 name="sign-in"
                 options={{ headerShown: false, contentStyle: { backgroundColor: '#FFFFFF' } }}
               />
-              <Stack.Screen name="checkout-chat" options={{ presentation: 'modal', title: 'Checkout chat' }} />
               <Stack.Screen name="scan-entry" options={{ presentation: 'modal', title: 'Quick capture' }} />
               <Stack.Screen name="capture-scan" options={{ presentation: 'modal', title: 'Scan receipt' }} />
               <Stack.Screen name="capture-upload" options={{ presentation: 'modal', title: 'Upload EOB/PDF' }} />

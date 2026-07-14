@@ -10,6 +10,7 @@ type Props = ProductStatus & {
 };
 
 function statusIcon(status: ProductStatus['status']): keyof typeof MaterialIcons.glyphMap {
+  if (status === 'hard_no') return 'block';
   if (status === 'conflict') return 'warning';
   if (status === 'watch') return 'visibility';
   if (status === 'safe') return 'check-circle';

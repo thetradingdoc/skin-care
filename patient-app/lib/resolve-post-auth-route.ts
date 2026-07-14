@@ -1,9 +1,9 @@
-// PR1 soft-launch safety — 2026-07-12
+// PR1 soft-launch safety — 2026-07-12 · TOUCH-031 Check lander
 import type { Href } from 'expo-router';
 
 import {
   BIO_CALIBRATION_HREF,
-  HOME_HREF,
+  CHECK_HREF,
   JOURNEY_CHOOSE_HREF,
   ROUTINE_PICK_HREF,
   SCAN_HREF,
@@ -46,12 +46,9 @@ async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
     fetchBioProfile().catch(() => ({ profile_complete: false, conditions: [], prescriptions: [] })),
   ]);
 
+  // Spot-only mode still uses Track until first spot exists.
   if (spotMode && !watchMode && !routineMode) {
     return TRACK_HREF;
-  }
-
-  if (watchMode && !routineMode) {
-    return HOME_HREF;
   }
 
   const products = Array.isArray(shelf?.products) ? shelf.products : [];
@@ -78,7 +75,8 @@ async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
     return TRACK_HREF;
   }
 
-  return HOME_HREF;
+  // TOUCH-031 — authenticated default is Check (never 5-tab Home lander).
+  return CHECK_HREF;
 }
 
 /** Route after session is established (journey + template + shelf + bio). */
@@ -96,20 +94,20 @@ export async function resolvePostAuthRoute(hints?: PostAuthRouteHints): Promise<
     );
 
     if (!modes.length) {
-      return JOURNEY_CHOOSE_HREF;
+      // Soft-start: camera Check is home; journey choose remains reachable from gear.
+      return CHECK_HREF;
     }
 
     return resolveWithModes(modes);
   } catch {
-    // PR1-21/22: fallback — check local profile before sending to home
     const local = await getJourneyProfile().catch(() => null);
     if (local?.modes?.length) {
       try {
         return await resolveWithModes(local.modes);
       } catch {
-        return HOME_HREF; // has modes but resolve failed
+        return CHECK_HREF;
       }
     }
-    return JOURNEY_CHOOSE_HREF; // was HOME_HREF — PR1 soft-launch 2026-07-12
+    return CHECK_HREF;
   }
 }

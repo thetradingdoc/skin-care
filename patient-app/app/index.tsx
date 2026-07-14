@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { JournalTokens } from '@/constants/journalTokens';
-import { SIGN_IN_HREF } from '@/constants/routes';
+import { TRY_VERDICT_HREF } from '@/constants/routes';
 import { resolveInitialRoute } from '@/hooks/useOnboardingGate';
 
 const ROUTE_BUDGET_MS = 4000;
@@ -14,16 +14,17 @@ export default function IndexScreen() {
   useEffect(() => {
     let cancelled = false;
 
-    const goSignIn = () => {
+    const goTryVerdict = () => {
       if (cancelled) return;
       try {
-        router.replace(SIGN_IN_HREF);
+        // TOUCH-013 failsafe: never dump to face-age funnel.
+        router.replace(TRY_VERDICT_HREF);
       } catch (e) {
-        console.error('[index] sign-in replace failed', e);
+        console.error('[index] try-verdict replace failed', e);
       }
     };
 
-    const failSafe = setTimeout(goSignIn, ROUTE_BUDGET_MS);
+    const failSafe = setTimeout(goTryVerdict, ROUTE_BUDGET_MS);
 
     void (async () => {
       try {
@@ -39,7 +40,7 @@ export default function IndexScreen() {
       } catch (e) {
         console.error('[index] resolveInitialRoute/replace failed', e);
         clearTimeout(failSafe);
-        goSignIn();
+        goTryVerdict();
       }
     })();
 

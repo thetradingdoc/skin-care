@@ -1,17 +1,21 @@
+/**
+ * TOUCH-062/063 + TOUCH-109 — Spot soft-ring capture + “What is this?” + library when denied.
+ */
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/billing-feedback';
 import { BodyMapPicker, SpotCaptureFrame } from '@/components/v3';
+import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
 import { spotHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
-import { addSpotPhoto, createSpot, type BodyRegion } from '@/lib/spot-store';
 import { consumePendingCaptureUri } from '@/lib/pending-capture-uri';
 import { localTodayIso } from '@/lib/routine-day-mode';
+import { addSpotPhoto, createSpot, type BodyRegion } from '@/lib/spot-store';
 
 export default function TrackCaptureScreen() {
   const { ready, checking } = useRequirePatientSession();
@@ -22,6 +26,8 @@ export default function TrackCaptureScreen() {
   const [uri, setUri] = useState<string | null>(
     typeof params.libraryUri === 'string' ? params.libraryUri : null,
   );
+  const [askOpen, setAskOpen] = useState(false);
+  const [label, setLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraDenied, setCameraDenied] = useState(false);
@@ -32,11 +38,18 @@ export default function TrackCaptureScreen() {
       const pending = await consumePendingCaptureUri();
       if (cancelled || !pending?.uri) return;
       setUri((prev) => prev || pending.uri);
+      setAskOpen(true);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof params.libraryUri === 'string' && params.libraryUri) {
+      setAskOpen(true);
+    }
+  }, [params.libraryUri]);
 
   const capturePhoto = useCallback(async () => {
     setError(null);
@@ -44,16 +57,28 @@ export default function TrackCaptureScreen() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
       setCameraDenied(true);
-      setError(
-        perm.canAskAgain === false
-          ? 'Camera access is off. Open Settings to allow photos for spot tracking.'
-          : 'Camera access is required to photograph a spot.',
-      );
+      setError('Camera access is off. Upload from your library instead.');
       return;
     }
     const picked = await ImagePicker.launchCameraAsync({ quality: 0.85 });
     if (!picked.canceled && picked.assets?.[0]?.uri) {
       setUri(picked.assets[0].uri);
+      setAskOpen(true);
+    }
+  }, []);
+
+  const pickLibrary = useCallback(async () => {
+    setError(null);
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError('Photo library access is required.');
+      return;
+    }
+    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (!picked.canceled && picked.assets?.[0]?.uri) {
+      setUri(picked.assets[0].uri);
+      setAskOpen(true);
+      setCameraDenied(false);
     }
   }, []);
 
@@ -72,7 +97,8 @@ export default function TrackCaptureScreen() {
       const today = localTodayIso();
       let spotId = typeof params.spotId === 'string' ? params.spotId : null;
       if (!spotId) {
-        const spot = await createSpot(region);
+        // TOUCH-063 — persist calm “What is this?” label with the spot.
+        const spot = await createSpot(region, label.trim() || undefined);
         spotId = spot.id;
       }
       await addSpotPhoto(spotId, { date: today, uri });
@@ -84,7 +110,7 @@ export default function TrackCaptureScreen() {
     } finally {
       setSaving(false);
     }
-  }, [params.spotId, region, uri, router, showToast]);
+  }, [params.spotId, region, uri, label, router, showToast]);
 
   if (checking || !ready) {
     return <SafeAreaView style={styles.root} />;
@@ -93,8 +119,9 @@ export default function TrackCaptureScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.content}>
-        <Text style={styles.title}>Position your skin in the circle</Text>
-        <Text style={styles.sub}>Get as close as you can</Text>
+        <ToucheMarkCompact height={20} style={styles.mark} />
+        <Text style={styles.title}>Spot</Text>
+        <Text style={styles.sub}>Soft ring · location only</Text>
 
         {uri ? (
           <View style={styles.previewWrap}>
@@ -108,14 +135,41 @@ export default function TrackCaptureScreen() {
         )}
 
         {cameraDenied ? (
-          <Pressable style={styles.settingsBtn} onPress={openSettings} accessibilityRole="button">
-            <Text style={styles.settingsBtnText}>Open Settings</Text>
+          <View style={styles.deniedRow} testID="spot-camera-denied">
+            <Pressable style={styles.settingsBtn} onPress={openSettings} accessibilityRole="button">
+              <Text style={styles.settingsBtnText}>Open Settings</Text>
+            </Pressable>
+            <Pressable
+              style={styles.libraryBtn}
+              onPress={() => void pickLibrary()}
+              testID="spot-library-upload"
+              accessibilityRole="button">
+              <Text style={styles.libraryBtnText}>Upload from library</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={() => void pickLibrary()} testID="spot-library-optional">
+            <Text style={styles.libraryOptional}>or upload from library</Text>
           </Pressable>
+        )}
+
+        {/* TOUCH-063 — calm “What is this?” after capture */}
+        {askOpen && uri ? (
+          <View style={styles.ask} testID="spot-what-is-this">
+            <Text style={styles.askTitle}>What is this?</Text>
+            <Text style={styles.askSub}>A short label helps you find it later.</Text>
+            <TextInput
+              style={styles.askInput}
+              placeholder="e.g. left cheek patch"
+              value={label}
+              onChangeText={setLabel}
+              testID="spot-what-label"
+            />
+            <BodyMapPicker selected={region} onSelect={setRegion} />
+          </View>
         ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <BodyMapPicker selected={region} onSelect={setRegion} />
 
         <View style={styles.actions}>
           <Pressable style={styles.cancel} onPress={() => router.back()} accessibilityRole="button">
@@ -125,8 +179,9 @@ export default function TrackCaptureScreen() {
             style={[styles.save, (!uri || saving) && styles.saveDisabled]}
             onPress={() => void save()}
             disabled={!uri || saving}
-            accessibilityRole="button">
-            <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save photo'}</Text>
+            accessibilityRole="button"
+            testID="spot-save">
+            <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save'}</Text>
           </Pressable>
         </View>
       </View>
@@ -137,7 +192,13 @@ export default function TrackCaptureScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
   content: { padding: AppTokens.spacing.lg, flex: 1 },
-  title: { fontSize: 15, fontWeight: '600', textAlign: 'center', color: AppTokens.color.ink },
+  mark: { alignSelf: 'flex-start', marginBottom: 8 },
+  title: {
+    fontSize: 22,
+    fontFamily: AppTokens.font.display,
+    textAlign: 'center',
+    color: AppTokens.color.ink,
+  },
   sub: { fontSize: 12, color: AppTokens.color.muted, textAlign: 'center', marginBottom: 10 },
   previewWrap: { marginBottom: 14, position: 'relative' },
   preview: {
@@ -156,13 +217,42 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   retakeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  settingsBtn: {
-    alignSelf: 'center',
-    marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
+  deniedRow: { alignItems: 'center', gap: 8, marginBottom: 8 },
+  settingsBtn: { paddingVertical: 8, paddingHorizontal: 12 },
   settingsBtnText: { color: AppTokens.color.brandAccent, fontSize: 13, fontWeight: '600' },
+  libraryBtn: {
+    backgroundColor: AppTokens.color.fabBg,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  libraryBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+  libraryOptional: {
+    textAlign: 'center',
+    color: AppTokens.color.muted,
+    marginBottom: 8,
+    textDecorationLine: 'underline',
+    fontSize: 13,
+  },
+  ask: {
+    marginTop: 4,
+    marginBottom: 8,
+    gap: 8,
+    padding: 12,
+    backgroundColor: AppTokens.color.cream,
+    borderRadius: 12,
+  },
+  askTitle: { fontFamily: AppTokens.font.display, fontSize: 18, color: AppTokens.color.ink },
+  askSub: { fontFamily: AppTokens.font.body, fontSize: 13, color: AppTokens.color.muted },
+  askInput: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppTokens.color.line,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: AppTokens.font.body,
+    backgroundColor: '#fff',
+  },
   error: { color: '#b91c1c', fontSize: 12, textAlign: 'center', marginBottom: 8 },
   actions: { flexDirection: 'row', gap: 8, marginTop: 8 },
   cancel: {

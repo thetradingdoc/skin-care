@@ -11,20 +11,22 @@ type Props = {
 
 export function VerdictActions({ onRemove, onKeep, busy }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={styles.row} testID="verdict-keep-dont">
       <Pressable
         style={[styles.btn, styles.btnPrimary]}
         onPress={onRemove}
         disabled={busy}
-        accessibilityRole="button">
-        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnPrimaryText}>Remove from shelf</Text>}
+        accessibilityRole="button"
+        testID="verdict-dont-use">
+        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnPrimaryText}>Don&apos;t use</Text>}
       </Pressable>
       <Pressable
         style={[styles.btn, styles.btnOutline]}
         onPress={onKeep}
         disabled={busy}
-        accessibilityRole="button">
-        <Text style={styles.btnOutlineText}>Keep anyway</Text>
+        accessibilityRole="button"
+        testID="verdict-keep">
+        <Text style={styles.btnOutlineText}>Keep</Text>
       </Pressable>
     </View>
   );

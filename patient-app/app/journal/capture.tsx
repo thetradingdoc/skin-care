@@ -1,6 +1,8 @@
 // PR1 soft-launch safety — 2026-07-12
+// TOUCH-050 harden — past-day backfill with date badge + library path
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -22,11 +24,12 @@ import { ConsumerPrimaryButton } from '@/components/billing-ui';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { AppTokens } from '@/constants/appTokens';
 import { JOURNAL_CAPTURE_ENABLED } from '@/constants/feature-flags';
-import { HOME_HREF, ROUTINE_PICK_HREF } from '@/constants/routes';
+import { PROOF_HREF, ROUTINE_PICK_HREF } from '@/constants/routes';
 import { postJournalDailyPhoto, type JournalConditionTag } from '@/lib/journal-api';
 import { setFirstPhotoLogged } from '@/lib/onboarding-storage';
 import { consumePendingCaptureUri } from '@/lib/pending-capture-uri';
 import { localTodayIso, resolveRoutineDayMode } from '@/lib/routine-day-mode';
+import { mimeTypeFromImagePickerAsset } from '@/lib/upload-uri';
 
 export default function JournalCaptureScreen() {
   const { ready, checking } = useRequirePatientSession();
@@ -37,6 +40,7 @@ export default function JournalCaptureScreen() {
     typeof params.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
       ? params.date
       : localTodayIso();
+  const preferLibrary = params.library === '1';
 
   const [permission, requestPermission] = useCameraPermissions();
   const camRef = useRef<CameraView>(null);
@@ -47,15 +51,14 @@ export default function JournalCaptureScreen() {
 
   const dayMode = resolveRoutineDayMode(entryDate);
   const allowsPhoto = dayMode.allows_photo;
+  const isBackfill = dayMode.mode === 'backfill';
 
-  // PR1: soft-launch guard — redirect if journal capture is disabled
   useEffect(() => {
     if (!JOURNAL_CAPTURE_ENABLED) {
       router.replace(ROUTINE_PICK_HREF);
     }
   }, [router]);
 
-  // PR1-24: load pending library URI async (not sync at render)
   useEffect(() => {
     if (!JOURNAL_CAPTURE_ENABLED) return;
     let cancelled = false;
@@ -69,8 +72,32 @@ export default function JournalCaptureScreen() {
     };
   }, []);
 
+  // TOUCH-050 — past-day backfill prefers library upload.
+  useEffect(() => {
+    if (!preferLibrary || !allowsPhoto || capturedUri) return;
+    let cancelled = false;
+    void (async () => {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (cancelled || !perm.granted) return;
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.85,
+      });
+      if (cancelled || picked.canceled || !picked.assets?.[0]) return;
+      void mimeTypeFromImagePickerAsset(picked.assets[0]);
+      setCapturedUri(picked.assets[0].uri);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [preferLibrary, allowsPhoto, capturedUri]);
+
   const save = useCallback(async () => {
     if (!capturedUri) return;
+    if (!allowsPhoto) {
+      showToast('This day is outside the 48-hour backfill window.', 'error');
+      return;
+    }
     setBusy(true);
     try {
       await postJournalDailyPhoto({
@@ -85,19 +112,31 @@ export default function JournalCaptureScreen() {
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (_) {}
       }
-      // PR1-25: celebrate + refresh Home after photo
-      router.replace(`${HOME_HREF}?celebrate=1&refresh=1` as typeof HOME_HREF);
+      router.replace(PROOF_HREF);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Could not save photo', 'error');
     } finally {
       setBusy(false);
     }
-  }, [capturedUri, conditionTags, entryDate, note, router, showToast]);
+  }, [allowsPhoto, capturedUri, conditionTags, entryDate, note, router, showToast]);
 
   const snap = useCallback(async () => {
     if (!camRef.current || !allowsPhoto) return;
     const photo = await camRef.current.takePictureAsync({ quality: 0.85 });
     if (photo?.uri) setCapturedUri(photo.uri);
+  }, [allowsPhoto]);
+
+  const pickLibrary = useCallback(async () => {
+    if (!allowsPhoto) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+    });
+    if (picked.canceled || !picked.assets?.[0]) return;
+    void mimeTypeFromImagePickerAsset(picked.assets[0]);
+    setCapturedUri(picked.assets[0].uri);
   }, [allowsPhoto]);
 
   if (checking || !ready) {
@@ -116,11 +155,29 @@ export default function JournalCaptureScreen() {
     );
   }
 
+  if (!allowsPhoto) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <Stack.Screen options={{ title: 'Add past day' }} />
+        <View style={styles.perm}>
+          <Text style={styles.permText} testID="backfill-window-blocked">
+            {entryDate} is outside the 48-hour backfill window.
+          </Text>
+          <ConsumerPrimaryButton label="Back to Proof" onPress={() => router.replace(PROOF_HREF)} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (capturedUri) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-        <Stack.Screen options={{ title: 'Save to journal' }} />
+        <Stack.Screen options={{ title: isBackfill ? 'Backfill photo' : 'Save to journal' }} />
         <ScrollView contentContainerStyle={styles.review}>
+          <Text style={styles.dateBadge} testID="capture-entry-date">
+            Logging for {entryDate}
+            {isBackfill ? ' · backfill' : ''}
+          </Text>
           <Image source={{ uri: capturedUri }} style={styles.preview} />
           <Text style={styles.reviewTitle}>How does it look?</Text>
           <Text style={styles.reviewSub}>Select everything that applies — this helps find patterns.</Text>
@@ -142,13 +199,15 @@ export default function JournalCaptureScreen() {
     );
   }
 
-  if (!permission?.granted) {
+  if (!permission?.granted && !preferLibrary) {
     return (
       <SafeAreaView style={styles.root}>
         <Stack.Screen options={{ title: 'Log photo' }} />
         <View style={styles.perm}>
+          <Text style={styles.dateBadge}>Logging for {entryDate}</Text>
           <Text style={styles.permText}>Camera access is needed for your daily skin photo.</Text>
           <ConsumerPrimaryButton label="Enable camera" onPress={() => void requestPermission()} />
+          <ConsumerPrimaryButton label="Upload from library" onPress={() => void pickLibrary()} />
         </View>
       </SafeAreaView>
     );
@@ -159,9 +218,17 @@ export default function JournalCaptureScreen() {
       <Stack.Screen options={{ title: 'Log photo', headerShown: false }} />
       <CameraView ref={camRef} style={styles.camera} facing="front">
         <SafeAreaView style={styles.cameraUi} edges={['top', 'bottom']}>
-          <Pressable onPress={() => router.back()} style={styles.closeBtn}>
-            <Text style={styles.closeText}>✕</Text>
-          </Pressable>
+          <View style={styles.topBar}>
+            <Pressable onPress={() => router.back()} style={styles.closeBtn}>
+              <Text style={styles.closeText}>✕</Text>
+            </Pressable>
+            <Text style={styles.dateOverlay} testID="capture-entry-date">
+              {entryDate}
+            </Text>
+            <Pressable onPress={() => void pickLibrary()} style={styles.libraryBtn} testID="capture-library">
+              <Text style={styles.libraryText}>Library</Text>
+            </Pressable>
+          </View>
           <View style={styles.shutterRow}>
             <Pressable onPress={() => void snap()} style={styles.shutter} accessibilityRole="button" />
           </View>
@@ -176,6 +243,7 @@ const styles = StyleSheet.create({
   cameraRoot: { flex: 1, backgroundColor: '#000' },
   camera: { flex: 1 },
   cameraUi: { flex: 1, justifyContent: 'space-between', padding: 16 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   closeBtn: {
     width: 36,
     height: 36,
@@ -185,6 +253,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: { color: '#fff', fontSize: 16 },
+  dateOverlay: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  libraryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  libraryText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   shutterRow: { alignItems: 'center', paddingBottom: 24 },
   shutter: {
     width: 72,
@@ -195,6 +271,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.9)',
   },
   review: { padding: 16, gap: 12, paddingBottom: 40 },
+  dateBadge: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: AppTokens.color.ink,
+    backgroundColor: AppTokens.color.cream,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
   preview: { width: '100%', height: 220, borderRadius: 12, backgroundColor: '#111' },
   reviewTitle: { fontFamily: AppTokens.font.display, fontSize: 22, color: AppTokens.color.ink },
   reviewSub: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 4 },

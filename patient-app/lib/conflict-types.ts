@@ -1,4 +1,4 @@
-export type VerdictOverall = 'safe' | 'caution' | 'avoid' | 'unknown';
+export type VerdictOverall = 'safe' | 'caution' | 'avoid' | 'hard_no' | 'unknown';
 
 export type ConflictHit = {
   ingredient_a?: string;
@@ -22,7 +22,7 @@ export type ContraindicationAlert = {
 export type ProductStatus = {
   shelf_product_id: string;
   product_name?: string;
-  status: 'safe' | 'conflict' | 'unknown' | 'watch';
+  status: 'safe' | 'conflict' | 'unknown' | 'watch' | 'hard_no';
   usage_time?: string;
   note?: string;
 };
@@ -38,6 +38,9 @@ export type RoutineStepState = {
 export type EvaluateResult = {
   success?: boolean;
   overall: VerdictOverall;
+  hard_no?: boolean;
+  acrylate_free_verified?: boolean;
+  safe_mode?: { active?: boolean; ambient_copy?: string | null };
   compatibility_score: number;
   barrier_friction_index: number;
   barrier_label?: string;
@@ -64,6 +67,11 @@ export type BioProfile = {
   sensitivity?: string;
   fitzpatrick?: string | null;
   zip?: string | null;
+  procedure_date?: string | null;
+  procedure_type?: string | null;
+  procedure_recovery_days?: number | null;
+  budget_band?: string | null;
+  climate_zone?: string | null;
   profile_complete?: boolean;
 };
 

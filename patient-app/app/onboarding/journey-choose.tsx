@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandWordmark } from '@/components/BrandWordmark';
+import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { ConsumerPrimaryButton } from '@/components/billing-ui';
 import { JourneyModeCard } from '@/components/v3';
 import { AppTokens } from '@/constants/appTokens';
@@ -64,7 +64,7 @@ export default function JourneyChooseScreen() {
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <BrandWordmark height={36} style={styles.logo} />
+          <ToucheMarkCompact height={28} style={styles.logo} />
           <Text style={styles.title}>What brings you here?</Text>
           <Text style={styles.sub}>Pick what fits — you can change it anytime.</Text>
         </View>

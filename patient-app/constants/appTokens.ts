@@ -14,7 +14,12 @@ export const AppTokens = {
     brandBlue: '#314DB6',
     brandAccent: '#314DB6',
     accent: '#57BFD4',
+    /** Caution / soft conflict (TOUCH-008) — reuse this hex; do not add a parallel "caution" color. */
     terracotta: '#C16E52',
+    /** Safe verdict / bottle band (TOUCH-006). */
+    safe: '#2F9E5C',
+    /** Hard-no / allergen exclude (TOUCH-007) — visually distinct from terracotta caution. */
+    hardNo: '#D93A3A',
     success: '#4F8A5B',
     danger: '#B42318',
     fabBg: '#111111',

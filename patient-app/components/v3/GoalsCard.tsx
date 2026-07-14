@@ -4,7 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppTokens } from '@/constants/appTokens';
-import { HOME_HREF, SCAN_HREF, TRACK_HREF } from '@/constants/routes';
+import { CHECK_HREF, SCAN_HREF, TRACK_HREF } from '@/constants/routes';
 import type { PatientGoal } from '@/lib/goals-api';
 import { goalLabel } from '@/lib/goals-api';
 
@@ -16,7 +16,7 @@ type Props = {
 function goalRoute(goalType: PatientGoal['goal_type']): Href {
   if (goalType === 'watch_spot') return TRACK_HREF;
   if (goalType === 'reduce_conflicts') return SCAN_HREF;
-  return HOME_HREF;
+  return CHECK_HREF;
 }
 
 export function GoalsCard({ goals, onDismiss }: Props) {

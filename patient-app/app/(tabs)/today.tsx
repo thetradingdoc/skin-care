@@ -1,6 +1,8 @@
 import { Redirect } from 'expo-router';
 
-/** Legacy route — redirects to Home tab. */
+import { CHECK_HREF } from '@/constants/routes';
+
+/** Legacy route — redirects to Check (sole home). */
 export default function TodayRedirect() {
-  return <Redirect href="/(tabs)/home" />;
+  return <Redirect href={CHECK_HREF} />;
 }

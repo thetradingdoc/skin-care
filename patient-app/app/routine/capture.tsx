@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PhotoAlignPreview } from '@/components/PhotoAlignPreview';
+import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { useToast } from '@/components/billing-feedback';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { AppTokens } from '@/constants/appTokens';
@@ -122,7 +123,7 @@ export default function RoutineCaptureScreen() {
       void setFirstPhotoLogged();
       if (verdictLine) showToast(verdictLine, 'success');
       router.replace({
-        pathname: '/(tabs)/home',
+        pathname: '/check',
         params: { date: entryDate, celebrate: '1', refresh: '1' },
       });
     },
@@ -315,6 +316,7 @@ export default function RoutineCaptureScreen() {
         ) : null}
         <View style={styles.guideFrame} pointerEvents="none" />
         <SafeAreaView edges={['top']} style={styles.hintBar}>
+          <ToucheMarkCompact height={18} style={styles.captureMark} />
           {preflight ? <Text style={styles.preflightBanner}>{preflight}</Text> : null}
           <Text style={styles.hintText}>
             {ghostUrl && ghostPriorDate
@@ -372,6 +374,7 @@ const styles = StyleSheet.create({
     margin: 24,
   },
   hintBar: { position: 'absolute', top: 0, left: 0, right: 0, padding: 16, gap: 8 },
+  captureMark: { alignSelf: 'flex-start' },
   preflightBanner: {
     backgroundColor: 'rgba(239,159,39,0.9)',
     color: '#fff',
