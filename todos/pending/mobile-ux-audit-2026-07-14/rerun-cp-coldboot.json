@@ -1,0 +1,116 @@
+{
+  "generatedAt": "2026-07-14T16:29:37.131Z",
+  "method": "bare_/app_cold_boot",
+  "seededDestinationUrls": false,
+  "spaFix": "TOUCH-002 serve-consumer-hosting + firebase.consumer.json",
+  "results": [
+    {
+      "id": "C1",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/sign-in",
+      "seededDestination": false,
+      "body": "\nBack\nSign in\nWelcome back. Enter your email for a secure 6-digit code.\nEmail\nSend code\nThe #1 Skincare Journal.\nSign in required."
+    },
+    {
+      "id": "C2",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/home",
+      "seededDestination": false,
+      "body": "Good morning, Inventory-e2e\nDay 8 · Week 2 of 12\n3 day streak\nAcne results: 12 weeks of daily photos. You're on week 2.\n72\nBARRIER\nBarrier under mild stress\nUse with caution\nRetinol 0.3% may clash with actives already on your shelf.\n1\nconflict\n3\nday streak\n-1\nskin age\nDAILY PHOTO"
+    },
+    {
+      "id": "C3",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/sign-in",
+      "seededDestination": false,
+      "body": "\nBack\nSign in\nWelcome back. Enter your email for a secure 6-digit code.\nEmail\nSend code\nThe #1 Skincare Journal."
+    },
+    {
+      "id": "C4",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/sign-in?error=connection",
+      "seededDestination": false,
+      "body": "\nBack\nConnection error — check your network and try again.\nRetry\nSign in\nWelcome back. Enter your email for a secure 6-digit code.\nEmail\nSend code\nThe #1 Skincare Journal."
+    },
+    {
+      "id": "C5",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/home",
+      "seededDestination": false,
+      "body": "Home\nTrack\nScan\nProgress\nProfile"
+    },
+    {
+      "id": "P1",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/onboarding/journey-choose",
+      "seededDestination": false,
+      "body": "skin\ncare\nWhat brings you here?\nPick what fits — you can change it anytime.\nKeep a skin diary\nOne photo a day. See what's changing and find your triggers — no routine needed.\nImprove my skin routine\nProduct conflicts and a guided 12-week program.\nWatch a spot or mark\nTrack a mole"
+    },
+    {
+      "id": "P2",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/routine/pick",
+      "seededDestination": false,
+      "body": "Choose routine\nChoose your routine\nPick a guided template to track AM/PM steps and daily progress photos.\nAcne care plan\n12 weeks · guided program\nAnti-aging care plan\n12 weeks · guided program\nKey rules\n· Use SPF daily\n· Patch test new products\nStart tracking"
+    },
+    {
+      "id": "P3",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/onboarding/bio-calibration",
+      "seededDestination": false,
+      "body": "Calibrate your skin profile\nWe use this to personalize ingredient conflict checks — not a diagnosis.\nSkin concerns\n\nAcne\n\nRosacea\n\nHyperpigmentation\n\nDark marks\n\nEczema\n\nSensitive skin\n\nBarrier damage\n\nInflamed skin\n\nDehydrated\nContinue"
+    },
+    {
+      "id": "P4",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/scan",
+      "seededDestination": false,
+      "body": "Your products\n0 added\nPoint at barcode · or search below\nHold barcode in the box\nor search by name\nYOUR SHELF TODAY\nNo products yet — scan or add one to get a verdict.\n\nAdd product\nHome\nTrack\nScan\nProgress\nProfile"
+    },
+    {
+      "id": "P5",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/track",
+      "seededDestination": false,
+      "body": "Track a spot\nLog photos and compare over time.\nNo forms. No medical words.\n\nTake a photo now\nPoint at the spot, tap the button\n\n\nUpload from gallery\nUse a photo you already took\n\n\nSee my photos so far\nCompare how it has changed\n\nNot a diagnosis. If you're worried, see a doc"
+    },
+    {
+      "id": "P6",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/home",
+      "seededDestination": false,
+      "body": "Good morning, Inventory-e2e\nDay 3 · 2026-07-14\n3 day streak\nStart your skin routine →\nNot a diagnosis. See a dermatologist if your symptoms worsen or you are unsure.\nHome\nTrack\nScan\nProgress\nProfile"
+    },
+    {
+      "id": "P7",
+      "severity": "info",
+      "issue": "ok",
+      "bootUrl": "http://127.0.0.1:5199/app",
+      "landedUrl": "http://127.0.0.1:5199/app/home",
+      "seededDestination": false,
+      "body": "Good morning, Inventory-e2e\nDay 8 · Week 2 of 12\n3 day streak\nAcne results: 12 weeks of daily photos. You're on week 2.\n72\nBARRIER\nBarrier under mild stress\nUse with caution\nRetinol 0.3% may clash with actives already on your shelf.\n1\nconflict\n3\nday streak\n-1\nskin age\nDAILY PHOTO"
+    }
+  ]
+}

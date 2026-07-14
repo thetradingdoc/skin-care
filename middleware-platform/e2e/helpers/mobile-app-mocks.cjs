@@ -69,14 +69,47 @@ function calendarDays(start, end) {
 async function bootstrapMobileSession(context, opts = {}) {
   const sessionId = opts.sessionId || MOCK_SESSION_ID;
   const email = opts.email || MOCK_EMAIL;
+  const journeyModes = opts.journeyModes; // undefined = leave alone; [] = clear; ['routine'] = set
+  const withSpot = !!opts.withSpot;
   await context.addInitScript(
-    ({ api, sid, em }) => {
+    ({ api, sid, em, journeyModes, withSpot, clearSpots }) => {
       localStorage.setItem('patient_session_id', sid);
       localStorage.setItem('patient_api_base_url', api);
       localStorage.setItem('api_base', api);
       localStorage.setItem('patient_session_email', em);
+      if (Array.isArray(journeyModes)) {
+        if (journeyModes.length) {
+          localStorage.setItem(
+            'patient_journey_profile_v1',
+            JSON.stringify({
+              modes: journeyModes,
+              primary: journeyModes[0],
+              chosenAt: new Date().toISOString(),
+            }),
+          );
+        } else {
+          localStorage.removeItem('patient_journey_profile_v1');
+        }
+      }
+      if (withSpot) {
+        localStorage.setItem(
+          'patient_spots_v1',
+          JSON.stringify([
+            {
+              id: 'spot_neck_1',
+              label: 'Neck spot',
+              bodyRegion: 'neck',
+              createdAt: new Date(Date.now() - 18 * 86400000).toISOString(),
+              photos: [{ date: '2026-06-01' }],
+            },
+          ]),
+        );
+        localStorage.setItem('patient_spots_migrated_v1', '1');
+      } else if (clearSpots) {
+        localStorage.removeItem('patient_spots_v1');
+      }
     },
-    { api: API_BASE, sid: sessionId, em: email }
+    { api: API_BASE, sid: sessionId, em: email, journeyModes, withSpot, clearSpots: !!opts.clearSpots },
   );
 }
 
@@ -84,6 +117,14 @@ const API_ROUTE_PATTERN = /\/api\/(patient|public)\//;
 
 async function stubMobileAppApis(page, opts = {}) {
   const emptyBilling = !!opts.emptyBilling;
+  const meMode = opts.meMode || 'ok'; // ok | auth_dead | network_fail | hang
+  const journeyModes = opts.journeyModes; // undefined → default routine+watch complete
+  const hasTemplate = opts.hasTemplate !== false;
+  const bioComplete = opts.bioComplete !== false;
+  const emptyShelf = !!opts.emptyShelf;
+  const allowsPhoto = opts.allowsPhoto !== false;
+  const hangMs = Number(opts.hangMs || 8000);
+
   try {
     await page.unroute(API_ROUTE_PATTERN);
   } catch {
@@ -118,6 +159,37 @@ async function stubMobileAppApis(page, opts = {}) {
       );
     }
 
+    if (url.includes('/me')) {
+      if (meMode === 'hang') {
+        await new Promise((r) => setTimeout(r, hangMs));
+        return route.fulfill(json({ success: true, patient: { email: MOCK_EMAIL, id: 'patient-e2e' } }));
+      }
+      if (meMode === 'auth_dead') {
+        return route.fulfill(json({ success: false, error: 'Sign in required.' }, 401));
+      }
+      if (meMode === 'network_fail') {
+        return route.abort('failed');
+      }
+      return route.fulfill(json({ success: true, patient: { email: MOCK_EMAIL, id: 'patient-e2e' } }));
+    }
+
+    if (url.includes('/consumer-profile')) {
+      const modes =
+        Array.isArray(journeyModes) ? journeyModes : ['watch', 'routine'];
+      return route.fulfill(
+        json({
+          success: true,
+          profile: {
+            journey_modes: modes,
+            primary_mode: modes[0] || null,
+            onboarding_complete: modes.length > 0,
+            bio_calibration_complete: bioComplete,
+            needs_first_photo: false,
+          },
+        }),
+      );
+    }
+
     if (url.includes('/shelf/products/scan') && method === 'POST') {
       return route.fulfill(
         json({
@@ -134,7 +206,9 @@ async function stubMobileAppApis(page, opts = {}) {
       return route.fulfill(
         json({
           success: true,
-          products: [{ id: MOCK_PRODUCT_ID, product_name: 'Retinol 0.3%', usage_time: 'pm' }],
+          products: emptyShelf
+            ? []
+            : [{ id: MOCK_PRODUCT_ID, product_name: 'Retinol 0.3%', usage_time: 'pm' }],
         })
       );
     }
@@ -157,7 +231,9 @@ async function stubMobileAppApis(page, opts = {}) {
         return route.fulfill(
           json({
             success: true,
-            profile: { conditions: ['acne'], prescriptions: [], profile_complete: true },
+            profile: bioComplete
+              ? { conditions: ['acne'], prescriptions: [], profile_complete: true }
+              : { conditions: [], prescriptions: [], profile_complete: false },
           })
         );
       }
@@ -167,6 +243,9 @@ async function stubMobileAppApis(page, opts = {}) {
     if (url.includes('/routine/template')) {
       if (method === 'POST') {
         return route.fulfill(json({ success: true, has_template: true, template: { id: 'tpl-1', name: 'Acne care plan' } }));
+      }
+      if (!hasTemplate) {
+        return route.fulfill(json({ success: true, has_template: false }));
       }
       return route.fulfill(
         json({
@@ -198,8 +277,8 @@ async function stubMobileAppApis(page, opts = {}) {
       return route.fulfill(
         json({
           success: true,
-          day_mode: 'today',
-          allows_photo: true,
+          day_mode: allowsPhoto ? 'today' : 'past_readonly',
+          allows_photo: allowsPhoto,
           daily_entry: { completion_score: 0, skin_report_parsed: null },
         })
       );
@@ -209,9 +288,9 @@ async function stubMobileAppApis(page, opts = {}) {
       return route.fulfill(
         json({
           success: true,
-          has_template: true,
-          day_mode: 'today',
-          allows_photo: true,
+          has_template: hasTemplate,
+          day_mode: allowsPhoto ? 'today' : 'past_readonly',
+          allows_photo: allowsPhoto,
           phase: {
             program_week: 2,
             total_weeks: 12,
@@ -310,10 +389,6 @@ async function stubMobileAppApis(page, opts = {}) {
 
     if (url.includes('/support-config')) {
       return route.fulfill(json({ success: true, support_email: 'help@example.com' }));
-    }
-
-    if (url.includes('/me')) {
-      return route.fulfill(json({ success: true, patient: { email: MOCK_EMAIL, id: 'patient-e2e' } }));
     }
 
     if (url.includes('/billing/retention-policy')) {
