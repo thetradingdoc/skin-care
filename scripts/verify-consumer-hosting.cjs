@@ -190,6 +190,21 @@ async function verifyLocalDist() {
 
   verifyExpoApiBaseInBundle(HOSTING_DIST, 'local dist');
 
+  const firebaseConsumer = path.join(ROOT, 'unified-dashboard', 'firebase.consumer.json');
+  if (!fs.existsSync(firebaseConsumer)) {
+    fail('Missing unified-dashboard/firebase.consumer.json');
+  }
+  const hostingCfg = JSON.parse(fs.readFileSync(firebaseConsumer, 'utf8'));
+  const rewrites = hostingCfg?.hosting?.rewrites || [];
+  const appExact = rewrites.some((r) => r.source === '/app' && r.destination === '/app/index.html');
+  const appGlob = rewrites.some((r) => r.source === '/app/**' && r.destination === '/app/index.html');
+  if (!appExact || !appGlob) {
+    fail(
+      'firebase.consumer.json must rewrite /app and /app/** → /app/index.html (SPA cold-boot; TOUCH-002)'
+    );
+  }
+  ok('firebase.consumer.json SPA rewrites for /app + /app/**');
+
   const rootFavicon = path.join(HOSTING_DIST, 'favicon.ico');
   if (!fs.existsSync(rootFavicon)) {
     fail('Missing favicon.ico at bundle root');

@@ -12,8 +12,9 @@ const EMAIL_WORDMARK_CID = 'skin-care-wordmark@brand';
 
 const SITE_URL = (
   process.env.SKIN_CARE_EMAIL_SITE_URL ||
+  process.env.TOUCHE_APP_URL ||
   process.env.SOMO_EMAIL_SITE_URL ||
-  'https://myskinandcare.com'
+  'https://app.trytouche.com'
 ).replace(/\/$/, '');
 
 const EMAIL_WORDMARK_URL = `${SITE_URL}/assets/brand/email-wordmark.png`;

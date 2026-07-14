@@ -47,10 +47,23 @@ function ensurePatientShelfInventoryColumns() {
   addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN ingredients_text TEXT');
   addCol("ALTER TABLE patient_onboarding_step3_products ADD COLUMN verdict_status TEXT DEFAULT 'unknown'");
   addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN kept_despite_conflict INTEGER DEFAULT 0');
+  // TOUCH-064 — cost per use
+  addCol('ALTER TABLE patient_onboarding_step3_products ADD COLUMN cost_per_use REAL');
+}
+
+function daysLeftFromExpiry(expiryDate) {
+  if (!expiryDate) return null;
+  const m = String(expiryDate).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const end = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((end - today) / 86400000);
 }
 
 function formatShelfProductApiRow(r) {
   const { safeParseJsonArray } = require('./patient-portal-shared');
+  const days_left = daysLeftFromExpiry(r.expiry_date);
   return {
     id: r.id,
     product_name: r.custom_product_name || r.product_name || 'Product',
@@ -67,8 +80,12 @@ function formatShelfProductApiRow(r) {
     pao_months: r.pao_months,
     inventory_status: r.inventory_status,
     price_usd: r.price_usd,
+    cost_per_use: r.cost_per_use != null ? Number(r.cost_per_use) : null,
+    days_left,
     key_ingredients: r.key_ingredients,
     display_color: r.display_color,
+    verdict_status: r.verdict_status || null,
+    kept_despite_conflict: Number(r.kept_despite_conflict) === 1,
     updated_at: r.updated_at,
   };
 }
@@ -79,7 +96,7 @@ function loadPatientShelfProductRows(sessionId) {
     .prepare(`
       SELECT id, selection_mode, catalog_product_id, custom_product_name, custom_brand, category, usage_time,
         frequency_rule, days_of_week_json, goal, opened_date, expiry_date, pao_months, inventory_status,
-        price_usd, key_ingredients, display_color, updated_at
+        price_usd, cost_per_use, key_ingredients, display_color, verdict_status, kept_despite_conflict, updated_at
       FROM patient_onboarding_step3_products
       WHERE session_id = ?
       ORDER BY datetime(updated_at) DESC
@@ -92,4 +109,5 @@ module.exports = {
   ensurePatientShelfInventoryColumns,
   formatShelfProductApiRow,
   loadPatientShelfProductRows,
+  daysLeftFromExpiry,
 };

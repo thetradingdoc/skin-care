@@ -21,12 +21,11 @@ function registerPatientJournalRoutes(app, deps) {
   }
 
   function journalStandaloneEnabled() {
-    // SOFT-LAUNCH GATE: client (patient-app) hides journal capture UI until
-    // JOURNAL_MODE_STANDALONE=1 is confirmed in prod Cloud Run env.
-    // Do not remove this server gate without coordinating with patient-app
-    // PR1 flag flip (JOURNAL_CAPTURE_ENABLED in constants/feature-flags.ts).
-    // See: todos/pending/MYSKINANDCARE_SOFT_LAUNCH_MASTER_CHECKLIST.md ENV-1
-    return String(process.env.JOURNAL_MODE_STANDALONE || '0').trim() === '1';
+    // Phase 2 Check home — camera journal is the product. Default ON.
+    // Opt out: JOURNAL_MODE_STANDALONE=0
+    const raw = process.env.JOURNAL_MODE_STANDALONE;
+    if (raw == null || String(raw).trim() === '') return true;
+    return String(raw).trim() === '1';
   }
 
   function triggerInsightsEnabled() {
@@ -57,7 +56,26 @@ function registerPatientJournalRoutes(app, deps) {
       note: entry.note || null,
       has_photo: Boolean(entry.photo_storage_ref),
       source: entry.source,
+      dryness_level: entry.dryness_level || null,
+      breakout_level: entry.breakout_level || null,
+      calm_flag: entry.calm_flag || null,
+      dryness_rank: entry.dryness_rank ?? null,
+      breakout_rank: entry.breakout_rank ?? null,
+      dryness_score: entry.dryness_score ?? null,
+      breakout_score: entry.breakout_score ?? null,
+      advanced_severity: Boolean(entry.advanced_severity),
     };
+  }
+
+  function parseSeverityFromBody(body, rawMultipart) {
+    const { normalizeSeverityPayload } = require('../lib/journal-severity');
+    let payload = body && typeof body === 'object' ? { ...body } : {};
+    if (rawMultipart) {
+      try {
+        if (typeof body.severity === 'string') Object.assign(payload, JSON.parse(body.severity));
+      } catch (_) {}
+    }
+    return normalizeSeverityPayload(payload);
   }
 
   app.post(
@@ -104,6 +122,7 @@ function registerPatientJournalRoutes(app, deps) {
         } catch (_) {}
 
         const note = req.body?.note != null ? String(req.body.note) : undefined;
+        const sev = parseSeverityFromBody(req.body, true);
 
         const gcsBillingStorage = require('../services/gcs-billing-storage');
         const uploaded = await gcsBillingStorage.uploadBuffer({
@@ -121,7 +140,13 @@ function registerPatientJournalRoutes(app, deps) {
           photoStorageRef: uploaded.storageRef,
           conditionTags,
           note,
-          source: 'standalone',
+          source: String(req.body?.source || 'check_camera'),
+          drynessLevel: sev.dryness_level,
+          breakoutLevel: sev.breakout_level,
+          calmFlag: sev.calm_flag,
+          drynessScore: sev.dryness_score,
+          breakoutScore: sev.breakout_score,
+          advancedSeverity: Boolean(sev.advanced_severity),
         });
 
         if (typeof recordPatientPortalEvent === 'function') {
@@ -172,6 +197,13 @@ function registerPatientJournalRoutes(app, deps) {
         const conditionTags =
           body.condition_tags != null ? normalizeConditionTags(body.condition_tags) : undefined;
         const note = body.note !== undefined ? body.note : undefined;
+        const sev = parseSeverityFromBody(body, false);
+        const hasSev =
+          sev.dryness_level != null ||
+          sev.breakout_level != null ||
+          sev.calm_flag != null ||
+          sev.dryness_score != null ||
+          sev.breakout_score != null;
 
         const { upsertEntry } = require('../repositories/patient-journal-repo');
         const entry = upsertEntry(db.db, {
@@ -180,7 +212,17 @@ function registerPatientJournalRoutes(app, deps) {
           entryDate,
           conditionTags: conditionTags ?? [],
           note,
-          source: 'standalone',
+          source: String(body.source || 'check_camera'),
+          ...(hasSev
+            ? {
+                drynessLevel: sev.dryness_level,
+                breakoutLevel: sev.breakout_level,
+                calmFlag: sev.calm_flag,
+                drynessScore: sev.dryness_score,
+                breakoutScore: sev.breakout_score,
+                advancedSeverity: Boolean(sev.advanced_severity),
+              }
+            : {}),
         });
 
         if (typeof recordPatientPortalEvent === 'function') {
@@ -224,6 +266,11 @@ function registerPatientJournalRoutes(app, deps) {
             condition_tags: e.condition_tags,
             note: e.note,
             source: e.source,
+            dryness_level: e.dryness_level,
+            breakout_level: e.breakout_level,
+            calm_flag: e.calm_flag,
+            dryness_rank: e.dryness_rank,
+            breakout_rank: e.breakout_rank,
           })),
           routineDays: [],
           issuePhotoUrl: (ref) => ref,
@@ -235,6 +282,188 @@ function registerPatientJournalRoutes(app, deps) {
         });
       } catch (e) {
         return res.status(500).json({ success: false, error_code: 'TIMELINE_FAILED', error: e.message });
+      }
+    },
+  );
+
+  /** TOUCH-041 — yesterday severity for prefill */
+  app.get(
+    '/api/patient/journal/severity/yesterday',
+    (req, res, next) => apiLimiter(req, res, next),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        ensureJournalTables(db.db);
+        const sessionId = req.patientSessionId;
+        const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+        const todayIso = clientTodayIso(req);
+        const { getYesterdaySeverity } = require('../repositories/patient-journal-repo');
+        const entry = getYesterdaySeverity(db.db, { patientId, sessionId, todayIso });
+        return res.json({
+          success: true,
+          entry_date: entry?.entry_date || null,
+          severity: entry
+            ? {
+                dryness_level: entry.dryness_level,
+                breakout_level: entry.breakout_level,
+                calm_flag: entry.calm_flag,
+                dryness_score: entry.dryness_score,
+                breakout_score: entry.breakout_score,
+                advanced_severity: entry.advanced_severity,
+              }
+            : null,
+        });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    },
+  );
+
+  /** TOUCH-042/048 — severity history ranks for charts */
+  app.get(
+    '/api/patient/journal/severity/history',
+    (req, res, next) => apiLimiter(req, res, next),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        ensureJournalTables(db.db);
+        const sessionId = req.patientSessionId;
+        const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+        const days = Math.max(1, Math.min(60, Number(req.query?.days) || 14));
+        const todayIso = clientTodayIso(req);
+        const start = new Date(`${todayIso}T12:00:00.000Z`);
+        start.setUTCDate(start.getUTCDate() - (days - 1));
+        const startIso = start.toISOString().slice(0, 10);
+        const { getByDateRange } = require('../repositories/patient-journal-repo');
+        const entries = getByDateRange(db.db, { patientId, sessionId, startIso, endIso: todayIso });
+        return res.json({
+          success: true,
+          days: entries.map((e) => ({
+            date: e.entry_date,
+            dryness_level: e.dryness_level,
+            breakout_level: e.breakout_level,
+            calm_flag: e.calm_flag,
+            dryness_rank: e.dryness_rank,
+            breakout_rank: e.breakout_rank,
+            dryness_score: e.dryness_score,
+            breakout_score: e.breakout_score,
+          })),
+        });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    },
+  );
+
+  /** TOUCH-043 — agent delta banner payload for Check */
+  app.get(
+    '/api/patient/check/agent-delta',
+    (req, res, next) => apiLimiter(req, res, next),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        const sessionId = req.patientSessionId;
+        const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+        const { findBarrierDip } = require('../services/barrier-insight-service');
+        const dip = findBarrierDip(db.db, { sessionId, patientId, days: 14 });
+
+        ensureJournalTables(db.db);
+        const todayIso = clientTodayIso(req);
+        const { getEntryForDate, getYesterdaySeverity } = require('../repositories/patient-journal-repo');
+        const today = getEntryForDate(db.db, { patientId, sessionId, entryDate: todayIso });
+        const yesterday = getYesterdaySeverity(db.db, { patientId, sessionId, todayIso });
+
+        let severityDelta = null;
+        if (today && yesterday) {
+          const dRank = (today.dryness_rank || 0) - (yesterday.dryness_rank || 0);
+          const bRank = (today.breakout_rank || 0) - (yesterday.breakout_rank || 0);
+          if (dRank >= 1 || bRank >= 1) {
+            severityDelta = {
+              dryness_rank_delta: dRank,
+              breakout_rank_delta: bRank,
+              message:
+                bRank >= 1
+                  ? 'Breakouts picked up vs yesterday. Skip actives tonight?'
+                  : 'Dryness rose vs yesterday. Ease actives tonight?',
+            };
+          }
+        }
+
+        const show = Boolean(dip || severityDelta);
+        const message =
+          severityDelta?.message ||
+          dip?.message ||
+          null;
+        if (show && message) {
+          try {
+            const { maybeEnqueueAgentDeltaPush } = require('../services/patient-push-service');
+            maybeEnqueueAgentDeltaPush(db.db, { patientId, sessionId, message });
+          } catch (_) {}
+        }
+        return res.json({
+          success: true,
+          show,
+          barrier_dip: dip || null,
+          severity_delta: severityDelta,
+          message,
+          skip_action: show ? 'skip_active_tonight' : null,
+        });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    },
+  );
+
+  app.post(
+    '/api/patient/check/agent-delta/skip',
+    (req, res, next) => apiLimiter(req, res, next),
+    express.json(),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        const sessionId = req.patientSessionId;
+        const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+        const entryDate = clientTodayIso(req);
+        const { applySkipActivesTonight } = require('../services/check-agent-skip-service');
+        const result = applySkipActivesTonight(db.db, { sessionId, patientId, entryDate });
+
+        // TOUCH-044 — maps to existing routine daily item-log skip path (not a new chat).
+        if (typeof recordPatientPortalEvent === 'function') {
+          recordPatientPortalEvent(req, 'check_agent_skip', {
+            action: 'skip_active_tonight',
+            daily_entry_id: result.daily_entry_id || null,
+            skipped_count: result.skipped_count,
+            path: result.path || result.reason || null,
+          });
+        }
+        return res.json({
+          success: true,
+          applied: 'skip_active_tonight',
+          advice: result.advice,
+          daily_entry_id: result.daily_entry_id || null,
+          skipped_count: result.skipped_count,
+          path: result.path || result.reason || null,
+        });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    },
+  );
+
+  app.post(
+    '/api/patient/check/agent-delta/keep',
+    (req, res, next) => apiLimiter(req, res, next),
+    express.json(),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        // TOUCH-045 — dismiss only; routine unchanged.
+        if (typeof recordPatientPortalEvent === 'function') {
+          recordPatientPortalEvent(req, 'check_agent_keep', {});
+        }
+        return res.json({ success: true, dismissed: true });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
       }
     },
   );

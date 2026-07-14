@@ -159,6 +159,18 @@ app.post('/api/patient/verify/confirm', botGuard, authLimiter, otpConfirmLimiter
           },
         });
       } catch (_) {}
+      // TOUCH-105 — reconcile unmatched Shopify orders for this email
+      let commerce_reconcile = null;
+      try {
+        const { reconcileDeadLettersForEmail } = require('../services/shopify-order-ingest-service');
+        commerce_reconcile = reconcileDeadLettersForEmail(db.db, {
+          email: result.email,
+          sessionId: result.session_id,
+          patientId: result.patient_id || null,
+        });
+      } catch (_) {
+        commerce_reconcile = null;
+      }
       res.json({
         success: true,
         session_id: result.session_id,
@@ -169,7 +181,8 @@ app.post('/api/patient/verify/confirm', botGuard, authLimiter, otpConfirmLimiter
         onboarding_step3_complete,
         onboarding_step3_reason: step3.reason || null,
         onboarding_complete,
-        missing_fields
+        missing_fields,
+        commerce_reconcile,
       });
     } else {
       try { db.incrementOpsCounter && db.incrementOpsCounter('otp_confirm_failed'); } catch (_) {}
@@ -221,6 +234,51 @@ app.post('/api/patient/logout', async (req, res) => {
     });
   }
 });
+
+  /**
+   * TOUCH-098 UI + TOUCH-099 purge — hard-delete consumer data for this identity.
+   */
+  app.post('/api/patient/account/delete', requirePatientSession, async (req, res) => {
+    try {
+      if (!req.body?.confirm) {
+        return res.status(400).json({
+          success: false,
+          error: 'confirm: true is required',
+        });
+      }
+
+      const sessionId = req.patientSessionId;
+      const email = req.patientSession?.email || null;
+      const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+      const sqliteDb = db.db;
+      const { purgePatientAccount, ensurePurgeSupportTables } = require('../services/patient-account-purge-service');
+
+      ensurePurgeSupportTables(sqliteDb);
+      const result = purgePatientAccount({
+        sqliteDb,
+        sessionId,
+        patientId: patientId || null,
+        email,
+      });
+
+      const isSecure = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
+      res.clearCookie('patient_session_id', { httpOnly: true, sameSite: 'lax', secure: isSecure });
+      res.clearCookie('patient_csrf', { sameSite: 'lax', secure: isSecure });
+
+      return res.json({
+        success: true,
+        purged: true,
+        email_hash: result.emailHash,
+        deleted: result.deleted,
+      });
+    } catch (error) {
+      console.error('❌ account delete purge failed', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Account deletion failed',
+      });
+    }
+  });
 }
 
 module.exports = { registerPatientAuthRoutes };

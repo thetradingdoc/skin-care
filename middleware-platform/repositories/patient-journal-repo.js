@@ -2,6 +2,7 @@
 
 const { resolveOwnerKey } = require('../db/client');
 const { normalizeConditionTags } = require('../lib/journal-condition-tags');
+const { levelToRank } = require('../lib/journal-severity');
 
 function entryId() {
   return `jrnl_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -17,6 +18,8 @@ function rowToEntry(row) {
   } catch {
     conditionTags = [];
   }
+  const dryness_level = row.dryness_level || null;
+  const breakout_level = row.breakout_level || null;
   return {
     id: row.id,
     owner_key: row.owner_key,
@@ -28,21 +31,16 @@ function rowToEntry(row) {
     note: row.note || null,
     source: row.source || 'standalone',
     routine_daily_entry_id: row.routine_daily_entry_id || null,
+    dryness_level,
+    breakout_level,
+    calm_flag: row.calm_flag || null,
+    dryness_score: row.dryness_score != null ? Number(row.dryness_score) : null,
+    breakout_score: row.breakout_score != null ? Number(row.breakout_score) : null,
+    advanced_severity: Number(row.advanced_severity) === 1,
+    dryness_rank: levelToRank(dryness_level),
+    breakout_rank: levelToRank(breakout_level),
     created_at: row.created_at,
     updated_at: row.updated_at,
-  };
-}
-
-function ownerWhereClause(patientId, sessionId) {
-  if (patientId) {
-    return {
-      sql: `(patient_id = ? OR session_id = ?)`,
-      params: [String(patientId), String(sessionId)],
-    };
-  }
-  return {
-    sql: `session_id = ?`,
-    params: [String(sessionId)],
   };
 }
 
@@ -55,6 +53,12 @@ function upsertEntry(sqliteDb, {
   note,
   source,
   routineDailyEntryId,
+  drynessLevel,
+  breakoutLevel,
+  calmFlag,
+  drynessScore,
+  breakoutScore,
+  advancedSeverity,
 }) {
   const ownerKey = resolveOwnerKey({ patientId, sessionId });
   if (!ownerKey || !entryDate) throw new Error('owner_key_and_date_required');
@@ -75,6 +79,22 @@ function upsertEntry(sqliteDb, {
   const mergedRoutineId =
     routineDailyEntryId || existing?.routine_daily_entry_id || null;
 
+  const mergedDryness =
+    drynessLevel !== undefined ? drynessLevel : existing?.dryness_level || null;
+  const mergedBreakout =
+    breakoutLevel !== undefined ? breakoutLevel : existing?.breakout_level || null;
+  const mergedCalm = calmFlag !== undefined ? calmFlag : existing?.calm_flag || null;
+  const mergedDryScore =
+    drynessScore !== undefined ? drynessScore : existing?.dryness_score ?? null;
+  const mergedBreakScore =
+    breakoutScore !== undefined ? breakoutScore : existing?.breakout_score ?? null;
+  const mergedAdvanced =
+    advancedSeverity !== undefined
+      ? advancedSeverity
+        ? 1
+        : 0
+      : Number(existing?.advanced_severity) || 0;
+
   if (existing) {
     sqliteDb
       .prepare(
@@ -86,6 +106,12 @@ function upsertEntry(sqliteDb, {
           note = ?,
           source = ?,
           routine_daily_entry_id = COALESCE(?, routine_daily_entry_id),
+          dryness_level = ?,
+          breakout_level = ?,
+          calm_flag = ?,
+          dryness_score = ?,
+          breakout_score = ?,
+          advanced_severity = ?,
           updated_at = ?
         WHERE id = ?`,
       )
@@ -97,6 +123,12 @@ function upsertEntry(sqliteDb, {
         mergedNote,
         mergedSource,
         mergedRoutineId,
+        mergedDryness,
+        mergedBreakout,
+        mergedCalm,
+        mergedDryScore,
+        mergedBreakScore,
+        mergedAdvanced,
         now,
         existing.id,
       );
@@ -109,8 +141,11 @@ function upsertEntry(sqliteDb, {
       `INSERT INTO patient_journal_entries (
         id, owner_key, patient_id, session_id, entry_date,
         photo_storage_ref, condition_tags_json, note, source,
-        routine_daily_entry_id, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        routine_daily_entry_id,
+        dryness_level, breakout_level, calm_flag,
+        dryness_score, breakout_score, advanced_severity,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       id,
@@ -123,6 +158,12 @@ function upsertEntry(sqliteDb, {
       mergedNote,
       mergedSource,
       mergedRoutineId,
+      mergedDryness,
+      mergedBreakout,
+      mergedCalm,
+      mergedDryScore,
+      mergedBreakScore,
+      mergedAdvanced,
       now,
       now,
     );
@@ -151,13 +192,20 @@ function getByDateRange(sqliteDb, { patientId, sessionId, startIso, endIso }) {
   return rows.map(rowToEntry);
 }
 
+function getYesterdaySeverity(sqliteDb, { patientId, sessionId, todayIso }) {
+  const d = new Date(`${todayIso}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  const yesterday = d.toISOString().slice(0, 10);
+  return getEntryForDate(sqliteDb, { patientId, sessionId, entryDate: yesterday });
+}
+
 function countLoggedDays(sqliteDb, { patientId, sessionId }) {
   const ownerKey = resolveOwnerKey({ patientId, sessionId });
   if (!ownerKey) return 0;
   const row = sqliteDb
     .prepare(
       `SELECT COUNT(*) AS n FROM patient_journal_entries
-       WHERE owner_key = ? AND (photo_storage_ref IS NOT NULL OR condition_tags_json IS NOT NULL AND condition_tags_json != '[]' OR note IS NOT NULL AND note != '')`,
+       WHERE owner_key = ? AND (photo_storage_ref IS NOT NULL OR condition_tags_json IS NOT NULL AND condition_tags_json != '[]' OR note IS NOT NULL AND note != '' OR dryness_level IS NOT NULL)`,
     )
     .get(ownerKey);
   return Number(row?.n) || 0;
@@ -175,6 +223,7 @@ function computeStreak(sqliteDb, { patientId, sessionId, todayIso }) {
            photo_storage_ref IS NOT NULL
            OR (condition_tags_json IS NOT NULL AND condition_tags_json != '[]')
            OR (note IS NOT NULL AND note != '')
+           OR dryness_level IS NOT NULL
          )
        ORDER BY entry_date DESC
        LIMIT 120`,
@@ -216,6 +265,7 @@ module.exports = {
   upsertEntry,
   getEntryForDate,
   getByDateRange,
+  getYesterdaySeverity,
   countLoggedDays,
   computeStreak,
   listRecentEntries,

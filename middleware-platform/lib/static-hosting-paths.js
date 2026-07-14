@@ -27,6 +27,9 @@ function isConsumerMarketingHostname(hostname) {
     h === 'www.myskinandcare.com' ||
     h === 'skinandcare.com' ||
     h === 'www.skinandcare.com' ||
+    h === 'app.trytouche.com' ||
+    h === 'trytouche.com' ||
+    h === 'www.trytouche.com' ||
     h === 'callsomo.com' ||
     h === 'www.callsomo.com'
   );

@@ -109,6 +109,14 @@ app.patch('/api/patient/shelf/products/:productId', (req, res, next) => apiLimit
       updates.push('price_usd = ?');
       params.push(p);
     }
+    if (Object.prototype.hasOwnProperty.call(body, 'cost_per_use')) {
+      const p = body.cost_per_use == null || body.cost_per_use === '' ? null : Number(body.cost_per_use);
+      if (p != null && (!Number.isFinite(p) || p < 0)) {
+        return res.status(400).json({ success: false, error: 'cost_per_use must be a non-negative number' });
+      }
+      updates.push('cost_per_use = ?');
+      params.push(p);
+    }
     if (Object.prototype.hasOwnProperty.call(body, 'key_ingredients')) {
       const k = body.key_ingredients == null ? null : String(body.key_ingredients).trim().slice(0, 2000);
       updates.push('key_ingredients = ?');
@@ -132,7 +140,7 @@ app.patch('/api/patient/shelf/products/:productId', (req, res, next) => apiLimit
     const fresh = db.db.prepare(`
       SELECT id, selection_mode, catalog_product_id, custom_product_name, custom_brand, category, usage_time,
         frequency_rule, days_of_week_json, goal, opened_date, expiry_date, pao_months, inventory_status,
-        price_usd, key_ingredients, display_color, updated_at
+        price_usd, cost_per_use, key_ingredients, display_color, verdict_status, kept_despite_conflict, updated_at
       FROM patient_onboarding_step3_products WHERE id = ? AND session_id = ?
     `).get(productId, sessionId);
     return res.json({ success: true, product: formatShelfProductApiRow(fresh) });

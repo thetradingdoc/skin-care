@@ -20,7 +20,12 @@ function ensureConflictEngineTables(db) {
 }
 
 function overallToScore(overall, bfi) {
-  const base = overall === 'avoid' ? 25 : overall === 'caution' ? 55 : 85;
+  const base =
+    overall === 'hard_no' || overall === 'avoid'
+      ? 18
+      : overall === 'caution'
+        ? 55
+        : 85;
   return Math.max(0, Math.min(100, Math.round((base + bfi) / 2)));
 }
 
