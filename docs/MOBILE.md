@@ -1,8 +1,10 @@
 # Mobile app architecture
 
-**Last reviewed:** 2026-06-10
+**Last reviewed:** 2026-07-13
 
 Skin & Care iOS app (`com.skinandcare.app`) is an Expo/React Native app in [patient-app/](../patient-app/).
+
+Cold-start / SIGABRT runbook: [patient-app/IOS_COLD_START_CRASH.md](./patient-app/IOS_COLD_START_CRASH.md).
 
 ## Architecture
 

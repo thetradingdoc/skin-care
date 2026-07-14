@@ -1,13 +1,13 @@
 # Skin & Care — daily skin tracking app
 
-**Last reviewed:** 2026-06-10
+**Last reviewed:** 2026-07-13
 
 **GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care)  
 **Consumer domain:** [myskinandcare.com](https://myskinandcare.com) (marketing + web funnel)  
 **Consumer API:** `https://api.myskinandcare.com` (shared middleware on Cloud Run)  
 **Legacy API:** `https://api.callsomo.com` (same stack — shared infra identifier)
 
-**Architecture:** [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md)
+**Architecture:** [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md) · [iOS cold-start crash](docs/patient-app/IOS_COLD_START_CRASH.md)
 
 Skin & Care is a consumer iOS app for daily photo tracking, concern-based routines (acne, anti-aging, hyperpigmentation, barrier repair, rosacea), and optional `care_program` subscription.
 

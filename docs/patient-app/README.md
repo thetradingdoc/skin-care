@@ -1,7 +1,7 @@
 # patient-app - Unified Architecture and System Design
-> Last reviewed: 2026-06-12
+> Last reviewed: 2026-07-13
 
-**Last Updated:** 2026-06-12
+**Last Updated:** 2026-07-13
 
 
 **Canonical map:** [CANONICAL_DOC_MAP.md](../meta/CANONICAL_DOC_MAP.md) — read here first to avoid duplicating documentation.
@@ -17,6 +17,7 @@ For the active consumer v3 app, start here:
 - **[`design/V3_SCREEN_MAP.md`](./design/V3_SCREEN_MAP.md)** — routes, tabs, post-auth gates (source of truth).
 - **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — web skin-age funnel + native sign-in paths.
 - **[`../runbooks/WEB_CONSUMER_SMOKE.md`](../runbooks/WEB_CONSUMER_SMOKE.md)** — web release smoke checklist.
+- **[`IOS_COLD_START_CRASH.md`](./IOS_COLD_START_CRASH.md)** — native iOS launch SIGABRT / blank screen (EXConstants, linking, hostname).
 - [`design/CONSUMER_AGENTIC_ARCHITECTURE.md`](./design/CONSUMER_AGENTIC_ARCHITECTURE.md) — LangGraph eval, insights, env flags.
 
 **v3 tab IA (Expo web at `/app`):**

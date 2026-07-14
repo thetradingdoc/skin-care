@@ -363,9 +363,26 @@ Full spec: `middleware-platform/openapi.yaml`. Route registration split across `
 5. Empty shelf → scan tab
 6. Default → home
 
-**Session:** `expo-secure-store` + `x-session-id` header on all API calls (`lib/patient-session.ts`, `lib/patient-api.ts`).
+**Session:** `expo-secure-store` + `x-session-id` header on all API calls (`lib/patient-session.ts`, `lib/patient-api.ts`). SecureStore get/set/delete are raced with a short timeout so a hung keychain call cannot blank the cold-start UI forever.
 
-**Deep links:** `auth?ticket=`, `subscription/success|cancel`, `routine/setup?concern=`.
+**Deep links:** `auth?ticket=`, `subscription/success|cancel`, `routine/setup?concern=`. Requires embedded `EXConstants.bundle/app.config` (scheme `patientapp`) — see §7.1.1.
+
+#### 7.1.1 Native iOS cold start (critical)
+
+Cold-start aborts on device show up as **SIGABRT** with `RCTExceptionsManager` / `RCTFormatError` (a **JS fatal** reported across the bridge), not as a random native module throw. Playwright against Expo web will **not** reproduce them.
+
+**Proven failure modes (2026-07-13):**
+
+| Symptom | Root cause | Mitigation |
+|---------|------------|------------|
+| Instant close / black screen | Missing `EXConstants.bundle/app.config` → `expo-linking` throws on scheme resolve | Local repo paths with spaces break Expo’s unquoted `basename $PROJECT_DIR` in `get-app-config-ios.sh` (sees `Voice` instead of `Pods` and exits). Run `patient-app/scripts/ensure-exconstants-app-config.sh` via npm `postinstall`; verify `app.config` exists in the `.app` after build. |
+| JS FATAL `hostname of undefined` | `config.ts` read `window.location` while RN defines `window` without `location` | Gate with `Platform.OS === 'web'` |
+| White blank / stuck logo | Splash `preventAutoHideAsync` without reliable hide; session gate hung | Do not prevent auto-hide; force `hideAsync`; timeouts on SecureStore + sign-in session check |
+| Route poison (historical) | `experiments.baseUrl: "/app"` inlined into Hermes as `EXPO_BASE_URL` | [`patient-app/app.config.js`](patient-app/app.config.js) sets `baseUrl` for **web only** |
+
+**Diagnostics:** `idevicecrashreport` for IPS; production ingest `POST /api/patient/public/client-fatal` (boot + ErrorUtils sync XHR) and `GET /api/patient/public/client-fatal/recent?token=`. Do not ship fatal-swallow / Alert overlays in Release — they mask root causes as black screens.
+
+**Runbook:** [`docs/patient-app/IOS_COLD_START_CRASH.md`](docs/patient-app/IOS_COLD_START_CRASH.md).
 
 ### 7.2 Web consumer funnel (`unified-dashboard/skin-care-landing/`)
 
@@ -668,10 +685,14 @@ User taps subscribe in Profile → Stripe Checkout session → webhook `payment_
 | File | Role |
 |------|------|
 | `patient-app/app/_layout.tsx` | Root layout, deep links, session expiry |
+| `patient-app/app.config.js` | Strip `experiments.baseUrl` on native; web static `/app` only |
+| `patient-app/scripts/ensure-exconstants-app-config.sh` | Quote Expo iOS `basename` so `app.config` embeds with spaced paths |
 | `patient-app/lib/patient-api.ts` | HTTP client with session header |
 | `patient-app/lib/patient-auth.ts` | OTP sign-in flow |
 | `patient-app/lib/conflict-api.ts` | Shelf evaluate/insight API |
+| `patient-app/lib/capture-fatal-boot.js` | Pre-router JS fatal ingest (sync XHR) |
 | `patient-app/eas.json` | iOS build profiles |
+| `docs/patient-app/IOS_COLD_START_CRASH.md` | Cold-start SIGABRT / blank UI runbook |
 
 ### Middleware consumer core
 | File | Role |
