@@ -1,0 +1,68 @@
+# APP-05 — Nightly Touche capture smoke (static + optional API + optional Maestro Cloud)
+name: Touche capture smoke (APP-05)
+
+on:
+  schedule:
+    - cron: '15 7 * * *' # ~03:15 ET
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'patient-app/app/capture/**'
+      - 'patient-app/.maestro/**'
+      - 'middleware-platform/scripts/app05-nightly-capture-smoke.cjs'
+      - 'middleware-platform/scripts/verify-touche-prod-capture.cjs'
+      - '.github/workflows/touche-capture-smoke.yml'
+
+jobs:
+  static-and-api:
+    name: APP-05 static + API smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: middleware-platform/package-lock.json
+
+      - name: Install middleware deps
+        working-directory: ./middleware-platform
+        run: npm ci
+
+      - name: APP-04 confirm migration unit gate
+        working-directory: ./middleware-platform
+        run: npx jest __tests__/app04-template-confirm-migration.test.js --runInBand
+
+      - name: APP-05 nightly capture smoke script
+        working-directory: ./middleware-platform
+        env:
+          TOUCHE_SMOKE_API_BASE: ${{ secrets.TOUCHE_SMOKE_API_BASE }}
+        run: node scripts/app05-nightly-capture-smoke.cjs
+
+  maestro-cloud:
+    name: APP-05 Maestro Cloud (optional)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip when Maestro Cloud secrets unset
+        id: gate
+        env:
+          KEY: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "MAESTRO_CLOUD_API_KEY unset — skipping device cloud (static/API job is the required gate)"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run Maestro Cloud capture-confirm smoke
+        if: steps.gate.outputs.skip != 'true'
+        uses: mobile-dev-inc/action-maestro-cloud@v1
+        with:
+          api-key: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+          project-id: ${{ secrets.MAESTRO_CLOUD_PROJECT_ID }}
+          app-file: ${{ secrets.MAESTRO_APP_FILE }}
+          workspace: patient-app/.maestro

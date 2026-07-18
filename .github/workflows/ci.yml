@@ -17,6 +17,28 @@ on:
         default: ""
 
 jobs:
+  field-templates-parity:
+    name: Field-template client/server parity (APP-03)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: middleware-platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./middleware-platform
+        run: npm ci
+
+      - name: Client mirror parity (must fail on catalog/key drift)
+        working-directory: ./middleware-platform
+        run: npm run test:field-templates-parity
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -42,6 +64,9 @@ jobs:
       - name: Check brand runtime copy (Kelly / alerts)
         run: node scripts/check-brand-runtime-copy.cjs
 
+      - name: Check self-referential commentary (APP-06)
+        run: node scripts/check-self-referential-commentary.cjs
+
       - name: Check legacy hosts
         run: node scripts/check-legacy-hosts.cjs
 
@@ -63,6 +88,11 @@ jobs:
           npm run test:e2e:kelly:golden-conversations
           npm run test:e2e:kelly:golden-conversations:es
           npm run test:voice:slo-smoke
+
+      - name: Medical tracker isolation (ARCH-02)
+        if: matrix.node-version == '20.x'
+        working-directory: ./middleware-platform
+        run: npm run verify:medical-tracker-isolation
 
       - name: Install and build skin-care-landing
         if: matrix.node-version == '20.x'

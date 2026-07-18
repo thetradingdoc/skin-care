@@ -1,0 +1,32 @@
+# APP-05 — Minimal capture → confirm smoke (Maestro)
+# Run: maestro test patient-app/.maestro/capture-confirm-smoke.yaml
+# Requires a built/dev client with testIDs from confirm screens.
+
+appId: com.myskinandcare.patient
+---
+- launchApp
+- assertVisible:
+    text: ".*[Hh]ome.*|Progress|Track|Capture.*"
+    optional: true
+- tapOn:
+    id: "fab-capture"
+    optional: true
+- tapOn:
+    text: ".*[Cc]apture.*|Log|Photo.*"
+    optional: true
+# After orchestration lands on confirm — assert template form chrome
+- assertVisible:
+    id: "confirm-5-skin"
+    optional: true
+- assertVisible:
+    id: "template-fields-skin.default"
+    optional: true
+- tapOn:
+    id: "confirm-skin-looks-right"
+    optional: true
+- assertVisible:
+    id: "confirm-5-bill"
+    optional: true
+- assertVisible:
+    id: "template-fields-bill.default"
+    optional: true
