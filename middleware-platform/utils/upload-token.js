@@ -1,12 +1,42 @@
+'use strict';
+
 /**
  * Telemedicine Phase 3 — Task 20: HMAC-signed upload token.
  * Token format: base64url(hmac) + '.' + base64url(payload).
  * Payload = { patient_id, appointment_id, expires_at } (expires_at as ISO string).
  * Not a plain UUID; verifiable with UPLOAD_TOKEN_SECRET.
+ *
+ * SEC-04: no default HMAC secret in prod-like envs; timing-safe compare.
  */
 const crypto = require('crypto');
+const { isProdLikeEnv } = require('./runtime-env');
 
-const SECRET = process.env.UPLOAD_TOKEN_SECRET || 'change-me-in-production';
+const INSECURE_DEFAULT = 'change-me-in-production';
+
+function resolveUploadTokenSecret() {
+  const raw = process.env.UPLOAD_TOKEN_SECRET;
+  const trimmed = raw == null ? '' : String(raw);
+  if (!trimmed || trimmed === INSECURE_DEFAULT) {
+    if (isProdLikeEnv()) {
+      const err = new Error('UPLOAD_TOKEN_SECRET_REQUIRED');
+      err.code = 'UPLOAD_TOKEN_SECRET_REQUIRED';
+      throw err;
+    }
+    return INSECURE_DEFAULT;
+  }
+  return trimmed;
+}
+
+function timingSafeEqualB64(a, b) {
+  try {
+    const ba = Buffer.from(String(a), 'utf8');
+    const bb = Buffer.from(String(b), 'utf8');
+    if (ba.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ba, bb);
+  } catch {
+    return false;
+  }
+}
 
 function base64url(buf) {
   return Buffer.isBuffer(buf) ? buf.toString('base64url') : Buffer.from(JSON.stringify(buf)).toString('base64url');
@@ -28,6 +58,7 @@ function decodeBase64url(str) {
  * @returns {string} Token string (base64url.hmac.base64url.payload)
  */
 function createUploadToken(patientId, appointmentId, expiresAt) {
+  const SECRET = resolveUploadTokenSecret();
   const exp = expiresAt instanceof Date ? expiresAt.toISOString() : (expiresAt || new Date(Date.now() + 3600000).toISOString());
   const payload = { patient_id: patientId, appointment_id: appointmentId || 'none', expires_at: exp };
   const payloadB64 = base64url(payload);
@@ -43,6 +74,12 @@ function createUploadToken(patientId, appointmentId, expiresAt) {
  */
 function verifyUploadToken(token) {
   if (!token || typeof token !== 'string') return null;
+  let SECRET;
+  try {
+    SECRET = resolveUploadTokenSecret();
+  } catch {
+    return null;
+  }
   const parts = token.split('.');
   if (parts.length !== 2) return null;
   const [hmacB64, payloadB64] = parts;
@@ -50,7 +87,7 @@ function verifyUploadToken(token) {
   if (!payload || !payload.patient_id || !payload.expires_at) return null;
   const expectedHmac = crypto.createHmac('sha256', SECRET).update(payloadB64).digest();
   const expectedB64 = base64url(expectedHmac);
-  if (expectedB64 !== hmacB64) return null;
+  if (!timingSafeEqualB64(expectedB64, hmacB64)) return null;
   const expiresAt = new Date(payload.expires_at).getTime();
   if (Date.now() > expiresAt) return null;
   return {
@@ -62,6 +99,7 @@ function verifyUploadToken(token) {
 
 /** Phase 8: Create short-lived token for visit feedback. Payload: { purpose: 'feedback', appointment_id, expires_at }. */
 function createFeedbackToken(appointmentId, expiresAt) {
+  const SECRET = resolveUploadTokenSecret();
   const exp = expiresAt instanceof Date ? expiresAt.toISOString() : (expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
   const payload = { purpose: 'feedback', appointment_id: appointmentId, expires_at: exp };
   const payloadB64 = base64url(payload);
@@ -72,15 +110,30 @@ function createFeedbackToken(appointmentId, expiresAt) {
 /** Verify feedback token; returns { appointment_id } or null. */
 function verifyFeedbackToken(token) {
   if (!token || typeof token !== 'string') return null;
+  let SECRET;
+  try {
+    SECRET = resolveUploadTokenSecret();
+  } catch {
+    return null;
+  }
   const parts = token.split('.');
   if (parts.length !== 2) return null;
   const [hmacB64, payloadB64] = parts;
   const payload = decodeBase64url(payloadB64);
   if (!payload || payload.purpose !== 'feedback' || !payload.appointment_id || !payload.expires_at) return null;
   const expectedHmac = crypto.createHmac('sha256', SECRET).update(payloadB64).digest();
-  if (base64url(expectedHmac) !== hmacB64) return null;
+  if (!timingSafeEqualB64(base64url(expectedHmac), hmacB64)) return null;
   if (Date.now() > new Date(payload.expires_at).getTime()) return null;
   return { appointment_id: payload.appointment_id };
 }
 
-module.exports = { createUploadToken, verifyUploadToken, createFeedbackToken, verifyFeedbackToken, base64url, decodeBase64url };
+module.exports = {
+  createUploadToken,
+  verifyUploadToken,
+  createFeedbackToken,
+  verifyFeedbackToken,
+  base64url,
+  decodeBase64url,
+  resolveUploadTokenSecret,
+  INSECURE_DEFAULT,
+};

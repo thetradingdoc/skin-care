@@ -75,7 +75,7 @@ describe('InsuranceService.submitExistingClaim', () => {
   afterEach(() => {
     if (origKey === undefined) delete process.env.STEDI_API_KEY;
     else process.env.STEDI_API_KEY = origKey;
-    InsuranceService.STEDI_API_KEY = origKey || 'test_1rRzTb0.Va9Tn88BB3fgPgttprqbrxQ1';
+    InsuranceService.STEDI_API_KEY = origKey || '';
     if (checkEligibilitySpy) checkEligibilitySpy.mockRestore();
   });
 
