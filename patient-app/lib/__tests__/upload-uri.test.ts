@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { mimeTypeFromImagePickerAsset, uriToUploadFile } from '@/lib/upload-uri';
+import {
+  appendUploadToForm,
+  mimeTypeFromImagePickerAsset,
+  uriToUploadFile,
+} from '@/lib/upload-uri';
 
-describe('uriToUploadFile', () => {
+describe('uriToUploadFile (options object)', () => {
   it('returns native file payload for file:// URIs', async () => {
-    const file = await uriToUploadFile('file:///tmp/spot.jpg', 'spot-1.jpg');
+    const file = await uriToUploadFile({ uri: 'file:///tmp/spot.jpg', fileName: 'spot-1.jpg' });
     expect(file).toEqual({
       uri: 'file:///tmp/spot.jpg',
       name: 'spot-1.jpg',
@@ -13,7 +17,11 @@ describe('uriToUploadFile', () => {
   });
 
   it('returns native file payload for content:// URIs', async () => {
-    const file = await uriToUploadFile('content://media/photo/1', 'spot-1.jpg', 'image/png');
+    const file = await uriToUploadFile({
+      uri: 'content://media/photo/1',
+      fileName: 'spot-1.jpg',
+      mimeType: 'image/png',
+    });
     expect(file).toEqual({
       uri: 'content://media/photo/1',
       name: 'spot-1.jpg',
@@ -27,7 +35,7 @@ describe('uriToUploadFile', () => {
       'fetch',
       vi.fn(async () => ({ blob: async () => blob })),
     );
-    const file = await uriToUploadFile('blob:http://localhost/abc', 'photo.jpg');
+    const file = await uriToUploadFile({ uri: 'blob:http://localhost/abc', fileName: 'photo.jpg' });
     expect(file).toBeInstanceOf(Blob);
     vi.unstubAllGlobals();
   });
@@ -38,9 +46,45 @@ describe('uriToUploadFile', () => {
       'fetch',
       vi.fn(async () => ({ blob: async () => blob })),
     );
-    const file = await uriToUploadFile('data:image/png;base64,abc', 'photo.png');
+    const file = await uriToUploadFile({ uri: 'data:image/png;base64,abc', fileName: 'photo.png' });
     expect(file).toBeInstanceOf(Blob);
     vi.unstubAllGlobals();
+  });
+
+  it('rejects positional / non-object calls at runtime', async () => {
+    await expect(
+      // @ts-expect-error intentional misuse
+      uriToUploadFile('file:///a.jpg', 'a.jpg'),
+    ).rejects.toThrow(/options|pass \{ uri/);
+  });
+});
+
+describe('appendUploadToForm (options object)', () => {
+  it('appends Blob with field name + fileName', () => {
+    const calls: unknown[] = [];
+    const form = {
+      append(key: string, value: unknown, filename?: string) {
+        calls.push({ key, value, filename });
+      },
+    } as unknown as FormData;
+    const blob = new Blob(['x'], { type: 'image/jpeg' });
+    appendUploadToForm({ form, file: blob, fileName: 'x.jpg' });
+    expect(calls).toEqual([{ key: 'file', value: blob, filename: 'x.jpg' }]);
+  });
+
+  it('rejects string file (the device FormData swap signature)', () => {
+    const form = new FormData();
+    expect(() =>
+      // @ts-expect-error intentional misuse
+      appendUploadToForm({ form, file: 'file', fileName: 'x.jpg' }),
+    ).toThrow(/got a string/);
+  });
+
+  it('rejects bare positional misuse at runtime', () => {
+    expect(() =>
+      // @ts-expect-error intentional misuse
+      appendUploadToForm(new FormData(), 'file', { uri: 'x' }),
+    ).toThrow(/pass \{ form, file, fileName \}/);
   });
 });
 

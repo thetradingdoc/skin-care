@@ -1,4 +1,4 @@
-# TestFlight device smoke — Skin & Care (journal-first)
+# TestFlight device smoke — touche (medical tracker)
 
 Run on a **physical iPhone** against `https://api.myskinandcare.com` (TestFlight build 8+).
 

@@ -40,11 +40,11 @@ describe('uploadRoutineProgressPhoto', () => {
       mimeType: 'image/heic',
     });
 
-    expect(uriToUploadFile).toHaveBeenCalledWith(
-      'file:///tmp/progress.jpg',
-      expect.stringMatching(/^progress-/),
-      'image/heic',
-    );
+    expect(uriToUploadFile).toHaveBeenCalledWith({
+      uri: 'file:///tmp/progress.jpg',
+      fileName: expect.stringMatching(/^progress-/),
+      mimeType: 'image/heic',
+    });
     expect(patientUploadForm).toHaveBeenCalledWith(
       '/api/patient/routine/daily/daily-1/photo',
       expect.any(FormData),

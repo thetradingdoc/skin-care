@@ -1,6 +1,6 @@
 /**
- * TOUCH-066 / TOUCH-067 — Alerts surface (hard-no louder than caution).
- * Only opened when count > 0 (TOUCH-068 routes from Check).
+ * P5.13 — Alerts are Progress module + Shelf badge + push — not a dedicated tab home.
+ * Empty state no longer redirects to Check (retired P7.47 dependency).
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -9,9 +9,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_CTAS_LOCAL_OVERRIDE } from '@/constants/feature-flags';
-import { CHECK_HREF, SHOP_HREF, verdictHref } from '@/constants/routes';
+import { CAPTURE_2A_HREF, PROGRESS_HREF, SHOP_HREF, verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
-import { fetchPatientAlerts } from '@/lib/conflict-api';
+import { settleAlertsFeed } from '@/lib/alerts-empty-policy';
 import { patientGet } from '@/lib/patient-api';
 
 type AlertRow = {
@@ -29,27 +29,42 @@ export default function AlertsScreen() {
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
   const [commerceOn, setCommerceOn] = useState(COMMERCE_CTAS_LOCAL_OVERRIDE);
+  const [empty, setEmpty] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [data, status] = await Promise.all([
-        fetchPatientAlerts(),
+        patientGet('/api/patient/alerts/feed').catch(() =>
+          patientGet('/api/patient/alerts').catch(() => null),
+        ),
         patientGet('/api/patient/commerce/status').catch(() => null),
       ]);
       if (status?.commerce_ctas_enabled) setCommerceOn(true);
-      const list = Array.isArray(data?.alerts) ? data.alerts : [];
-      if (!list.length) {
-        router.replace(CHECK_HREF);
+      const settled = settleAlertsFeed(data?.alerts);
+      // P5.13 — autoRedirectTo is always null; empty renders in place (no bounce to Check)
+      if (settled.autoRedirectTo != null) {
+        // Defensive: policy forbids this; never navigate from settle
+        setEmpty(true);
+        setAlerts([]);
         return;
       }
-      setAlerts(list);
+      if (settled.empty) {
+        setEmpty(true);
+        setAlerts([]);
+        return;
+      }
+      setEmpty(false);
+      setAlerts(settled.alerts as AlertRow[]);
     } catch {
-      router.replace(CHECK_HREF);
+      // Error path also stays on this screen — no Check redirect
+      const settled = settleAlertsFeed([]);
+      setEmpty(settled.empty);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (ready) void load();
@@ -66,33 +81,46 @@ export default function AlertsScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.top}>
-        <Pressable onPress={() => router.replace(CHECK_HREF)} testID="alerts-back">
+        <Pressable onPress={() => router.replace(PROGRESS_HREF)} testID="alerts-back">
           <Text style={styles.back}>Back</Text>
         </Pressable>
         <Text style={styles.title}>Alerts</Text>
         <View style={{ width: 48 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        {alerts.map((a) => {
-          const hard = a.severity === 'hard_no';
-          return (
-            <Pressable
-              key={a.id}
-              style={[styles.card, hard ? styles.cardHardNo : styles.cardCaution]}
-              testID={hard ? 'alert-card-hard-no' : 'alert-card-caution'}
-              onPress={() => {
-                if (a.product_id) router.push(verdictHref(String(a.product_id)));
-              }}>
-              <Text style={[styles.cardTitle, hard && styles.cardTitleHard]}>{a.title}</Text>
-              <Text style={styles.cardBody}>{a.message}</Text>
+        {empty ? (
+          <View testID="alerts-empty">
+            <Text style={styles.emptyTitle}>No alerts right now</Text>
+            <Text style={styles.emptyBody}>
+              Conflicts and reminders show on Progress and as Shelf badges — there is no separate alerts home.
+            </Text>
+            <Pressable onPress={() => router.replace(PROGRESS_HREF)} testID="alerts-go-progress">
+              <Text style={styles.link}>Go to Progress</Text>
             </Pressable>
-          );
-        })}
-        {commerceOn ? (
-          <Pressable style={styles.shopCta} onPress={() => router.push(SHOP_HREF)} testID="alerts-shop">
-            <Text style={styles.shopCtaText}>Find a safer swap in Shop →</Text>
-          </Pressable>
-        ) : null}
+            <Pressable onPress={() => router.replace(CAPTURE_2A_HREF)} testID="alerts-go-check">
+              <Text style={styles.linkSecondary}>Open Check</Text>
+            </Pressable>
+          </View>
+        ) : (
+          alerts.map((a) => {
+            const hard = a.severity === 'hard_no';
+            return (
+              <Pressable
+                key={a.id}
+                style={[styles.card, hard && styles.cardHard]}
+                onPress={() => {
+                  if (a.product_id && commerceOn) router.push(verdictHref(a.product_id));
+                  else if (a.kind === 'hard_no' || a.kind === 'conflict') router.push(SHOP_HREF);
+                  else router.replace(PROGRESS_HREF);
+                }}
+                testID={`alert-${a.id}`}
+              >
+                <Text style={[styles.cardTitle, hard && styles.cardTitleHard]}>{a.title}</Text>
+                <Text style={styles.cardMsg}>{a.message}</Text>
+              </Pressable>
+            );
+          })
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -105,38 +133,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
-  back: { fontFamily: AppTokens.font.body, color: AppTokens.color.ink, fontSize: 15 },
-  title: { fontFamily: AppTokens.font.display, fontSize: 18, color: AppTokens.color.ink },
+  back: { color: AppTokens.color.fabBg, fontSize: 16, width: 48 },
+  title: { fontSize: 18, fontWeight: '600', color: AppTokens.color.ink },
   content: { padding: 16, gap: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
+  emptyBody: { fontSize: 15, color: AppTokens.color.muted, marginBottom: 16, lineHeight: 22 },
+  link: { color: AppTokens.color.fabBg, fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  linkSecondary: { color: AppTokens.color.muted, fontSize: 15 },
   card: {
-    borderRadius: AppTokens.radius.md,
     padding: 14,
-    borderLeftWidth: 4,
+    borderRadius: 12,
+    backgroundColor: AppTokens.color.card,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
   },
-  cardHardNo: {
-    backgroundColor: '#FDECEC',
-    borderLeftColor: AppTokens.color.hardNo,
-  },
-  cardCaution: {
-    backgroundColor: '#F8EDE7',
-    borderLeftColor: AppTokens.color.terracotta,
-  },
-  cardTitle: {
-    fontFamily: AppTokens.font.body,
-    fontWeight: '700',
-    fontSize: 15,
-    color: AppTokens.color.ink,
-    marginBottom: 4,
-  },
-  cardTitleHard: { color: AppTokens.color.hardNo, fontSize: 16 },
-  cardBody: { fontFamily: AppTokens.font.body, fontSize: 13, color: AppTokens.color.muted },
-  shopCta: { paddingVertical: 12, alignItems: 'center' },
-  shopCtaText: {
-    fontFamily: AppTokens.font.body,
-    fontWeight: '600',
-    color: AppTokens.color.fabBg,
-    textDecorationLine: 'underline',
-  },
+  cardHard: { borderColor: AppTokens.color.hardNo },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: AppTokens.color.ink },
+  cardTitleHard: { color: AppTokens.color.hardNo },
+  cardMsg: { marginTop: 4, fontSize: 14, color: AppTokens.color.muted },
 });

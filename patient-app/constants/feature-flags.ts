@@ -5,7 +5,7 @@
  * TOUCH-084 — Commerce CTAs stay off until middleware reports ready
  * (COMMERCE_CTAS_ENABLED=1 or seeded variant map). Client also checks /api/patient/commerce/status.
  */
-export const JOURNAL_CAPTURE_ENABLED = true;
+export const JOURNAL_CAPTURE_ENABLED = false;
 
 /** Local override only — runtime truth comes from commerce/status. */
 export const COMMERCE_CTAS_LOCAL_OVERRIDE =

@@ -11,8 +11,10 @@ import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
 import { TRY_ALLERGENS_HREF } from '@/constants/routes';
 import { setPendingTryProduct } from '@/lib/try-verdict-session';
+import { useTryFunnelNoIndex } from '@/lib/try-funnel-noindex';
 
 export default function TryVerdictScreen() {
+  useTryFunnelNoIndex();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [barcodeMode, setBarcodeMode] = useState(false);

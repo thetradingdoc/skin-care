@@ -1,26 +1,34 @@
 /**
  * TOUCH-028/029 — iOS-only Get-the-App interstitial after OTP.
  * Copy is camera-only until TOUCH-114–116 ship in the same train.
+ *
+ * Hydration: UA/platform checks differ between SSR and client — never branch on
+ * shouldShowGetTheAppInterstitial() during the first paint.
  */
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
-import { CHECK_HREF } from '@/constants/routes';
+import { PROGRESS_HREF } from '@/constants/routes';
 import { APP_STORE_URL } from '@/constants/storeConfig';
 import { shouldShowGetTheAppInterstitial } from '@/lib/ios-web-gate';
 import { trackFunnelEvent } from '@/lib/trackFunnelEvent';
 
 export default function GetTheAppScreen() {
   const router = useRouter();
+  /** null = not decided yet (SSR + first client frame). */
+  const [showInterstitial, setShowInterstitial] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // TOUCH-030: non-iOS must never see this screen.
+    // TOUCH-030: non-iOS must never see this screen — decide only after mount.
     if (!shouldShowGetTheAppInterstitial()) {
-      router.replace(CHECK_HREF);
+      setShowInterstitial(false);
+      router.replace(PROGRESS_HREF);
+      return;
     }
+    setShowInterstitial(true);
   }, [router]);
 
   const onDownload = useCallback(() => {
@@ -30,11 +38,12 @@ export default function GetTheAppScreen() {
 
   const onContinue = useCallback(() => {
     void trackFunnelEvent('auth_handoff_continue_web', { surface: 'get_the_app_6c' });
-    router.replace(CHECK_HREF);
+    router.replace(PROGRESS_HREF);
   }, [router]);
 
-  if (Platform.OS !== 'web' || !shouldShowGetTheAppInterstitial()) {
-    return <SafeAreaView style={styles.root} />;
+  // Same empty shell for SSR + hydration, then fill in after mount.
+  if (showInterstitial !== true) {
+    return <SafeAreaView style={styles.root} testID="get-the-app-pending" />;
   }
 
   return (

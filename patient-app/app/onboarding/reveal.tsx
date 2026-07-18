@@ -180,7 +180,7 @@ export default function OnboardingRevealScreen() {
           <View style={[styles.badge, visionFailed && styles.badgeWarn]}>
             <Ionicons name={visionFailed ? 'warning' : 'checkmark-circle'} size={14} color="#fff" />
             <Text style={styles.badgeText}>
-              {visionFailed ? 'Needs better lighting' : 'Scan complete'}
+              {visionFailed ? 'Scan unclear' : 'Scan complete'}
             </Text>
           </View>
         </View>
@@ -191,9 +191,7 @@ export default function OnboardingRevealScreen() {
               <Text style={styles.scoreN}>{faceAge}</Text>
               <Text style={styles.scoreL}>Face age</Text>
               {faceRead?.age_unreliable ? (
-                <Text style={styles.scoreNote}>
-                  Estimate may vary on deep skin tones — retake in good light for best results.
-                </Text>
+                <Text style={styles.scoreNote}>Age estimate is approximate.</Text>
               ) : null}
             </View>
             {skinAge != null ? (
@@ -222,16 +220,13 @@ export default function OnboardingRevealScreen() {
             <View style={styles.retryIcon}>
               <Ionicons name="camera" size={24} color={JournalTokens.color.muted} />
             </View>
-            <Text style={styles.retryTitle}>We couldn&apos;t read your skin clearly</Text>
+            <Text style={styles.retryTitle}>We couldn&apos;t read this photo clearly</Text>
             <Text style={styles.retryBody}>
-              Your face was detected but lighting made it hard to spot details. Try again — better
-              light gives us a lot more to work with.
+              Try again with clearer front light and a steady hold.
             </Text>
             <View style={styles.tipsBox}>
               {[
-                'Face a window or lamp — natural front-light works best',
-                'For deep skin tones, avoid backlit or dim rooms',
-                'No glasses, hair away from face',
+                'Face a window or lamp — front light works best',
                 'Hold still for 2 seconds before capturing',
               ].map((tip) => (
                 <Text key={tip} style={styles.tipRow}>

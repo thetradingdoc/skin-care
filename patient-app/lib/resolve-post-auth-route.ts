@@ -1,25 +1,27 @@
-// PR1 soft-launch safety — 2026-07-12 · TOUCH-031 Check lander
+'use strict';
+
+/**
+ * P5.05 / P7.03 — Post-auth routing.
+ * Authenticated cold lander is always Progress. journey_modes never gate elsewhere.
+ * Spot-only empty → Track was a silent cold-lander regression; removed in P7.03.
+ */
+
 import type { Href } from 'expo-router';
 
-import {
-  BIO_CALIBRATION_HREF,
-  CHECK_HREF,
-  JOURNEY_CHOOSE_HREF,
-  ROUTINE_PICK_HREF,
-  SCAN_HREF,
-  TRACK_HREF,
-} from '@/constants/routes';
-import { fetchBioProfile } from '@/lib/conflict-api';
+import { CAPTURE_2A_HREF, PROGRESS_HREF } from '@/constants/routes';
+import type { JourneyMode } from '@/lib/journey-mode-storage';
+import { getJourneyProfile } from '@/lib/journey-mode-storage';
 import { fetchConsumerProfile } from '@/lib/consumer-profile-api';
-import { getJourneyProfile, type JourneyMode } from '@/lib/journey-mode-storage';
-import { listSpots } from '@/lib/spot-store';
-import { patientGet } from '@/lib/patient-api';
 
 export type PostAuthRoute = Href;
 
 export type PostAuthRouteHints = {
-  /** Freshly saved modes before server PATCH propagates (journey-choose). */
   journeyModes?: JourneyMode[];
+  /**
+   * Cold lander always uses Progress (P7.03).
+   * preferProgress:false is only for an explicit in-app capture jump — never cold auth.
+   */
+  preferProgress?: boolean;
 };
 
 function resolveJourneyModes(
@@ -33,58 +35,24 @@ function resolveJourneyModes(
   return [];
 }
 
-async function resolveWithModes(modes: JourneyMode[]): Promise<PostAuthRoute> {
-  const routineMode = modes.includes('routine');
-  const watchMode = modes.includes('watch');
-  const spotMode = modes.includes('spot');
-  const serverProfile = await fetchConsumerProfile().catch(() => null);
-
-  const [spots, template, shelf, bio] = await Promise.all([
-    listSpots().catch(() => []),
-    patientGet('/api/patient/routine/template').catch(() => ({ has_template: false })),
-    patientGet('/api/patient/shelf/products').catch(() => ({ products: [] })),
-    fetchBioProfile().catch(() => ({ profile_complete: false, conditions: [], prescriptions: [] })),
-  ]);
-
-  // Spot-only mode still uses Track until first spot exists.
-  if (spotMode && !watchMode && !routineMode) {
-    return TRACK_HREF;
-  }
-
-  const products = Array.isArray(shelf?.products) ? shelf.products : [];
-  const hasTemplate = Boolean(template?.has_template);
-  const bioComplete = Boolean(
-    serverProfile?.bio_calibration_complete ||
-      bio?.profile_complete ||
-      (bio?.conditions?.length ?? 0) > 0,
-  );
-
-  if (routineMode && !hasTemplate) {
-    return ROUTINE_PICK_HREF;
-  }
-
-  if (routineMode && !bioComplete) {
-    return BIO_CALIBRATION_HREF;
-  }
-
-  if (routineMode && products.length === 0) {
-    return SCAN_HREF;
-  }
-
-  if (spotMode && watchMode && spots.length === 0 && !hasTemplate) {
-    return TRACK_HREF;
-  }
-
-  // TOUCH-031 — authenticated default is Check (never 5-tab Home lander).
-  return CHECK_HREF;
+/**
+ * Pure resolver used by tests — no network.
+ * P7.03: every journey_modes combo cold-lands on Progress (not Check, Track, journey-choose).
+ */
+export function resolvePostAuthRouteSync(
+  _modes: JourneyMode[],
+  opts: { preferProgress?: boolean } = {},
+): PostAuthRoute {
+  const preferProgress = opts.preferProgress !== false;
+  return preferProgress ? PROGRESS_HREF : CAPTURE_2A_HREF;
 }
 
-/** Route after session is established (journey + template + shelf + bio). */
+/** Route after session is established (cold auth / OTP / handoff). */
 export async function resolvePostAuthRoute(hints?: PostAuthRouteHints): Promise<PostAuthRoute> {
   try {
     const [serverProfile, journeyProfile] = await Promise.all([
-      fetchConsumerProfile(),
-      getJourneyProfile(),
+      fetchConsumerProfile().catch(() => null),
+      getJourneyProfile().catch(() => null),
     ]);
 
     const modes = resolveJourneyModes(
@@ -93,21 +61,10 @@ export async function resolvePostAuthRoute(hints?: PostAuthRouteHints): Promise<
       hints,
     );
 
-    if (!modes.length) {
-      // Soft-start: camera Check is home; journey choose remains reachable from gear.
-      return CHECK_HREF;
-    }
-
-    return resolveWithModes(modes);
+    return resolvePostAuthRouteSync(modes, {
+      preferProgress: hints?.preferProgress,
+    });
   } catch {
-    const local = await getJourneyProfile().catch(() => null);
-    if (local?.modes?.length) {
-      try {
-        return await resolveWithModes(local.modes);
-      } catch {
-        return CHECK_HREF;
-      }
-    }
-    return CHECK_HREF;
+    return PROGRESS_HREF;
   }
 }

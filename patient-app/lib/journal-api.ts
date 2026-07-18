@@ -54,8 +54,12 @@ export async function postJournalDailyPhoto(params: {
   note?: string;
 }): Promise<JournalEntry> {
   const form = new FormData();
-  const file = await uriToUploadFile(params.photoUri, 'journal.jpg', 'image/jpeg');
-  appendUploadToForm(form, file, 'journal.jpg');
+  const file = await uriToUploadFile({
+    uri: params.photoUri,
+    fileName: 'journal.jpg',
+    mimeType: 'image/jpeg',
+  });
+  appendUploadToForm({ form, file, fileName: 'journal.jpg' });
   if (params.entryDate) form.append('entry_date', params.entryDate);
   if (params.conditionTags?.length) {
     form.append('condition_tags', JSON.stringify(params.conditionTags));

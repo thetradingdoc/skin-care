@@ -1,5 +1,6 @@
 import { getEffectiveApiBaseUrl } from '@/config';
 import { handleExpiredPatientSession, isPatientSessionAuthError } from '@/lib/patient-auth';
+import { PatientApiError } from '@/lib/patient-api-error';
 import { getPatientSessionId } from '@/lib/patient-session';
 import { localTodayIso } from '@/lib/routine-day-mode';
 
@@ -18,7 +19,7 @@ async function parseJson(res: Response) {
   return res.json().catch(() => ({}));
 }
 
-async function ensurePatientOk<T extends { success?: boolean; error?: string }>(
+async function ensurePatientOk<T extends { success?: boolean; error?: string; error_code?: string }>(
   res: Response,
   data: T,
 ): Promise<T> {
@@ -26,7 +27,12 @@ async function ensurePatientOk<T extends { success?: boolean; error?: string }>(
     if (isPatientSessionAuthError(res.status, data?.error)) {
       await handleExpiredPatientSession();
     }
-    throw new Error(data?.error || 'Request failed');
+    const code = String(data?.error_code || data?.error || 'REQUEST_FAILED');
+    throw new PatientApiError(code, {
+      status: res.status,
+      error_code: code,
+      body: data as Record<string, unknown>,
+    });
   }
   return data;
 }

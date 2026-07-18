@@ -13,6 +13,7 @@ import { DEMO_PATIENT_EMAIL, getApiReachabilityIssue } from '@/config';
 import { JournalTokens } from '@/constants/journalTokens';
 import { patientPostPublic } from '@/lib/patient-api';
 import { setPatientSession } from '@/lib/patient-session';
+import { clearPendingCaptureToken, getPendingCaptureToken } from '@/lib/pending-capture-token';
 
 type Step = 'email' | 'code';
 
@@ -35,6 +36,7 @@ export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: 
   const apiIssue = getApiReachabilityIssue();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState(DEMO_PATIENT_EMAIL || '');
+  const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,13 @@ export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: 
     setLoading(true);
     setError(null);
     try {
-      await patientPostPublic('/api/patient/verify/send', { email: trimmed });
+      await patientPostPublic('/api/patient/verify/send', {
+        email: trimmed,
+        ...(await (async () => {
+          const captureToken = await getPendingCaptureToken();
+          return captureToken ? { capture_token: captureToken } : {};
+        })()),
+      });
       setStep('code');
     } catch (e: unknown) {
       setError(formatFetchError(e));
@@ -71,12 +79,17 @@ export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: 
     setLoading(true);
     setError(null);
     try {
+      const captureToken = await getPendingCaptureToken();
       const json = await patientPostPublic('/api/patient/verify/confirm', {
         email: email.trim(),
         code: code.trim(),
+        ...(captureToken ? { capture_token: captureToken } : {}),
       });
       const sid = String(json.session_id || '');
       if (!sid) throw new Error('Sign-in failed. Try again.');
+      if (json.capture_claim?.claimed) {
+        await clearPendingCaptureToken();
+      }
       await setPatientSession(sid, email.trim());
       await onSuccess(sid, email.trim());
     } catch (e: unknown) {
@@ -112,6 +125,17 @@ export function OtpForm({ headline, subtitle, variant = 'billing', onSuccess }: 
               keyboardType="email-address"
               autoComplete="email"
               placeholder="you@example.com"
+              style={[styles.input, isConsumer && styles.inputConsumer]}
+            />
+            {/* P7.14 — name collection; no password field */}
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoComplete="name"
+              placeholder="Your name"
+              testID="auth-name-input"
               style={[styles.input, isConsumer && styles.inputConsumer]}
             />
             <PrimaryButton

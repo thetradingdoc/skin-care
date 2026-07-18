@@ -28,7 +28,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com",
-        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://myskinandcare.com/scan"
+        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://app.trytouche.com/welcome"
       }
     },
     "production": {
@@ -39,7 +39,7 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://api.callsomo.com",
-        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://myskinandcare.com/scan"
+        "EXPO_PUBLIC_WEB_SIGNUP_URL": "https://app.trytouche.com/welcome"
       }
     }
   },

@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_COPY } from '@/constants/commerceCopy';
-import { CHECK_HREF } from '@/constants/routes';
+import { PROGRESS_HREF } from '@/constants/routes';
 import { buildShopifyCartUrl, buildShopifyPdpUrl } from '@/constants/storeConfig';
 
 const OPEN_MS = 700;
@@ -43,7 +43,7 @@ export default function CheckoutHandoffScreen() {
             }
           }
         } finally {
-          router.replace(CHECK_HREF);
+          router.replace(PROGRESS_HREF);
         }
       })();
     }, OPEN_MS);

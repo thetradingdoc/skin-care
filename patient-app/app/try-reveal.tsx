@@ -1,5 +1,6 @@
 /**
  * TOUCH-019–023 + TOUCH-104 — Reveal Safe / Caution / Hard-no + acrylate-free as distinct second badge.
+ * Trust rule: evaluate failure / unknown overall must NEVER render as Safe.
  */
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -8,18 +9,42 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_CTAS_LOCAL_OVERRIDE } from '@/constants/feature-flags';
-import { CHECKOUT_HANDOFF_HREF, SHOP_HREF, SIGN_IN_HREF, TRY_VERDICT_HREF } from '@/constants/routes';
+import {
+  SHOP_HREF,
+  SIGN_IN_HREF,
+  TRY_ALLERGENS_HREF,
+  TRY_VERDICT_HREF,
+  checkoutHandoffHref,
+} from '@/constants/routes';
 import { getTryRevealPayload, type TryRevealPayload } from '@/lib/try-reveal-store';
 import { patientGet } from '@/lib/patient-api';
+import { useTryFunnelNoIndex } from '@/lib/try-funnel-noindex';
+import {
+  TRY_REVEAL_BUY_BLOCKED,
+  commerceIdsFromTryReveal,
+  tryRevealCanCheckout,
+} from '@/lib/try-reveal-commerce';
 
-type PrimaryKind = 'safe' | 'caution' | 'hard_no';
+type PrimaryKind = 'safe' | 'caution' | 'hard_no' | 'error';
 
-function mapPrimary(verdict: Record<string, unknown>): PrimaryKind {
-  const overall = String(verdict.overall || '').toLowerCase();
+/**
+ * Map API verdict → UI kind.
+ * Default absent/invalid overall → error (never safe).
+ */
+export function mapPrimary(verdict: Record<string, unknown> | null | undefined): PrimaryKind {
+  if (!verdict || typeof verdict !== 'object') return 'error';
+  if (verdict.success === false) return 'error';
+  if (verdict.error != null && String(verdict.error).length > 0 && verdict.overall == null) {
+    return 'error';
+  }
+
+  const overall = String(verdict.overall ?? '').toLowerCase().trim();
+  if (!overall || overall === 'unknown') return 'error';
   if (overall === 'hard_no' || verdict.hard_no === true) return 'hard_no';
   if (overall === 'avoid') return 'hard_no';
   if (overall === 'caution') return 'caution';
-  return 'safe';
+  if (overall === 'safe') return 'safe';
+  return 'error';
 }
 
 /** TOUCH-104 — secondary badge; never replaces Safe / Caution / Hard-no. */
@@ -30,11 +55,17 @@ function showAcrylateFreeBadge(
 ): boolean {
   if (primary !== 'safe') return false;
   if (verdict.acrylate_free_verified !== true) return false;
-  // Only when user cared about acrylates (or explicitly verified by engine with that intent).
   return allergens.some((a) => a.allergen_class === 'acrylates');
 }
 
 function plainLanguage(kind: PrimaryKind, verdict: Record<string, unknown>, productName: string): string {
+  if (kind === 'error') {
+    return String(
+      verdict.message ||
+        verdict.error ||
+        'We couldn’t verify this product. Try again — we won’t guess a Safe result.',
+    );
+  }
   if (kind === 'hard_no') {
     return String(verdict.message || `Not a match for ${productName} with your exclusions.`);
   }
@@ -65,9 +96,11 @@ function sourceLines(verdict: Record<string, unknown>): string[] {
 }
 
 export default function TryRevealScreen() {
+  useTryFunnelNoIndex();
   const router = useRouter();
   const [payload, setPayload] = useState<TryRevealPayload | null>(null);
   const [commerceOn, setCommerceOn] = useState(COMMERCE_CTAS_LOCAL_OVERRIDE);
+  const [buyError, setBuyError] = useState<string | null>(null);
 
   useEffect(() => {
     void getTryRevealPayload().then((p) => {
@@ -87,7 +120,31 @@ export default function TryRevealScreen() {
   const productName =
     payload?.product.product_name || payload?.product.query || payload?.product.barcode || 'This product';
 
-  const kind = useMemo(() => (payload ? mapPrimary(payload.verdict) : 'safe'), [payload]);
+  const commerceIds = useMemo(
+    () =>
+      commerceIdsFromTryReveal({
+        product: payload?.product as unknown as Record<string, unknown>,
+        verdict: payload?.verdict,
+      }),
+    [payload],
+  );
+  const canCheckout = tryRevealCanCheckout(commerceIds);
+
+  const onSwapBuy = () => {
+    setBuyError(null);
+    if (!canCheckout) {
+      setBuyError(TRY_REVEAL_BUY_BLOCKED);
+      return;
+    }
+    router.push(
+      checkoutHandoffHref({
+        variantId: commerceIds.variantId,
+        handle: commerceIds.handle,
+        mode: commerceIds.variantId ? 'cart' : 'pdp',
+      }),
+    );
+  };
+  const kind = useMemo(() => (payload ? mapPrimary(payload.verdict) : 'error'), [payload]);
   const acrylateFree = useMemo(
     () => (payload ? showAcrylateFreeBadge(payload.verdict, payload.allergens, kind) : false),
     [payload, kind],
@@ -96,6 +153,40 @@ export default function TryRevealScreen() {
 
   if (!payload) {
     return <SafeAreaView style={styles.root} />;
+  }
+
+  if (kind === 'error') {
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={[styles.banner, styles.bannerError]} testID="reveal-banner-error">
+          <View style={[styles.badge, styles.badgeError]} testID="reveal-badge-error">
+            <Text style={styles.badgeText}>Couldn’t verify</Text>
+          </View>
+          <Text style={styles.plain} testID="reveal-plain-language">
+            {plainLanguage('error', payload.verdict, productName)}
+          </Text>
+        </View>
+        <View style={styles.body}>
+          <Text style={styles.errorDetail} testID="reveal-error-detail">
+            No Safe / Caution / Hard-no is shown until evaluate succeeds.
+          </Text>
+          <Pressable
+            style={styles.cta}
+            onPress={() => router.replace(TRY_ALLERGENS_HREF)}
+            testID="reveal-retry"
+            accessibilityRole="button">
+            <Text style={styles.ctaText}>Try again</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondary}
+            onPress={() => router.replace(TRY_VERDICT_HREF)}
+            testID="reveal-start-over"
+            accessibilityRole="button">
+            <Text style={styles.secondaryText}>Check a different product</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const bannerStyle =
@@ -107,7 +198,10 @@ export default function TryRevealScreen() {
       <View style={[styles.banner, bannerStyle]} testID={`reveal-banner-${kind}`}>
         <View style={styles.badgeRow}>
           <View
-            style={[styles.badge, kind === 'hard_no' ? styles.badgeHardNo : kind === 'caution' ? styles.badgeCaution : styles.badgeSafe]}
+            style={[
+              styles.badge,
+              kind === 'hard_no' ? styles.badgeHardNo : kind === 'caution' ? styles.badgeCaution : styles.badgeSafe,
+            ]}
             testID={`reveal-badge-${kind}`}>
             <Text style={styles.badgeText}>{badgeLabel}</Text>
           </View>
@@ -154,16 +248,30 @@ export default function TryRevealScreen() {
                 accessibilityRole="button">
                 <Text style={styles.crossSellLink}>Browse shop</Text>
               </Pressable>
-              <Pressable
-                onPress={() => router.push(CHECKOUT_HANDOFF_HREF)}
-                testID="reveal-swap-buy"
-                accessibilityRole="button">
-                <Text style={styles.crossSellLink}>Swap / Buy →</Text>
-              </Pressable>
+              {canCheckout ? (
+                <Pressable
+                  onPress={onSwapBuy}
+                  testID="reveal-swap-buy"
+                  accessibilityRole="button">
+                  <Text style={styles.crossSellLink}>Swap / Buy →</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={onSwapBuy}
+                  testID="reveal-swap-buy-blocked"
+                  accessibilityRole="button">
+                  <Text style={styles.crossSellLinkMuted}>Swap / Buy unavailable</Text>
+                </Pressable>
+              )}
             </View>
           ) : (
             <Text style={styles.crossSellMuted}>Suggestions when shopping connects</Text>
           )}
+          {buyError ? (
+            <Text style={styles.buyError} testID="reveal-buy-error">
+              {buyError}
+            </Text>
+          ) : null}
         </View>
 
         <Pressable
@@ -184,6 +292,7 @@ const styles = StyleSheet.create({
   bannerSafe: { backgroundColor: AppTokens.color.safe },
   bannerCaution: { backgroundColor: AppTokens.color.terracotta },
   bannerHardNo: { backgroundColor: AppTokens.color.hardNo },
+  bannerError: { backgroundColor: AppTokens.color.ink },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   badge: {
     alignSelf: 'flex-start',
@@ -195,7 +304,7 @@ const styles = StyleSheet.create({
   badgeSafe: {},
   badgeCaution: {},
   badgeHardNo: {},
-  /** Distinct from Safe — outlined chip, not the same green fill treatment. */
+  badgeError: {},
   badgeAcrylate: {
     backgroundColor: 'rgba(0,0,0,0.2)',
     borderWidth: 1.5,
@@ -210,6 +319,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   body: { flex: 1, padding: 20, gap: 20 },
+  errorDetail: {
+    fontFamily: AppTokens.font.body,
+    fontSize: 14,
+    color: AppTokens.color.muted,
+    lineHeight: 20,
+  },
   sources: { gap: 6 },
   sourcesLabel: {
     fontFamily: AppTokens.font.body,
@@ -231,6 +346,18 @@ const styles = StyleSheet.create({
     color: AppTokens.color.fabBg,
     textDecorationLine: 'underline',
   },
+  crossSellLinkMuted: {
+    fontFamily: AppTokens.font.body,
+    fontSize: 14,
+    fontWeight: '600',
+    color: AppTokens.color.muted,
+  },
+  buyError: {
+    fontFamily: AppTokens.font.body,
+    fontSize: 13,
+    color: AppTokens.color.cardRedText,
+    marginTop: 6,
+  },
   cta: {
     marginTop: 'auto',
     backgroundColor: AppTokens.color.fabBg,
@@ -239,4 +366,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  secondary: { alignItems: 'center', paddingVertical: 10 },
+  secondaryText: {
+    fontFamily: AppTokens.font.body,
+    fontSize: 14,
+    color: AppTokens.color.muted,
+    textDecorationLine: 'underline',
+  },
 });

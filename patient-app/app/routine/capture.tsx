@@ -123,7 +123,7 @@ export default function RoutineCaptureScreen() {
       void setFirstPhotoLogged();
       if (verdictLine) showToast(verdictLine, 'success');
       router.replace({
-        pathname: '/check',
+        pathname: '/capture',
         params: { date: entryDate, celebrate: '1', refresh: '1' },
       });
     },

@@ -20,8 +20,15 @@ import { registerSessionExpiredHandler } from '@/lib/patient-auth';
 // Do NOT call preventAutoHideAsync — that left the logo splash stuck on device.
 void SplashScreen.hideAsync().catch(() => undefined);
 
+/**
+ * Anchor must NOT be `(tabs)`.
+ * `(tabs)/track` calls useRequirePatientSession → router.replace('/sign-in') when
+ * localStorage is empty. With `anchor: '(tabs)'`, Expo Router also mounts that
+ * tab under deep links (e.g. /welcome, /try-verdict), so anonymous entry is stolen to sign-in.
+ * Anchor `index` instead; index resolves to Welcome when cold/no session.
+ */
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: 'index',
 };
 
 function useSessionExpiryRedirect() {
@@ -125,23 +132,37 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: '#FFFFFF' },
                 headerStyle: { backgroundColor: '#FFFFFF' },
               }}>
+              <Stack.Screen name="welcome" options={{ headerShown: false }} />
               <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="try-verdict" options={{ headerShown: false }} />
+              <Stack.Screen name="try-allergens" options={{ headerShown: false }} />
+              <Stack.Screen name="try-reveal" options={{ headerShown: false }} />
+              <Stack.Screen name="try-handoff" options={{ headerShown: false }} />
+              <Stack.Screen name="get-the-app" options={{ headerShown: false }} />
+              <Stack.Screen name="check" options={{ headerShown: false }} />
+              <Stack.Screen name="bottle" options={{ headerShown: false }} />
+              <Stack.Screen name="severity" options={{ headerShown: false }} />
+              <Stack.Screen name="alerts" options={{ headerShown: false }} />
+              <Stack.Screen name="proof" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="capture" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen name="profile" options={{ headerShown: false }} />
+              <Stack.Screen name="shelf" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
               <Stack.Screen
                 name="sign-in"
                 options={{ headerShown: false, contentStyle: { backgroundColor: '#FFFFFF' } }}
               />
               <Stack.Screen name="scan-entry" options={{ presentation: 'modal', title: 'Quick capture' }} />
-              <Stack.Screen name="capture-scan" options={{ presentation: 'modal', title: 'Scan receipt' }} />
-              <Stack.Screen name="capture-upload" options={{ presentation: 'modal', title: 'Upload EOB/PDF' }} />
-              <Stack.Screen name="capture-manual-bill" options={{ presentation: 'modal', title: 'Add bill manually' }} />
-              <Stack.Screen name="capture-manual-payment" options={{ presentation: 'modal', title: 'Add payment manually' }} />
-              <Stack.Screen name="capture-review" options={{ presentation: 'modal', title: 'Review extraction' }} />
-              <Stack.Screen name="capture-complete" options={{ presentation: 'modal', title: 'Saved' }} />
               <Stack.Screen name="routine" options={{ headerShown: false }} />
               <Stack.Screen name="track" options={{ headerShown: false }} />
               <Stack.Screen name="verdict" options={{ headerShown: false }} />
+              <Stack.Screen name="shop" options={{ headerShown: false }} />
+              <Stack.Screen name="orders" options={{ headerShown: false }} />
+              <Stack.Screen name="order-confirmation" options={{ headerShown: false }} />
+              <Stack.Screen name="barcode-verdict-depth" options={{ headerShown: false }} />
+              <Stack.Screen name="checkout-handoff" options={{ headerShown: false }} />
               <Stack.Screen name="compare" options={{ presentation: 'modal', title: 'Compare photos' }} />
             </Stack>
             <StatusBar style="dark" />

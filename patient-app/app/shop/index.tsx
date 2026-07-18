@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_COPY } from '@/constants/commerceCopy';
-import { CHECK_HREF, shopProductHref } from '@/constants/routes';
+import { PROGRESS_HREF, shopProductHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { patientGet } from '@/lib/patient-api';
 
@@ -53,7 +53,7 @@ export default function ShopBrowseScreen() {
           <Text style={styles.back}>Back</Text>
         </Pressable>
         <Text style={styles.title}>Shop</Text>
-        <Pressable onPress={() => router.replace(CHECK_HREF)}>
+        <Pressable onPress={() => router.replace(PROGRESS_HREF)}>
           <Text style={styles.back}>Check</Text>
         </Pressable>
       </View>

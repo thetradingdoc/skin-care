@@ -11,14 +11,15 @@ import { useToast } from '@/components/billing-feedback';
 import { BodyMapPicker, SpotCaptureFrame } from '@/components/v3';
 import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
-import { spotHref } from '@/constants/routes';
-import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { SIGN_IN_HREF, MARK_COMPARE_HREF } from '@/constants/routes';
 import { consumePendingCaptureUri } from '@/lib/pending-capture-uri';
+import { createCaptureRequestId } from '@/lib/capture-request-id';
+import { captureRecordFact } from '@/lib/patient-record-capture';
+import { getPatientSessionId } from '@/lib/patient-session';
 import { localTodayIso } from '@/lib/routine-day-mode';
-import { addSpotPhoto, createSpot, type BodyRegion } from '@/lib/spot-store';
+import type { BodyRegion } from '@/lib/spot-store';
 
 export default function TrackCaptureScreen() {
-  const { ready, checking } = useRequirePatientSession();
   const { showToast } = useToast();
   const router = useRouter();
   const params = useLocalSearchParams<{ libraryUri?: string; spotId?: string }>();
@@ -31,6 +32,20 @@ export default function TrackCaptureScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraDenied, setCameraDenied] = useState(false);
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  /** Stable across retries of the same Save until success. */
+  const pendingRequestId = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const sid = await getPatientSessionId();
+      if (!cancelled) setHasSession(Boolean(sid));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,16 +108,52 @@ export default function TrackCaptureScreen() {
     }
     setSaving(true);
     setError(null);
+    if (!pendingRequestId.current) pendingRequestId.current = createCaptureRequestId();
+    const requestId = pendingRequestId.current;
     try {
       const today = localTodayIso();
-      let spotId = typeof params.spotId === 'string' ? params.spotId : null;
-      if (!spotId) {
-        // TOUCH-063 — persist calm “What is this?” label with the spot.
-        const spot = await createSpot(region, label.trim() || undefined);
-        spotId = spot.id;
+      const trimmedLabel = label.trim();
+      // C2 / H3 — unified facts pipeline (auth → /records/capture; guest → anonymous + capture_token)
+      const factResult = await captureRecordFact({
+        tag: 'mark',
+        uri,
+        ai_or_manual: 'manual',
+        date: today,
+        label: trimmedLabel || undefined,
+        note: trimmedLabel || undefined,
+        body_location: region,
+        body_area: region,
+        compare_group_id:
+          typeof params.spotId === 'string' && params.spotId ? params.spotId : undefined,
+        request_id: requestId,
+      });
+
+      const sid = await getPatientSessionId();
+      if (!sid || factResult.via === 'anonymous_capture') {
+        pendingRequestId.current = null;
+        showToast('Sign in to keep this spot on your account.', 'success');
+        router.replace(SIGN_IN_HREF);
+        return;
       }
-      await addSpotPhoto(spotId, { date: today, uri });
-      router.replace(spotHref(spotId));
+
+      // Phase D — facts/marks only. No dual-write to legacy /api/patient/spots.
+      const fact = factResult.fact || {};
+      const structured =
+        fact.structured_json && typeof fact.structured_json === 'object'
+          ? (fact.structured_json as Record<string, unknown>)
+          : {};
+      const compareGroupId = String(
+        (typeof params.spotId === 'string' && params.spotId) ||
+          structured.compare_group_id ||
+          fact.compare_group_id ||
+          fact.id ||
+          requestId,
+      );
+      pendingRequestId.current = null;
+      router.replace({
+        pathname: MARK_COMPARE_HREF,
+        params: { compareGroupId },
+      } as never);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Could not save your photo. Try again.';
       setError(msg);
@@ -112,7 +163,7 @@ export default function TrackCaptureScreen() {
     }
   }, [params.spotId, region, uri, label, router, showToast]);
 
-  if (checking || !ready) {
+  if (hasSession === null) {
     return <SafeAreaView style={styles.root} />;
   }
 

@@ -61,8 +61,8 @@ export async function uploadRoutineProgressPhoto(
     : [];
 
   const form = new FormData();
-  const file = await uriToUploadFile(uri, fileName, mimeType);
-  appendUploadToForm(form, file, fileName);
+  const file = await uriToUploadFile({ uri, fileName, mimeType });
+  appendUploadToForm({ form, file, fileName });
   if (symptomTags.length) {
     form.append('symptom_tags', JSON.stringify(symptomTags));
   }
