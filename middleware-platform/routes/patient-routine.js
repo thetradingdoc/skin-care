@@ -952,18 +952,64 @@ app.post('/api/patient/routine/daily/:id/photo', (req, res, next) => apiLimiter(
       try {
         const { analyzeWithVision } = require('../services/face-read-vision');
         const { insertSkinAgeReading } = require('../services/skin-age-readings');
-        const vision = await analyzeWithVision(uploadFile.buffer, uploadFile.mimetype || 'image/jpeg');
-        if (vision?.apparent_age_estimate != null) {
-          insertSkinAgeReading(db.db, {
-            patient_id: patientId,
-            session_id: sessionId,
-            source: 'weekly_rescore',
-            apparent_age_estimate: Number(vision.apparent_age_estimate),
-            model_id: vision.model_id,
-            model_version: vision.model_version,
-            media_id: mediaId,
-            payload_json: vision,
-          });
+        const meter = require('../services/ai-capture-meter');
+        // P1.08 — meter weekly GPT rescore; Plus bypass via billing subscription
+        let isPlus = false;
+        try {
+          const sub = typeof resolveBillingSubscription === 'function'
+            ? resolveBillingSubscription(req)
+            : null;
+          isPlus = sub?.tier === 'plus';
+        } catch (_) {}
+        const gate = meter.tryConsume(db.db, {
+          patientId,
+          sessionId,
+          captureKind: 'weekly_photo_rescore',
+          isPlus,
+          model: process.env.FACE_READ_VISION_MODEL || 'gpt-4o',
+        });
+        if (!gate.ok) {
+          // Do not fail the photo upload — skip AI rescore only
+          console.warn('[routine/photo] weekly rescore metered out:', gate.body?.error_code);
+        } else {
+          try {
+            const vision = await analyzeWithVision(uploadFile.buffer, uploadFile.mimetype || 'image/jpeg');
+            if (!vision) {
+              meter.refundFailedIfNeeded(db.db, gate.usageId, { reason: 'weekly_rescore_null_result' });
+            } else {
+              if (vision._usage && gate.usageId) {
+                meter.recordUsageTokens(db.db, gate.usageId, {
+                  promptTokens: vision._usage.prompt_tokens,
+                  completionTokens: vision._usage.completion_tokens,
+                  estimatedUsd: meter.estimateUsdFromTokens(
+                    vision._usage.prompt_tokens,
+                    vision._usage.completion_tokens,
+                  ),
+                  model: vision._usage.model,
+                });
+              }
+              if (vision.apparent_age_estimate != null) {
+                insertSkinAgeReading(db.db, {
+                  patient_id: patientId,
+                  session_id: sessionId,
+                  source: 'weekly_rescore',
+                  apparent_age_estimate: Number(vision.apparent_age_estimate),
+                  model_id: vision.model_id,
+                  model_version: vision.model_version,
+                  media_id: mediaId,
+                  payload_json: vision,
+                });
+              } else {
+                meter.refundFailedIfNeeded(db.db, gate.usageId, {
+                  reason: 'weekly_rescore_no_usable_age',
+                });
+              }
+            }
+          } catch (visionErr) {
+            meter.refundFailedIfNeeded(db.db, gate.usageId, {
+              reason: visionErr?.message || 'weekly_rescore_failed',
+            });
+          }
         }
       } catch (_) {}
     }

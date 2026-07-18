@@ -187,12 +187,16 @@ app.get('/api/patient/billing/documents', (req, res, next) => apiLimiter(req, re
       ORDER BY datetime(created_at) DESC
       LIMIT ?
     `).all(...params);
-    const safeRows = rows.map((row) => ({
-      ...row,
-      storage_ref: decryptBillingField(row.storage_ref),
-      notes: decryptBillingField(row.notes),
-      metadata_json: parseBillingMetadata(row.metadata_json)
-    }));
+    const safeRows = rows.map((row) => {
+      const decrypted = decryptBillingField(row.storage_ref);
+      const { redactStorageRef } = require('../services/patient-record-media-access');
+      return {
+        ...row,
+        storage_ref: redactStorageRef(decrypted),
+        notes: decryptBillingField(row.notes),
+        metadata_json: parseBillingMetadata(row.metadata_json),
+      };
+    });
     recordPatientPortalEvent(req, 'billing_documents_accessed', { count: safeRows.length });
     return billingOk(res, { documents: safeRows, entitlement: { tier: sub.tier } });
   } catch (e) {
@@ -218,12 +222,26 @@ app.post('/api/patient/billing/documents/:documentId/extract', (req, res, next) 
     `).get(...params);
     if (!doc) return billingErr(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found.');
 
+    // P1.09 / P3.06 — meter AI OCR; refund if download/OCR cannot produce text
+    const meter = require('../services/ai-capture-meter');
+    const gate = meter.tryConsume(db.db, {
+      patientId: sub.patientId || null,
+      sessionId: sub.sessionId,
+      captureKind: 'billing_ocr',
+      isPlus: sub.tier === 'plus',
+      model: 'gpt-4o',
+    });
+    if (!gate.ok) {
+      return res.status(gate.status).json(gate.body);
+    }
+
     const decryptedStorageRef = decryptBillingField(doc.storage_ref);
     const gcsBillingStorage = require('../services/gcs-billing-storage');
     const extractionService = require('../services/patient-document-extraction');
     const billingOcrParser = require('../services/billing-ocr-parser');
     let ocrText = '';
     let extractionMethod = 'fallback';
+    let downloadFailed = false;
     try {
       const buf = await gcsBillingStorage.downloadBuffer(decryptedStorageRef);
       if (buf && Buffer.isBuffer(buf)) {
@@ -235,10 +253,24 @@ app.post('/api/patient/billing/documents/:documentId/extract', (req, res, next) 
         });
         ocrText = String(extracted?.text || '').trim();
         extractionMethod = String(extracted?.method || 'unknown');
+      } else {
+        downloadFailed = true;
       }
     } catch (e) {
+      downloadFailed = true;
       console.warn('[billing/extract] OCR read failed:', e.message);
     }
+
+    if ((downloadFailed || !ocrText) && gate.usageId) {
+      meter.refundFailedIfNeeded(db.db, gate.usageId, {
+        reason: downloadFailed ? 'downloadBuffer_or_ocr_failed' : 'ocr_empty_text',
+      });
+    } else if (ocrText && gate.usageId) {
+      try {
+        meter.recordUsageTokens(db.db, gate.usageId, { model: 'gpt-4o' });
+      } catch (_) {}
+    }
+
     let extraction;
     try {
       extraction = ocrText
@@ -356,7 +388,7 @@ app.post('/api/patient/billing/documents/confirm', (req, res, next) => apiLimite
       ? `WHERE id = ? AND (patient_id = ? OR session_id = ?)`
       : `WHERE id = ? AND session_id = ?`;
     const docParams = sub.patientId ? [documentId, sub.patientId, sub.sessionId] : [documentId, sub.sessionId];
-    const doc = db.db.prepare(`SELECT id, metadata_json FROM patient_billing_documents ${docWhere} LIMIT 1`).get(...docParams);
+    const doc = db.db.prepare(`SELECT id, source_type, mime_type, storage_ref, metadata_json FROM patient_billing_documents ${docWhere} LIMIT 1`).get(...docParams);
     if (!doc) return billingErr(res, 404, 'DOCUMENT_NOT_FOUND', 'Document not found.');
 
     const eventId = `bev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -395,6 +427,30 @@ app.post('/api/patient/billing/documents/confirm', (req, res, next) => apiLimite
       SET parse_status = 'ready', metadata_json = ?, updated_at = datetime('now')
       WHERE id = ?
     `).run(normalizeBillingMetadata({ ...parseBillingMetadata(doc.metadata_json), confirmed_event_id: eventId }), documentId);
+
+    // P2.14 — best-effort dual-write → patient_record_facts (tag=bill) on confirm/save only (not OCR extract)
+    try {
+      const { dualWriteBillingBill } = require('../services/patient-record-dual-write');
+      dualWriteBillingBill(db.db, {
+        patientId: sub.patientId,
+        sessionId: sub.sessionId,
+        document: {
+          id: doc.id,
+          source_type: doc.source_type,
+          mime_type: doc.mime_type,
+          storage_ref: decryptBillingField(doc.storage_ref),
+        },
+        event: {
+          id: eventId,
+          event_type: payload.normalized.eventType,
+          provider_name: payload.normalized.providerName,
+          service_date: payload.normalized.serviceDate,
+          amount_cents: payload.normalized.amountCents,
+          currency: payload.normalized.currency,
+        },
+      });
+    } catch (_) {}
+
     recordPatientPortalEvent(req, 'billing_document_confirmed', { billing_document_id: documentId, billing_event_id: eventId, episode_id: episodeId });
     return billingOk(res, { event: { id: eventId, status: payload.normalized.status }, episode: { id: episodeId } });
   } catch (e) {
@@ -432,19 +488,45 @@ app.post('/api/patient/billing/events', (req, res, next) => apiLimiter(req, res,
     );
 
     const documentId = body.document_id ? String(body.document_id).trim() : '';
+    let linkedDoc = null;
     if (documentId) {
       const whereSql = sub.patientId
         ? `WHERE id = ? AND (patient_id = ? OR session_id = ?)`
         : `WHERE id = ? AND session_id = ?`;
       const params = sub.patientId ? [documentId, sub.patientId, sub.sessionId] : [documentId, sub.sessionId];
-      const doc = db.db.prepare(`SELECT id FROM patient_billing_documents ${whereSql} LIMIT 1`).get(...params);
-      if (doc) {
+      linkedDoc = db.db.prepare(`SELECT id, source_type, mime_type, storage_ref FROM patient_billing_documents ${whereSql} LIMIT 1`).get(...params);
+      if (linkedDoc) {
         db.db.prepare(`
           INSERT OR IGNORE INTO patient_billing_event_documents (id, billing_event_id, billing_document_id, created_at)
           VALUES (?, ?, ?, datetime('now'))
         `).run(`bed_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, eventId, documentId);
       }
     }
+
+    // P2.14 — best-effort dual-write on billing event save (not OCR extract)
+    try {
+      const { dualWriteBillingBill } = require('../services/patient-record-dual-write');
+      dualWriteBillingBill(db.db, {
+        patientId: sub.patientId,
+        sessionId: sub.sessionId,
+        document: linkedDoc
+          ? {
+              id: linkedDoc.id,
+              source_type: linkedDoc.source_type,
+              mime_type: linkedDoc.mime_type,
+              storage_ref: decryptBillingField(linkedDoc.storage_ref),
+            }
+          : null,
+        event: {
+          id: eventId,
+          event_type: validated.normalized.eventType,
+          provider_name: validated.normalized.providerName,
+          service_date: validated.normalized.serviceDate,
+          amount_cents: validated.normalized.amountCents,
+          currency: validated.normalized.currency,
+        },
+      });
+    } catch (_) {}
 
     recordPatientPortalEvent(req, 'billing_event_created', { billing_event_id: eventId, event_type: validated.normalized.eventType, status: validated.normalized.status });
     return billingOk(res, {

@@ -19,19 +19,7 @@ describe('improvement-metrics-service', () => {
     } catch (_) {}
   });
 
-  test('returns null metrics when fewer than two readings with payloads', () => {
-    insertSkinAgeReading(db, {
-      session_id: 'sess-1',
-      apparent_age_estimate: 32,
-      payload_json: { concern_scores: { texture: 2, redness: 1 } },
-    });
-    const result = computeImprovementMetrics(db, { sessionId: 'sess-1', skinAgeDelta: -1 });
-    expect(result.clarity_pct).toBeNull();
-    expect(result.redness_pct).toBeNull();
-    expect(result.skin_age_delta).toBe(-1);
-  });
-
-  test('computes clarity and redness deltas from first vs latest concern_scores', () => {
+  test('never invents clarity/redness percent from concern_scores', () => {
     insertSkinAgeReading(db, {
       session_id: 'sess-1',
       apparent_age_estimate: 34,
@@ -47,8 +35,21 @@ describe('improvement-metrics-service', () => {
       },
     });
     const result = computeImprovementMetrics(db, { sessionId: 'sess-1', skinAgeDelta: -3 });
-    expect(result.clarity_pct).toBe(33);
-    expect(result.redness_pct).toBe(66);
+    expect(result.clarity_pct).toBeNull();
+    expect(result.redness_pct).toBeNull();
     expect(result.skin_age_delta).toBe(-3);
+    expect(result.fabricated_pct_retired).toBe(true);
+  });
+
+  test('returns null fabricated pcts with fewer than two readings', () => {
+    insertSkinAgeReading(db, {
+      session_id: 'sess-1',
+      apparent_age_estimate: 32,
+      payload_json: { concern_scores: { texture: 2, redness: 1 } },
+    });
+    const result = computeImprovementMetrics(db, { sessionId: 'sess-1', skinAgeDelta: -1 });
+    expect(result.clarity_pct).toBeNull();
+    expect(result.redness_pct).toBeNull();
+    expect(result.skin_age_delta).toBe(-1);
   });
 });

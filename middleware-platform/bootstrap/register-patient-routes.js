@@ -34,6 +34,9 @@ const { registerPatientWalletRoutes } = require('../routes/patient-wallet');
 const { registerPatientRcmRoutes } = require('../routes/patient-rcm');
 const { registerPatientInsuranceRoutes } = require('../routes/patient-insurance');
 const { registerPriorAuthRoutes } = require('../routes/prior-auth');
+const { registerPatientRecordRoutes } = require('../routes/patient-records');
+const { registerPatientMedicalProgressRoutes } = require('../routes/patient-medical-progress');
+const { registerPatientAiMonetizationRoutes } = require('../routes/patient-ai-monetization');
 
 /** Consumer funnel + early patient mounts (preserve order vs voice/retell routes). */
 function registerConsumerFunnelRoutes(app, deps) {
@@ -114,6 +117,11 @@ function registerPatientPortalRoutes(app, deps) {
   registerPatientBioProfileRoutes(app, patientRouteDeps);
   registerPatientConsumerProfileRoutes(app, patientRouteDeps);
   registerPatientSpotsRoutes(app, patientRouteDeps);
+  // Medical progress BEFORE records: `/api/patient/records/calendar` must not be
+  // shadowed by GET `/api/patient/records/:id`.
+  registerPatientMedicalProgressRoutes(app, patientRouteDeps);
+  registerPatientRecordRoutes(app, patientRouteDeps);
+  registerPatientAiMonetizationRoutes(app, patientRouteDeps);
   registerPatientGoalsRoutes(app, patientRouteDeps);
   registerPatientShelfRoutes(app, patientRouteDeps);
   registerPatientProductsRoutes(app, patientRouteDeps);
@@ -140,7 +148,7 @@ function registerPatientPortalRoutes(app, deps) {
   registerPatientWalletRoutes(app, patientPortalDeps);
   registerPatientRcmRoutes(app, patientPortalDeps);
   registerPatientInsuranceRoutes(app, patientPortalDeps);
-  registerPriorAuthRoutes(app, { apiLimiter, express, db });
+  registerPriorAuthRoutes(app, { apiLimiter, express, db, requireAdminAuth });
 }
 
 module.exports = {

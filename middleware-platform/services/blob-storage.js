@@ -57,9 +57,33 @@ function generateSignedUrl({ blobName, expiresInSeconds = 300, contentDispositio
   return `https://${account}.blob.core.windows.net/${containerName}/${blobName}?${sas}`;
 }
 
+async function downloadBuffer({ blobName }) {
+  if (!blobName) throw new Error('blobName_required');
+  const container = await ensureContainer();
+  const block = container.getBlockBlobClient(blobName);
+  const resp = await block.download(0);
+  const stream = resp.readableStreamBody;
+  if (!stream) throw new Error('empty_blob_stream');
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+async function deleteBlob({ blobName }) {
+  if (!blobName) throw new Error('blobName_required');
+  const container = await ensureContainer();
+  const block = container.getBlockBlobClient(blobName);
+  const result = await block.deleteIfExists();
+  return { deleted: Boolean(result?.succeeded), blobName };
+}
+
 module.exports = {
   isAzureConfigured,
   uploadBuffer,
-  generateSignedUrl
+  generateSignedUrl,
+  downloadBuffer,
+  deleteBlob,
 };
 
