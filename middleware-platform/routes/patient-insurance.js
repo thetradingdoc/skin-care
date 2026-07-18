@@ -31,12 +31,18 @@ function registerPatientInsuranceRoutes(app, deps) {
     parseBooleanFlag,
   } = deps;
 
-app.get('/api/patient/insurance', async (req, res) => {
+app.get('/api/patient/insurance', requirePatientSession, async (req, res) => {
   try {
     const { patientId } = req.query;
+    const { patientId: sessionPatientId } = resolvePatientIdFromSession(req.patientSession);
 
     if (!patientId) {
       return res.status(400).json({ success: false, error: 'Patient ID required' });
+    }
+
+    // SEC-18: IDOR guard — session patient must own the requested id
+    if (!sessionPatientId || String(sessionPatientId) !== String(patientId)) {
+      return res.status(403).json({ success: false, error: 'Forbidden', code: 'PATIENT_IDOR' });
     }
 
     const insurance = db.getAllPatientInsurance(patientId) || [];

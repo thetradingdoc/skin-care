@@ -29,7 +29,7 @@ function registerPatientDocumentsRoutes(app, deps) {
     parseBooleanFlag,
   } = deps;
 
-app.post('/api/patient/send-upload-link', sendUploadLinkHandler);
+app.post('/api/patient/send-upload-link', requireAdminAuth, sendUploadLinkHandler); // SEC-21
 
 // Phase 8: POST /api/patient/visits/:id/feedback — Token-validated feedback (no session required)
 app.post('/api/patient/visits/:id/feedback', apiLimiter, express.json(), async (req, res) => {

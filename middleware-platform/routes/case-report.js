@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const { requireAdminAuth } = require('../middleware/admin-auth');
 const FHIRService = require('../services/fhir-service');
 const EmailService = require('../services/email-service');
 let stripe = null;
@@ -17,7 +18,7 @@ try { stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); } catch (_) {}
  * Aggregate longitudinal view for a single patient.
  * Protected by admin auth to ensure only staff can view longitudinal data.
  */
-router.get('/api/patient/:patientId/case-report', async (req, res) => {
+router.get('/api/patient/:patientId/case-report', requireAdminAuth, async (req, res) => { // SEC-19
   try {
     // Basic RBAC: ensure caller has a valid admin session (provider/staff).
     // In server.js, caseReportRoutes should be mounted behind requireAdminAuth for UI calls.

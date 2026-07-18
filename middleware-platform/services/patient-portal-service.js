@@ -10,6 +10,7 @@
 const db = require('../database');
 const { v4: uuidv4 } = require('uuid');
 const EmailService = require('./email-service');
+const crypto = require('crypto');
 
 class PatientPortalService {
   /**
@@ -36,7 +37,7 @@ class PatientPortalService {
     })();
 
     // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = String(crypto.randomInt(100000, 1000000)); // SEC-25
 
     // Create or update session
     const sessionId = uuidv4();

@@ -7,8 +7,12 @@
  */
 
 function registerPriorAuthRoutes(app, deps) {
-  const { apiLimiter, express, db } = deps;
+  const { apiLimiter, express, db, requireAdminAuth } = deps;
   const PriorAuthService = require('../services/prior-auth-service');
+  const { requireAdminAuth: adminAuth } =
+    requireAdminAuth
+      ? { requireAdminAuth }
+      : require('../middleware/admin-auth');
 
   app.post('/api/prior-auth/evaluate', apiLimiter, express.json(), (req, res) => {
     try {
@@ -61,7 +65,7 @@ function registerPriorAuthRoutes(app, deps) {
   });
 
   // Phase-1 manual approval/update endpoints (human in the loop)
-  app.post('/api/prior-auth/requests/:id/approve', apiLimiter, express.json(), (req, res) => {
+  app.post('/api/prior-auth/requests/:id/approve', apiLimiter, express.json(), adminAuth, (req, res) => {
     try {
       const out = PriorAuthService.manualApproveRequest(db, req.params.id, {
         authNumber: req.body?.auth_number || req.body?.authNumber || null,
@@ -74,7 +78,7 @@ function registerPriorAuthRoutes(app, deps) {
     }
   });
 
-  app.post('/api/prior-auth/requests/:id/deny', apiLimiter, express.json(), (req, res) => {
+  app.post('/api/prior-auth/requests/:id/deny', apiLimiter, express.json(), adminAuth, (req, res) => {
     try {
       const out = PriorAuthService.manualDenyRequest(db, req.params.id, {
         denialReason: req.body?.denial_reason || req.body?.denialReason || null
@@ -86,7 +90,7 @@ function registerPriorAuthRoutes(app, deps) {
     }
   });
 
-  app.post('/api/prior-auth/requests/:id/update', apiLimiter, express.json(), (req, res) => {
+  app.post('/api/prior-auth/requests/:id/update', apiLimiter, express.json(), adminAuth, (req, res) => {
     try {
       const out = PriorAuthService.manualUpdateApprovedRequest(db, req.params.id, {
         authNumber: req.body?.auth_number || req.body?.authNumber || null,

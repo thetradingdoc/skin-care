@@ -112,18 +112,81 @@ router.options('/token', (req, res) => {
  * POST /api/livekit/token (L-1, L-2)
  * Get a token to join a LiveKit video room.
  *
- * SECURITY: This endpoint has no auth by design for backwards compatibility.
- * For patient joins, use GET /api/livekit/patient/video/token (requires x-session-id).
- * When using appointment_id, appointment is validated with clinic/customer scoping.
+ * SEC-14R: validated customer_session OR signed provider JWT OR patient x-session-id.
+ * Bare x-provider-id / x-clinic-id are NOT credentials (tenant scoping only after auth).
+ * Prefer GET /api/livekit/patient/video/token for patient joins.
  *
  * Body: { room?: string, identity?: string, name?: string, appointment_id?: string, clinic_id?: string }
- *   room          - Room name (optional; overridden by appointment_id)
- *   appointment_id - If provided, validates appointment exists and uses room appt-{id} (L-2: scoped)
- *   clinic_id     - Optional; when provided with appointment_id, enforces tenant scope
- *   identity      - Participant ID (default: "user-{uuid}")
- *   name          - Display name (default: "Participant")
  */
-router.post('/token', async (req, res) => {
+
+function parseCookieHeader(req) {
+  const header = req.headers?.cookie;
+  if (!header) return {};
+  return header.split(';').reduce((acc, chunk) => {
+    const [key, value] = chunk.split('=');
+    if (key && value) {
+      acc[key.trim()] = decodeURIComponent(value.trim());
+    }
+    return acc;
+  }, {});
+}
+
+function requireLivekitTokenAuth(req, res, next) {
+  // 1) Validated patient portal session
+  const sessionId = req.headers['x-session-id'];
+  if (sessionId) {
+    const v = PatientPortalService.validateSession(sessionId);
+    if (v && v.valid) {
+      req.patientSession = v;
+      return next();
+    }
+  }
+
+  // 2) Validated customer_session (cookie or header) — never accept presence alone
+  const cookies = req.cookies && typeof req.cookies === 'object' ? req.cookies : parseCookieHeader(req);
+  const customerSessionId =
+    cookies.customer_session ||
+    req.headers['x-customer-session'] ||
+    null;
+  if (customerSessionId) {
+    try {
+      const session = db.getCustomerSession(String(customerSessionId));
+      if (session) {
+        const customer = db.getCustomer(session.customer_id);
+        if (customer) {
+          req.customer = customer;
+          req.customerSession = session;
+          return next();
+        }
+      }
+    } catch (_) {
+      /* fall through */
+    }
+  }
+
+  // 3) Signed provider / user session JWT (SEC-13 mint)
+  const auth = String(req.headers.authorization || '');
+  const bearer = auth.replace(/^Bearer\s+/i, '').trim();
+  const headerTok = req.headers['x-user-session'] || req.headers['x-session-token'];
+  const tok = bearer || (headerTok ? String(headerTok).trim() : '');
+  if (tok) {
+    try {
+      const { verifyUserSessionToken } = require('../utils/session-token');
+      const payload = verifyUserSessionToken(tok);
+      if (payload && (payload.sub || payload.email || payload.provider_id || payload.user_id)) {
+        req.userSession = payload;
+        return next();
+      }
+    } catch (_) {
+      /* fall through */
+    }
+  }
+
+  // SEC-14R: bare x-provider-id / x-clinic-id deliberately ignored as auth
+  return res.status(401).json({ success: false, error: 'Authentication required', code: 'LIVEKIT_AUTH_REQUIRED' });
+}
+
+router.post('/token', requireLivekitTokenAuth, async (req, res) => {
   if (livekitTokenDebugEnabled()) {
     console.log('POST /api/livekit/token from:', req.headers.origin || 'no origin', 'IP:', req.ip);
   }
@@ -212,8 +275,6 @@ router.post('/token', async (req, res) => {
     });
   }
 });
-
-module.exports = router;
 
 /**
  * Patient-scoped helper for LiveKit token issuance.
@@ -359,3 +420,5 @@ router.get('/patient/video/token', async (req, res) => {
     return res.status(500).json({ success: false, error: err.message || 'Failed to create token' });
   }
 });
+
+module.exports = router;

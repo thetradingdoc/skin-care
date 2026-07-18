@@ -55,15 +55,16 @@ class FraudDetector {
 
         } catch (error) {
             console.error('❌ Fraud detection error:', error);
-            // Fail open (allow transaction) but log error
+            // SEC-24: fail closed — do not auto-approve when the detector errors
             return {
-                risk_score: 0,
-                risk_level: 'LOW',
-                should_block: false,
+                risk_score: 100,
+                risk_level: 'HIGH',
+                should_block: true,
                 requires_verification: false,
                 signals: {},
-                reasons: ['Fraud check failed - proceeding with caution'],
-                error: error.message
+                reasons: ['Fraud check failed - blocking until resolved'],
+                error: error.message,
+                fail_closed: true
             };
         }
     }

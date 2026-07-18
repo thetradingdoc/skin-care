@@ -29,29 +29,37 @@ function ensureJwtSecret(res) {
   return true;
 }
 
-// Patient token: email + code OR patient_id (when already verified via session)
+// Patient token: require verified OTP code (or authenticated patient session). Never mint from email alone (SEC-13).
 router.post('/patient-token', async (req, res) => {
   try {
     if (!ensureJwtSecret(res)) return;
     const { email, code, patient_id } = req.body || {};
 
-    let patientId = patient_id || null;
+    let patientId = null;
 
-    // If email+code provided, verify using existing PatientPortalService
-    if (!patientId && email && code) {
+    // Preferred: email + OTP code verified via PatientPortalService
+    if (email && code) {
       const verification = PatientPortalService.verifyCode(email, code);
       if (!verification || !verification.success || !verification.patient_id) {
         return res.status(401).json({ success: false, error: 'Invalid or expired verification code' });
       }
       patientId = verification.patient_id;
-    }
-
-    // Fallback: resolve by email if already verified upstream
-    if (!patientId && email) {
-      const patient = db.getFHIRPatientByEmail && db.getFHIRPatientByEmail(email.trim());
-      if (patient) {
-        patientId = patient.resource_id;
+      // If patient_id also supplied, must match verified patient
+      if (patient_id && String(patient_id) !== String(patientId)) {
+        return res.status(403).json({ success: false, error: 'patient_id does not match verified identity' });
       }
+    } else if (patient_id && req.patientSession && req.patientSession.patient_id) {
+      // Already authenticated patient session (middleware-attached)
+      if (String(req.patientSession.patient_id) !== String(patient_id)) {
+        return res.status(403).json({ success: false, error: 'Session patient mismatch' });
+      }
+      patientId = patient_id;
+    } else {
+      return res.status(401).json({
+        success: false,
+        error: 'Verification required: provide email+code (or authenticated patient session)',
+        code: 'AUTH_VERIFICATION_REQUIRED',
+      });
     }
 
     if (!patientId) {

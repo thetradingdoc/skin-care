@@ -12,7 +12,7 @@ class EmailVerificationService {
      * Generate a 6-digit verification code
      */
     static generateCode() {
-        return Math.floor(100000 + Math.random() * 900000).toString();
+        return String(crypto.randomInt(100000, 1000000)); // SEC-25
     }
 
     /**
@@ -36,7 +36,7 @@ class EmailVerificationService {
             console.log('\n📧 EMAIL VERIFICATION: Sending Code');
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             console.log(`Email: ${email}`);
-            console.log(`Code: ${code}`);
+            if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'prod') console.log(`Code: ${code}`);
             console.log(`Expires: ${expiresAt.toISOString()}`);
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
@@ -55,13 +55,18 @@ class EmailVerificationService {
                 // Still return success since code is stored - email might be delayed
             }
 
-            return {
+            const result = {
                 success: true,
-                code: code, // For testing/debugging - remove in production
                 expires_at: expiresAt,
                 email_sent: emailResult.success,
                 message: 'Verification code sent to email'
             };
+            // SEC-25: never return OTP in production responses
+            const isProd = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
+            if (!isProd && process.env.RETURN_OTP_IN_RESPONSE === '1') {
+                result.code = code;
+            }
+            return result;
 
         } catch (error) {
             console.error('❌ Email verification error:', error.message);

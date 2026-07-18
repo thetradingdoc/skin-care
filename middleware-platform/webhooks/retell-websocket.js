@@ -2480,10 +2480,10 @@ class RetellWebSocketHandler {
         }
         if (!opening) {
             opening = isOutboundSales
-                ? "Hi, this is Alex from Skin & Care. Is now still a good time to talk?"
-                : (patientName
-                    ? `Hi ${patientName}, this is Kelly from Skin & Care. How can I help you today?`
-                    : 'Hi, this is Kelly from Skin & Care. How can I help you today?');
+                ? "Hi, this is Alex from Touche. Is now still a good time to talk?"
+                    : (patientName
+                    ? `Hi ${patientName}, this is Kelly from Touche. How can I help you today?`
+                    : 'Hi, this is Kelly from Touche. How can I help you today?');
         }
 
         this.sendRetellResponse(connection.ws, opening, responseId);
@@ -3398,7 +3398,7 @@ class RetellWebSocketHandler {
             const leadId = connection?.callMetadata?.lead_id || args.lead_id;
 
             const toEmail = args.to_email || args.email;
-            const subject = args.subject || 'Follow-up from Skin & Care';
+            const subject = args.subject || 'Follow-up from Touche';
             const body = args.body || args.message || '';
 
             if (!toEmail) {

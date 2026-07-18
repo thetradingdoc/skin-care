@@ -61,11 +61,29 @@ app.post('/api/patient/verify/send', botGuard, authLimiter, otpSendLimiter, asyn
           metadata: { ip: req.ip || null }
         });
       } catch (_) {}
+
+      // Bind capture_token → this OTP session (possession alone must not claim)
+      let capture_bind = null;
+      try {
+        const captureToken = req.body?.capture_token ? String(req.body.capture_token).trim() : '';
+        if (captureToken && result.session_id) {
+          const { bindCaptureTokenToOtpSession } = require('../services/pending-capture-claim');
+          capture_bind = bindCaptureTokenToOtpSession(db.db, {
+            captureToken,
+            otpSessionId: result.session_id,
+          });
+        }
+      } catch (bindErr) {
+        console.warn('[verify/send] capture bind failed:', bindErr.message);
+        capture_bind = { ok: false, reason: 'error', error: bindErr.message };
+      }
+
       res.json({
         success: true,
         session_id: result.session_id,
         existing_patient: !!result.existing_patient,
-        message: result.message || 'Verification code sent to your email'
+        message: result.message || 'Verification code sent to your email',
+        capture_bind,
       });
     } else {
       try { db.incrementOpsCounter && db.incrementOpsCounter('otp_send_failed'); } catch (_) {}
@@ -171,6 +189,24 @@ app.post('/api/patient/verify/confirm', botGuard, authLimiter, otpConfirmLimiter
       } catch (_) {
         commerce_reconcile = null;
       }
+
+      // P2.22 / P2.24 — server-side claim of anonymous medical captures + meter merge
+      let capture_claim = null;
+      try {
+        const captureToken = req.body?.capture_token ? String(req.body.capture_token).trim() : '';
+        if (captureToken && result.patient_id) {
+          const { claimPendingCaptures } = require('../services/pending-capture-claim');
+          capture_claim = claimPendingCaptures(db.db, {
+            captureToken,
+            patientId: result.patient_id,
+            portalSessionId: result.session_id,
+          });
+        }
+      } catch (claimErr) {
+        console.warn('[verify/confirm] capture claim failed:', claimErr.message);
+        capture_claim = { claimed: false, reason: 'error', error: claimErr.message };
+      }
+
       res.json({
         success: true,
         session_id: result.session_id,
@@ -183,6 +219,7 @@ app.post('/api/patient/verify/confirm', botGuard, authLimiter, otpConfirmLimiter
         onboarding_complete,
         missing_fields,
         commerce_reconcile,
+        capture_claim,
       });
     } else {
       try { db.incrementOpsCounter && db.incrementOpsCounter('otp_confirm_failed'); } catch (_) {}

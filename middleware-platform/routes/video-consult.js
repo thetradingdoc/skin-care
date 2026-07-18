@@ -141,9 +141,36 @@ ensureVisionCaptureTables();
 startVisionCaptureWorker();
 
 function verifyAgentAuth(req) {
-  if (!AGENT_SECRET || !AGENT_SECRET.trim()) return true; // Dev: skip if not set
+  const { isProdLikeEnv } = require('../utils/runtime-env');
+  // SEC-12: never fail-open when secret unset in prod-like
+  if (!AGENT_SECRET || !AGENT_SECRET.trim()) {
+    if (isProdLikeEnv()) return false;
+    return true; // Dev only: skip if not set
+  }
   const secret = req.headers['x-video-consult-secret'] || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
   return secret === AGENT_SECRET;
+}
+
+function requireVideoConsultStaffOrAgent(req, res, next) {
+  if (verifyAgentAuth(req)) return next();
+  const { requireAdminAuth } = require('../middleware/admin-auth');
+  return requireAdminAuth(req, res, next);
+}
+
+/** SEC-12R — agent secret only (vision event ingress / metrics write). */
+function requireVideoConsultAgent(req, res, next) {
+  if (verifyAgentAuth(req)) return next();
+  return res.status(401).json({
+    success: false,
+    error: 'Agent authentication required',
+    code: 'VIDEO_CONSULT_AGENT_AUTH_REQUIRED',
+  });
+}
+
+/** SEC-12R — admin/staff only (no agent secret). */
+function requireVideoConsultStaff(req, res, next) {
+  const { requireAdminAuth } = require('../middleware/admin-auth');
+  return requireAdminAuth(req, res, next);
 }
 
 function checkRateLimit(roomId) {
@@ -713,7 +740,7 @@ router.post('/agent-events', async (req, res) => {
  * Generic event ingress for vision capture trigger/result (assistant/manual/worker).
  * Body: { event_type, payload, idempotency_key?, actor? }
  */
-router.post('/vision/capture-events', express.json(), (req, res) => {
+router.post('/vision/capture-events', requireVideoConsultAgent, express.json(), (req, res) => {
   const routeStartedAt = Date.now();
   try {
     const flags = visionFlags();
@@ -924,7 +951,7 @@ router.post('/vision/capture-events', express.json(), (req, res) => {
   }
 });
 
-router.post('/vision/metrics/inc', express.json(), (req, res) => {
+router.post('/vision/metrics/inc', requireVideoConsultAgent, express.json(), (req, res) => {
   try {
     const sessionId = String(req.body?.session_id || '').trim();
     const metricName = String(req.body?.metric_name || '').trim();
@@ -943,7 +970,7 @@ router.post('/vision/metrics/inc', express.json(), (req, res) => {
   }
 });
 
-router.get('/vision/metrics/:sessionId', (req, res) => {
+router.get('/vision/metrics/:sessionId', requireVideoConsultStaffOrAgent, (req, res) => {
   try {
     const sessionId = String(req.params?.sessionId || '').trim();
     if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
@@ -983,7 +1010,7 @@ router.get('/vision/metrics/:sessionId', (req, res) => {
  * GET /api/video-consult/vision/session/:sessionId
  * Returns checklist + latest dialogue guidance for patient/assistant UI.
  */
-router.get('/vision/session/:sessionId', (req, res) => {
+router.get('/vision/session/:sessionId', requireVideoConsultStaffOrAgent, (req, res) => {
   try {
     const sessionId = String(req.params?.sessionId || '').trim();
     if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
@@ -1020,7 +1047,7 @@ router.get('/vision/session/:sessionId', (req, res) => {
  * Server-Sent Events stream for real-time HUD updates.
  * Credentials sent via cookie for same-origin; validate room access.
  */
-router.get('/sse/:roomId', (req, res) => {
+router.get('/sse/:roomId', requireVideoConsultStaffOrAgent, (req, res) => {
   const { roomId } = req.params;
   if (!roomId) return res.status(400).json({ error: 'Missing roomId' });
   res.setHeader('Content-Type', 'text/event-stream');
@@ -1035,7 +1062,7 @@ router.get('/sse/:roomId', (req, res) => {
  * GET /api/video-consult/review-tasks
  * List HITL review tasks (optional ?room= or ?status=pending)
  */
-router.get('/review-tasks', (req, res) => {
+router.get('/review-tasks', requireVideoConsultStaff, (req, res) => {
   try {
     const reviewTaskService = require('../services/review-task-service');
     const tasks = reviewTaskService.listTasks({
@@ -1053,7 +1080,7 @@ router.get('/review-tasks', (req, res) => {
  * GET /api/video-consult/session/:roomId
  * Get session state (transcript, findings) for UI
  */
-router.get('/session/:roomId', async (req, res) => {
+router.get('/session/:roomId', requireVideoConsultStaffOrAgent, async (req, res) => {
   try {
     const { roomId } = req.params;
     const state = await videoConsultService.getSessionState(roomId);
@@ -1068,7 +1095,7 @@ router.get('/session/:roomId', async (req, res) => {
  * POST /api/video-consult/rooms/:roomId/transcript-translation
  * Body: { enabled: boolean, target_language?: string }
  */
-router.post('/rooms/:roomId/transcript-translation', express.json(), (req, res) => {
+router.post('/rooms/:roomId/transcript-translation', requireVideoConsultStaffOrAgent, express.json(), (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1086,7 +1113,7 @@ router.post('/rooms/:roomId/transcript-translation', express.json(), (req, res) 
 /**
  * GET /api/video-consult/rooms/:roomId/transcript-translation
  */
-router.get('/rooms/:roomId/transcript-translation', (req, res) => {
+router.get('/rooms/:roomId/transcript-translation', requireVideoConsultStaffOrAgent, (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1103,7 +1130,7 @@ router.get('/rooms/:roomId/transcript-translation', (req, res) => {
  * Provider-triggered end of video call. Completes appointment, runs LangGraph (store FHIR + case report).
  * Body: { room: string } or room in URL.
  */
-router.post('/end-session', express.json(), async (req, res) => {
+router.post('/end-session', requireVideoConsultStaffOrAgent, express.json(), async (req, res) => {
   try {
     const room = (req.body?.room || req.query?.room || '').toString().trim();
     if (!room) {
@@ -1173,7 +1200,7 @@ router.post('/end-session', express.json(), async (req, res) => {
  * POST /api/video-consult/rooms/:roomId/vitals (vc-4)
  * Save vitals for the current video consult.
  */
-router.post('/rooms/:roomId/vitals', express.json(), async (req, res) => {
+router.post('/rooms/:roomId/vitals', requireVideoConsultStaffOrAgent, express.json(), async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1204,7 +1231,7 @@ router.post('/rooms/:roomId/vitals', express.json(), async (req, res) => {
  * POST /api/video-consult/rooms/:roomId/summary (vc-12)
  * In-call live AI summary from current transcript.
  */
-router.post('/rooms/:roomId/summary', express.json(), async (req, res) => {
+router.post('/rooms/:roomId/summary', requireVideoConsultStaffOrAgent, express.json(), async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1243,7 +1270,7 @@ router.post('/rooms/:roomId/summary', express.json(), async (req, res) => {
  * POST /api/video-consult/rooms/:roomId/client-transcript
  * Browser-side fallback transcript ingress for provider/patient web clients.
  */
-router.post('/rooms/:roomId/client-transcript', express.json(), async (req, res) => {
+router.post('/rooms/:roomId/client-transcript', requireVideoConsultStaffOrAgent, express.json(), async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1277,7 +1304,7 @@ router.post('/rooms/:roomId/client-transcript', express.json(), async (req, res)
  * POST /api/video-consult/rooms/:roomId/thread-event
  * Persist lightweight attachment/note events in short-term session thread memory.
  */
-router.post('/rooms/:roomId/thread-event', express.json(), (req, res) => {
+router.post('/rooms/:roomId/thread-event', requireVideoConsultStaffOrAgent, express.json(), (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1309,7 +1336,7 @@ router.post('/rooms/:roomId/thread-event', express.json(), (req, res) => {
  * GET /api/video-consult/rooms/:roomId/vitals (vc-4)
  * Get vitals for the current video consult.
  */
-router.get('/rooms/:roomId/vitals', async (req, res) => {
+router.get('/rooms/:roomId/vitals', requireVideoConsultStaffOrAgent, async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1325,7 +1352,7 @@ router.get('/rooms/:roomId/vitals', async (req, res) => {
  * GET /api/video-consult/rooms/:roomId/patient-chart (vc-6)
  * Returns patient document extracts for provider in-call chart view.
  */
-router.get('/rooms/:roomId/patient-chart', async (req, res) => {
+router.get('/rooms/:roomId/patient-chart', requireVideoConsultStaffOrAgent, async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) return res.status(400).json({ success: false, error: 'roomId required' });
@@ -1348,7 +1375,7 @@ router.get('/rooms/:roomId/patient-chart', async (req, res) => {
  * GET /api/video-consult/assistant/:roomId
  * Get assistant overlay view (summary + suggestions) for provider UI.
  */
-router.get('/assistant/:roomId', async (req, res) => {
+router.get('/assistant/:roomId', requireVideoConsultStaff, async (req, res) => {
   try {
     const { roomId } = req.params;
     if (!roomId) {

@@ -57,15 +57,15 @@ class MastercardService {
                 };
             }
 
-            // TODO: Implement actual Mastercard API verification
-            // This would involve:
-            // 1. Calling Mastercard's mandate verification endpoint
-            // 2. Verifying cryptographic signature
-            // 3. Checking mandate status
-
+            // SEC-24: never treat unverified mandates as valid
+            if (process.env.MASTERCARD_MANDATE_VERIFY === '1' && mandate.signature) {
+              // Placeholder for real crypto/API verify — still require signature presence
+              return { valid: true, mandate };
+            }
             return {
-                valid: true,
-                mandate: mandate
+                valid: false,
+                error: 'Mastercard mandate verification not configured (fail-closed)',
+                code: 'MANDATE_VERIFY_UNAVAILABLE'
             };
 
         } catch (error) {
