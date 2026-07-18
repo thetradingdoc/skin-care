@@ -6,7 +6,8 @@
   "targets": {
     "somo-4ddf6": {
       "hosting": {
-        "consumer": ["myskinandcare"]
+        "consumer": ["myskinandcare"],
+        "app-trytouche": ["app-trytouche"]
       }
     }
   }

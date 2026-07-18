@@ -21,9 +21,10 @@ function Polaroid({ label, rotate }: { label: string; rotate: string }) {
 export function PhotoStreakHero({ onTakePhoto }: Props) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Start your photo streak</Text>
+      <Text style={styles.title}>Start logging</Text>
       <Text style={styles.body}>
-        Take a daily progress photo on Home or log a spot on Track to build your progress story.
+        Capture a photo from Track or tap below. Confirmed records show up here on Progress and
+        Calendar — no invented scores, just what you logged.
       </Text>
       <View style={styles.polaroidRow}>
         <Polaroid label="Day 1" rotate="-8deg" />
@@ -32,7 +33,7 @@ export function PhotoStreakHero({ onTakePhoto }: Props) {
       </View>
       <Pressable style={styles.cta} onPress={onTakePhoto} accessibilityRole="button">
         <AppIcon name="camera" size={18} color="#fff" />
-        <Text style={styles.ctaText}>Take today&apos;s photo</Text>
+        <Text style={styles.ctaText}>Log something</Text>
       </Pressable>
     </View>
   );

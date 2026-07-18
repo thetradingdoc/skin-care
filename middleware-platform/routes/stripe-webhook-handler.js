@@ -156,6 +156,13 @@ router.post(
         case 'customer.subscription.updated':
         case 'customer.subscription.deleted':
         case 'checkout.session.completed': {
+          // P6 — AI credit pack / Plus before voice SaaS (metadata.type gated)
+          const { handleAiMonetizationStripeEvent } = require('../services/ai-monetization-stripe');
+          const aiResult = await handleAiMonetizationStripeEvent(event, db.db);
+          if (aiResult?.handled) {
+            console.log('[StripeWebhook] AI monetization:', event.type, aiResult.kind || aiResult);
+            break;
+          }
           const { handleVoiceBillingStripeEvent } = require('../services/voice-billing-stripe');
           const voiceResult = await handleVoiceBillingStripeEvent(event);
           if (voiceResult?.handled) {

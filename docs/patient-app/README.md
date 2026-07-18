@@ -1,9 +1,9 @@
 # patient-app - Unified Architecture and System Design
-> Last reviewed: 2026-07-14
+> Last reviewed: 2026-07-16
 
-**Last Updated:** 2026-07-14
+**Last Updated:** 2026-07-16
 
-> **Superseded for product IA:** Camera-first rebuild is current. See [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md) — **Check = sole home, no tab bar**, Shopify commerce, `patientapp://`. Sections below that describe the v3 **5-tab** Home/Track/Scan/Progress/Profile IA or Explore/checkout as the primary shell are **historical**.
+> **Product IA:** Current shell is the agentic medical tracker — [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md) (5-tab, Progress lander). Camera-first “Check sole home / no tab bar” is **superseded** ([`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md)). Sections below that describe v3 Home/Track/Scan IA or Explore/checkout as the primary shell are **historical**.
 
 **Canonical map:** [CANONICAL_DOC_MAP.md](../meta/CANONICAL_DOC_MAP.md) — read here first to avoid duplicating documentation.
 
@@ -13,16 +13,17 @@ This document is the single source of truth for this subfolder. It consolidates 
 
 ## Current product direction
 
-**Active SSOT:** [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
+**Active SSOT:** [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md).
 
-Setup: `cd patient-app && cp .env.example .env && npm ci && npx expo start` (`npm ci` includes `@react-native-async-storage/async-storage`). Web host for camera-first consumer: `app.trytouche.com` (CORS TOUCH-038).
+Setup: `cd patient-app && cp .env.example .env && npm ci && npx expo start` (`npm ci` includes `@react-native-async-storage/async-storage`). Web host for consumer app: `app.trytouche.com` (CORS TOUCH-038).
 
-### Historical — v3 tab IA (superseded by camera-first)
+### Historical — v3 / camera-first IA
 
-For the retired v3 consumer tab map (kept for archaeology only):
+For retired maps (kept for archaeology only):
 
-- **[`../../archive/pre-rebuild/V3_SCREEN_MAP.md`](../../archive/pre-rebuild/V3_SCREEN_MAP.md)** — historical 5-tab routes (archived).
-- **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — includes facial-age / skin-age funnel paths; primary app loop is now Check.
+- **[`../../archive/pre-rebuild/V3_SCREEN_MAP.md`](../../archive/pre-rebuild/V3_SCREEN_MAP.md)** — historical v3 5-tab routes (archived).
+- **[`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md)** — superseded camera-first Check-only shell.
+- **[`../user-journey/JOURNEY.md`](../user-journey/JOURNEY.md)** — includes facial-age / skin-age funnel paths; current in-app lander is Progress.
 - **[`../../archive/pre-rebuild/WEB_CONSUMER_SMOKE.md`](../../archive/pre-rebuild/WEB_CONSUMER_SMOKE.md)** — archived web release smoke checklist.
 - **[`IOS_COLD_START_CRASH.md`](./IOS_COLD_START_CRASH.md)** — native iOS launch SIGABRT / blank screen (EXConstants, linking, hostname).
 - [`design/CONSUMER_AGENTIC_ARCHITECTURE.md`](./design/CONSUMER_AGENTIC_ARCHITECTURE.md) — LangGraph eval, insights, env flags.

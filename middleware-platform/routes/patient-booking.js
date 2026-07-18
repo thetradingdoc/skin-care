@@ -737,21 +737,42 @@ app.post('/api/patient/appointments/:id/complete', apiLimiter, requirePatientSes
 
 // Patient: Get benefits data (for patient dashboard)
 // Protected by general API rate limiter
-app.get('/api/patient/benefits', apiLimiter, async (req, res) => {
+app.get('/api/patient/benefits', apiLimiter, requirePatientSession, async (req, res) => {
   try {
     const { patientName, patientPhone, patientId, memberId, patient_id: patientIdSnake } = req.query;
     const resolvedPatientId = patientId || patientIdSnake;
+    const { patientId: sessionPatientId } = resolvePatientIdFromSession(req.patientSession);
+
+    // SEC-18: require session ownership when patient id is queried; block open memberId IDOR in prod
+    if (resolvedPatientId) {
+      if (!sessionPatientId || String(sessionPatientId) !== String(resolvedPatientId)) {
+        return res.status(403).json({ success: false, error: 'Forbidden', code: 'PATIENT_IDOR' });
+      }
+    } else if (memberId || patientPhone || patientName) {
+      // Lookup-by-PII without matching session is IDOR — require session patient and ignore foreign keys
+      if (!sessionPatientId) {
+        return res.status(401).json({ success: false, error: 'Patient session required' });
+      }
+    }
 
     console.log('\n🏥 PATIENT BENEFITS: Fetching benefits data');
-    console.log('   Query params:', { patientName, patientPhone, patientId: resolvedPatientId, memberId });
+    console.log('   Query params:', { patientName, patientPhone, patientId: resolvedPatientId || sessionPatientId, memberId });
 
     let patient = null;
 
-    // Find patient by ID, phone, name, or member_id (insurance number) — V-1: support patient_id from collect_insurance
-    if (resolvedPatientId) {
-      console.log('   Searching by patient ID:', resolvedPatientId);
-      patient = db.getFHIRPatient(resolvedPatientId);
-    } else if (memberId) {
+    // Prefer session-bound patient id — never resolve another patient via memberId/phone/name (SEC-18)
+    const effectivePatientId = resolvedPatientId || sessionPatientId;
+
+    // Find patient by ID only (session-owned)
+    if (effectivePatientId) {
+      console.log('   Searching by patient ID:', effectivePatientId);
+      patient = db.getFHIRPatient(effectivePatientId);
+    } else {
+      return res.status(400).json({ success: false, error: 'patientId required' });
+    }
+
+    // Dead branches below retained for claim/eligibility logic that uses `patient` — skip open PII search
+    if (false && memberId) {
       // Search by insurance member_id (for voice agent)
       // PRIORITY: Find patient that has BOTH claims AND eligibility data (most complete data)
       console.log('   Searching by insurance member ID:', memberId);

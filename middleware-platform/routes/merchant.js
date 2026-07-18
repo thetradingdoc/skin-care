@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const db = require('../database');
 const UniversalAdapter = require('../adapters/universal-adapter');
 const { withProviderAliases, logAliasUsage } = require('../utils/naming-aliases');
+const { requireAdminAuth } = require('../middleware/admin-auth');
 
 const router = express.Router();
 
@@ -272,7 +273,7 @@ router.post('/me/test-webhook', async (req, res) => {
  * Register a new merchant
  * POST /api/merchant/register
  */
-router.post('/register', async (req, res) => {
+router.post('/register', requireAdminAuth, async (req, res) => {
     try {
         logAliasUsage('merchant-register', req);
         const { name, api_url, webhook_url, enabled_platforms } = req.body;
@@ -307,6 +308,7 @@ router.post('/register', async (req, res) => {
 
         db.createMerchant(merchant);
 
+        // SEC-20: only return full api_key to authenticated admin (one-time reveal)
         const payload = {
             success: true,
             message: 'Merchant registered successfully',
@@ -314,6 +316,7 @@ router.post('/register', async (req, res) => {
                 id: merchant.id,
                 name: merchant.name,
                 api_key: apiKey,
+                api_key_last4: apiKey.slice(-4),
                 enabled_platforms: merchant.enabled_platforms
             }
         };

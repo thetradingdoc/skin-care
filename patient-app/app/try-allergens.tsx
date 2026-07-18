@@ -15,6 +15,7 @@ import {
   type PendingAllergen,
 } from '@/lib/try-verdict-session';
 import { setTryRevealPayload } from '@/lib/try-reveal-store';
+import { useTryFunnelNoIndex } from '@/lib/try-funnel-noindex';
 
 const PRESETS: PendingAllergen[] = [
   { allergen_class: 'acrylates', label: 'acrylates' },
@@ -24,6 +25,7 @@ const PRESETS: PendingAllergen[] = [
 ];
 
 export default function TryAllergensScreen() {
+  useTryFunnelNoIndex();
   const router = useRouter();
   const [selected, setSelected] = useState<PendingAllergen[]>([]);
   const [freeform, setFreeform] = useState('');
@@ -70,6 +72,12 @@ export default function TryAllergensScreen() {
       ];
       // TOUCH-016/054 — public evaluate with allergen classes for hard_no.
       const verdict = await publicEvaluateProducts(products, undefined, allergens);
+      // Trust: never stash a failed/ambiguous payload for reveal (false-safe).
+      if (!verdict || verdict.success === false || !verdict.overall) {
+        throw new Error(
+          typeof verdict?.error === 'string' ? verdict.error : 'Could not get a verdict — try again',
+        );
+      }
       await setTryRevealPayload({
         product: products[0],
         allergens,

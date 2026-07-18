@@ -184,7 +184,7 @@ export default function RevealPage() {
             className={`sc-reveal-photo-badge${visionFailed ? ' sc-reveal-photo-badge--warn' : ''}`}>
             {visionFailed ? (
               <>
-                <i className="ti ti-alert-triangle" aria-hidden="true" /> Needs better lighting
+                <i className="ti ti-alert-triangle" aria-hidden="true" /> Scan unclear
               </>
             ) : (
               <>
@@ -200,9 +200,7 @@ export default function RevealPage() {
               <div className="sc-score-n">{faceAge}</div>
               <div className="sc-score-l">Face age</div>
               {faceRead?.age_unreliable ? (
-                <div className="sc-score-note">
-                  Estimate may vary on deep skin tones — retake in good light for best results.
-                </div>
+                <div className="sc-score-note">Age estimate is approximate.</div>
               ) : null}
             </div>
             {skinAge != null && (
@@ -233,20 +231,14 @@ export default function RevealPage() {
             <div className="sc-retry-icon">
               <i className="ti ti-camera" aria-hidden="true" />
             </div>
-            <p className="sc-retry-title">We couldn&apos;t read your skin clearly</p>
+            <p className="sc-retry-title">We couldn&apos;t read this photo clearly</p>
             <p className="sc-retry-body">
-              Your face was detected but lighting made it hard to spot details. Try again — better
-              light gives us a lot more to work with.
+              Try again with clearer front light and a steady hold.
             </p>
             <ul className="sc-retry-tips">
               <li>
-                <strong>Face a window or lamp</strong> — natural front-light works best
+                <strong>Face a window or lamp</strong> — front light works best
               </li>
-              <li>
-                <strong>For deep skin tones, avoid backlit or dim rooms</strong> — our model needs
-                more contrast
-              </li>
-              <li>No glasses, hair away from face</li>
               <li>Hold still for 2 seconds before capturing</li>
             </ul>
             <button type="button" className="sc-btn-reveal-primary" onClick={retake}>

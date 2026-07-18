@@ -29,8 +29,20 @@ function registerPatientWalletRoutes(app, deps) {
     parseBooleanFlag,
   } = deps;
 
-app.patch('/api/patient/:patientId/hsa-wallet', async (req, res) => {
+  function assertWalletPatientOwnership(req, res) {
+    const { patientId } = req.params;
+    const { patientId: sessionPatientId } = resolvePatientIdFromSession(req.patientSession);
+    if (!sessionPatientId || String(sessionPatientId) !== String(patientId)) {
+      res.status(403).json({ success: false, error: 'Forbidden', code: 'PATIENT_IDOR' });
+      return false;
+    }
+    return true;
+  }
+
+
+app.patch('/api/patient/:patientId/hsa-wallet', requirePatientSession, async (req, res) => {
   try {
+    if (!assertWalletPatientOwnership(req, res)) return;
     const { patientId } = req.params;
     const { walletAddress } = req.body;
     if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
@@ -867,8 +879,9 @@ app.post('/api/patient/wallet/pay-claim', apiLimiter, requirePatientSession, blo
   }
 });
 
-app.get('/api/patient/:patientId/cards', async (req, res) => {
+app.get('/api/patient/:patientId/cards', requirePatientSession, async (req, res) => {
   try {
+    if (!assertWalletPatientOwnership(req, res)) return;
     const { patientId } = req.params;
 
     // Get cards (JSON fields are already parsed by database function)
@@ -888,8 +901,9 @@ app.get('/api/patient/:patientId/cards', async (req, res) => {
   }
 });
 
-app.post('/api/patient/:patientId/cards', async (req, res) => {
+app.post('/api/patient/:patientId/cards', requirePatientSession, async (req, res) => {
   try {
+    if (!assertWalletPatientOwnership(req, res)) return;
     const { patientId } = req.params;
     const { spending_limit, spending_interval, clinic_id } = req.body;
 

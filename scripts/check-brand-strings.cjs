@@ -36,6 +36,8 @@ const BANNED = [
   { re: /\bdoclittle\b/i, label: 'doclittle' },
   { re: /\bdoctor\s+little\b/i, label: 'doctor little' },
   { re: /\bSomo\b/, label: 'Somo' },
+  { re: /Skin\s*&\s*Care\s+Diary/i, label: 'Skin & Care Diary' },
+  { re: /Sensitive\s+Skin\s+Diary/i, label: 'Sensitive Skin Diary' },
 ];
 
 const ALLOW_PATH = [
@@ -46,6 +48,8 @@ const ALLOW_PATH = [
 
 const ALLOW_LINE = [
   /brand-allowlist/i,
+  /check-brand-strings/i,
+  /docs\/archive/i,
   /process\.env\./i,
   /somo-platform/i,
   /api\.callsomo/i,
@@ -58,10 +62,14 @@ const ALLOW_LINE = [
   /^\s*\*/,
 ];
 
+function shouldSkipDir(name) {
+  return SKIP_DIRS.has(name) || /^hosting-dist/.test(name);
+}
+
 function walk(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP_DIRS.has(ent.name)) continue;
+    if (ent.isDirectory() && shouldSkipDir(ent.name)) continue;
     const p = path.join(dir, ent.name);
     if (ent.isDirectory()) walk(p, files);
     else if (EXT.has(path.extname(ent.name))) files.push(p);

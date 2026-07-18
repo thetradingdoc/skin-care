@@ -69,7 +69,7 @@ function maybeEnqueueAgentDeltaPush(sqliteDb, { patientId, sessionId, message })
     kind: 'agent_delta',
     title: 'touche',
     body: String(message).slice(0, 180),
-    data: { route: '/check', kind: 'agent_delta' },
+    data: { route: '/capture', kind: 'agent_delta' },
   });
 }
 

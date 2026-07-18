@@ -1,30 +1,38 @@
-# Brand documentation index
+# Brand documentation index — Touche
 
-> **Last reviewed:** 2026-07-14
+> **Last reviewed:** 2026-07-17  
+> **Superseded product naming:** docs that still say the consumer product is “Skin & Care” are **historical**. Locked consumer brand: **Touche** · **Be Bold** · **Skincare & medical journal** (tulip/rose motif).  
+> **Product IA SSOT:** [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md)
 
-## Unified brand: Skin & Care
+## Unified brand: Touche (consumer)
 
-One user-facing brand for **consumer** (app, marketing, patient web) and **provider** (signup, portal, voice billing). Hostnames like `callsomo.com` and `api.callsomo.com` are **infrastructure identifiers only** until DNS cutover.
+One user-facing **consumer** brand for the Expo app, marketing, and patient web: **Touche**. Hostnames like `callsomo.com`, `api.callsomo.com`, and GCP project `somo-*` are **infrastructure identifiers** — not the consumer face. Provider/Kelly/RCM surfaces may still show Skin & Care chrome until a separate provider brand pass.
 
-**Camera-first product:** Check chrome uses compact orange **touche** (`ToucheMarkCompact`), not skin‧care lockup — product SSOT [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md); surface map [`WORDMARK_BY_SURFACE.md`](./WORDMARK_BY_SURFACE.md).
+**Capture chrome:** Compact orange **touche** (`ToucheMarkCompact`) — surface map [`WORDMARK_BY_SURFACE.md`](./WORDMARK_BY_SURFACE.md). Camera-first nav claims in [`TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md) are superseded.
 
 | Doc | Purpose |
 |-----|---------|
-| [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, journal palette, typography, tokens |
-| [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, **myskinandcare.com**, EAS/TestFlight, DNS cutover |
-| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, Check touche mark, favicon, panda — paths and code SSOT |
-| [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) | Which mark per surface (landing vs Check chrome vs email) |
+| [DOMAIN_MAP.md](./DOMAIN_MAP.md) | Consumer vs shared API hosts (no DNS change in this task) |
+| [BUNDLE_ID_DECISION.md](./BUNDLE_ID_DECISION.md) | Keep `com.skinandcare.app` for App Store continuity |
+| [POSITIONING.md](./POSITIONING.md) | **Historical** Skin & Care journal positioning — superseded for consumer lock |
+| [SKIN_AND_CARE_GUIDELINES.md](./SKIN_AND_CARE_GUIDELINES.md) | Logo, palette, typography, tokens (paths still use Skin & Care filenames) |
+| [SKIN_AND_CARE_REPO.md](./SKIN_AND_CARE_REPO.md) | Workspace, GitHub, EAS/TestFlight, DNS notes (**historical** product name in title) |
+| [LOGO_AND_ICON_SSOT.md](./LOGO_AND_ICON_SSOT.md) | Tulip wordmark, compact touche mark, favicon, panda — paths and code SSOT |
+| [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) | Which mark per surface (landing vs capture chrome vs email) |
 | [BRAND_IP_AND_LICENSES.md](./BRAND_IP_AND_LICENSES.md) | Trademarks, Be Vietnam Pro OFL, logo build-script archive |
 
-**Product name:** Skin & Care (not "MySkinAndCare"). Marketing host `myskinandcare.com`; camera-first app host `app.trytouche.com`.
+**Product name (consumer):** Touche (not “Skin & Care”, not “MySkinAndCare”). App host `app.trytouche.com`. Marketing `trytouche.com`.
 
 ## Domains (user-facing vs infra)
 
 | Role | User-facing | Infra ID (unchanged until migration) |
 |------|-------------|--------------------------------------|
-| Consumer marketing + funnel | `myskinandcare.com` (target) | Firebase `somo-4ddf6` |
-| Provider portal + shared web shell | `callsomo.com` (Skin & Care UI) | Same hosting project |
-| Shared API | `api.callsomo.com` | Cloud Run `somo-middleware` |
+| Consumer marketing + funnel | `trytouche.com` (primary); `myskinandcare.com` redirects | Firebase `somo-4ddf6` / `myskinandcare` site |
+| Consumer app | `app.trytouche.com` | Same hosting / Expo web |
+| Provider portal + shared web shell | `callsomo.com` (may still show Skin & Care UI) | Same hosting project |
+| Shared API | `api.callsomo.com` / `api.myskinandcare.com` | Cloud Run `somo-middleware` |
+
+Detail: [`DOMAIN_MAP.md`](./DOMAIN_MAP.md).
 
 **Shared API deploy:** [somo-platform](https://github.com/richiejeremiah/somo-platform) only — see [`../deployment/OPERATIONS.md#somo-cloud-run-deploy`](../deployment/OPERATIONS.md#somo-cloud-run-deploy).
 

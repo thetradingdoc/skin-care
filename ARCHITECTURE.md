@@ -1,6 +1,10 @@
-# Architecture Report — Skin & Care (`skin-and-care`)
+# Architecture Report — shared platform (`skin-and-care`)
 
-> Comprehensive solution architecture report for the Skin & Care codebase.
+> **Platform SSOT.** This document covers the shared Cloud Run middleware, Kelly/RCM/provider stack, and repo-wide infrastructure.  
+> **Product IA (consumer medical tracker)** lives in [`docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`](docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md).  
+> **Consumer brand:** **Touche** · Be Bold · Skincare & medical journal (repo/GCP names may still say Skin & Care / Somo — infra only).
+
+> Comprehensive solution architecture report for the shared platform codebase in this workspace.
 > Generated from full repository analysis (~2,000 files).
 
 ---
@@ -9,7 +13,7 @@
 
 | Item | Value |
 |------|-------|
-| **What the project is** | Consumer skincare tracking platform: Expo app + web funnel on shared Somo middleware API (Cloud Run). Camera-first **Check** sole home (see `docs/product/TOUCHE_CAMERA_FIRST.md`); daily photos, spot tracking, routine/conflict engine, barcode shelf; Shopify product commerce. Optional Stripe `care_program` is buried / legacy journal entitlement — not primary monetization. |
+| **What the project is** | Consumer skincare tracking platform: Expo app + web funnel on shared Somo middleware API (Cloud Run). **5-tab shell** with **Progress** lander (see `docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`); facts store + `orchestrateCapture`; daily photos, spot tracking, routine/conflict engine, barcode shelf; Shopify product commerce. Optional Stripe `care_program` is buried / legacy journal entitlement — not primary monetization. |
 | **Files analyzed** | **~1,999 tracked files** (glob cap; repo is ~2,000 files including docs, Knowledge ICD data, scripts, tests) |
 | **Unclear / incomplete areas** | Production middleware deploy runs from `somo-platform` only; some legacy Azure/Railway references in OpenAPI; large `database.js` (~20k lines) has tables not fully enumerated here; Kelly/LangGraph rollout is flag-driven and environment-specific |
 
@@ -348,20 +352,22 @@ Full spec: `middleware-platform/openapi.yaml`. Route registration split across `
 
 **Router:** expo-router with tab navigator at `(tabs)/`.
 
-**Tab IA (v3) — historical:** Camera-first rebuild hides the tab bar; **Check** is sole home ([`docs/product/TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md)). The five tabs below remain mounted routes but are **not** the primary shell.
+**Tab IA (current):** Visible **5-tab** shell — Calendar · Shelf · Track · Progress · Profile; lander **Progress**. Full detail: [`docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`](docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md). Check is a capture surface (stacked), not sole home. Journal (`_journal`) is hidden / retirement candidate. Camera-first “no tab bar” is **superseded** ([`TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md) historical).
+
+**v3 tab names (historical labels only — do not treat as current shell):**
 - **Home** — BFI ring, routine steps, daily photo CTA
 - **Track** — Spot watcher (journey A)
 - **Scan** — Barcode + shelf (journey B)
-- **Progress** — Photo grid, history
+- **Progress** — (now Proof lander + facts aggregates)
 - **Profile (account)** — Goals, journey toggle; Stripe `care_program` buried below primary actions
 
-**Post-auth routing** — **current default:** authenticated → `/check`. Historical v3 gate order (`resolvePostAuthRoute` legacy branches may still exist):
+**Post-auth routing** — **current default:** authenticated → Progress lander (see agentic SSOT). Historical gates (`resolvePostAuthRoute` legacy branches may still exist):
 1. No journey → `/onboarding/journey-choose` (historical)
 2. Watch mode, no spots → track tab
 3. Routine, no template → `/routine/pick`
 4. Incomplete bio → `/onboarding/bio-calibration`
 5. Empty shelf → scan tab
-6. Default → home (superseded by Check for camera-first)
+6. Default → home / Check (superseded by Progress lander)
 **Session:** `expo-secure-store` + `x-session-id` header on all API calls (`lib/patient-session.ts`, `lib/patient-api.ts`). SecureStore get/set/delete are raced with a short timeout so a hung keychain call cannot blank the cold-start UI forever.
 
 **Deep links:** `auth?ticket=`, `subscription/success|cancel`, `routine/setup?concern=`. Requires embedded `EXConstants.bundle/app.config` (scheme `patientapp`) — see §7.1.1.

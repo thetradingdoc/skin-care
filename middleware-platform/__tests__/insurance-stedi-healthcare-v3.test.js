@@ -7,7 +7,7 @@ describe('InsuranceService Stedi Healthcare v3', () => {
 
   afterEach(() => {
     process.env = { ...orig };
-    InsuranceService.STEDI_API_KEY = orig.STEDI_API_KEY || 'test_1rRzTb0.Va9Tn88BB3fgPgttprqbrxQ1';
+    InsuranceService.STEDI_API_KEY = orig.STEDI_API_KEY || '';
   });
 
   test('isStediTestMode when STEDI_TEST_MODE=1', () => {

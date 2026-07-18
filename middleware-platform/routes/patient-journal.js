@@ -47,10 +47,15 @@ function registerPatientJournalRoutes(app, deps) {
   function entryToApi(entry, photoUrl) {
     if (!entry) return null;
     const { primaryConditionLabel } = require('../lib/journal-condition-tags');
+    const { issueReadUrl } = require('../services/gcs-billing-storage');
+    const resolvedPhoto =
+      photoUrl ||
+      (entry.photo_storage_ref ? issueReadUrl(entry.photo_storage_ref) : null) ||
+      null;
     return {
       entry_id: entry.id,
       entry_date: entry.entry_date,
-      photo_url: photoUrl || entry.photo_storage_ref || null,
+      photo_url: resolvedPhoto,
       condition_tags: entry.condition_tags || [],
       primary_condition: primaryConditionLabel(entry.condition_tags),
       note: entry.note || null,
@@ -149,6 +154,21 @@ function registerPatientJournalRoutes(app, deps) {
           advancedSeverity: Boolean(sev.advanced_severity),
         });
 
+        // P2.12 — best-effort dual-write → patient_record_facts (tag=skin); journal write already committed
+        try {
+          const { dualWriteJournalSkin } = require('../services/patient-record-dual-write');
+          dualWriteJournalSkin(db.db, {
+            patientId,
+            sessionId,
+            entry,
+            media: {
+              storage_ref: uploaded.storageRef,
+              storage_key: uploaded.storageKey || null,
+              storage_provider: uploaded.provider || null,
+            },
+          });
+        } catch (_) {}
+
         if (typeof recordPatientPortalEvent === 'function') {
           recordPatientPortalEvent(req, 'journal_photo_uploaded', {
             entry_date: entryDate,
@@ -158,7 +178,7 @@ function registerPatientJournalRoutes(app, deps) {
 
         return res.json({
           success: true,
-          ...entryToApi(entry, uploaded.storageRef),
+          ...entryToApi(entry, require('../services/gcs-billing-storage').issueReadUrl(uploaded.storageRef)),
           day_mode: dayMode.mode,
         });
       } catch (e) {
@@ -225,6 +245,12 @@ function registerPatientJournalRoutes(app, deps) {
             : {}),
         });
 
+        // P2.12 — best-effort dual-write → patient_record_facts (tag=skin); journal write already committed
+        try {
+          const { dualWriteJournalSkin } = require('../services/patient-record-dual-write');
+          dualWriteJournalSkin(db.db, { patientId, sessionId, entry });
+        } catch (_) {}
+
         if (typeof recordPatientPortalEvent === 'function') {
           recordPatientPortalEvent(req, 'journal_checkin_saved', { entry_date: entryDate });
         }
@@ -273,7 +299,7 @@ function registerPatientJournalRoutes(app, deps) {
             breakout_rank: e.breakout_rank,
           })),
           routineDays: [],
-          issuePhotoUrl: (ref) => ref,
+          issuePhotoUrl: (ref) => require('../services/gcs-billing-storage').issueReadUrl(ref) || null,
         });
 
         return res.json({
@@ -367,33 +393,22 @@ function registerPatientJournalRoutes(app, deps) {
         const { findBarrierDip } = require('../services/barrier-insight-service');
         const dip = findBarrierDip(db.db, { sessionId, patientId, days: 14 });
 
-        ensureJournalTables(db.db);
-        const todayIso = clientTodayIso(req);
-        const { getEntryForDate, getYesterdaySeverity } = require('../repositories/patient-journal-repo');
-        const today = getEntryForDate(db.db, { patientId, sessionId, entryDate: todayIso });
-        const yesterday = getYesterdaySeverity(db.db, { patientId, sessionId, todayIso });
-
-        let severityDelta = null;
-        if (today && yesterday) {
-          const dRank = (today.dryness_rank || 0) - (yesterday.dryness_rank || 0);
-          const bRank = (today.breakout_rank || 0) - (yesterday.breakout_rank || 0);
-          if (dRank >= 1 || bRank >= 1) {
-            severityDelta = {
-              dryness_rank_delta: dRank,
-              breakout_rank_delta: bRank,
-              message:
-                bRank >= 1
-                  ? 'Breakouts picked up vs yesterday. Skip actives tonight?'
-                  : 'Dryness rose vs yesterday. Ease actives tonight?',
-            };
-          }
+        // P5.02 — N-day-worse + co-occurrence from patient_record_facts (not journal severity table)
+        let factsDelta = null;
+        try {
+          const { computeFactsAgentDelta } = require('../services/medical-tracker-domain/agent-delta-facts');
+          factsDelta = computeFactsAgentDelta(db.db, {
+            patientId,
+            sessionId,
+            todayIso: clientTodayIso(req),
+          });
+        } catch (e) {
+          if (e.code === 'OWNER_REQUIRED' || e.code === 'TODAY_ISO_REQUIRED') throw e;
+          factsDelta = { show: false, error_code: e.code || 'FACTS_DELTA_FAILED' };
         }
 
-        const show = Boolean(dip || severityDelta);
-        const message =
-          severityDelta?.message ||
-          dip?.message ||
-          null;
+        const show = Boolean(dip || factsDelta?.show);
+        const message = factsDelta?.message || dip?.message || null;
         if (show && message) {
           try {
             const { maybeEnqueueAgentDeltaPush } = require('../services/patient-push-service');
@@ -404,9 +419,14 @@ function registerPatientJournalRoutes(app, deps) {
           success: true,
           show,
           barrier_dip: dip || null,
-          severity_delta: severityDelta,
+          // Legacy journal severity_delta removed from primary path — facts store is SSOT
+          severity_delta: null,
+          facts_agent_delta: factsDelta,
+          n_day_worse: factsDelta?.n_day_worse || null,
+          product_cooccurrence: factsDelta?.product_cooccurrence || null,
           message,
           skip_action: show ? 'skip_active_tonight' : null,
+          source: factsDelta?.source || (dip ? 'barrier_dip' : null),
         });
       } catch (e) {
         return res.status(500).json({ success: false, error: e.message });

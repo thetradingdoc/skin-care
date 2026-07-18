@@ -31,15 +31,18 @@ class AP2Adapter {
                 return { valid: false, error: 'Missing constraints' };
             }
 
-            // In production: verify cryptographic signature
-            // For demo: simulate verification
-            const isSignatureValid = true; // mandate.signature verification
-
-            if (!isSignatureValid) {
-                return { valid: false, error: 'Invalid signature' };
+            // SEC-24: fail-closed until real signature verification exists
+            if (!mandate.signature) {
+                return { valid: false, error: 'Missing mandate signature', code: 'AP2_SIG_REQUIRED' };
             }
-
-            return { valid: true, mandate };
+            if (process.env.AP2_ALLOW_UNSIGNED_DEMO === '1' && process.env.NODE_ENV !== 'production') {
+                return { valid: true, mandate, demo: true };
+            }
+            return {
+                valid: false,
+                error: 'AP2 signature verification not configured (fail-closed)',
+                code: 'AP2_SIG_UNAVAILABLE'
+            };
         } catch (error) {
             return { valid: false, error: error.message };
         }

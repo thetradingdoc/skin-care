@@ -24,10 +24,11 @@ import {
   SuggestedFixCard,
   VerdictActions,
 } from '@/components/conflict';
+import { ShelfItemActions } from '@/components/shelf/ShelfItemActions';
 import { useToast } from '@/components/billing-feedback';
 import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
-import { SCAN_HREF } from '@/constants/routes';
+import { SCAN_HREF, SHOP_HREF } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import {
   fetchEvaluatePair,
@@ -37,6 +38,17 @@ import {
 } from '@/lib/conflict-api';
 import type { EvaluateResult, ProductInsight } from '@/lib/conflict-types';
 import { patientGet } from '@/lib/patient-api';
+import { shelfItemCommerceKind } from '@/lib/shelf-commerce-cta';
+
+type ShelfRowLite = {
+  id?: string;
+  product_name?: string;
+  category?: string;
+  is_prescription?: boolean;
+  price_usd?: number | null;
+  expiry_date?: string | null;
+  cost_per_use?: number | null;
+};
 
 export default function VerdictScreen() {
   const { ready, checking } = useRequirePatientSession();
@@ -50,6 +62,7 @@ export default function VerdictScreen() {
   const [costPerUse, setCostPerUse] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [shelfBusy, setShelfBusy] = useState(false);
+  const [shelfRow, setShelfRow] = useState<ShelfRowLite | null>(null);
   const scoreCardRef = useRef<View>(null);
 
   const load = useCallback(async () => {
@@ -62,13 +75,16 @@ export default function VerdictScreen() {
         const shelf = await patientGet('/api/patient/shelf/products');
         const row = (Array.isArray(shelf?.products) ? shelf.products : []).find(
           (p: { id?: string }) => String(p.id) === String(productId),
-        );
+        ) as ShelfRowLite | undefined;
         if (row) {
+          setShelfRow(row);
           if (row.cost_per_use != null) setCostPerUse(String(row.cost_per_use));
           if (row.expiry_date) setExpiryDate(String(row.expiry_date));
+        } else {
+          setShelfRow(null);
         }
       } catch {
-        /* optional */
+        setShelfRow(null);
       }
       try {
         const insightRes = await fetchProductInsight(String(productId));
@@ -268,6 +284,30 @@ export default function VerdictScreen() {
             <Text style={styles.saveShelfText}>{shelfBusy ? 'Saving…' : 'Save shelf fields'}</Text>
           </Pressable>
         </View>
+
+        {shelfRow ? (
+          <>
+            <Text style={styles.section}>Buy / refill</Text>
+            <View testID="verdict-commerce-cta">
+              <ShelfItemActions
+                kind={shelfItemCommerceKind({
+                  is_prescription: shelfRow.is_prescription,
+                  category: shelfRow.category,
+                })}
+                name={String(shelfRow.product_name || productName)}
+                is_prescription={shelfRow.is_prescription === true}
+                category={shelfRow.category}
+                priceLabel={
+                  shelfRow.price_usd != null && Number.isFinite(Number(shelfRow.price_usd))
+                    ? `$${Number(shelfRow.price_usd).toFixed(2)}`
+                    : undefined
+                }
+                expires={shelfRow.expiry_date ? String(shelfRow.expiry_date) : undefined}
+                onBuy={() => router.push(SHOP_HREF)}
+              />
+            </View>
+          </>
+        ) : null}
 
         <VerdictActions onRemove={() => void onAction('remove')} onKeep={() => void onAction('keep')} busy={busy} />
       </ScrollView>

@@ -1,25 +1,24 @@
+/**
+ * P5.05 — journey_modes must never block Progress lander.
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  mockPatientGet,
-  mockFetchBioProfile,
   mockFetchConsumerProfile,
   mockGetJourneyProfile,
   mockListSpots,
 } = vi.hoisted(() => ({
-  mockPatientGet: vi.fn(),
-  mockFetchBioProfile: vi.fn(),
   mockFetchConsumerProfile: vi.fn(),
   mockGetJourneyProfile: vi.fn(),
   mockListSpots: vi.fn(),
 }));
 
 vi.mock('@/lib/patient-api', () => ({
-  patientGet: mockPatientGet,
+  patientGet: vi.fn(),
 }));
 
 vi.mock('@/lib/conflict-api', () => ({
-  fetchBioProfile: mockFetchBioProfile,
+  fetchBioProfile: vi.fn(),
 }));
 
 vi.mock('@/lib/consumer-profile-api', () => ({
@@ -36,152 +35,51 @@ vi.mock('@/lib/spot-store', () => ({
 
 import {
   BIO_CALIBRATION_HREF,
-  CHECK_HREF,
+  PROGRESS_HREF,
   ROUTINE_PICK_HREF,
   SCAN_HREF,
   TRACK_HREF,
 } from '@/constants/routes';
-import { resolvePostAuthRoute } from '@/lib/resolve-post-auth-route';
+import { resolvePostAuthRoute, resolvePostAuthRouteSync } from '@/lib/resolve-post-auth-route';
 
-function mockRoutineReady() {
-  mockPatientGet.mockImplementation(async (path: string) => {
-    if (path.includes('/routine/template')) return { has_template: true };
-    return { products: [{ id: 'p1' }] };
-  });
-  mockFetchBioProfile.mockResolvedValue({
-    profile_complete: true,
-    conditions: ['acne'],
-    prescriptions: [],
-  });
-}
-
-describe('resolvePostAuthRoute', () => {
+describe('resolvePostAuthRoute (P5.05)', () => {
   beforeEach(() => {
-    mockPatientGet.mockReset();
-    mockFetchBioProfile.mockReset();
     mockFetchConsumerProfile.mockReset();
     mockGetJourneyProfile.mockReset();
     mockListSpots.mockReset();
-
-    mockFetchConsumerProfile.mockResolvedValue({
-      journey_modes: ['routine'],
-      bio_calibration_complete: false,
-    });
+    mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['routine'] });
     mockGetJourneyProfile.mockResolvedValue(null);
     mockListSpots.mockResolvedValue([]);
-    mockPatientGet.mockResolvedValue({ products: [] });
-    mockFetchBioProfile.mockResolvedValue({
-      profile_complete: false,
-      conditions: [],
-      prescriptions: [],
-    });
   });
 
-  it('returns Check when no journey mode (TOUCH-031)', async () => {
+  it('lands on Progress when no journey mode', async () => {
     mockFetchConsumerProfile.mockResolvedValue({ journey_modes: [] });
-    mockGetJourneyProfile.mockResolvedValue(null);
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
+    await expect(resolvePostAuthRoute()).resolves.toBe(PROGRESS_HREF);
   });
 
-  it('uses hint modes when server returns empty array', async () => {
-    mockFetchConsumerProfile.mockResolvedValue({ journey_modes: [] });
-    mockGetJourneyProfile.mockResolvedValue(null);
-    mockPatientGet.mockImplementation(async (path: string) => {
-      if (path.includes('/routine/template')) return { has_template: false };
-      return { products: [] };
-    });
-    await expect(resolvePostAuthRoute({ journeyModes: ['routine'] })).resolves.toBe(
-      ROUTINE_PICK_HREF,
-    );
+  it('P5.05 routine with empty template/shelf still Progress — not pick/bio/scan', async () => {
+    await expect(resolvePostAuthRoute({ journeyModes: ['routine'] })).resolves.toBe(PROGRESS_HREF);
+    expect(resolvePostAuthRouteSync(['routine'], { spotCount: 0 })).toBe(PROGRESS_HREF);
+    expect(resolvePostAuthRouteSync(['routine'], { spotCount: 0 })).not.toBe(ROUTINE_PICK_HREF);
+    expect(resolvePostAuthRouteSync(['routine'], { spotCount: 0 })).not.toBe(BIO_CALIBRATION_HREF);
+    expect(resolvePostAuthRouteSync(['routine'], { spotCount: 0 })).not.toBe(SCAN_HREF);
   });
 
-  it('returns routine pick when no template', async () => {
-    mockPatientGet.mockImplementation(async (path: string) => {
-      if (path.includes('/routine/template')) return { has_template: false };
-      return { products: [] };
-    });
-    mockFetchBioProfile.mockResolvedValue({
-      profile_complete: true,
-      conditions: ['acne'],
-      prescriptions: [],
-    });
-
-    await expect(resolvePostAuthRoute()).resolves.toBe(ROUTINE_PICK_HREF);
-  });
-
-  it('returns bio calibration when profile incomplete', async () => {
-    mockPatientGet.mockImplementation(async (path: string) => {
-      if (path.includes('/routine/template')) return { has_template: true };
-      return { products: [{ id: 'p1' }] };
-    });
-    mockFetchBioProfile.mockResolvedValue({
-      profile_complete: false,
-      conditions: [],
-      prescriptions: [],
-    });
-
-    await expect(resolvePostAuthRoute()).resolves.toBe(BIO_CALIBRATION_HREF);
-  });
-
-  it('returns scan when shelf is empty', async () => {
-    mockPatientGet.mockImplementation(async (path: string) => {
-      if (path.includes('/routine/template')) return { has_template: true };
-      return { products: [] };
-    });
-    mockFetchBioProfile.mockResolvedValue({
-      profile_complete: true,
-      conditions: ['acne'],
-      prescriptions: [],
-    });
-
-    await expect(resolvePostAuthRoute()).resolves.toBe(SCAN_HREF);
-  });
-
-  it('returns Check when shelf has products (TOUCH-031)', async () => {
-    mockRoutineReady();
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
-  });
-
-  it('watch-only with no spots routes to Check', async () => {
-    mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['watch'] });
-    mockListSpots.mockResolvedValue([]);
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
-  });
-
-  it('spot-only routes to track', async () => {
+  it('spot-only also lands on Progress (P7.03 — Track divert retired)', async () => {
     mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['spot'] });
-    await expect(resolvePostAuthRoute()).resolves.toBe(TRACK_HREF);
+    await expect(resolvePostAuthRoute()).resolves.toBe(PROGRESS_HREF);
+    expect(resolvePostAuthRouteSync(['spot'])).toBe(PROGRESS_HREF);
+    expect(resolvePostAuthRouteSync(['spot'])).not.toBe(TRACK_HREF);
   });
 
-  it('watch-only with spots routes to Check', async () => {
+  it('watch-only lands on Progress', async () => {
     mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['watch'] });
-    mockListSpots.mockResolvedValue([
-      {
-        id: 'spot-1',
-        label: 'Neck spot',
-        bodyRegion: 'neck',
-        createdAt: '2026-06-01T00:00:00.000Z',
-        photos: [],
-      },
-    ]);
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
+    await expect(resolvePostAuthRoute()).resolves.toBe(PROGRESS_HREF);
   });
 
-  it('watch+routine with no spots routes to Check after routine gates', async () => {
-    mockFetchConsumerProfile.mockResolvedValue({ journey_modes: ['watch', 'routine'] });
-    mockRoutineReady();
-    mockListSpots.mockResolvedValue([]);
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
-  });
-
-  it('falls back to Check on transient API errors when journey is known locally', async () => {
+  it('falls back to Progress on API errors', async () => {
     mockFetchConsumerProfile.mockRejectedValue(new Error('network'));
-    mockGetJourneyProfile.mockResolvedValue({
-      modes: ['routine'],
-      primary: 'routine',
-      chosenAt: '2026-06-01T00:00:00.000Z',
-    });
-    mockRoutineReady();
-    await expect(resolvePostAuthRoute()).resolves.toBe(CHECK_HREF);
+    mockGetJourneyProfile.mockRejectedValue(new Error('network'));
+    await expect(resolvePostAuthRoute()).resolves.toBe(PROGRESS_HREF);
   });
 });

@@ -141,8 +141,11 @@ async function flushPendingUploads(): Promise<void> {
     try {
       if (!item.uri) continue;
       const form = new FormData();
-      const file = await uriToUploadFile(item.uri, `spot-${item.spotId}.jpg`);
-      appendUploadToForm(form, file, `spot-${item.spotId}.jpg`);
+      const file = await uriToUploadFile({
+        uri: item.uri,
+        fileName: `spot-${item.spotId}.jpg`,
+      });
+      appendUploadToForm({ form, file, fileName: `spot-${item.spotId}.jpg` });
       if (item.journalEntryId) {
         form.append('journal_entry_id', item.journalEntryId);
       }
@@ -292,8 +295,11 @@ export async function addSpotPhoto(spotId: string, photo: SpotPhoto): Promise<Sp
   ) {
     try {
       const form = new FormData();
-      const file = await uriToUploadFile(photo.uri, `spot-${spotId}.jpg`);
-      appendUploadToForm(form, file, `spot-${spotId}.jpg`);
+      const file = await uriToUploadFile({
+        uri: photo.uri,
+        fileName: `spot-${spotId}.jpg`,
+      });
+      appendUploadToForm({ form, file, fileName: `spot-${spotId}.jpg` });
       if (photo.journalEntryId) {
         form.append('journal_entry_id', photo.journalEntryId);
       }

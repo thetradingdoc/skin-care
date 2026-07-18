@@ -1,8 +1,9 @@
-# Skin & Care — product positioning
+# Skin & Care — product positioning (historical)
 
-> **Last reviewed:** 2026-06-11
+> **Superseded for consumer brand.** Locked identity is **Touche** · **Be Bold** · **Skincare & medical journal**. See product SSOT [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md) and brand index [`README.md`](./README.md).  
+> **Last reviewed:** 2026-06-11 (content below is historical Skin & Care journal positioning).
 
-## SSOT tagline
+## SSOT tagline (historical)
 
 **The #1 Skincare Journal.**
 

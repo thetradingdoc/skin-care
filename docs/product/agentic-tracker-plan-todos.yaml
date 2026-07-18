@@ -1,0 +1,521 @@
+# =============================================================================
+# SSOT: agentic medical-tracker plan todos
+# =============================================================================
+# Audit script reads THIS FILE ONLY.
+# Cursor plan frontmatter is a generated mirror — sync with:
+#   node middleware-platform/scripts/sync-agentic-plan-todos.cjs
+# Do not hand-edit ~/.cursor/plans/*.plan.md todos; they will be overwritten.
+# =============================================================================
+todos:
+  - id: p0-01
+    content: P0.01 Delete todos/pending/mobile-ux-audit-2026-07-14 (screenshots + audit dumps)
+    status: completed
+  - id: p0-02
+    content: P0.02 Delete todos/pending/app-trytouche-live-audit-2026-07-14
+    status: completed
+  - id: p0-03
+    content: P0.03 Delete todos/pending/app-trytouche-domain-cutover-2026-07-14
+    status: completed
+  - id: p0-04
+    content: P0.04 Delete todos/pending/calendar-routines-shots-2026-07-15
+    status: completed
+  - id: p0-05
+    content: P0.05 Delete todos/pending/ux-audit-artifacts
+    status: completed
+  - id: p0-06
+    content: P0.06 Delete patient-app dead route capture-scan.tsx
+    status: completed
+  - id: p0-07
+    content: P0.07 Delete patient-app dead route capture-upload.tsx
+    status: completed
+  - id: p0-08
+    content: P0.08 Delete patient-app dead route capture-review.tsx
+    status: completed
+  - id: p0-09
+    content: P0.09 Delete patient-app dead route capture-manual-bill.tsx
+    status: completed
+  - id: p0-10
+    content: P0.10 Delete patient-app dead route capture-manual-payment.tsx
+    status: completed
+  - id: p0-11
+    content: P0.11 Delete patient-app dead route capture-complete.tsx
+    status: completed
+  - id: p0-12
+    content: P0.12 Delete patient-app dead route scan-entry.tsx
+    status: cancelled
+  - id: p0-13
+    content: P0.13 Delete patient-app dead route (tabs)/today.tsx
+    status: completed
+  - id: p0-14
+    content: P0.14 Delete patient-app dead route (tabs)/timeline.tsx
+    status: completed
+  - id: p0-15
+    content: P0.15 Delete patient-app dead route (tabs)/money.tsx
+    status: completed
+  - id: p0-16
+    content: P0.16 Remove dead Stack registrations for deleted routes in app/_layout.tsx
+    status: completed
+  - id: p0-17
+    content: P0.17 Remove Progress Redness/Clarity/Skin-age fabricated ImprovementBar usage when no real series
+    status: completed
+  - id: p0-18
+    content: P0.18 Remove or gate SkinMetricSparkCards hardcoded sparkline points
+    status: completed
+  - id: p0-19
+    content: P0.19 Stop returning inventable concern_score×33 % from improvement-metrics-service when inappropriate
+    status: completed
+  - id: p0-20
+    content: P0.20 Write docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md SSOT from this plan
+    status: completed
+  - id: p1-01
+    content: P1.01 Create migration ai_capture_usage table (patient/session, month, count, last_at)
+    status: completed
+  - id: p1-02
+    content: P1.02 Create migration ai_welcome_bonus table (quota, remaining, expires_at, issued_at)
+    status: completed
+  - id: p1-03
+    content: P1.03 Implement meter service getUsage / tryConsume / refundFailedIfNeeded
+    status: completed
+  - id: p1-04
+    content: P1.04 Env AI_FREE_CAPTURE_LIMIT default 20
+    status: completed
+  - id: p1-05
+    content: P1.05 Env AI_WELCOME_BONUS_LIMIT default 12 and AI_WELCOME_BONUS_DAYS default 7
+    status: completed
+  - id: p1-06
+    content: P1.06 Env AI_BURST_LIMIT_24H default 10
+    status: completed
+  - id: p1-07
+    content: P1.07 Wrap public face-read GPT path with meter consume (when FACE_READ_VISION_ENABLED)
+    status: completed
+  - id: p1-08
+    content: P1.08 Wrap weekly routine/journal photo GPT rescore with meter consume
+    status: completed
+  - id: p1-09
+    content: P1.09 Wrap billing document OCR extract with unified meter (not only BILLING_FREE_SCAN_LIMIT)
+    status: completed
+  - id: p1-10
+    content: P1.10 Return 402 AI_CAPTURE_LIMIT with manual_allowed true when over monthly+bonus
+    status: completed
+  - id: p1-11
+    content: P1.11 Return 429 AI_BURST_LIMIT when over 24h burst
+    status: completed
+  - id: p1-12
+    content: P1.12 Log per AI call model, prompt_tokens, completion_tokens, estimated_usd, capture_kind, user_id
+    status: completed
+  - id: p1-13
+    content: P1.13 Wire Plus/unlimited entitlement to bypass monthly meter (reuse pricing_policy.plus pattern)
+    status: completed
+  - id: p1-14
+    content: P1.14 Unit tests for meter consume, bonus first, monthly second, burst, Plus bypass
+    status: completed
+  - id: p1-15
+    content: P1.15 Add verify-prod-consumer-env checks for new AI meter env vars
+    status: completed
+  - id: p2-01
+    content: P2.01 Create migration patient_record_facts table with indexes
+    status: completed
+  - id: p2-02
+    content: P2.02 Define structured_json JSON Schema validators for tag skin
+    status: completed
+  - id: p2-03
+    content: P2.03 Define structured_json JSON Schema validators for tag bill
+    status: completed
+  - id: p2-04
+    content: P2.04 Define structured_json JSON Schema validators for tag prescription
+    status: completed
+  - id: p2-05
+    content: P2.05 Define structured_json JSON Schema validators for tag mark
+    status: completed
+  - id: p2-06
+    content: P2.06 Define structured_json JSON Schema validators for tag lab
+    status: completed
+  - id: p2-07
+    content: P2.07 Define structured_json JSON Schema validators for tag other
+    status: completed
+  - id: p2-08
+    content: P2.08 Implement tag enum middleware rejecting unknown tags
+    status: completed
+  - id: p2-09
+    content: P2.09 Implement media_type enum photo|pdf only (reject video)
+    status: completed
+  - id: p2-10
+    content: P2.10 Unified POST /api/patient/records/upload returning storage_ref
+    status: completed
+  - id: p2-11
+    content: P2.11 Persist storage via Azure/local helper (gcs-billing-storage pattern)
+    status: completed
+  - id: p2-12
+    content: P2.12 Dual-write journal daily photo confirm into patient_record_facts tag=skin
+    status: completed
+  - id: p2-13
+    content: P2.13 Dual-write spot snapshots into patient_record_facts tag=mark with compare_group_id
+    status: completed
+  - id: p2-14
+    content: P2.14 Dual-write billing events into patient_record_facts tag=bill
+    status: completed
+  - id: p2-15
+    content: P2.15 CRUD GET/PATCH confirm for patient_record_facts by id
+    status: completed
+  - id: p2-16
+    content: P2.16 List facts by date range and tag for Calendar
+    status: completed
+  - id: p2-17
+    content: P2.17 Store source_language and display_language on lab (and optional other) facts
+    status: completed
+  - id: p2-18
+    content: P2.18 Stub language detect on OCR text (editable by user on confirm)
+    status: completed
+  - id: p2-19
+    content: P2.19 Repository + tests for patient_record_facts CRUD and tag filters
+    status: completed
+  - id: p3-01
+    content: P3.01 Capture orchestration service entrypoint (tag, media, ai_or_manual)
+    status: completed
+  - id: p3-02
+    content: P3.02 Pre-flight meter_guard before any GPT vision/OCR
+    status: completed
+  - id: p3-03
+    content: P3.03 Quality gate node (blur/no-doc/fail → retake or manual, no charge on failed AI)
+    status: completed
+  - id: p3-04
+    content: P3.04 Skin vision suggest via face-read-vision returning labeled ai_suggestion only
+    status: completed
+  - id: p3-05
+    content: P3.05 Doc OCR via patient-document-extraction for pdf and image
+    status: completed
+  - id: p3-06
+    content: P3.06 Fix storage downloadBuffer export for OCR round-trip from stored refs
+    status: completed
+  - id: p3-07
+    content: P3.07 Restore or replace missing billing-ocr-parser dependency for bill field parse
+    status: completed
+  - id: p3-08
+    content: P3.08 Structurer skin → confirm payload
+    status: completed
+  - id: p3-09
+    content: P3.09 Structurer bill → confirm payload
+    status: completed
+  - id: p3-10
+    content: P3.10 Structurer prescription → confirm payload
+    status: completed
+  - id: p3-11
+    content: P3.11 Structurer mark → confirm payload including new vs existing compare_group
+    status: completed
+  - id: p3-12
+    content: P3.12 Structurer lab → confirm payload including language row
+    status: completed
+  - id: p3-13
+    content: P3.13 Structurer other → confirm payload
+    status: completed
+  - id: p3-14
+    content: P3.14 Manual path creates fact with ai_or_manual=manual without meter
+    status: completed
+  - id: p3-15
+    content: P3.15 API POST /api/patient/records/capture returning confirm draft
+    status: completed
+  - id: p3-16
+    content: "P3.16 API POST /api/patient/records/:id/confirm persisting user edits"
+    status: completed
+  - id: p3-17
+    content: P3.17 Integration tests capture→confirm for each tag
+    status: completed
+  - id: p4-01
+    content: P4.01 Add medical-tracker tool definitions file (get_extract, normalize_facts, detect_language, etc.)
+    status: completed
+  - id: p4-02
+    content: P4.02 Add medical-tracker tool allowlists separate from shelf insight tools
+    status: completed
+  - id: p4-03
+    content: P4.03 Implement medical-tracker tool executor
+    status: completed
+  - id: p4-04
+    content: P4.04 Build capture_compose LangGraph (OCR → structure → format confirm)
+    status: completed
+  - id: p4-05
+    content: P4.05 Build delta_compose LangGraph (prior skin + today → AI SUGGESTS worse/same/calmer)
+    status: completed
+  - id: p4-06
+    content: P4.06 Build meter_guard as graph/pre-node used by all AI paths
+    status: completed
+  - id: p4-07
+    content: P4.07 Build export_pack graph (list facts+media, no AI narrative)
+    status: completed
+  - id: p4-08
+    content: P4.08 Enable Postgres checkpointer for medical graphs in staging/prod
+    status: completed
+  - id: p4-09
+    content: P4.09 Optional Redis cache keys for capture_compose by content hash
+    status: completed
+  - id: p4-10
+    content: P4.10 Policy test no diagnosis vocabulary in compose outputs
+    status: completed
+  - id: p4-11
+    content: P4.11 Policy test AI fields always labeled ai_suggestion not blended
+    status: completed
+  - id: p4-12
+    content: P4.12 Policy test prescription facts never attach commerce_variant_id
+    status: completed
+  - id: p4-13
+    content: P4.13 Keep consumer-analysis-graph for shelf evaluate only (no medical facts)
+    status: completed
+  - id: p4-14
+    content: P4.14 Document Kelly/perception/coding excluded from consumer capture in architecture MD
+    status: completed
+  - id: p5-01
+    content: P5.01 Keep shelf scan/evaluate/allergen hard_no APIs unchanged for OTC safety
+    status: completed
+  - id: p5-02
+    content: P5.02 Extend agent-delta for N-day worse + product co-occurrence exit-ramp
+    status: completed
+  - id: p5-03
+    content: P5.03 Reminder job Rx expiry (from prescription facts reminder_opt_in)
+    status: completed
+  - id: p5-04
+    content: P5.04 Reminder job routine cadence (optional, not a gate)
+    status: completed
+  - id: p5-05
+    content: P5.05 Demote resolvePostAuthRoute so routine mode never blocks Check/Progress
+    status: completed
+  - id: p5-06
+    content: P5.06 Physician export PDF builder from facts + media refs
+    status: completed
+  - id: p5-07
+    content: P5.07 Physician export share-link token endpoint
+    status: completed
+  - id: p5-08
+    content: P5.08 Progress aggregate API honest counts (calmer days, bill sum, Rx reminders)
+    status: completed
+  - id: p5-09
+    content: P5.09 Progress aggregate hides empty modules (skin/bill/rx) server-side
+    status: completed
+  - id: p5-10
+    content: P5.10 Calendar list/month API over patient_record_facts multi-type days
+    status: completed
+
+  - id: p5-11
+    content: P5.11 GET marks list for compare_group picker (ownership-scoped)
+    status: completed
+  - id: p5-12
+    content: P5.12 GET compare_group timeline/delta (no AI narrative)
+    status: completed
+  - id: p5-13
+    content: P5.13 Lock alerts home decision (Progress + Shelf badge + push, no dedicated tab)
+    status: completed
+  - id: p5-14
+    content: P5.14 Alerts feed API (allergen + Rx expiry + agent-delta) ownership-scoped
+    status: completed
+  - id: cf-1
+    content: "CF-1 Diagnosis positive constraint on free-text (note/ai_suggestion.text allowlist+clinical fixtures) — resolved Phase 5"
+    status: completed
+  - id: cf-2
+    content: CF-2 Confirm plan-sync is one-directional (repo YAML → Cursor frontmatter only)
+    status: completed
+  - id: p6-01
+    content: P6.01 Credits ledger table (balance, packs purchased)
+    status: completed
+  - id: p6-02
+    content: P6.02 Stripe price for 20-read credit pack ($3.99)
+    status: completed
+  - id: p6-03
+    content: P6.03 Stripe Plus subscription wire for unlimited AI ($9.99)
+    status: completed
+  - id: p6-04
+    content: P6.04 Webhook credit pack fulfillment
+    status: completed
+  - id: p6-05
+    content: P6.05 Webhook Plus activate/deactivate meter bypass
+    status: completed
+  - id: p6-06
+    content: P6.06 Issue welcome bonus on first authenticated AI capture
+    status: completed
+  - id: p6-07
+    content: P6.07 GET /api/patient/ai/usage for Profile meter UI
+    status: completed
+  - id: p6-08
+    content: P6.08 Keep Shopify cart/webhook path separate from AI credits
+    status: completed
+  - id: p6-09
+    content: P6.09 Bury care_program as primary consumer offer (leave code buried)
+    status: completed
+  - id: p7-01
+    content: P7.01 Restore visible 5-tab shell Calendar Shelf Track Progress Profile
+    status: completed
+  - id: p7-02
+    content: P7.02 Hide tab bar during active capture transaction only
+    status: completed
+  - id: p7-03
+    content: P7.03 Authenticated cold lander → Progress
+    status: completed
+  - id: p7-04
+    content: P7.04 Capture state machine screens 2a–5b–6 per tag
+    status: completed
+  - id: p7-05
+    content: P7.05 Confirm UI templates for all six tags including other
+    status: completed
+  - id: p7-06
+    content: P7.06 Thesis variants skin bill rx mark lab other
+    status: completed
+  - id: p7-07
+    content: P7.07 Daily T5b with AI SUGGESTS label
+    status: completed
+  - id: p7-08
+    content: P7.08 Shelf T4 skincare Buy vs Rx never Buy
+    status: completed
+  - id: p7-09
+    content: P7.09 Profile Language stub T11
+    status: completed
+  - id: p7-10
+    content: P7.10 Profile Share with doctor T12 wired to export API
+    status: completed
+  - id: p7-11
+    content: P7.11 Welcome copy states 20 AI reads free each month
+    status: completed
+  - id: p7-12
+    content: P7.12 Capture copy photo or PDF video not in this version
+    status: completed
+  - id: p7-13
+    content: P7.13 Keep try-* Shopify funnel entry for trytouche continuation
+    status: completed
+  - id: p7-14
+    content: P7.14 OTP + name collection (no password)
+    status: completed
+  - id: p7-15
+    content: P7.15 Empty states Calendar Shelf Progress
+    status: completed
+  - id: p7-16
+    content: P7.16 AI cap T6 and unlock T8 screens
+    status: completed
+  - id: p7-17
+    content: P7.17 Welcome bonus T7 interstitial trigger
+    status: completed
+  - id: p7-18
+    content: "P7.18 BLOCKER Reveal 5b-skin"
+    status: completed
+  - id: p7-19
+    content: "P7.19 BLOCKER Reveal 5b-bill"
+    status: completed
+  - id: p7-20
+    content: "P7.20 BLOCKER Reveal 5b-rx"
+    status: completed
+  - id: p7-21
+    content: "P7.21 BLOCKER Reveal 5b-mark"
+    status: completed
+  - id: p7-22
+    content: "P7.22 BLOCKER Reveal 5b-lab"
+    status: completed
+  - id: p7-23
+    content: "P7.23 BLOCKER Reveal 5b-other"
+    status: completed
+  - id: p7-24
+    content: "P7.24 BLOCKER Mark new-vs-existing picker"
+    status: completed
+  - id: p7-25
+    content: "P7.25 BLOCKER Compare-over-time mark UI"
+    status: completed
+  - id: p7-26
+    content: "P7.26 BLOCKER Calendar month multi-type days"
+    status: completed
+  - id: p7-27
+    content: "P7.27 BLOCKER Calendar list view"
+    status: completed
+  - id: p7-28
+    content: "P7.28 BLOCKER Calendar legend icon+color"
+    status: completed
+  - id: p7-29
+    content: "P7.29 BLOCKER Calendar empty T2b"
+    status: completed
+  - id: p7-30
+    content: "P7.30 BLOCKER Calendar day detail"
+    status: completed
+  - id: p7-31
+    content: "P7.31 BLOCKER Progress Alerts module"
+    status: completed
+  - id: p7-32
+    content: "P7.32 BLOCKER Shelf conflict/hard_no surface"
+    status: completed
+  - id: p7-33
+    content: P7.33 Screen 2b camera denied
+    status: completed
+  - id: p7-34
+    content: P7.34 Screen 2c vision fail/retry
+    status: completed
+  - id: p7-35
+    content: P7.35 Screen 2m manual entry all tags
+    status: completed
+  - id: p7-36
+    content: P7.36 Screen 9 OPQRST-lite (skin, skippable)
+    status: completed
+  - id: p7-37
+    content: P7.37 Screen 10 routine nudge (skin, one-time)
+    status: completed
+  - id: p7-38
+    content: P7.38 Screen 7b OTP entry
+    status: completed
+  - id: p7-39
+    content: P7.39 Screen 7c OTP error/resend
+    status: completed
+  - id: p7-40
+    content: P7.40 Profile allergens management
+    status: completed
+  - id: p7-41
+    content: P7.41 Profile notifications permission
+    status: completed
+  - id: p7-42
+    content: P7.42 Profile consent/privacy
+    status: completed
+  - id: p7-43
+    content: P7.43 Rx refill info destination (not dead button)
+    status: completed
+  - id: p7-44
+    content: P7.44 Track capture AI-reads-left chip
+    status: completed
+  - id: p7-45
+    content: P7.45 Alerts history from Progress/Profile
+    status: completed
+  - id: p7-46
+    content: P7.46 Shelf Ask/Learn hide or Coming soon (no dead buttons)
+    status: completed
+  - id: p7-47
+    content: P7.47 Alerts empty UI must not auto-redirect to Check
+    status: completed
+  - id: p8-01
+    content: P8.01 Enforce burst guard in production with UX message
+    status: completed
+  - id: p8-02
+    content: P8.02 AV scan on all uploads (reuse face-read AV pattern)
+    status: completed
+  - id: p8-03
+    content: P8.03 Retention policy for media + raw_extract_text
+    status: completed
+  - id: p8-04
+    content: P8.04 Update HIPAA consumer notes for multi-record medical tracker
+    status: completed
+  - id: p8-05
+    content: "P8.05 OCR cost measured (~$0.009 p50 / ~$0.018 p95); AI_FREE_CAPTURE_LIMIT stays 20 — revisit only on real prod friction, not synthetic headroom"
+    status: completed
+  - id: p8-06
+    content: P8.06 Multilingual translate of lab facts (after English extract SSOT)
+    status: completed
+  - id: p8-07
+    content: P8.07 Ask/Learn shelf LLM surfaces (deferred product depth)
+    status: completed
+  - id: p8-08
+    content: P8.08 Barcode safe caution hard_no depth screens (P1 product)
+    status: completed
+  - id: p8-09
+    content: "P8.09 Accessibility CI floor (source contracts: VoiceOver labels, Dynamic Type, tap targets on 5-tab + onboarding) — not a device pass"
+    status: completed
+  - id: p8-10
+    content: P8.10 E2E Playwright rebuilt IA cold capture auth Progress
+    status: completed
+  - id: p8-11
+    content: P8.11 Bill multi-currency locale format
+    status: completed
+  - id: p8-12
+    content: "P8.12 Real-device accessibility pass — VoiceOver on, through onboarding + all five tabs (human navigability; CI floor P8.09 does not close this)"
+    status: pending
+  - id: storekit-ai-credits
+    content: "StoreKit 2 — Unlock AI credit packs + Plus on iOS (replace Stripe Linking.openURL). Guideline 3.1.1. TF currently hides purchase on iOS via isUnlockAiPurchaseEnabled."
+    status: pending
+

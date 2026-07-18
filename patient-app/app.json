@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "touche — Skin Journal",
+    "name": "touche",
     "slug": "skin-care",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,8 +13,8 @@
       "bundleIdentifier": "com.skinandcare.app",
       "infoPlist": {
         "CFBundleDisplayName": "touche",
-        "NSCameraUsageDescription": "touche uses the camera for daily progress photos so you can track changes in your skin over time.",
-        "NSPhotoLibraryUsageDescription": "touche can save progress photos from your library when you choose to upload instead of taking a new photo.",
+        "NSCameraUsageDescription": "touche uses the camera so you can capture photos for your skincare and medical journal — skin, prescriptions, bills, marks, labs, and other documents you choose to log.",
+        "NSPhotoLibraryUsageDescription": "touche can use a photo from your library when you choose to upload a capture instead of taking a new photo for your journal.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -41,7 +41,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "touche uses the camera for daily progress photos so you can track changes in your skin over time.",
+          "cameraPermission": "touche uses the camera so you can capture photos for your skincare and medical journal — skin, prescriptions, bills, marks, labs, and other documents you choose to log.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
@@ -49,7 +49,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "touche can save progress photos from your library when you choose to upload instead of taking a new photo."
+          "photosPermission": "touche can use a photo from your library when you choose to upload a capture instead of taking a new photo for your journal."
         }
       ],
       [
@@ -73,8 +73,8 @@
       "eas": {
         "projectId": "16b5d1d9-a703-4035-b41a-be2401f95c68"
       },
-      "privacyPolicyUrl": "https://myskinandcare.com/patients/legal/privacy.html",
-      "supportUrl": "https://trytouche.com/pages/contact"
+      "privacyPolicyUrl": "https://app.trytouche.com/privacy",
+      "supportUrl": "https://app.trytouche.com/welcome"
     }
   }
 }

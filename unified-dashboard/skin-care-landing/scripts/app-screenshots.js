@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, 'screenshots', 'app');
-const APP_BASE = (process.env.APP_BASE_URL || 'https://myskinandcare.com').replace(/\/$/, '');
+const APP_BASE = (process.env.APP_BASE_URL || 'https://app.trytouche.com').replace(/\/$/, '');
 
 const SCREENS = [
   { name: 'app-sign-in', path: '/app/sign-in', stubAuth: false },

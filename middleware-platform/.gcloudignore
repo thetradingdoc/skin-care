@@ -19,6 +19,14 @@ __tests__/
 test-results/
 uploads/
 data/
+screenshots/
+.playwright-browsers/
+playwright-report/
+test-results/
+tmp/
+:memory:
+:memory:-*
+*.db-*
 .DS_Store
 *.md
 !package.json

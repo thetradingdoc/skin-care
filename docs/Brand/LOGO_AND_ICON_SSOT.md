@@ -2,7 +2,7 @@
 
 > **Last reviewed:** 2026-07-14
 
-The **landing page wordmark** (skin + tulip + care) remains the SSOT for **marketing / funnel / email** headers. **Camera-first Check chrome** uses a different mark: compact orange **touche** (`ToucheMarkCompact`, `#F7591F`) — see [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md) and [`docs/product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
+The **landing page wordmark** (skin + tulip + care) remains the SSOT for **marketing / funnel / email** headers. **Check / capture chrome** uses a different mark: compact orange **touche** (`ToucheMarkCompact`, `#F7591F`) — see [WORDMARK_BY_SURFACE.md](./WORDMARK_BY_SURFACE.md). Product IA: [`docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md).
 
 | Mark | Surface | Doc section |
 |------|---------|-------------|

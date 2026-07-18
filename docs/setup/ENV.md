@@ -37,7 +37,7 @@ Quick reference. Full narrative: [`docs/setup/README.md`](./README.md). Copy fro
 
 CORS origins (not env vars — hardcoded allowlist in `middleware-platform/server.js`): includes `https://app.trytouche.com` and `*.trytouche.com` (TOUCH-038), plus myskinandcare / callsomo / localhost.
 
-See also: [Medical Coding OPERATIONS](../Medical%20Coding/OPERATIONS.md), [RENDER_PRODUCTION_CHECKLIST](../deployment/RENDER_PRODUCTION_CHECKLIST.md), [TOUCHE_CAMERA_FIRST.md](../product/TOUCHE_CAMERA_FIRST.md).
+See also: [Medical Coding OPERATIONS](../Medical%20Coding/OPERATIONS.md), [RENDER_PRODUCTION_CHECKLIST](../deployment/RENDER_PRODUCTION_CHECKLIST.md), [TOUCHE_AGENTIC_ARCHITECTURE.md](../product/TOUCHE_AGENTIC_ARCHITECTURE.md) (product SSOT; camera-first commerce env notes also in [TOUCHE_CAMERA_FIRST.md](../product/TOUCHE_CAMERA_FIRST.md) historical).
 
 ## Skin & Care landing (`unified-dashboard/skin-care-landing/.env.development`)
 

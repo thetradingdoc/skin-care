@@ -81,7 +81,7 @@ function registerPatientDeviceRoutes(app, deps) {
             kind: 'daily_reminder',
             title: 'touche',
             body: "Time for today's Check photo.",
-            data: { route: '/check', kind: 'daily_reminder' },
+            data: { route: '/capture', kind: 'daily_reminder' },
           });
           return res.json({ success: true, enabled: true, outbox_id: id });
         }

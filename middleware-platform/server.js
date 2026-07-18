@@ -108,6 +108,7 @@ const {
   hasValidSession
 } = require('./middleware/admin-auth');
 const { generateApiKey, hashApiKey } = require('./utils/api-keys');
+const { mintUserSessionToken } = require('./utils/session-token');
 
 // Try to load bcryptjs, but make it optional for now
 let bcrypt;
@@ -601,11 +602,13 @@ function withIdempotency(operationType) {
   };
 }
 
-/** C2 / impl-11: When LEGACY_APPOINTMENTS_API_DISABLED=1, legacy booking APIs return 410 Gone with replacement routes. */
+/** C2 / impl-11 / SEC-23: Legacy booking APIs disabled by default in prod-like; opt-in with LEGACY_APPOINTMENTS_API_DISABLED=0 */
 function legacyAppointmentsApiDisabled(res) {
-  const off =
-    process.env.LEGACY_APPOINTMENTS_API_DISABLED === '1' ||
-    process.env.LEGACY_APPOINTMENTS_API_DISABLED === 'true';
+  const { isProdLikeEnv } = require('./utils/runtime-env');
+  const flag = String(process.env.LEGACY_APPOINTMENTS_API_DISABLED || '').trim().toLowerCase();
+  const explicitlyEnabled = flag === '0' || flag === 'false';
+  const explicitlyDisabled = flag === '1' || flag === 'true';
+  const off = explicitlyDisabled || (isProdLikeEnv() && !explicitlyEnabled);
   if (!off) return false;
   res.status(410).json({
     success: false,
@@ -1381,16 +1384,22 @@ function decryptBillingField(value) {
 
 function resolveBillingPricingPolicy() {
   const { resolveCareProgramPricing } = require('./services/care-program-billing-service');
+  const { resolveAiMonetizationPricing } = require('./services/ai-monetization-stripe');
+  const ai = resolveAiMonetizationPricing();
   return {
     currency: 'USD',
     free: { monthly_scan_limit: Math.max(1, Number(process.env.BILLING_FREE_SCAN_LIMIT || 15)) },
     plus: {
-      monthly_price_cents: 999,
+      monthly_price_cents: ai.plus.monthly_price_cents,
       annual_price_cents: 9999,
       trial_days: 14,
-      unlimited_scans: true
+      unlimited_scans: true,
+      unlimited_ai: true,
     },
-    care_program: resolveCareProgramPricing()
+    // P6.02 — credit pack alongside existing pricing_policy pattern (not a one-off)
+    ai_credit_pack: ai.credit_pack,
+    // P6.09 — care_program remains non-primary; present for buried offer only
+    care_program: resolveCareProgramPricing(),
   };
 }
 
@@ -1917,6 +1926,9 @@ app.use('/webhooks/shopify', createShopifyWebhookRouter(db));
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// SEC-02: never expose /api/test/* in prod-like envs (404 unless ALLOW_TEST_ENDPOINTS=1)
+const { blockTestEndpointsInProduction } = require('./middleware/block-test-endpoints');
+app.use(blockTestEndpointsInProduction);
 
 // Request logging (console)
 app.use(requestLogger);
@@ -2764,7 +2776,7 @@ app.use('/api/voice', voiceWebCallRoutes);
 
 // RCM / Financial Intelligence APIs (EMPI-based)
 const rcmRoutes = require('./routes/rcm');
-app.use('/api/rcm', rcmRoutes);
+app.use('/api/rcm', requireAdminAuth, rcmRoutes); // SEC-09
 const rcmPublicRoutes = require('./routes/rcm-public');
 app.use('/api/public/rcm', rcmPublicRoutes);
 const internalServiceOpsRoutes = require('./routes/internal-service-ops');
@@ -2961,13 +2973,13 @@ app.use('/fhir', jwtFhirAuth, fhirResourceAccess, fhirRoutes);
 // PDF Medical Coding Routes
 // ============================================
 const pdfCodingRoutes = require('./routes/pdf-coding');
-app.use('/api/pdf-coding', pdfCodingRoutes);
+app.use('/api/pdf-coding', requireAdminAuth, pdfCodingRoutes); // SEC-11
 
 // ============================================
 // Usage Tracking Routes
 // ============================================
 const usageRoutes = require('./routes/usage');
-app.use('/api/usage', usageRoutes);
+app.use('/api/usage', requireAdminAuth, usageRoutes); // SEC-10
 
 // Usage Monitor Routes (monthly billing & usage tracking)
 const usageMonitorRoutes = require('./routes/usage-monitor');
@@ -4204,7 +4216,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         role: user.role,
         merchant_id: user.merchant_id,
         picture: user.picture,
-        token: Buffer.from(user.email).toString('base64')
+        token: mintUserSessionToken(user)
       };
 
       console.log(`✅ User logged in: ${email}`);
@@ -4230,20 +4242,38 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   }
 });
 
-// Google OAuth authentication
+// Google OAuth authentication — SEC-03: verify ID token; never trust body.email alone
+const { verifyGoogleIdToken } = require('./utils/google-id-token');
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { credential, email, name, picture } = req.body;
+    const { credential } = req.body || {};
 
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid Google credentials'
-      });
+    let verified;
+    try {
+      verified = await verifyGoogleIdToken(credential);
+    } catch (verifyErr) {
+      const code = verifyErr && verifyErr.code;
+      if (
+        code === 'GOOGLE_CREDENTIAL_REQUIRED' ||
+        code === 'GOOGLE_TOKEN_INVALID' ||
+        code === 'GOOGLE_TOKEN_MISSING_EMAIL' ||
+        code === 'GOOGLE_EMAIL_NOT_VERIFIED' ||
+        code === 'GOOGLE_AUD_MISMATCH' ||
+        code === 'GOOGLE_CLIENT_ID_REQUIRED'
+      ) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid Google credentials',
+          code,
+        });
+      }
+      throw verifyErr;
     }
 
-    // In production, verify the credential with Google
-    // For now, accept any valid Google sign-in and create/find user
+    const email = verified.email;
+    const name = verified.name || (req.body && req.body.name) || email;
+    const picture = verified.picture || (req.body && req.body.picture) || null;
+    const googleSub = verified.sub || null;
 
     // Check if user exists
     let user = db.getUserByEmail(email);
@@ -4264,7 +4294,7 @@ app.post('/api/auth/google', async (req, res) => {
         merchant_id: null, // Will be set when user is associated with a clinic/merchant
         picture,
         auth_method: 'google',
-        google_id: credential // Store Google ID for future reference
+        google_id: googleSub || credential // Store Google subject when available
       });
 
       user = db.getUserByEmail(email);
@@ -4287,7 +4317,7 @@ app.post('/api/auth/google', async (req, res) => {
       picture: user.picture || picture,
       role: user.role,
       merchant_id: user.merchant_id,
-      token: Buffer.from(user.email).toString('base64'),
+      token: mintUserSessionToken(user),
       auth_method: 'google'
     };
 
@@ -4691,6 +4721,9 @@ app.post('/api/calendar/disconnect', async (req, res) => {
 
 
 
+// SEC-07: gate /api/admin BEFORE platform route registration (session endpoints exempt)
+const { requireAdminAuthUnlessSession } = require('./middleware/require-admin-unless-session');
+app.use('/api/admin', requireAdminAuthUnlessSession);
 const { registerAdminPlatformRoutes } = require('./routes/admin-platform');
 registerAdminPlatformRoutes(app, {
   apiLimiter,
@@ -4699,7 +4732,6 @@ registerAdminPlatformRoutes(app, {
   requireAdminAuth,
   pricingRoutes,
 });
-app.use('/api/admin', requireAdminAuth);
 const impactAdminRoutes = require('./routes/impact-admin');
 app.use('/api/admin/impact', impactAdminRoutes);
 
@@ -7420,7 +7452,7 @@ app.get('/api/provider/booking-observability', async (req, res) => {
 });
 
 // Phase 7.2: GET /api/provider/case-report?room= — OPQRST + ICD-10 + patient summary for video side-panel
-app.get('/api/provider/case-report', async (req, res) => {
+app.get('/api/provider/case-report', requireProviderAuth, async (req, res) => { // SEC-08
   try {
     const room = (req.query.room || '').toString().trim();
     if (!room) {
@@ -7653,9 +7685,26 @@ app.get('/webhook/retell/llm', (req, res) => {
   });
 });
 
-// Retell events webhook (call end, status updates)
+// Retell events webhook (call end, status updates) — SEC-23: require shared secret when configured / always in prod
 app.post('/webhook/retell/events', express.json(), async (req, res) => {
   try {
+    const { isProdLikeEnv } = require('./utils/runtime-env');
+    const expected = String(process.env.RETELL_WEBHOOK_SECRET || '').trim();
+    if (isProdLikeEnv() && !expected) {
+      console.error('❌ RETELL_WEBHOOK_SECRET required in production');
+      return res.status(503).json({ success: false, error: 'Webhook not configured' });
+    }
+    if (expected) {
+      const provided =
+        req.headers['x-retell-signature'] ||
+        req.headers['x-retell-webhook-secret'] ||
+        req.headers['authorization']?.replace(/^Bearer\s+/i, '') ||
+        '';
+      if (provided !== expected) {
+        return res.status(401).json({ success: false, error: 'Invalid webhook secret' });
+      }
+    }
+
     // Log everything for debugging
     console.log('\n📥 ========================================');
     console.log('📥 RETELL WEBHOOK RECEIVED');
@@ -9563,6 +9612,12 @@ function onServerListening() {
   try {
     ReminderScheduler.start();
     ReminderScheduler.startScheduledActivities(); // Start email follow-up scheduler
+    try {
+      const { MedicalTrackerReminderScheduler } = require('./services/medical-tracker-reminder-scheduler');
+      MedicalTrackerReminderScheduler.start();
+    } catch (e) {
+      console.warn('[medical-tracker-reminders] start skipped:', e.message);
+    }
     const caseReportTimeoutWorker = require('./services/case-report-timeout-worker');
     caseReportTimeoutWorker.start();
   } catch (error) {
@@ -9725,6 +9780,56 @@ function onServerListening() {
     }
   } catch (e) {
     console.warn('⚠️  checkout_sessions purge disabled:', e.message);
+  }
+
+  // P2.26 — purge expired anonymous pending captures
+  try {
+    const { purgeExpiredPendingCaptures } = require('./services/pending-capture-claim');
+    const sqlite = db.db;
+    if (sqlite) {
+      const first = purgeExpiredPendingCaptures(sqlite);
+      if (first.purged_bundles > 0) {
+        console.log(`🧹 pending_captures purge: ${first.purged_bundles} bundle(s), ${first.facts_deleted} fact(s)`);
+      }
+      setInterval(() => {
+        try {
+          const n = purgeExpiredPendingCaptures(sqlite);
+          if (n.purged_bundles > 0) {
+            console.log(`🧹 pending_captures purge: ${n.purged_bundles} bundle(s), ${n.facts_deleted} fact(s)`);
+          }
+        } catch (err) {
+          console.warn('⚠️  pending_captures purge tick failed:', err.message);
+        }
+      }, 6 * 60 * 60 * 1000);
+    }
+  } catch (e) {
+    console.warn('⚠️  pending_captures purge disabled:', e.message);
+  }
+
+  // P8.03 — purge expired medical-tracker media + raw_extract_text (enforced job)
+  try {
+    const { purgeExpiredPatientRecordMedia } = require('./services/patient-record-retention');
+    const sqlite = db.db;
+    if (sqlite) {
+      const tick = async () => {
+        try {
+          const n = await purgeExpiredPatientRecordMedia(sqlite);
+          if (n.raw_cleared > 0 || n.media_cleared > 0) {
+            console.log(
+              `🧹 patient_record retention: raw=${n.raw_cleared} media=${n.media_cleared} (confirmed ${n.policy.confirmed_media_days}d)`,
+            );
+          }
+        } catch (err) {
+          console.warn('⚠️  patient_record retention tick failed:', err.message);
+        }
+      };
+      void tick();
+      setInterval(() => {
+        void tick();
+      }, 12 * 60 * 60 * 1000);
+    }
+  } catch (e) {
+    console.warn('⚠️  patient_record retention disabled:', e.message);
   }
 
   // Phase 1: Auto-cancel unpaid appointment checkouts (webhook-safe)

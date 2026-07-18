@@ -6,8 +6,20 @@ on:
     paths:
       - 'patient-app/**'
       - 'middleware-platform/services/care-program-billing-service.js'
+      - 'middleware-platform/services/record-field-templates.js'
+      - 'middleware-platform/services/record-field-templates/**'
+      - 'middleware-platform/__tests__/record-field-templates.test.js'
+      - 'patient-app/lib/record-field-templates.ts'
       - 'middleware-platform/routes/patient-billing-portal.js'
       - 'middleware-platform/__tests__/care-program-billing-service.test.js'
+      - '.github/workflows/skin-care-mobile.yml'
+  pull_request:
+    paths:
+      - 'patient-app/**'
+      - 'middleware-platform/services/record-field-templates.js'
+      - 'middleware-platform/services/record-field-templates/**'
+      - 'middleware-platform/__tests__/record-field-templates.test.js'
+      - 'patient-app/lib/record-field-templates.ts'
       - '.github/workflows/skin-care-mobile.yml'
   workflow_dispatch:
 
@@ -20,6 +32,26 @@ env:
   CI_PROFILE: skin-care
 
 jobs:
+  field-templates-parity:
+    name: Field-template client/server parity (APP-03)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: npm
+          cache-dependency-path: middleware-platform/package-lock.json
+
+      - name: Install middleware dependencies
+        working-directory: ./middleware-platform
+        run: npm ci
+
+      - name: Client mirror parity (must fail on catalog/key drift)
+        working-directory: ./middleware-platform
+        run: npm run test:field-templates-parity
+
   typecheck:
     name: patient-app typecheck
     runs-on: ubuntu-latest

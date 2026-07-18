@@ -41,7 +41,7 @@ export async function syncDailyReminderSchedule(enabled: boolean): Promise<void>
       content: {
         title: 'touche',
         body: 'Time for today’s Check photo.',
-        data: { route: '/check', kind: 'daily_reminder' },
+        data: { route: '/capture', kind: 'daily_reminder' },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes?.DAILY || 'daily',

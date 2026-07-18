@@ -20,7 +20,7 @@ import { ProductBarcodeScanner } from '@/components/conflict';
 import { useToast } from '@/components/billing-feedback';
 import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
-import { CHECK_HREF, verdictHref } from '@/constants/routes';
+import { PROGRESS_HREF, verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import {
   addProductManual,
@@ -114,7 +114,7 @@ export default function BottleScreen() {
     try {
       await shelfVerdictAction(productId, action);
       showToast(action === 'keep' ? 'Kept on shelf' : "Don't use — removed", 'success');
-      router.replace(CHECK_HREF);
+      router.replace(PROGRESS_HREF);
     } catch (e: unknown) {
       showToast(e instanceof Error ? e.message : 'Action failed', 'error');
     } finally {
@@ -134,7 +134,7 @@ export default function BottleScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.top}>
-        <Pressable onPress={() => router.replace(CHECK_HREF)} testID="bottle-back">
+        <Pressable onPress={() => router.replace(PROGRESS_HREF)} testID="bottle-back">
           <Text style={styles.back}>Back</Text>
         </Pressable>
         <Text style={styles.title}>Bottle</Text>

@@ -1,8 +1,19 @@
 User-agent: *
 Allow: /
-Allow: /scan
-Allow: /for/
+Allow: /privacy
+Allow: /terms
+Allow: /about.html
+Allow: /contact.html
 Disallow: /app/
 Disallow: /patients/
+Disallow: /try-verdict
+Disallow: /try-allergens
+Disallow: /try-reveal
+Disallow: /try-handoff
+Disallow: /app/try-verdict
+Disallow: /app/try-allergens
+Disallow: /app/try-reveal
+Disallow: /app/try-handoff
 
-Sitemap: https://myskinandcare.com/sitemap.xml
+# try-* product funnel: noindex in-app + Disallow here (thin mid-funnel, confusing cold entry).
+Sitemap: https://trytouche.com/sitemap.xml

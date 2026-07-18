@@ -1,1 +1,1 @@
-export const FOOTER_TAGLINE = 'The #1 Skincare Journal.';
+export const FOOTER_TAGLINE = 'Your medical tracker journal.';

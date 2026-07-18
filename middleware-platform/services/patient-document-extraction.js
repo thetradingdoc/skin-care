@@ -8,6 +8,10 @@ const fs = require('fs').promises;
 const path = require('path');
 const pdfParse = require('pdf-parse');
 const { v4: uuidv4 } = require('uuid');
+const {
+  assessPdfTextLayer,
+  extractEmbeddedJpegBuffers,
+} = require('./pdf-text-layer');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -92,9 +96,10 @@ async function extractFromImage(imagePath, mimeType = 'image/jpeg') {
 }
 
 /**
- * Extract text from file (PDF or image)
+ * Extract text from file (PDF or image).
+ * PDFs: prefer embedded text layer (no AI). Scanned PDFs fall back to vision on embedded JPEGs.
  * @param {Object} opts - { storagePath, buffer, mimeType, fileName }
- * @returns {Promise<{text: string, method: string}>}
+ * @returns {Promise<{text: string, method: string, used_ai?: boolean, text_layer?: object}>}
  */
 async function extractText(opts) {
   const { storagePath, buffer, mimeType, fileName } = opts;
@@ -102,14 +107,72 @@ async function extractText(opts) {
   const ext = (fileName && path.extname(fileName).toLowerCase()) || (storagePath && path.extname(storagePath).toLowerCase()) || '';
   const isPDF = mime.includes('pdf') || ext === '.pdf';
 
-  if (isPDF && buffer) {
-    const text = await extractFromPDF(buffer);
-    return { text, method: 'pdf-parse' };
-  }
-  if (isPDF && storagePath) {
-    const buf = await fs.readFile(storagePath);
-    const text = await extractFromPDF(buf);
-    return { text, method: 'pdf-parse' };
+  if (isPDF) {
+    let buf = buffer;
+    if (!buf && storagePath) {
+      buf = await fs.readFile(storagePath);
+    }
+    if (!buf) return { text: '', method: 'pdf-parse', used_ai: false };
+
+    // Prefer real magic; if caller claimed PDF by extension but bytes aren't PDF, fail empty
+    const { bufferHasPdfMagic } = require('./patient-record-media-gate');
+    if (!bufferHasPdfMagic(buf)) {
+      return {
+        text: '',
+        method: 'pdf-invalid-magic',
+        used_ai: false,
+        text_layer: { usable: false, reason: 'no_pdf_magic', char_count: 0 },
+      };
+    }
+
+    let pdfText = '';
+    try {
+      pdfText = await extractFromPDF(buf);
+    } catch (_) {
+      pdfText = '';
+    }
+    const layer = assessPdfTextLayer(pdfText);
+    if (layer.usable) {
+      return {
+        text: pdfText,
+        method: 'pdf-text-layer',
+        used_ai: false,
+        text_layer: layer,
+      };
+    }
+
+    // Scanned / empty text layer → vision OCR on embedded page images when present
+    const jpegs = extractEmbeddedJpegBuffers(buf, { maxImages: 3 });
+    if (jpegs.length && OPENAI_API_KEY) {
+      const chunks = [];
+      for (const jpeg of jpegs) {
+        const tmp = await writeTempImage(jpeg, 'image/jpeg');
+        try {
+          const t = await extractFromImage(tmp, 'image/jpeg');
+          if (t) chunks.push(t);
+        } finally {
+          try {
+            await fs.unlink(tmp);
+          } catch (_) {}
+        }
+      }
+      const merged = chunks.join('\n\n').trim();
+      if (merged) {
+        return {
+          text: merged,
+          method: 'pdf-scan-vision',
+          used_ai: true,
+          text_layer: layer,
+        };
+      }
+    }
+
+    return {
+      text: pdfText || '',
+      method: layer.char_count ? 'pdf-text-layer-weak' : 'pdf-no-text',
+      used_ai: false,
+      text_layer: layer,
+    };
   }
 
   const imageMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -118,10 +181,10 @@ async function extractText(opts) {
 
   if (isImage) {
     const p = storagePath || (buffer && await writeTempImage(buffer, mimeType));
-    if (!p) return { text: '', method: 'vision' };
+    if (!p) return { text: '', method: 'vision', used_ai: true };
     try {
       const text = await extractFromImage(p, mimeType);
-      return { text, method: 'vision' };
+      return { text, method: 'vision', used_ai: true };
     } finally {
       if (!storagePath && p) {
         try { await fs.unlink(p); } catch (_) {}
@@ -129,7 +192,7 @@ async function extractText(opts) {
     }
   }
 
-  return { text: '', method: 'unsupported' };
+  return { text: '', method: 'unsupported', used_ai: false };
 }
 
 async function writeTempImage(buffer, mimeType) {

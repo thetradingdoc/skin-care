@@ -3,7 +3,7 @@
 **Source mock:** [v3-redesign-source.html](./v3-redesign-source.html)  
 **Last updated:** 2026-07-14
 
-> **Historical / superseded:** This 5-tab map (Home / Track / Scan / Progress / Profile) and journey-choose post-auth gate describe the **pre–camera-first** IA. Current product SSOT: [`../../product/TOUCHE_CAMERA_FIRST.md`](../../product/TOUCHE_CAMERA_FIRST.md) — **no tab bar**, Check sole home, try-verdict cold entry.
+> **Historical / superseded:** This v3 5-tab map (Home / Track / Scan / Progress / Profile) and journey-choose post-auth gate are **not** current. Current product SSOT: [`../../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../../product/TOUCHE_AGENTIC_ARCHITECTURE.md) — Calendar | Shelf | Track | Progress | Profile (Progress lander). Camera-first Check-only interim: [superseded](../../product/TOUCHE_CAMERA_FIRST.md).
 
 ## Product framing
 
@@ -14,7 +14,7 @@ Two journeys, one app, shared photo loop (v3 framing — retained for archaeolog
 | User A — spot/growth watcher | `watch` | 3 taps max, plain language |
 | User B — routine/conflict tracker | `routine` | BFI ring, scan shelf, program steps |
 
-App positioning SSOT: **The #1 Skincare Journal.** Face check = hook; daily photo log = product. See [`docs/Brand/POSITIONING.md`](../../Brand/POSITIONING.md). Camera-first rebuild uses Check (not this tab bar) as sole home.
+App positioning SSOT: **The #1 Skincare Journal.** Face check = hook; daily photo log = product. See [`docs/Brand/POSITIONING.md`](../../Brand/POSITIONING.md). Current shell is the agentic 5-tab Progress lander (not this v3 map, not Check-as-sole-home).
 
 ## Tab bar (5 tabs) — historical
 
@@ -46,7 +46,7 @@ Typography: **Gloock** (display) + **DM Sans** (body) via `AppFontsProvider`.
 
 ## Post-auth routing
 
-> **Historical v3 gate order.** Current default: authenticated → `/check` (`resolve-post-auth-route.ts`).
+> **Historical gate order (v3 / camera-first era).** Not current — see agentic SSOT (Progress lander). Code may still mention `/check` in `resolve-post-auth-route.ts`.
 
 1. No journey mode → `/onboarding/journey-choose`
 2. `watch` only, no spots → `/(tabs)/track`

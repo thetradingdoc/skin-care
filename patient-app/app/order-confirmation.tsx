@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_COPY } from '@/constants/commerceCopy';
-import { CHECK_HREF, SCAN_HREF, verdictHref } from '@/constants/routes';
+import { PROGRESS_HREF, SCAN_HREF, verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
 import { patientGet } from '@/lib/patient-api';
 
@@ -88,7 +88,7 @@ export default function OrderConfirmationScreen() {
               <Text style={styles.primaryText}>Open shelf</Text>
             </Pressable>
           )}
-          <Pressable onPress={() => router.replace(CHECK_HREF)}>
+          <Pressable onPress={() => router.replace(PROGRESS_HREF)}>
             <Text style={styles.link}>Back to Check</Text>
           </Pressable>
         </View>

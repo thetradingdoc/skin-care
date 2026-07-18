@@ -9,10 +9,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { TRY_VERDICT_HREF } from '@/constants/routes';
+import { useTryFunnelNoIndex } from '@/lib/try-funnel-noindex';
 
 const REDIRECT_MS = 900;
 
 export default function TryHandoffScreen() {
+  useTryFunnelNoIndex();
   const router = useRouter();
 
   useEffect(() => {

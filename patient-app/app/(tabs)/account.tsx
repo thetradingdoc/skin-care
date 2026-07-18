@@ -19,7 +19,7 @@ import {
 import { patientGet, patientPost } from '@/lib/patient-api';
 import { trackPortalEvent } from '@/lib/trackPortalEvent';
 import { clearPatientSession, getStoredEmail } from '@/lib/patient-session';
-import { JOURNEY_CHOOSE_HREF, ORDERS_HREF, SHOP_HREF, SIGN_IN_HREF, BIO_CALIBRATION_HREF, TRY_ALLERGENS_HREF } from '@/constants/routes';
+import { JOURNEY_CHOOSE_HREF, ORDERS_HREF, PROGRESS_HREF, PROFILE_ALLERGENS_HREF, PROFILE_CONSENT_HREF, PROFILE_LANGUAGE_HREF, PROFILE_NOTIFICATIONS_HREF, PROFILE_SHARE_DOCTOR_HREF, ALERTS_HISTORY_HREF, SHOP_HREF, SIGN_IN_HREF, BIO_CALIBRATION_HREF } from '@/constants/routes';
 import { COMMERCE_COPY } from '@/constants/commerceCopy';
 import { TOUCHE_HOME_URL, TOUCHE_SKIN_COLLECTION_URL } from '@/constants/storeConfig';
 import { COMMERCE_CTAS_LOCAL_OVERRIDE } from '@/constants/feature-flags';
@@ -69,6 +69,7 @@ export default function AccountScreen() {
   const [showAdvancedProfile, setShowAdvancedProfile] = useState(false);
   const [isAppMember, setIsAppMember] = useState(false);
   const [commerceOn, setCommerceOn] = useState(COMMERCE_CTAS_LOCAL_OVERRIDE);
+  const [aiReadsLabel, setAiReadsLabel] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +121,15 @@ export default function AccountScreen() {
       ]);
       setAdvancedSeverity(adv);
       setDailyReminder(rem);
+
+      try {
+        const usage = await patientGet('/api/patient/ai/usage');
+        const used = Number(usage?.monthly_used ?? usage?.used ?? 0);
+        const limit = Number(usage?.monthly_limit ?? usage?.limit ?? 20);
+        setAiReadsLabel(`${used} of ${limit} AI reads`);
+      } catch {
+        setAiReadsLabel(null);
+      }
 
       if (template?.has_template && template?.template?.name) {
         setProgramName(String(template.template.name));
@@ -260,6 +270,15 @@ export default function AccountScreen() {
               )}
             </View>
 
+            {aiReadsLabel ? (
+              <View style={styles.card} testID="profile-ai-reads-meter">
+                <Text style={styles.cardTitle}>AI reads</Text>
+                <Text style={styles.cardBody} testID="profile-ai-reads-label">
+                  {aiReadsLabel} this month — manual entries stay free.
+                </Text>
+              </View>
+            ) : null}
+
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Your journeys</Text>
               <Text style={styles.cardBody}>Turn on the experiences you use. You can enable both.</Text>
@@ -329,7 +348,47 @@ export default function AccountScreen() {
               </Text>
               <ConsumerPrimaryButton
                 label="Edit allergens"
-                onPress={() => router.push(TRY_ALLERGENS_HREF)}
+                onPress={() => router.push(PROFILE_ALLERGENS_HREF)}
+              />
+            </View>
+
+            <View style={styles.card} testID="profile-language-row">
+              <Text style={styles.cardTitle}>Language</Text>
+              <ConsumerPrimaryButton
+                label="Language"
+                onPress={() => router.push(PROFILE_LANGUAGE_HREF)}
+              />
+            </View>
+
+            <View style={styles.card} testID="profile-share-doctor-row">
+              <Text style={styles.cardTitle}>Share with a doctor</Text>
+              <ConsumerPrimaryButton
+                label="Share with a doctor"
+                onPress={() => router.push(PROFILE_SHARE_DOCTOR_HREF)}
+              />
+            </View>
+
+            <View style={styles.card} testID="profile-alerts-history-row">
+              <Text style={styles.cardTitle}>Alerts history</Text>
+              <ConsumerPrimaryButton
+                label="View alerts history"
+                onPress={() => router.push(ALERTS_HISTORY_HREF)}
+              />
+            </View>
+
+            <View style={styles.card} testID="profile-notifications-row">
+              <Text style={styles.cardTitle}>Notifications</Text>
+              <ConsumerPrimaryButton
+                label="Manage notifications"
+                onPress={() => router.push(PROFILE_NOTIFICATIONS_HREF)}
+              />
+            </View>
+
+            <View style={styles.card} testID="profile-consent-row">
+              <Text style={styles.cardTitle}>Consent & privacy</Text>
+              <ConsumerPrimaryButton
+                label="View consent & privacy"
+                onPress={() => router.push(PROFILE_CONSENT_HREF)}
               />
             </View>
 
@@ -513,7 +572,7 @@ export default function AccountScreen() {
             {walletEnabled ? (
               <Pressable
                 style={styles.linkRow}
-                onPress={() => router.push('/(tabs)/money')}
+                onPress={() => router.push(PROGRESS_HREF)}
                 accessibilityRole="button">
                 <Text style={styles.linkLabel}>Bills & receipts</Text>
                 <Text style={styles.linkChevron}>›</Text>

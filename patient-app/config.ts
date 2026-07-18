@@ -58,7 +58,7 @@ export function getLocalhostProdApiIssue(): string | null {
       return (
         'This local build is pointed at the production API. ' +
         'Run: npm run dev:consumer-local (with middleware on :4000 using middleware-dev.db). ' +
-        'Or test on https://myskinandcare.com/app/sign-in after deploy.'
+        'Or test on https://app.trytouche.com/sign-in after deploy.'
       );
     }
   } catch {
@@ -67,10 +67,10 @@ export function getLocalhostProdApiIssue(): string | null {
   return null;
 }
 
-/** Web funnel entry for new users (sign-in screen). Override when myskinandcare.com DNS is live. */
+/** Web funnel entry for new users (sign-in screen). Override when app.trytouche.com DNS is live. */
 export const WEB_SIGNUP_URL = (
-  process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://myskinandcare.com/scan'
-).replace(/\/$/, '') || 'https://myskinandcare.com/scan';
+  process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://app.trytouche.com/welcome'
+).replace(/\/$/, '') || 'https://app.trytouche.com/welcome';
 
 /** Optional: pre-fill login email (e.g. same as appointment row in middleware). */
 export const DEMO_PATIENT_EMAIL =

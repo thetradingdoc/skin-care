@@ -10,9 +10,7 @@ import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
 import { JournalTokens } from '@/constants/journalTokens';
 import {
-  CHECK_HREF,
   GET_THE_APP_HREF,
-  HOME_HREF,
   INDEX_HREF,
   TRY_VERDICT_HREF,
 } from '@/constants/routes';
@@ -32,6 +30,7 @@ import {
   getPendingAllergens,
   getPendingTryProduct,
 } from '@/lib/try-verdict-session';
+import { clearPendingCaptureToken } from '@/lib/pending-capture-token';
 
 function webSignupLabel(url: string): string {
   try {
@@ -153,6 +152,13 @@ export default function SignInScreen() {
   }, [router]);
 
   async function finishWithSession(sessionId?: string) {
+    // P2.23 — capture_token is claimed server-side on verify/confirm; clear client stash.
+    try {
+      await clearPendingCaptureToken();
+    } catch {
+      /* ignore */
+    }
+
     // TOUCH-018 — persist pre-signup allergen exclusions to profile.
     try {
       const allergens = await getPendingAllergens();
@@ -194,11 +200,7 @@ export default function SignInScreen() {
       const completed = await completeSkinAgeJourney(sessionId);
       if (completed) {
         const route = await resolvePostAuthRoute({ journeyModes: ['routine'] });
-        if (route === HOME_HREF || route === CHECK_HREF) {
-          router.replace(CHECK_HREF);
-        } else {
-          router.replace(route);
-        }
+        router.replace(route);
         return;
       }
     }
@@ -213,12 +215,12 @@ export default function SignInScreen() {
       }
     }
 
-    // TOUCH-027/028/030 — iOS web → 6c; Android/desktop → Check.
+    // TOUCH-027/028/030 — iOS web → 6c; Android/desktop → Progress (P7.03 / Phase D).
     if (shouldShowGetTheAppInterstitial()) {
       router.replace(GET_THE_APP_HREF);
       return;
     }
-    router.replace(CHECK_HREF);
+    router.replace(await resolvePostAuthRoute());
   }
 
   if (checkingSession) {
@@ -272,7 +274,7 @@ export default function SignInScreen() {
         />
         {isSignupIntent ? (
           <Text style={styles.legal}>
-            By continuing you agree to our Privacy Policy and Terms at myskinandcare.com/patients/legal/.
+            By continuing you agree to our Privacy Policy and Terms at app.trytouche.com/privacy and app.trytouche.com/terms.
           </Text>
         ) : null}
         <Text style={styles.tagline}>{FOOTER_TAGLINE}</Text>

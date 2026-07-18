@@ -17,7 +17,7 @@ export default function OnboardingSignupScreen() {
     try {
       await completeOnboardingAfterSignup();
       router.replace({
-        pathname: '/check',
+        pathname: '/capture',
         params: { celebrate: '1', photo: '1' },
       });
     } catch {
@@ -37,7 +37,7 @@ export default function OnboardingSignupScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <View style={styles.wrap}>
-        <Text style={styles.brand}>Skin & Care</Text>
+        <Text style={styles.brand}>touche</Text>
         <OtpForm
           headline="Create your account"
           subtitle="Save your journal and start logging daily photos. Free to start."

@@ -119,6 +119,21 @@ temp/
 *.tmp
 *.html.bak
 
+# Auth scratch / token dumps (never commit)
+*.tok
+todos/pending/*.tok
+todos/pending/gct.tok
+todos/pending/firebase-login.out
+todos/pending/gcloud-auth-list.txt
+
+# AZ-01 prod inventory evidence (may reference live DB paths / snapshots)
+todos/pending/AZ01_PROD_*
+
+# Medical / patient-like test fixtures (real Rx OCR, MRI PDF, device photos)
+middleware-platform/__tests__/fixtures/allerton*
+middleware-platform/__tests__/fixtures/mri-rodilla*
+middleware-platform/__tests__/fixtures/sample-device.*
+
 # Middleware artifacts (local runs)
 middleware-platform/test-results/
 middleware-platform/uploads/

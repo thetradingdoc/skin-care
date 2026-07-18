@@ -8,13 +8,15 @@ const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../database');
 const { getOrCreate, STEDI } = require('../utils/circuit-breaker');
+const { isProdLikeEnv } = require('../utils/runtime-env');
 
 const stediBreaker = getOrCreate(STEDI, { failureThreshold: 5, windowMs: 60000, resetTimeMs: 30000 });
 
 class InsuranceService {
   // Stedi API Configuration (translate fallback on core; eligibility/claims on healthcare)
+  // SEC-01: never hardcode a key — env only; fail-closed in prod when unset.
   static STEDI_API_BASE = process.env.STEDI_API_BASE || 'https://core.us.stedi.com';
-  static STEDI_API_KEY = process.env.STEDI_API_KEY || 'test_1rRzTb0.Va9Tn88BB3fgPgttprqbrxQ1';
+  static STEDI_API_KEY = String(process.env.STEDI_API_KEY || '').trim();
   static STEDI_ELIGIBILITY_V3_PATH =
     process.env.STEDI_ELIGIBILITY_V3_PATH || '/2024-04-01/change/medicalnetwork/eligibility/v3';
 
@@ -26,14 +28,30 @@ class InsuranceService {
     return key;
   }
 
+  /** Throw when prod-like and STEDI_API_KEY is missing (SEC-01). */
+  static assertStediKeyConfigured() {
+    if (isProdLikeEnv() && !String(this.STEDI_API_KEY || '').trim()) {
+      const err = new Error('STEDI_API_KEY_REQUIRED');
+      err.code = 'STEDI_API_KEY_REQUIRED';
+      throw err;
+    }
+  }
+
   /**
    * Get Stedi API client with authentication
    */
   static getStediClient() {
+    this.assertStediKeyConfigured();
+    const auth = this.getStediAuthorizationHeader();
+    if (!auth) {
+      const err = new Error('STEDI_API_KEY_REQUIRED');
+      err.code = 'STEDI_API_KEY_REQUIRED';
+      throw err;
+    }
     return axios.create({
       baseURL: this.STEDI_API_BASE,
       headers: {
-        Authorization: this.getStediAuthorizationHeader(),
+        Authorization: auth,
         'Content-Type': 'application/json'
       },
       timeout: 30000 // 30 second timeout

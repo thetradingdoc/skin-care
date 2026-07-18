@@ -1,5 +1,8 @@
-// PR1 soft-launch safety — 2026-07-12
-// BLOCK 2 branding & UI — 2026-07-12
+/**
+ * Progress / Proof — medical history from patient_record_facts only (P5.08–P5.11).
+ * Calendar twin: same store via `/api/patient/records/calendar`.
+ * Does not call journal/spots summary endpoints.
+ */
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -13,102 +16,41 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BarrierGrid8, ImprovementBar } from '@/components/conflict';
 import { PhotoStreakHero } from '@/components/progress/PhotoStreakHero';
-import { SkinMetricSparkCards } from '@/components/progress/SkinMetricSparkCards';
-import { EmptyStateCard, SectionLabel, SpotRowCard } from '@/components/v3';
-import { SessionImage } from '@/components/SessionImage';
-import { AppIcon } from '@/components/ui/AppIcon';
+import { ProgressAlertsModule } from '@/components/progress/ProgressAlertsModule';
+import { ProgressEmptyState } from '@/components/progress/ProgressEmptyState';
+import { EmptyStateCard, SectionLabel } from '@/components/v3';
 import { AppFontFamilies } from '@/components/ui/AppFontsProvider';
 import { AppTokens } from '@/constants/appTokens';
-import { COMPARE_HREF, CHECK_HREF, spotHref, TRACK_HREF } from '@/constants/routes';
-import { rollingJournalRange } from '@/components/journal/journalTypes';
-import { listSpots, spotStatusLabel, type Spot } from '@/lib/spot-store';
+import { CAPTURE_2A_HREF, MARK_COMPARE_HREF, MARK_PICKER_HREF, TRACK_HREF } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { fetchFactsCalendar } from '@/lib/facts-calendar-api';
+import type { FactsCalendarDay } from '@/lib/facts-calendar';
+import { fetchMarksList, type MarkListItem } from '@/lib/marks-api';
 import {
-  fetchBarrierInsight,
-  fetchStreakPercentile,
-  fetchVerdictHistory,
-} from '@/lib/conflict-api';
-import { fetchJournalImprovements, fetchTriggerInsights } from '@/lib/journal-api';
-import type { BarrierInsight, VerdictHistoryDay } from '@/lib/conflict-types';
-import { verdictTagColor } from '@/lib/conflict-helpers';
-import { patientGet } from '@/lib/patient-api';
+  fetchProgressAggregates,
+  progressShowsBillModule,
+  progressShowsSkinModule,
+  streakFromFactDays,
+  type ProgressAggregatesPayload,
+} from '@/lib/progress-aggregates-api';
+import { formatBillMoney } from '@/lib/format-bill-money';
 import { trackPortalEvent } from '@/lib/trackPortalEvent';
 import { localTodayIso } from '@/lib/routine-day-mode';
 
-type Summary = {
-  streak_days?: number;
-  journal_days_logged?: number;
-  baseline_skin_age?: number | null;
-  latest_skin_age?: number | null;
-  improvement_metrics?: {
-    clarity_pct?: number;
-    redness_pct?: number;
-    skin_age_delta?: number;
-  };
-};
-
-type CalendarDay = {
-  date: string;
-  has_media?: boolean;
-  completion_score?: number;
-  verdict_overall?: string | null;
-  barrier_friction_index?: number | null;
-  thumbnail_url?: string | null;
-  condition_tags?: string[];
-};
-
-const CONDITION_DOT: Record<string, string> = {
-  calm: '#1D9E75',
-  breaking_out: '#EF9F27',
-  dry: '#314DB6',
-  oily: '#6B7280',
-  irritated: '#E24B4A',
-};
-
-function latestBfi(days: VerdictHistoryDay[]): number | null {
-  for (let i = days.length - 1; i >= 0; i--) {
-    const v = days[i]?.barrier_friction_index;
-    if (v != null) return v;
-  }
-  return null;
-}
-
-function bfiLabel(score: number): string {
-  if (score >= 70) return 'Good';
-  if (score >= 55) return 'Fair';
-  return 'Poor';
-}
-
-function isLoggedPhotoDay(d: CalendarDay): boolean {
-  return Boolean(d.has_media) || (d.completion_score ?? 0) >= 100;
+function rollingStartIso(days: number, todayIso: string): string {
+  const dt = new Date(`${todayIso}T12:00:00.000Z`);
+  dt.setUTCDate(dt.getUTCDate() - (days - 1));
+  return dt.toISOString().slice(0, 10);
 }
 
 export default function ProgressScreen() {
   const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [improvementMetrics, setImprovementMetrics] = useState<Summary['improvement_metrics'] | null>(null);
-  const [percentileCopy, setPercentileCopy] = useState<string | null>(null);
-  const [insight, setInsight] = useState<BarrierInsight>(null);
-  const [history, setHistory] = useState<VerdictHistoryDay[]>([]);
-  const [days, setDays] = useState<CalendarDay[]>([]);
-  /** Full calendar window (up to 180d) for Compare CTA — not the 8-day timeline strip. */
-  const [photoHistory, setPhotoHistory] = useState<CalendarDay[]>([]);
-  const [spots, setSpots] = useState<Spot[]>([]);
-  const [triggerTags, setTriggerTags] = useState<string[]>([]);
-  const [journalMetrics, setJournalMetrics] = useState<{
-    redness_pct?: number;
-    breakouts_pct?: number;
-    texture_pct?: number;
-    hydration_pct?: number;
-  } | null>(null);
-
-  const [severityHistory, setSeverityHistory] = useState<
-    Array<{ date: string; dryness_rank?: number | null; breakout_rank?: number | null }>
-  >([]);
+  const [aggregates, setAggregates] = useState<ProgressAggregatesPayload | null>(null);
+  const [calendarDays, setCalendarDays] = useState<FactsCalendarDay[]>([]);
+  const [marks, setMarks] = useState<MarkListItem[]>([]);
 
   useEffect(() => {
     if (ready) trackPortalEvent('progress_viewed');
@@ -118,49 +60,22 @@ export default function ProgressScreen() {
     setLoading(true);
     try {
       const today = localTodayIso();
-      // UX-1: wide range for true first photo + total photo days (timeline still uses last 8)
-      const { start: startIso } = rollingJournalRange(180);
-
-      const [progRes, insightRes, calRes, histRes, spotList, triggersRes, journalImpRes, sevRes] =
-        await Promise.all([
-          patientGet('/api/patient/home/progress-summary'),
-          fetchBarrierInsight().catch(() => null),
-          patientGet(
-            `/api/patient/journal/calendar-range?start=${startIso}&end=${today}&include_empty_days=1`,
-          ).catch(() => ({ days: [] })),
-          fetchVerdictHistory(8).catch(() => []),
-          listSpots(),
-          fetchTriggerInsights().catch(() => ({ insights: [] })),
-          fetchJournalImprovements().catch(() => ({ ready: false, metrics: null })),
-          patientGet('/api/patient/journal/severity/history?days=14').catch(() => ({ days: [] })),
-        ]);
-      setSpots(spotList);
-      setTriggerTags(
-        (triggersRes?.insights || []).map((i: { label: string }) => i.label).filter(Boolean),
-      );
-      setJournalMetrics(journalImpRes?.ready ? journalImpRes.metrics : null);
-      setSummary(progRes?.summary || null);
-      setImprovementMetrics(progRes?.improvement_metrics || null);
-      setInsight(insightRes);
-      setHistory(histRes);
-      setSeverityHistory(Array.isArray(sevRes?.days) ? sevRes.days : []);
-      const calDays: CalendarDay[] = Array.isArray(calRes?.days) ? calRes.days : [];
-      setPhotoHistory(calDays);
-      setDays(calDays.slice(-8));
-
-      const streak = Number(progRes?.summary?.streak_days) || 0;
-      if (streak > 0) {
-        const pct = await fetchStreakPercentile(streak).catch(() => null);
-        if (pct?.copy) setPercentileCopy(pct.copy);
-      } else {
-        setPercentileCopy(null);
-      }
+      const start = rollingStartIso(180, today);
+      const [agg, cal, markList] = await Promise.all([
+        fetchProgressAggregates().catch(() => null),
+        fetchFactsCalendar({ start, end: today }).catch(() => ({ days: [] as FactsCalendarDay[] })),
+        fetchMarksList()
+          .then((p) => p.marks)
+          .catch(() => [] as MarkListItem[]),
+      ]);
+      setAggregates(agg);
+      setCalendarDays(Array.isArray(cal?.days) ? cal.days : []);
+      setMarks(markList);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // PR1-15: reload on tab focus (covers initial mount when ready — replaces ready+load useEffect)
   useFocusEffect(
     useCallback(() => {
       if (!ready) return;
@@ -168,35 +83,17 @@ export default function ProgressScreen() {
     }, [ready, load]),
   );
 
-  // UX-1: first logged photo across 180d history (not the 8-day strip)
-  const earliestPhotoDate = useMemo(() => {
-    if (!photoHistory.length) return null;
-    const logged = photoHistory
-      .filter(isLoggedPhotoDay)
-      .sort((a, b) => a.date.localeCompare(b.date));
-    return logged.length > 0 ? logged[0].date : null;
-  }, [photoHistory]);
-
-  const countedPhotoDays = useMemo(
-    () => photoHistory.filter(isLoggedPhotoDay).length,
-    [photoHistory],
-  );
   const todayIso = localTodayIso();
-  const [showBackfillPicker, setShowBackfillPicker] = useState(false);
-
-  const backfillDates = useMemo(() => {
-    const today = localTodayIso();
-    const out: string[] = [];
-    for (let d = 1; d <= 2; d += 1) {
-      const dt = new Date(`${today}T12:00:00.000Z`);
-      dt.setUTCDate(dt.getUTCDate() - d);
-      const iso = dt.toISOString().slice(0, 10);
-      const day = photoHistory.find((p) => p.date === iso);
-      const logged = day ? isLoggedPhotoDay(day) : false;
-      if (!logged) out.push(iso);
-    }
-    return out;
-  }, [photoHistory]);
+  const factDates = useMemo(() => calendarDays.map((d) => d.date), [calendarDays]);
+  const streak = useMemo(() => streakFromFactDays(factDates, todayIso), [factDates, todayIso]);
+  const totalLoggedDays = calendarDays.length;
+  const timelineDays = useMemo(() => calendarDays.slice(-8), [calendarDays]);
+  const hasAnyFacts =
+    Boolean(aggregates?.skin || aggregates?.bill || aggregates?.rx || aggregates?.mark) ||
+    calendarDays.length > 0 ||
+    marks.length > 0;
+  const showCompareCta = marks.length >= 1;
+  const compareGroupId = marks[0] ? marks[0].compare_group_id || marks[0].id : null;
 
   if (checking || !ready) {
     return (
@@ -206,19 +103,6 @@ export default function ProgressScreen() {
     );
   }
 
-  const metrics = improvementMetrics;
-  const streak = summary?.streak_days ?? 0;
-  // Prefer API total when present (journal mode); else count from 180d calendar
-  const totalPhotoDays =
-    summary?.journal_days_logged != null
-      ? Number(summary.journal_days_logged) || 0
-      : countedPhotoDays;
-  const bfi = latestBfi(history);
-
-  const openPhoto = () => router.push(CHECK_HREF);
-  const showCompareCta =
-    totalPhotoDays >= 7 && Boolean(earliestPhotoDate) && earliestPhotoDate !== todayIso;
-
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']} testID="proof-screen">
       <ScrollView
@@ -227,16 +111,30 @@ export default function ProgressScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             <Text style={styles.title}>Proof</Text>
-            <Text style={styles.subtitle}>Your skin data. Your proof.</Text>
+            <Text style={styles.subtitle}>Your records. One history.</Text>
           </View>
-          <Pressable onPress={() => router.replace(CHECK_HREF)} accessibilityRole="button">
-            <Text style={styles.seeAll}>Check</Text>
+          <Pressable onPress={() => router.replace(CAPTURE_2A_HREF)} accessibilityRole="button">
+            <Text style={styles.seeAll}>Log</Text>
           </Pressable>
         </View>
 
-        {streak === 0 ? (
-          <PhotoStreakHero onTakePhoto={openPhoto} />
-        ) : (
+        <ProgressAlertsModule />
+
+        {!loading && !hasAnyFacts ? <ProgressEmptyState /> : null}
+
+        {!loading && !hasAnyFacts ? (
+          <PhotoStreakHero onTakePhoto={() => router.push(CAPTURE_2A_HREF)} />
+        ) : streak === 0 && hasAnyFacts ? (
+          <View style={styles.streakHero} testID="proof-streak-zero">
+            <View>
+              <Text style={styles.streakHeroLabel}>Keep going</Text>
+              <Text style={styles.streakHeroSubLight}>
+                {totalLoggedDays} day{totalLoggedDays === 1 ? '' : 's'} with records — log again
+                today to start a streak.
+              </Text>
+            </View>
+          </View>
+        ) : streak > 0 ? (
           <View style={styles.streakHero} testID="proof-streak">
             <View>
               <Text style={styles.streakHeroLabel}>Current streak</Text>
@@ -244,193 +142,92 @@ export default function ProgressScreen() {
                 <Text style={styles.streakHeroNum}>{streak}</Text>
                 <Text style={styles.streakHeroUnit}>days</Text>
               </View>
-              {percentileCopy ? <Text style={styles.streakHeroSub}>{percentileCopy}</Text> : null}
+              <Text style={styles.streakHeroSub}>
+                {totalLoggedDays} day{totalLoggedDays === 1 ? '' : 's'} with records
+              </Text>
             </View>
-            <AppIcon name="flame" size={28} color={AppTokens.color.watchAmberText} />
           </View>
-        )}
-        {bfi != null ? (
-          <Text style={styles.subtitle} testID="proof-barrier">
-            Barrier {bfiLabel(bfi)} · {bfi}/100
-          </Text>
         ) : null}
-        {showCompareCta ? (
+
+        {showCompareCta && compareGroupId ? (
           <Pressable
             onPress={() =>
               router.push({
-                pathname: COMPARE_HREF as '/compare',
-                params: { dateA: todayIso, dateB: earliestPhotoDate! },
-              })
+                pathname: MARK_COMPARE_HREF,
+                params: { compareGroupId },
+              } as never)
             }
             accessibilityRole="button"
-            accessibilityLabel="Compare day 1 to today"
+            accessibilityLabel="Compare marks over time"
             style={styles.compareCta}
             testID="proof-compare-cta">
-            <Text style={styles.compareCtaText}>See day 1 vs today →</Text>
+            <Text style={styles.compareCtaText}>Compare marks over time →</Text>
+          </Pressable>
+        ) : !loading && hasAnyFacts && marks.length === 0 ? (
+          <Pressable
+            onPress={() => router.push(MARK_PICKER_HREF)}
+            accessibilityRole="button"
+            accessibilityLabel="Start mark compare"
+            style={styles.compareCta}
+            testID="proof-compare-cta-start">
+            <Text style={styles.compareCtaText}>Track a mark to compare →</Text>
           </Pressable>
         ) : null}
 
-        <Pressable
-          style={styles.compareCta}
-          onPress={() => setShowBackfillPicker((v) => !v)}
-          testID="proof-add-past-day"
-          accessibilityRole="button"
-          accessibilityLabel="Add past day">
-          <Text style={styles.compareCtaText}>
-            {showBackfillPicker ? 'Choose a day below' : 'Add past day →'}
-          </Text>
-        </Pressable>
-        {showBackfillPicker ? (
-          <View style={styles.backfillPicker} testID="proof-backfill-picker">
-            <Text style={styles.subtitle}>
-              Photos can be backfilled for the last 48 hours only.
-            </Text>
-            {backfillDates.length === 0 ? (
-              <Text style={styles.bfiEmptyText}>No empty days in the backfill window.</Text>
-            ) : (
-              backfillDates.map((iso) => (
-                <Pressable
-                  key={iso}
-                  style={styles.backfillDay}
-                  testID={`proof-backfill-${iso}`}
-                  onPress={() => {
-                    setShowBackfillPicker(false);
-                    router.push({
-                      pathname: '/journal/capture' as never,
-                      params: { date: iso, library: '1' },
-                    } as never);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Backfill ${iso}`}>
-                  <Text style={styles.compareCtaText}>{iso} · upload photo →</Text>
-                </Pressable>
-              ))
-            )}
-          </View>
-        ) : null}
-
-        {/* TOUCH-048 — severity rank bars */}
-        <SectionLabel>Severity — last 2 weeks</SectionLabel>
-        <View style={styles.barrierCard} testID="proof-severity-charts">
-          {severityHistory.length === 0 ? (
-            <Text style={styles.bfiEmptyText}>Log severity after Check to unlock bars</Text>
-          ) : (
-            severityHistory.slice(-8).map((d) => (
-              <View key={d.date} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <Text style={{ width: 72, fontSize: 11, color: AppTokens.color.muted }}>{d.date.slice(5)}</Text>
-                <View
-                  style={{
-                    height: 10,
-                    width: Math.max(8, (Number(d.dryness_rank) || 0) * 28),
-                    backgroundColor: AppTokens.color.brandBlue,
-                    borderRadius: 4,
-                  }}
-                />
-                <View
-                  style={{
-                    height: 10,
-                    width: Math.max(8, (Number(d.breakout_rank) || 0) * 28),
-                    backgroundColor: AppTokens.color.terracotta,
-                    borderRadius: 4,
-                  }}
-                />
-              </View>
-            ))
-          )}
-          <Text style={{ fontSize: 11, color: AppTokens.color.hint, marginTop: 4 }}>
-            Blue = dry rank · Terracotta = breakout rank (1–3)
-          </Text>
-        </View>
-
-        <SectionLabel>Barrier score — last 8 days</SectionLabel>
-        <View style={styles.barrierCard}>
-          <View style={styles.barrierCardHeader}>
-            <Text style={styles.barrierCardTitle}>Barrier health — last 8 days</Text>
-            {bfi != null ? (
-              <View style={styles.bfiBadge}>
-                <Text style={styles.bfiBadgeText}>
-                  {bfiLabel(bfi)} {bfi}/100
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          <BarrierGrid8 days={history} />
-          {history.length === 0 ? (
-            <Text style={styles.bfiEmptyText}>Log photos to unlock barrier insights</Text>
-          ) : null}
-        </View>
-
-        {insight?.message ? (
-          <View style={styles.dipCard}>
-            <Text style={styles.dipTitle}>{insight.title || 'What caused the dip'}</Text>
-            {insight.drop_points != null ? (
-              <Text style={styles.dipPoints}>Barrier dropped {insight.drop_points} points</Text>
-            ) : null}
-            <Text style={styles.dipBody}>{insight.message}</Text>
-            {insight.pattern_count != null && insight.pattern_count > 1 ? (
-              <Text style={styles.dipPattern}>Seen {insight.pattern_count} times</Text>
-            ) : null}
-          </View>
-        ) : null}
-
-        <SectionLabel>Skin improvements</SectionLabel>
-        {journalMetrics ? (
-          <SkinMetricSparkCards metrics={journalMetrics} />
-        ) : (
+        {progressShowsSkinModule(aggregates) ? (
           <>
-            {metrics?.redness_pct != null ? (
-              <ImprovementBar label="Redness" value={metrics.redness_pct} positiveIsGood={false} />
-            ) : null}
-            {metrics?.clarity_pct != null ? (
-              <ImprovementBar label="Clarity" value={metrics.clarity_pct} positiveIsGood />
-            ) : null}
-            {metrics?.skin_age_delta != null ? (
-              <ImprovementBar
-                label="Skin age"
-                value={metrics.skin_age_delta}
-                unit=" yrs"
-                max={5}
-                positiveIsGood={false}
-              />
-            ) : null}
-            {!metrics?.clarity_pct && !metrics?.redness_pct && !metrics?.skin_age_delta ? (
-              <Text style={styles.emptyMetrics}>Log more photos to unlock improvement metrics.</Text>
-            ) : null}
-          </>
-        )}
-
-        {triggerTags.length > 0 ? (
-          <>
-            <SectionLabel>Your triggers</SectionLabel>
-            <View style={styles.tagRow}>
-              {triggerTags.map((tag) => (
-                <View key={tag} style={styles.triggerTag}>
-                  <Text style={styles.triggerTagText}>{tag}</Text>
-                </View>
-              ))}
+            <SectionLabel>Skin</SectionLabel>
+            <View style={styles.moduleCard} testID="progress-module-skin">
+              <Text style={styles.moduleLine}>
+                {aggregates!.skin!.fact_count} logged · calmer {aggregates!.skin!.calmer_day_count} ·
+                worse {aggregates!.skin!.worse_day_count} · same {aggregates!.skin!.same_day_count}
+              </Text>
+              <Text style={styles.moduleSub}>
+                Counts from your records — no invented improvement %.
+              </Text>
             </View>
           </>
         ) : null}
 
-        {days.length > 0 ? (
+        {progressShowsBillModule(aggregates) ? (
+          <>
+            <SectionLabel>Bills</SectionLabel>
+            <View style={styles.moduleCard} testID="progress-module-bill">
+              <Text style={styles.moduleLine}>
+                {aggregates!.bill!.fact_count} bill
+                {aggregates!.bill!.fact_count === 1 ? '' : 's'} ·{' '}
+                {formatBillMoney(aggregates!.bill!.total_amount_cents, aggregates!.bill!.currency)}
+              </Text>
+            </View>
+          </>
+        ) : null}
+
+        {aggregates?.rx ? (
+          <>
+            <SectionLabel>Prescriptions</SectionLabel>
+            <View style={styles.moduleCard} testID="progress-module-rx">
+              <Text style={styles.moduleLine}>
+                {aggregates.rx.fact_count} prescription
+                {aggregates.rx.fact_count === 1 ? '' : 's'}
+                {aggregates.rx.reminder_opt_in_count
+                  ? ` · ${aggregates.rx.reminder_opt_in_count} with reminders`
+                  : ''}
+              </Text>
+            </View>
+          </>
+        ) : null}
+
+        {timelineDays.length > 0 ? (
           <>
             <View style={styles.timelineHeader}>
-              <SectionLabel>{`${days.length}-day photo timeline`}</SectionLabel>
-              <Pressable onPress={() => router.push(CHECK_HREF)} accessibilityRole="button">
+              <SectionLabel>{`${timelineDays.length}-day record timeline`}</SectionLabel>
+              <Pressable onPress={() => router.push(CAPTURE_2A_HREF)} accessibilityRole="button">
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
-            <View style={styles.thumbGrid}>
-              {days.map((d) => {
-                const logged = (d.completion_score || 0) >= 100 || d.has_media;
-                const isToday = d.date === localTodayIso();
-                const tagColor = d.verdict_overall
-                  ? verdictTagColor(d.verdict_overall as 'safe' | 'caution' | 'avoid')
-                  : null;
-                const conditionDot =
-                  d.condition_tags?.[0] && CONDITION_DOT[d.condition_tags[0]]
-                    ? CONDITION_DOT[d.condition_tags[0]]
-                    : null;
+            <View style={styles.thumbGrid} testID="progress-facts-timeline">
+              {timelineDays.map((d) => {
+                const isToday = d.date === todayIso;
                 const dayLabel = (() => {
                   if (isToday) return 'Today';
                   const daysAgo = Math.round(
@@ -446,28 +243,12 @@ export default function ProgressScreen() {
                   <View key={d.date} style={styles.thumbCol}>
                     <Pressable
                       onPress={() =>
-                        router.push(`${CHECK_HREF}?date=${d.date}` as typeof CHECK_HREF)
+                        router.push(`${CAPTURE_2A_HREF}?date=${d.date}` as typeof CAPTURE_2A_HREF)
                       }
-                      style={[
-                        styles.thumb,
-                        logged ? styles.thumbLogged : styles.thumbEmpty,
-                        isToday && styles.thumbToday,
-                      ]}
+                      style={[styles.thumb, styles.thumbLogged, isToday && styles.thumbToday]}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${dayLabel}`}>
-                      {conditionDot ? (
-                        <View style={[styles.conditionDot, { backgroundColor: conditionDot }]} />
-                      ) : null}
-                      {tagColor && logged ? (
-                        <View style={[styles.thumbTag, { backgroundColor: tagColor }]}>
-                          <Text style={styles.thumbTagText}>{dayLabel}</Text>
-                        </View>
-                      ) : null}
-                      {d.thumbnail_url ? (
-                        <SessionImage uri={d.thumbnail_url} style={styles.thumbImage} contentFit="cover" />
-                      ) : logged ? (
-                        <AppIcon name="camera" size={18} color="rgba(255,255,255,0.45)" />
-                      ) : null}
+                      <Text style={styles.thumbTags}>{d.tags.join(' · ')}</Text>
                     </Pressable>
                     <Text style={styles.thumbDayLabel}>{dayLabel}</Text>
                   </View>
@@ -478,7 +259,7 @@ export default function ProgressScreen() {
         ) : null}
 
         <SectionLabel>Spot tracking</SectionLabel>
-        {spots.length === 0 ? (
+        {marks.length === 0 ? (
           <EmptyStateCard
             title="No spots tracked yet"
             body="Photograph a mole or mark on the Track tab. We'll help you watch it over time."
@@ -486,13 +267,25 @@ export default function ProgressScreen() {
             onCta={() => router.push(TRACK_HREF)}
           />
         ) : (
-          spots.map((spot) => (
-            <SpotRowCard
-              key={spot.id}
-              spot={spot}
-              statusLabel={spotStatusLabel(spot)}
-              onPress={() => router.push(spotHref(spot.id))}
-            />
+          marks.map((m) => (
+            <Pressable
+              key={m.id}
+              style={styles.markRow}
+              testID={`progress-mark-${m.id}`}
+              onPress={() =>
+                router.push({
+                  pathname: MARK_COMPARE_HREF,
+                  params: { compareGroupId: m.compare_group_id || m.id },
+                } as never)
+              }
+              accessibilityRole="button">
+              <View style={{ flex: 1 }}>
+                <Text style={styles.markTitle}>
+                  {m.body_location || m.note || 'Mark'}
+                </Text>
+                <Text style={styles.markSub}>{m.date || 'undated'}</Text>
+              </View>
+            </Pressable>
           ))
         )}
       </ScrollView>
@@ -542,6 +335,13 @@ const styles = StyleSheet.create({
   streakHeroNum: { fontSize: 42, fontWeight: '700', color: '#fff', lineHeight: 44 },
   streakHeroUnit: { fontSize: 16, fontWeight: '600', color: AppTokens.color.watchAmberText },
   streakHeroSub: { fontSize: 12, color: AppTokens.color.hint, marginTop: 4 },
+  streakHeroSubLight: {
+    fontSize: 14,
+    color: '#fff',
+    marginTop: 4,
+    lineHeight: 20,
+    maxWidth: 280,
+  },
   compareCta: {
     backgroundColor: AppTokens.color.cream,
     borderRadius: 24,
@@ -559,24 +359,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  backfillPicker: {
-    backgroundColor: AppTokens.color.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-    padding: 14,
-    gap: 10,
-    marginBottom: 8,
-  },
-  backfillDay: {
-    backgroundColor: AppTokens.color.cream,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-  },
-  barrierCard: {
+  moduleCard: {
     backgroundColor: AppTokens.color.card,
     borderRadius: 14,
     borderWidth: 1,
@@ -584,60 +367,12 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 4,
   },
-  barrierCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  barrierCardTitle: {
-    fontSize: 13,
-    fontFamily: AppFontFamilies.bodySemiBold,
+  moduleLine: {
+    fontSize: 15,
     color: AppTokens.color.ink,
-    flex: 1,
-  },
-  bfiEmptyText: {
-    fontSize: 12,
-    color: AppTokens.color.muted,
-    textAlign: 'center',
-    marginTop: 8,
-    fontFamily: AppFontFamilies.body,
-  },
-  bfiBadge: {
-    backgroundColor: '#E6F1FB',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  bfiBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: AppTokens.color.brandBlue,
     fontFamily: AppFontFamilies.bodySemiBold,
   },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  triggerTag: {
-    backgroundColor: '#FFF3E0',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FBBF24',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  triggerTagText: { fontSize: 12, color: '#92400E' },
-  emptyMetrics: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 8 },
-  dipCard: {
-    backgroundColor: AppTokens.color.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-    padding: 14,
-    marginTop: 8,
-  },
-  dipTitle: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
-  dipPoints: { fontSize: 11, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 4 },
-  dipBody: { fontSize: 11, color: AppTokens.color.muted, lineHeight: 17 },
-  dipPattern: { fontSize: 10, color: AppTokens.color.muted, marginTop: 6, fontStyle: 'italic' },
+  moduleSub: { fontSize: 12, color: AppTokens.color.muted, marginTop: 6 },
   timelineHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -659,30 +394,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    position: 'relative',
+    padding: 4,
   },
   thumbLogged: { backgroundColor: AppTokens.color.photoBg },
-  thumbEmpty: { backgroundColor: AppTokens.color.cream },
   thumbToday: { borderWidth: 2, borderColor: AppTokens.color.brandBlue },
-  conditionDot: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    zIndex: 3,
-  },
-  thumbTag: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    zIndex: 2,
-  },
-  thumbTagText: { color: '#fff', fontSize: 8, fontWeight: '600' },
-  thumbImage: { ...StyleSheet.absoluteFillObject, borderRadius: 8 },
+  thumbTags: { fontSize: 9, color: '#fff', textAlign: 'center', fontWeight: '600' },
   thumbDayLabel: { fontSize: 9, color: AppTokens.color.muted, marginTop: 2, textAlign: 'center' },
+  markRow: {
+    backgroundColor: AppTokens.color.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppTokens.color.line,
+    padding: 14,
+    marginBottom: 8,
+  },
+  markTitle: { fontSize: 15, color: AppTokens.color.ink, fontFamily: AppFontFamilies.bodySemiBold },
+  markSub: { fontSize: 12, color: AppTokens.color.muted, marginTop: 2 },
 });

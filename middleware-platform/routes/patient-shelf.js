@@ -233,6 +233,8 @@ app.post('/api/patient/shelf/products/scan', (req, res, next) => apiLimiter(req,
     }
     const n = resolved.normalized;
     const productName = n.product_name || `Product ${barcode}`;
+    const { resolveShelfCategoryFromScan } = require('../lib/patient-shelf-api');
+    const category = resolveShelfCategoryFromScan({ body: req.body || {}, normalized: n });
     const { extractActivesFromText, persistCanonicalIds } = require('../services/patient-lineup-resolver-service');
     const ids = extractActivesFromText(n.ingredients_text || productName);
     const id = `shelf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -240,13 +242,14 @@ app.post('/api/patient/shelf/products/scan', (req, res, next) => apiLimiter(req,
       INSERT INTO patient_onboarding_step3_products (
         id, session_id, patient_id, selection_mode, catalog_product_id, custom_product_name,
         category, usage_time, goal, ingredients_text, barcode, ingredient_canonical_ids_json, key_ingredients
-      ) VALUES (?, ?, ?, 'catalog', ?, ?, 'treatment', ?, 'conflict_track', ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, 'catalog', ?, ?, ?, ?, 'conflict_track', ?, ?, ?, ?)
     `).run(
       id,
       sessionId,
       patientId || null,
       `obf:${barcode}`,
       productName,
+      category,
       String(req.body?.usage_time || 'pm'),
       n.ingredients_text || null,
       barcode,
@@ -387,6 +390,34 @@ app.post('/api/patient/shelf/products/:productId/verdict-action', (req, res, nex
     return res.status(500).json({ success: false, error: e.message });
   }
 });
+
+  /** P8.07 — Ask / Learn shelf LLM (policy-gated; not diagnosis) */
+  app.post(
+    '/api/patient/shelf/ask-learn',
+    (req, res, next) => apiLimiter(req, res, next),
+    express.json(),
+    requirePatientSession,
+    (req, res) => {
+      try {
+        const { buildShelfAskLearnReply } = require('../services/shelf-ask-learn');
+        const out = buildShelfAskLearnReply({
+          kind: req.body?.kind,
+          productName: req.body?.product_name || req.body?.name,
+          question: req.body?.question,
+        });
+        if (!out.ok) {
+          return res.status(400).json({
+            success: false,
+            error: out.error_code,
+            error_code: out.error_code,
+          });
+        }
+        return res.json({ success: true, ai_suggestion: out.ai_suggestion });
+      } catch (e) {
+        return res.status(500).json({ success: false, error: e.message });
+      }
+    },
+  );
 }
 
 module.exports = { registerPatientShelfRoutes };

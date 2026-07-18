@@ -1,30 +1,42 @@
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { JournalTokens } from '@/constants/journalTokens';
-import { TRY_VERDICT_HREF } from '@/constants/routes';
+import { WELCOME_HREF } from '@/constants/routes';
 import { resolveInitialRoute } from '@/hooks/useOnboardingGate';
 
 const ROUTE_BUDGET_MS = 4000;
 
+/** True only for the SPA entry URL — never for deep links (sign-in, welcome, shop, …). */
+function isEntryPath(pathname: string | null | undefined): boolean {
+  const p = String(pathname || '').replace(/\/+$/, '') || '/';
+  return p === '/' || p === '/index';
+}
+
 export default function IndexScreen() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     let cancelled = false;
 
-    const goTryVerdict = () => {
+    // Anchor `index` stays mounted under deep links. Never steal those URLs to Welcome.
+    if (!isEntryPath(pathname)) {
+      return;
+    }
+
+    const goWelcome = () => {
       if (cancelled) return;
       try {
-        // TOUCH-013 failsafe: never dump to face-age funnel.
-        router.replace(TRY_VERDICT_HREF);
+        // Failsafe: signed-out cold start → Welcome (medical-tracker IA), never face-age.
+        router.replace(WELCOME_HREF);
       } catch (e) {
-        console.error('[index] try-verdict replace failed', e);
+        console.error('[index] welcome replace failed', e);
       }
     };
 
-    const failSafe = setTimeout(goTryVerdict, ROUTE_BUDGET_MS);
+    const failSafe = setTimeout(goWelcome, ROUTE_BUDGET_MS);
 
     void (async () => {
       try {
@@ -40,7 +52,7 @@ export default function IndexScreen() {
       } catch (e) {
         console.error('[index] resolveInitialRoute/replace failed', e);
         clearTimeout(failSafe);
-        goTryVerdict();
+        goWelcome();
       }
     })();
 
@@ -48,7 +60,12 @@ export default function IndexScreen() {
       cancelled = true;
       clearTimeout(failSafe);
     };
-  }, [router]);
+  }, [router, pathname]);
+
+  // Deep-link case: index is anchored but not the focused route — render nothing.
+  if (!isEntryPath(pathname)) {
+    return <View style={styles.root} />;
+  }
 
   return (
     <View style={styles.root}>

@@ -17,7 +17,8 @@ function registerCoreApiRoutes(app) {
   app.use('/api/providers', providerRoutes);
 
   const clinicInvoiceRoutes = require('../routes/invoices-clinic');
-  app.use('/api/invoices', clinicInvoiceRoutes);
+  const { requireAdminAuth } = require('../middleware/admin-auth');
+  app.use('/api/invoices', requireAdminAuth, clinicInvoiceRoutes); // SEC-15
 
   const productRoutes = require('../routes/products');
   const orderRoutes = require('../routes/orders');
@@ -49,7 +50,7 @@ function registerCoreApiRoutes(app) {
   app.use('/api/admin/ai', adminAIAssistantRoutes);
 
   const adminTenantsRoutes = require('../routes/admin-tenants');
-  app.use('/api/admin/tenants', adminTenantsRoutes);
+  app.use('/api/admin/tenants', requireAdminAuth, adminTenantsRoutes); // SEC-16
 
   const tenantConfigRoutes = require('../routes/tenant-config');
   app.use('/api/tenant', tenantConfigRoutes);

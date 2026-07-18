@@ -1,5 +1,11 @@
 'use strict';
 
+/**
+ * Deterministic consumer evaluate graph (shelf / lineup only).
+ * P4.13 — Medical facts compose lives elsewhere; this file must not import
+ * medical tracker rails, facts tables, or capture/delta/export pack graphs.
+ */
+
 require('../utils/langsmith-config');
 
 const { redisGet, redisSet } = require('../lib/redis-client');

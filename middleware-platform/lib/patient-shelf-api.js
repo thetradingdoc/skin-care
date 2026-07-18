@@ -61,16 +61,51 @@ function daysLeftFromExpiry(expiryDate) {
   return Math.round((end - today) / 86400000);
 }
 
+/** Backend classification for Rx-never-Buy — must stay aligned with patient-app/lib/shelf-commerce-cta.ts */
+function isPrescriptionShelfCategory(category) {
+  const c = String(category || '')
+    .toLowerCase()
+    .trim();
+  if (!c) return false;
+  if (c === 'prescription' || c === 'rx') return true;
+  return /\bprescription\b/.test(c) || /\brx\b/.test(c);
+}
+
+/**
+ * Classify shelf category from Open Beauty Facts / scan body.
+ * Prefer explicit body.is_prescription / body.category; else OBF category tags.
+ */
+function resolveShelfCategoryFromScan({ body, normalized }) {
+  if (body && body.is_prescription === true) return 'prescription';
+  if (body && body.category != null && String(body.category).trim()) {
+    return String(body.category).trim();
+  }
+  const blob = [
+    ...(Array.isArray(normalized?.categories) ? normalized.categories : []),
+    ...(Array.isArray(normalized?.categories_tags) ? normalized.categories_tags : []),
+    normalized?.product_name || '',
+    normalized?.generic_name || '',
+  ]
+    .join(' ')
+    .toLowerCase();
+  if (/\bprescription\b/.test(blob) || /\brx[- ]?only\b/.test(blob) || /\bmedicament\b/.test(blob)) {
+    return 'prescription';
+  }
+  return 'treatment';
+}
+
 function formatShelfProductApiRow(r) {
   const { safeParseJsonArray } = require('./patient-portal-shared');
   const days_left = daysLeftFromExpiry(r.expiry_date);
+  const category = r.category;
   return {
     id: r.id,
     product_name: r.custom_product_name || r.product_name || 'Product',
     selection_mode: r.selection_mode,
     catalog_product_id: r.catalog_product_id,
     custom_brand: r.custom_brand,
-    category: r.category,
+    category,
+    is_prescription: isPrescriptionShelfCategory(category),
     usage_time: r.usage_time,
     frequency_rule: r.frequency_rule,
     days_of_week: safeParseJsonArray(r.days_of_week_json),
@@ -110,4 +145,6 @@ module.exports = {
   formatShelfProductApiRow,
   loadPatientShelfProductRows,
   daysLeftFromExpiry,
+  isPrescriptionShelfCategory,
+  resolveShelfCategoryFromScan,
 };
