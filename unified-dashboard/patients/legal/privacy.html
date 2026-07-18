@@ -3,78 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy — Skin &amp; Care</title>
-  <link rel="stylesheet" href="../../assets/css/skin-care-tokens.css" />
+  <title>Privacy Policy — Touche</title>
+  <meta name="description" content="Touche privacy policy: how we process photos, documents, and medical facts you capture." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://app.trytouche.com/privacy" />
   <style>
-    body {
-      margin: 0;
-      font-family: var(--font-ui);
-      background: var(--sc-cream);
-      color: var(--sc-ink);
-      line-height: 1.6;
-      padding: 2rem 1.25rem 3rem;
-    }
-    main {
-      max-width: 640px;
-      margin: 0 auto;
-      background: var(--sc-card);
-      border: 1px solid var(--sc-line);
-      border-radius: 18px;
-      padding: 2rem 1.5rem;
-    }
-    h1 {
-      font-family: var(--font-display);
-      font-weight: 400;
-      font-size: 1.75rem;
-      margin: 0 0 0.5rem;
-    }
-    .muted { color: var(--sc-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
-    h2 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
-    p { margin: 0 0 0.75rem; }
-    a { color: var(--sc-brand-blue); }
+    body { margin: 0; font-family: "DM Sans", system-ui, sans-serif; background: #f7f4ef; color: #1a1a1a; line-height: 1.65; padding: 2rem 1.25rem 3rem; }
+    main { max-width: 680px; margin: 0 auto; background: #fff; border: 1px solid #e6e0d6; border-radius: 16px; padding: 2rem 1.5rem; }
+    h1 { font-size: 1.75rem; margin: 0 0 0.35rem; font-weight: 700; }
+    h2 { font-size: 1.05rem; margin: 1.6rem 0 0.5rem; }
+    .muted { color: #6b6560; font-size: 0.9rem; margin-bottom: 1.25rem; }
+    p, li { margin: 0 0 0.75rem; }
+    ul { padding-left: 1.2rem; }
+    a { color: #2f5d50; }
+    .note { background: #f3ebe3; border-radius: 10px; padding: 0.85rem 1rem; font-size: 0.92rem; }
   </style>
 </head>
 <body>
   <main>
     <h1>Privacy Policy</h1>
-    <p class="muted">Skin &amp; Care · Last updated June 2026</p>
+    <p class="muted">Touche · Last updated July 17, 2026 · Effective for the consumer app and web experience</p>
 
     <p>
-      Skin &amp; Care helps you track daily skin photos and follow concern-based routines.
-      This policy describes what we collect and how we use it for the consumer app and web experience.
+      Touche (“we”, “us”) is a personal <strong>skincare and medical journal</strong>.
+      It helps you capture and organize facts about your skin, prescriptions, bills, marks, labs, and other health documents.
+      It is a wellness / self-tracking tool — <strong>not</strong> a clinical diagnosis service and not a substitute for professional medical care.
     </p>
 
-    <h2>Information we collect</h2>
+    <h2>What we collect</h2>
+    <ul>
+      <li><strong>Account:</strong> email address used for one-time-password (OTP) sign-in; optional display name.</li>
+      <li><strong>Captures you attach:</strong> photos and PDFs you choose to upload, plus structured fields you confirm (for example drug name, bill amount, body location).</li>
+      <li><strong>Six capture tags:</strong> <code>skin</code>, <code>bill</code>, <code>prescription</code>, <code>mark</code>, <code>lab</code>, and <code>other</code>.</li>
+      <li><strong>Optional AI extracts:</strong> when you use an AI read, we may temporarily store machine-extracted text from your upload to help you confirm fields.</li>
+      <li><strong>Product / shelf data:</strong> products you add or scan, evaluate results, and related alerts.</li>
+      <li><strong>Operational metadata:</strong> coarse device/app paths and event enums needed to run the service (not photo contents in analytics payloads).</li>
+    </ul>
+
+    <h2>How AI processing works</h2>
     <p>
-      Account email for sign-in, progress photos you choose to upload, routine logs, and basic device/app
-      metadata needed to operate the service.
+      If you choose an <strong>AI read</strong>, your photo or document is sent to our capture orchestration pipeline to propose a tag and draft fields.
+      You review and confirm before a fact is kept. Manual entry is always available and is not metered the same way as AI reads.
+      AI suggestions (including Shelf Ask/Learn) are labeled as suggestions and are not diagnoses.
+      We do <strong>not</strong> use your uploads to train outside (third-party) models.
     </p>
 
     <h2>How we use information</h2>
+    <ul>
+      <li>To provide your Calendar, Track, Progress, Shelf, and Profile surfaces from your confirmed facts.</li>
+      <li>To meter AI usage where applicable, and to process optional paid features (for example AI credits) through our payment provider.</li>
+      <li>To provide physician export / share packs that retrieve your confirmed facts — without inventing an AI narrative.</li>
+      <li>We do <strong>not</strong> sell your personal information. Consumer surfaces do not use third-party advertising analytics SDKs (no Google Analytics / Segment on these surfaces).</li>
+    </ul>
+
+    <h2>Storage, encryption, and a named limitation</h2>
     <p>
-      To provide your timeline, routine guidance, subscription billing when enabled, and product support.
-      We do not sell your personal information.
+      Confirmed structured fact fields (and raw extract text while retained) are encrypted at rest with
+      <strong>AES-256-GCM</strong> in our application layer, in addition to storage-provider encryption where applicable.
+      Media is stored under opaque references and accessed via short-lived signed or tokenized URLs.
+    </p>
+    <p class="note">
+      <strong>Limitation we want to state clearly:</strong> we do not yet operate customer-managed key rotation or a dedicated KMS workflow for these application keys.
+      Rotating encryption keys would require a migration tool that is not shipped today. We will update this policy when that changes.
     </p>
 
-    <h2>Photos and health-related data</h2>
+    <h2>Antivirus scanning</h2>
     <p>
-      Progress photos are stored to power your journal. Skin &amp; Care is a wellness tracking tool, not a
-      substitute for professional medical advice. You control when photos are captured and uploaded.
+      Medical uploads through the capture pipeline are scanned with fail-closed antivirus controls (ClamAV in production configuration).
+      Uploads that cannot be scanned safely are rejected rather than stored silently.
     </p>
+
+    <h2>Retention</h2>
+    <ul>
+      <li><strong>Confirmed structured facts:</strong> retained for the life of your account (until you delete the account).</li>
+      <li><strong>Media files and raw OCR / extract text:</strong> purged on a schedule after confirmation windows (defaults: <strong>90 days</strong> after confirmation for confirmed media/raw text; <strong>30 days</strong> after creation for unconfirmed drafts). Structured facts are kept.</li>
+      <li><strong>Anonymous try / funnel journeys:</strong> short-lived (on the order of days) and expire automatically.</li>
+    </ul>
+
+    <h2>Your controls</h2>
     <p>
-      <strong>Face scan (before account):</strong> If you use the free skin-age scan on the web, your photo is
-      sent securely to our analysis service to produce a wellness estimate. We do not keep that scan image on
-      our servers after analysis; only the numeric estimate may be stored in your browser until you sign up.
-      After you create an account, daily progress photos you choose to upload are stored in your private
-      journal (encrypted cloud storage) so you can compare change over time.
+      You can review consent language in Profile, stop using AI reads and enter facts manually, and request account deletion from Profile.
+      Deleting your account removes related health data we hold for that account, subject to short backup/operational windows described in our operational policies.
     </p>
+
+    <h2>Children</h2>
+    <p>Touche is not directed to children under 13. Do not create an account for a child under 13.</p>
 
     <h2>Contact</h2>
-    <p>
-      Questions: <a href="mailto:support@skinandcare.com">support@skinandcare.com</a>
-    </p>
-
-    <p><a href="/">← Back to Skin &amp; Care</a></p>
+    <p>Privacy questions: <a href="mailto:support@trytouche.com">support@trytouche.com</a></p>
+    <p><a href="/">← Back to Touche</a> · <a href="/terms">Terms of Service</a></p>
   </main>
 </body>
 </html>

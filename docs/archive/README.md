@@ -1,6 +1,6 @@
 # archive — consolidated documentation
 
-> **Pre-rebuild material (2026-07-14):** [`pre-rebuild/`](./pre-rebuild/) holds the archived v3 screen map, soft-launch TODOs, and old smoke/prod checklists. Current product SSOT: [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
+> **Pre-rebuild material (2026-07-14):** [`pre-rebuild/`](./pre-rebuild/) holds the archived v3 screen map, soft-launch TODOs, and old smoke/prod checklists. Current product SSOT: [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md). Camera-first IA: [superseded](../product/TOUCHE_CAMERA_FIRST.md).
 
 **Single file:** All former `docs/archive/**/*.md` content is merged here. **Last updated:** 2026-07-14
 

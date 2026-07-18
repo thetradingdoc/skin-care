@@ -1,0 +1,1651 @@
+{
+  "generatedAt": "2026-07-17T15:28:48.021Z",
+  "baseUrl": "http://127.0.0.1:5299",
+  "mode": "local-stub",
+  "routeCount": 70,
+  "okCount": 66,
+  "failCount": 4,
+  "failureCount": 74,
+  "criticalCount": 0,
+  "highCount": 74,
+  "tabResults": [
+    {
+      "tab": "Calendar",
+      "url": "http://127.0.0.1:5299/app/calendar",
+      "ok": true,
+      "unmatched": false,
+      "preview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_f"
+    },
+    {
+      "tab": "Shelf",
+      "url": "http://127.0.0.1:5299/app/shelf",
+      "ok": true,
+      "unmatched": false,
+      "preview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_f"
+    },
+    {
+      "tab": "Track",
+      "url": "http://127.0.0.1:5299/app/track",
+      "ok": true,
+      "unmatched": false,
+      "preview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_f"
+    },
+    {
+      "tab": "Progress",
+      "url": "http://127.0.0.1:5299/app/progress",
+      "ok": true,
+      "unmatched": false,
+      "preview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_f"
+    },
+    {
+      "tab": "Profile",
+      "url": "http://127.0.0.1:5299/app/account",
+      "ok": true,
+      "unmatched": false,
+      "preview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_f"
+    }
+  ],
+  "designIssues": [
+    {
+      "path": "/capture",
+      "kind": "pdf_copy",
+      "detail": "Capture copy mentions PDF — verify DocumentPicker exists"
+    }
+  ],
+  "failures": [
+    {
+      "path": "/welcome",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/welcome"
+    },
+    {
+      "path": "/sign-in",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in"
+    },
+    {
+      "path": "/auth/otp-entry",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/auth/otp-entry"
+    },
+    {
+      "path": "/auth/otp-error",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/auth/otp-error"
+    },
+    {
+      "path": "/get-the-app",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in"
+    },
+    {
+      "path": "/capture/consent",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/consent"
+    },
+    {
+      "path": "/capture",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture"
+    },
+    {
+      "path": "/capture/camera-denied",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/camera-denied"
+    },
+    {
+      "path": "/capture/vision-fail",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/vision-fail"
+    },
+    {
+      "path": "/capture/manual-entry",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/manual-entry"
+    },
+    {
+      "path": "/capture/tag",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/tag"
+    },
+    {
+      "path": "/capture/loading",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/camera-denied"
+    },
+    {
+      "path": "/capture/ai-cap",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/ai-cap"
+    },
+    {
+      "path": "/capture/ai-burst",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/ai-burst"
+    },
+    {
+      "path": "/capture/welcome-bonus",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/welcome-bonus"
+    },
+    {
+      "path": "/capture/unlock-ai",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/unlock-ai"
+    },
+    {
+      "path": "/capture/daily-ai-suggests",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/daily-ai-suggests"
+    },
+    {
+      "path": "/capture/opqrst-lite",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/opqrst-lite"
+    },
+    {
+      "path": "/capture/routine-nudge",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/routine-nudge"
+    },
+    {
+      "path": "/capture/mark-picker",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/mark-picker"
+    },
+    {
+      "path": "/capture/mark-compare",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/mark-compare"
+    },
+    {
+      "path": "/capture/confirm/skin",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/skin"
+    },
+    {
+      "path": "/capture/reveal/skin",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/skin"
+    },
+    {
+      "path": "/capture/thesis/skin",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/skin"
+    },
+    {
+      "path": "/capture/confirm/bill",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/bill"
+    },
+    {
+      "path": "/capture/reveal/bill",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/bill"
+    },
+    {
+      "path": "/capture/thesis/bill",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/bill"
+    },
+    {
+      "path": "/capture/confirm/rx",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/rx"
+    },
+    {
+      "path": "/capture/reveal/rx",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/rx"
+    },
+    {
+      "path": "/capture/thesis/rx",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/rx"
+    },
+    {
+      "path": "/capture/confirm/mark",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/mark"
+    },
+    {
+      "path": "/capture/reveal/mark",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/mark"
+    },
+    {
+      "path": "/capture/thesis/mark",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/mark"
+    },
+    {
+      "path": "/capture/confirm/lab",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/lab"
+    },
+    {
+      "path": "/capture/reveal/lab",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/lab"
+    },
+    {
+      "path": "/capture/thesis/lab",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/lab"
+    },
+    {
+      "path": "/capture/confirm/other",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/other"
+    },
+    {
+      "path": "/capture/reveal/other",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/other"
+    },
+    {
+      "path": "/capture/thesis/other",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/other"
+    },
+    {
+      "path": "/calendar",
+      "severity": "high",
+      "kind": "empty_despite_stub",
+      "detail": "Calendar empty despite calendar stub",
+      "finalUrl": "http://127.0.0.1:5299/app/calendar"
+    },
+    {
+      "path": "/calendar",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/calendar"
+    },
+    {
+      "path": "/shelf",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/shelf"
+    },
+    {
+      "path": "/track",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/track"
+    },
+    {
+      "path": "/progress",
+      "severity": "high",
+      "kind": "empty_despite_stub",
+      "detail": "Progress looks empty while aggregates stub returns data — wire/API contract mismatch",
+      "finalUrl": "http://127.0.0.1:5299/app/progress"
+    },
+    {
+      "path": "/progress",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/progress"
+    },
+    {
+      "path": "/account",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/account"
+    },
+    {
+      "path": "/profile/language",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/language"
+    },
+    {
+      "path": "/profile/share-with-doctor",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/share-with-doctor"
+    },
+    {
+      "path": "/profile/notifications",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/notifications"
+    },
+    {
+      "path": "/profile/consent-privacy",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/consent-privacy"
+    },
+    {
+      "path": "/profile/allergens",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/allergens"
+    },
+    {
+      "path": "/alerts",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/alerts"
+    },
+    {
+      "path": "/shelf/rx-refill-info",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/shelf/rx-refill-info"
+    },
+    {
+      "path": "/scan-entry",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/progress"
+    },
+    {
+      "path": "/shop",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in"
+    },
+    {
+      "path": "/verdict/shelf_e2e_retinol",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/verdict/shelf_e2e_retinol"
+    },
+    {
+      "path": "/barcode-verdict-depth",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/barcode-verdict-depth"
+    },
+    {
+      "path": "/try-verdict",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict"
+    },
+    {
+      "path": "/try-allergens",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/try-allergens"
+    },
+    {
+      "path": "/try-reveal",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict"
+    },
+    {
+      "path": "/try-handoff",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict"
+    },
+    {
+      "path": "/onboarding/journey-choose",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/journey-choose"
+    },
+    {
+      "path": "/onboarding/concerns",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/concerns"
+    },
+    {
+      "path": "/onboarding/signup",
+      "severity": "high",
+      "kind": "brand_drift",
+      "detail": "Signup still Skin & Care",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/signup"
+    },
+    {
+      "path": "/onboarding/signup",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/signup"
+    },
+    {
+      "path": "/routine/pick",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/routine/pick"
+    },
+    {
+      "path": "/routine/setup",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/routine/pick?concern=acne"
+    },
+    {
+      "path": "/check",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture"
+    },
+    {
+      "path": "/severity",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/capture"
+    },
+    {
+      "path": "/_journal",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/calendar"
+    },
+    {
+      "path": "/compare",
+      "severity": "high",
+      "kind": "legacy_compare",
+      "detail": "Legacy compare route still reachable (Progress CTA risk)",
+      "finalUrl": "http://127.0.0.1:5299/app/compare"
+    },
+    {
+      "path": "/compare",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/compare"
+    },
+    {
+      "path": "/proof",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/proof"
+    },
+    {
+      "path": "/track/capture",
+      "severity": "high",
+      "kind": "pageerror",
+      "detail": "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.",
+      "finalUrl": "http://127.0.0.1:5299/app/track/capture"
+    }
+  ],
+  "results": [
+    {
+      "path": "/welcome",
+      "area": "cold",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/welcome",
+      "title": "",
+      "bodyPreview": "touche Medical Tracker One place for your skin, your prescriptions, your bills — whatever you need to keep track of. 20 AI reads free each month — manual entries are always free. Get started free, always for manual entries",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-cold-welcome.png",
+      "ok": true
+    },
+    {
+      "path": "/sign-in",
+      "area": "auth",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in",
+      "title": "",
+      "bodyPreview": " Back Sign in Welcome back. Enter your email for a secure 6-digit code. Email Name Send code The #1 Skincare Journal.",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-auth-sign-in.png",
+      "ok": true
+    },
+    {
+      "path": "/auth/otp-entry",
+      "area": "auth",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/auth/otp-entry",
+      "title": "",
+      "bodyPreview": "Enter your code sent to your email Confirm use a different email",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-auth-auth_otp-entry.png",
+      "ok": true
+    },
+    {
+      "path": "/auth/otp-error",
+      "area": "auth",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/auth/otp-error",
+      "title": "",
+      "bodyPreview": "Enter your code that code's wrong or expired Resend code use a different email",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-auth-auth_otp-error.png",
+      "ok": true
+    },
+    {
+      "path": "/get-the-app",
+      "area": "cold",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in",
+      "title": "",
+      "bodyPreview": " Back Sign in Welcome back. Enter your email for a secure 6-digit code. Email Name Send code The #1 Skincare Journal.",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-cold-get-the-app.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/consent",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/consent",
+      "title": "",
+      "bodyPreview": "Before we start touche reads photos and documents you attach to log facts across six tags — skin, bill, prescription, mark, lab, or other. Optional AI reads can draft fields you confirm; manual entry is always free. It never diagnoses. Uploads are scanned for malware, encrypted a",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_consent.png",
+      "ok": true
+    },
+    {
+      "path": "/capture",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture",
+      "title": "",
+      "bodyPreview": "Log something skin, prescription, bill — anything photo or PDF — video not in this version Take a photo Upload from library",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/camera-denied",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/camera-denied",
+      "title": "",
+      "bodyPreview": "camera access needed Allow camera access in Settings, or upload a photo / enter details manually. upload photo instead enter it manually",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_camera-denied.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/vision-fail",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/vision-fail",
+      "title": "",
+      "bodyPreview": "couldn't read this clearly Lighting, blur, or a cropped edge can confuse the read. Try again or type it in — no dead end. retake or re-upload enter it manually",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_vision-fail.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/manual-entry",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/manual-entry",
+      "title": "",
+      "bodyPreview": "Enter it yourself no AI · no photo needed skin bill prescription mark lab other what happened / what is it date Save",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_manual-entry.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/tag",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/tag",
+      "title": "",
+      "bodyPreview": "What's this about? pick any that apply Skin Bill Prescription Mark Lab Other Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_tag.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/loading",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/camera-denied",
+      "title": "",
+      "bodyPreview": "camera access needed Allow camera access in Settings, or upload a photo / enter details manually. upload photo instead enter it manually",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_loading.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/ai-cap",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/ai-cap",
+      "title": "",
+      "bodyPreview": "AI reads used up for this month you can still log this manually right now, free, no limit — or unlock more AI reads Log manually instead See options",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_ai-cap.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/ai-burst",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/ai-burst",
+      "title": "",
+      "bodyPreview": "Too many AI reads in a short time for safety we cap AI reads at 10 in 24 hours. you can still log this manually right now — free, no limit — or try AI again later. AI_BURST_LIMIT Log manually instead See unlock options",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_ai-burst.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/welcome-bonus",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/welcome-bonus",
+      "title": "",
+      "bodyPreview": "Catching up? Extra reads on us for your first week, backfilling old records doesn't touch your monthly limit 12 bonus reads · 5 days left Got it",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_welcome-bonus.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/unlock-ai",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/unlock-ai",
+      "title": "",
+      "bodyPreview": "More AI reads manual logging is always free — this only covers AI-read photos/documents 20 reads $3.99 Unlimited monthly $9.99/mo Choose",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_unlock-ai.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/daily-ai-suggests",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/daily-ai-suggests",
+      "title": "",
+      "bodyPreview": "AI SUGGESTS: calmer than yesterday tap to confirm or correct worse same calmer what did you use today? (optional) looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_daily-ai-suggests.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/opqrst-lite",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/opqrst-lite",
+      "title": "",
+      "bodyPreview": "A few quick questions only shown when you tag a skin issue · skippable When did you first notice it? Anything that makes it better or worse? How would you describe it? Continue skip this",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_opqrst-lite.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/routine-nudge",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/routine-nudge",
+      "title": "",
+      "bodyPreview": "Want reminders? optional — a routine just sets a reminder cadence, tracking works either way Acne 12 weeks · daily reminder Barrier repair 8 weeks · daily reminder Start with reminders no thanks, just let me log",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_routine-nudge.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/mark-picker",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/mark-picker",
+      "title": "",
+      "bodyPreview": "new mark, or is this the same one as before? /api/patient/marks No earlier marks yet — this will be your first. Tracking starts here. new mark",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_mark-picker.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/mark-compare",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/mark-compare",
+      "title": "",
+      "bodyPreview": "Compare over time dated photos only — nothing AI-interpreted /api/patient/marks/compare-group/{id} No photos in this compare group yet. Done",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-capture_mark-compare.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/skin",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/skin",
+      "title": "",
+      "bodyPreview": "Here's what we found skin Loading draft… Date — ✎ Area — ✎ AI SUGGESTS AI suggestion pending confirm Looks right enter this one manually instead",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_skin.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/skin",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/skin",
+      "title": "",
+      "bodyPreview": "Does this match what you see? this is your day 1 — nothing to compare yet. we'll track it from here. Yes, that's right Not quite — let me fix it",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_skin.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/skin",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/skin",
+      "title": "",
+      "bodyPreview": "day 1 recorded Stop guessing about your skin tomorrow's photo answers one question: same, calmer, or worse. that's it. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_skin.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/bill",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/bill",
+      "title": "",
+      "bodyPreview": "Here's what we found bill Loading draft… Provider — ✎ Amount — ✎ Currency USD ✎ Doc type — ✎ Date — ✎ Looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_bill.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/bill",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/bill",
+      "title": "",
+      "bodyPreview": "Saved to your calendar Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_bill.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/bill",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/bill",
+      "title": "",
+      "bodyPreview": "saved One less thing to remember it's already in your calendar. next time, snap it before you file it away. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_bill.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/rx",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/rx",
+      "title": "",
+      "bodyPreview": "Here's what we found prescription Loading draft… Drug — ✎ Strength — ✎ Prescriber — ✎ Expires — ✎ Looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_rx.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/rx",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/rx",
+      "title": "",
+      "bodyPreview": "Your prescription want a reminder before it runs out? Yes, remind me No thanks",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_rx.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/rx",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/rx",
+      "title": "",
+      "bodyPreview": "saved Never miss a refill again we'll remind you before this one expires. that's the whole job. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_rx.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/mark",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/mark",
+      "title": "",
+      "bodyPreview": "Here's what we found mark Loading draft… Location — ✎ Date — ✎ new mark, or is this the same one as before? Looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_mark.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/mark",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/mark",
+      "title": "",
+      "bodyPreview": "Logged as \"mark\" saved to your calendar — we'll help you compare it over time Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_mark.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/mark",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/mark",
+      "title": "",
+      "bodyPreview": "saved We'll help you compare it over time each photo joins the same mark group — no guessing which bump was which. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_mark.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/lab",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/lab",
+      "title": "",
+      "bodyPreview": "Here's what we found lab Loading draft… Provider — ✎ Test — ✎ Date — ✎ Document language — ✎ we save it as written. translation is coming — for now, results are kept as detected. Looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_lab.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/lab",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/lab",
+      "title": "",
+      "bodyPreview": "Lab result saved we save it as written. translation is coming — for now, results are kept as written. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_lab.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/lab",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/lab",
+      "title": "",
+      "bodyPreview": "saved Results kept as written translation is coming — for now your document language stays intact. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_lab.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/confirm/other",
+      "area": "confirm",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/confirm/other",
+      "title": "",
+      "bodyPreview": "Here's what we found other Loading draft… What — ✎ Date — ✎ Looks right",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-confirm-capture_confirm_other.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/reveal/other",
+      "area": "reveal",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/reveal/other",
+      "title": "",
+      "bodyPreview": "Logged as \"other\" saved to your calendar Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-reveal-capture_reveal_other.png",
+      "ok": true
+    },
+    {
+      "path": "/capture/thesis/other",
+      "area": "thesis",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture/thesis/other",
+      "title": "",
+      "bodyPreview": "saved Logged for later it's on your calendar so you can find it when you need it. Continue",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-thesis-capture_thesis_other.png",
+      "ok": true
+    },
+    {
+      "path": "/calendar",
+      "area": "tabs",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/calendar",
+      "title": "",
+      "bodyPreview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_facts Calendar Shelf Track Progress Profile",
+      "issues": [
+        {
+          "severity": "high",
+          "kind": "empty_despite_stub",
+          "detail": "Calendar empty despite calendar stub"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-tabs-calendar.png",
+      "ok": false
+    },
+    {
+      "path": "/shelf",
+      "area": "tabs",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/shelf",
+      "title": "",
+      "bodyPreview": "Shelf products & meds — inventory, not a storefront 1 product flagged hard_no/conflict via evaluate  Retinol 0.3% PM Conflict Retinol 0.3% ask a question about this learn about this ingredient Price unavailable — buy hidden until a real price loads. Scan barcode refill info — co",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-tabs-shelf.png",
+      "ok": true
+    },
+    {
+      "path": "/track",
+      "area": "tabs",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/track",
+      "title": "",
+      "bodyPreview": "Track 20 AI reads left Log skin, bills, prescriptions, marks — and compare over time. /api/patient/marks  Log something Photo or PDF — skin, Rx, bill, anything   Daily check-in AI SUGGESTS — confirm or correct   Upload from gallery Use a photo you already took   See my pho",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-tabs-track.png",
+      "ok": true
+    },
+    {
+      "path": "/progress",
+      "area": "tabs",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/progress",
+      "title": "",
+      "bodyPreview": "Proof Your records. One history. Check Alerts History No alerts right now empty_redirect_to_check_retired Nothing to show yet log your first thing and this fills in Start your photo streak Take a daily progress photo on Home or log a spot on Track to build your progress story. Da",
+      "issues": [
+        {
+          "severity": "high",
+          "kind": "empty_despite_stub",
+          "detail": "Progress looks empty while aggregates stub returns data — wire/API contract mismatch"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-tabs-progress.png",
+      "ok": false
+    },
+    {
+      "path": "/account",
+      "area": "tabs",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/account",
+      "title": "",
+      "bodyPreview": "Profile inventory-e2e@example.com Program: Acne care plan AI reads 0 of 20 AI reads this month — manual entries stay free. Your journeys Turn on the experiences you use. You can enable both. Keep a skin diary Daily photos and notes to find your triggers Improve my skin routine Pr",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-tabs-account.png",
+      "ok": true
+    },
+    {
+      "path": "/profile/language",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/language",
+      "title": "",
+      "bodyPreview": "Language App language: English. more app languages coming. documents you upload keep their own language — we detect it and ask you to confirm on each one. Done",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-profile_language.png",
+      "ok": true
+    },
+    {
+      "path": "/profile/share-with-doctor",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/share-with-doctor",
+      "title": "",
+      "bodyPreview": "Share with a doctor a dated record — nothing AI-interpreted Date range · last 30 days Include · all tags Language · as saved Create PDF Share link instead Back",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-profile_share-with-doctor.png",
+      "ok": true
+    },
+    {
+      "path": "/profile/notifications",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/notifications",
+      "title": "",
+      "bodyPreview": "Notifications Reminders for capture and prescription expiry — only if you opt in. Allow notifications Not now",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-profile_notifications.png",
+      "ok": true
+    },
+    {
+      "path": "/profile/consent-privacy",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/consent-privacy",
+      "title": "",
+      "bodyPreview": "Consent & privacy touche reads photos and documents you attach to log facts across six tags — skin, bill, prescription, mark, lab, or other. Optional AI reads can draft fields you confirm; manual entry is always free. It never diagnoses. Uploads are scanned for malware, encrypted",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-profile_consent-privacy.png",
+      "ok": true
+    },
+    {
+      "path": "/profile/allergens",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/profile/allergens",
+      "title": "",
+      "bodyPreview": "Allergens Things you want ruled out of product checks. acrylates fragrance essential oils alcohol Save allergens",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-profile_allergens.png",
+      "ok": true
+    },
+    {
+      "path": "/alerts",
+      "area": "profile",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/alerts",
+      "title": "",
+      "bodyPreview": "Back Alerts No alerts right now Conflicts and reminders show on Progress and as Shelf badges — there is no separate alerts home. Go to Progress Open Check",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-profile-alerts.png",
+      "ok": true
+    },
+    {
+      "path": "/shelf/rx-refill-info",
+      "area": "shelf",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/shelf/rx-refill-info",
+      "title": "",
+      "bodyPreview": "Refill info Your prescription refill info — contact your prescriber touche never sells or refills prescription medication Back to Shelf",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-shelf-shelf_rx-refill-info.png",
+      "ok": true
+    },
+    {
+      "path": "/scan-entry",
+      "area": "shelf",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/progress",
+      "title": "",
+      "bodyPreview": "Proof Your records. One history. Check Alerts History No alerts right now empty_redirect_to_check_retired Nothing to show yet log your first thing and this fills in Start your photo streak Take a daily progress photo on Home or log a spot on Track to build your progress story. Da",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-shelf-scan-entry.png",
+      "ok": true
+    },
+    {
+      "path": "/shop",
+      "area": "commerce",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/sign-in",
+      "title": "",
+      "bodyPreview": " Back Sign in Welcome back. Enter your email for a secure 6-digit code. Email Name Send code The #1 Skincare Journal.",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-commerce-shop.png",
+      "ok": true
+    },
+    {
+      "path": "/verdict/shelf_e2e_retinol",
+      "area": "shelf",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/verdict/shelf_e2e_retinol",
+      "title": "",
+      "bodyPreview": "Verdict Retinol 0.3% Share 58 /100 COMPATIBILITY Use with caution Retinol 0.3% may clash with actives already on your shelf. Why flagged ⚠️ retinol + salicylic acid Separate AM/PM Moderate Evidence Retinol + BHA Avoid same routine. Shelf details Cost per use (USD) Expiry (YYYY-MM",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-shelf-verdict_shelf_e2e_retinol.png",
+      "ok": true
+    },
+    {
+      "path": "/barcode-verdict-depth",
+      "area": "shelf",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/barcode-verdict-depth",
+      "title": "",
+      "bodyPreview": "Safe Product unknown buy_cta_hidden",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-shelf-barcode-verdict-depth.png",
+      "ok": true
+    },
+    {
+      "path": "/try-verdict",
+      "area": "try",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict",
+      "title": "",
+      "bodyPreview": "touche Check a product ⌕ scan barcode Get my verdict",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-try-try-verdict.png",
+      "ok": true
+    },
+    {
+      "path": "/try-allergens",
+      "area": "try",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/try-allergens",
+      "title": "",
+      "bodyPreview": "Back Rule anything out? acrylates fragrance essential oils alcohol + add Continue Skip",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-try-try-allergens.png",
+      "ok": true
+    },
+    {
+      "path": "/try-reveal",
+      "area": "try",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict",
+      "title": "",
+      "bodyPreview": "touche Check a product ⌕ scan barcode Get my verdict",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-try-try-reveal.png",
+      "ok": true
+    },
+    {
+      "path": "/try-handoff",
+      "area": "try",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/try-verdict",
+      "title": "",
+      "bodyPreview": "touche Check a product ⌕ scan barcode Get my verdict",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-try-try-handoff.png",
+      "ok": true
+    },
+    {
+      "path": "/onboarding/journey-choose",
+      "area": "onboarding",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/journey-choose",
+      "title": "",
+      "bodyPreview": "touche What brings you here? Pick what fits — you can change it anytime. Keep a skin diary One photo a day. See what's changing and find your triggers — no routine needed. Improve my skin routine Product conflicts and a guided 12-week program. Watch a spot or mark Track a mole, g",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-onboarding-onboarding_journey-choose.png",
+      "ok": true
+    },
+    {
+      "path": "/onboarding/concerns",
+      "area": "onboarding",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/concerns",
+      "title": "",
+      "bodyPreview": "What should we focus on? Pick up to two. We'll personalize your 12-week track. Acne care plan Anti-aging care plan Continue Not sure — skip",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-onboarding-onboarding_concerns.png",
+      "ok": true
+    },
+    {
+      "path": "/onboarding/signup",
+      "area": "onboarding",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/onboarding/signup",
+      "title": "",
+      "bodyPreview": "Skin & Care Create your account Save your journal and start logging daily photos. Free to start. Email Name Send code",
+      "issues": [
+        {
+          "severity": "high",
+          "kind": "brand_drift",
+          "detail": "Signup still Skin & Care"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-onboarding-onboarding_signup.png",
+      "ok": false
+    },
+    {
+      "path": "/routine/pick",
+      "area": "routine",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/routine/pick",
+      "title": "",
+      "bodyPreview": "Choose routine Choose your routine Pick a guided template to track AM/PM steps and daily progress photos. Acne care plan 12 weeks · guided program Anti-aging care plan 12 weeks · guided program Key rules · Use SPF daily · Patch test new products Start tracking",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-routine-routine_pick.png",
+      "ok": true
+    },
+    {
+      "path": "/routine/setup",
+      "area": "routine",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/routine/pick?concern=acne",
+      "title": "",
+      "bodyPreview": "Choose routine Choose your routine Pick a guided template to track AM/PM steps and daily progress photos. Acne care plan 12 weeks · guided program Anti-aging care plan 12 weeks · guided program Key rules · Use SPF daily · Patch test new products Start tracking",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-routine-routine_setup.png",
+      "ok": true
+    },
+    {
+      "path": "/check",
+      "area": "legacy",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture",
+      "title": "",
+      "bodyPreview": "Log something skin, prescription, bill — anything photo or PDF — video not in this version Take a photo Upload from library",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-legacy-check.png",
+      "ok": true
+    },
+    {
+      "path": "/severity",
+      "area": "legacy",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/capture",
+      "title": "",
+      "bodyPreview": "Log something skin, prescription, bill — anything photo or PDF — video not in this version Take a photo Upload from library",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-legacy-severity.png",
+      "ok": true
+    },
+    {
+      "path": "/_journal",
+      "area": "legacy",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/calendar",
+      "title": "",
+      "bodyPreview": "Calendar month list ‹ July 2026 › skin bill/doc Rx mark lab other Nothing logged yet tap the camera below to log your first thing Log something patient_record_facts Calendar Shelf Track Progress Profile",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-legacy-_journal.png",
+      "ok": true
+    },
+    {
+      "path": "/compare",
+      "area": "legacy",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/compare",
+      "title": "",
+      "bodyPreview": "Compare photos Compare progress vs Two dates are required to compare. Earlier No photo for this day Later No photo for this day",
+      "issues": [
+        {
+          "severity": "high",
+          "kind": "legacy_compare",
+          "detail": "Legacy compare route still reachable (Progress CTA risk)"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-legacy-compare.png",
+      "ok": false
+    },
+    {
+      "path": "/proof",
+      "area": "legacy",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/proof",
+      "title": "",
+      "bodyPreview": "Proof Your records. One history. Check Alerts History No alerts right now empty_redirect_to_check_retired Nothing to show yet log your first thing and this fills in Start your photo streak Take a daily progress photo on Home or log a spot on Track to build your progress story. Da",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-legacy-proof.png",
+      "ok": true
+    },
+    {
+      "path": "/track/capture",
+      "area": "capture",
+      "mode": "local-stub",
+      "finalUrl": "http://127.0.0.1:5299/app/track/capture",
+      "title": "",
+      "bodyPreview": "touche Spot Soft ring · location only  Tap to capture or upload from library Cancel Save",
+      "issues": [],
+      "consoleErrors": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "screenshot": "todos/pending/touche-full-screen-audit-2026-07-17/screenshots/local-stub-capture-track_capture.png",
+      "ok": true
+    }
+  ]
+}

@@ -123,6 +123,25 @@ fi
 
 gcloud "${DEPLOY_ARGS[@]}" --project "$PROJECT" --command="" --args=""
 
+# APP-01: fail deploy if Cloud Run is still serving a prior image digest
+# (health can pass on the old revision — do not treat that as success).
+if [[ "${SKIP_SERVING_DIGEST_ASSERT:-}" != "1" ]]; then
+  echo "==> Asserting Cloud Run serving digest matches built image..."
+  BUILT_DIGEST=""
+  if command -v gcloud >/dev/null 2>&1; then
+    BUILT_DIGEST="$(gcloud container images describe "$IMAGE" --format='value(image_summary.digest)' 2>/dev/null || true)"
+  fi
+  if [[ -z "$BUILT_DIGEST" ]]; then
+    echo "ERROR: could not resolve built image digest for $IMAGE"
+    echo "       Set SKIP_SERVING_DIGEST_ASSERT=1 only for emergency bypass (not for production)."
+    exit 1
+  fi
+  GCP_PROJECT="$PROJECT" GCP_REGION="$REGION" CLOUDRUN_SERVICE="$SERVICE" \
+    BUILT_IMAGE_DIGEST="$BUILT_DIGEST" \
+    node "$ROOT/scripts/assert-cloudrun-serving-digest.cjs" \
+      --project "$PROJECT" --region "$REGION" --service "$SERVICE" --built-digest "$BUILT_DIGEST"
+fi
+
 echo "==> Done. Verify:"
 API_BASE="${CLOUDRUN_BASE_URL:-$CLOUDRUN_API_HOST}"
 echo "    curl -sS ${API_BASE}/health/live"

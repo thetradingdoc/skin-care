@@ -1,10 +1,10 @@
 # Mobile app architecture
 
-**Last reviewed:** 2026-07-14
+**Last reviewed:** 2026-07-16
 
 Skin & Care iOS app (`com.skinandcare.app`) is an Expo/React Native app in [patient-app/](../patient-app/).
 
-**Product SSOT:** [docs/product/TOUCHE_CAMERA_FIRST.md](./product/TOUCHE_CAMERA_FIRST.md) — Check sole home, no tab bar. Consumer web shell: `app.trytouche.com` (CORS TOUCH-038).
+**Product SSOT:** [docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md](./product/TOUCHE_AGENTIC_ARCHITECTURE.md) — 5-tab shell, Progress lander. Consumer web shell: `app.trytouche.com` (CORS TOUCH-038). Camera-first IA doc is [superseded](./product/TOUCHE_CAMERA_FIRST.md).
 
 Cold-start / SIGABRT runbook: [patient-app/IOS_COLD_START_CRASH.md](./patient-app/IOS_COLD_START_CRASH.md).
 

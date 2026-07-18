@@ -1,0 +1,179 @@
+{
+  "apiBase": "https://api.callsomo.com",
+  "generatedAt": "2026-07-17T16:10:36.692Z",
+  "results": [
+    {
+      "id": "health",
+      "status": "PASS",
+      "detail": "API /health ok",
+      "evidence": {
+        "status": "ok",
+        "timestamp": "2026-07-17T16:10:33.886Z",
+        "service": "middleware-platform"
+      },
+      "at": "2026-07-17T16:10:34.051Z"
+    },
+    {
+      "id": "route:/api/patient/records/calendar",
+      "status": "PASS",
+      "detail": "Mounted (auth gate HTTP 401)",
+      "evidence": {
+        "success": false,
+        "error": "x-session-id required"
+      },
+      "at": "2026-07-17T16:10:34.234Z"
+    },
+    {
+      "id": "route:/api/patient/progress/aggregates",
+      "status": "PASS",
+      "detail": "Mounted (auth gate HTTP 401)",
+      "evidence": {
+        "success": false,
+        "error": "x-session-id required"
+      },
+      "at": "2026-07-17T16:10:34.290Z"
+    },
+    {
+      "id": "route:/api/patient/marks",
+      "status": "PASS",
+      "detail": "Mounted (auth gate HTTP 401)",
+      "evidence": {
+        "success": false,
+        "error": "x-session-id required"
+      },
+      "at": "2026-07-17T16:10:34.350Z"
+    },
+    {
+      "id": "route:/api/patient/ai/usage",
+      "status": "PASS",
+      "detail": "Mounted (auth gate HTTP 401)",
+      "evidence": {
+        "success": false,
+        "error": "x-session-id required"
+      },
+      "at": "2026-07-17T16:10:34.407Z"
+    },
+    {
+      "id": "route:/api/patient/export/physician.pdf",
+      "status": "PASS",
+      "detail": "Mounted (auth gate HTTP 401)",
+      "evidence": {
+        "success": false,
+        "error": "x-session-id required"
+      },
+      "at": "2026-07-17T16:10:34.478Z"
+    },
+    {
+      "id": "clamav",
+      "status": "PASS",
+      "detail": "Anonymous capture accepted (AV did not fail-closed as AV_NOT_CONFIGURED)",
+      "evidence": {
+        "status": 201,
+        "media": "prf_86acaf66-98d3-4800-b5b7-2a9ff6f386c7"
+      },
+      "at": "2026-07-17T16:10:34.781Z"
+    },
+    {
+      "id": "media",
+      "status": "PASS",
+      "detail": "Durable GCS media observed",
+      "evidence": {
+        "storage_provider": "gcs",
+        "storage_ref": null,
+        "media_url": "/api/patient/records/media/e45182deac0da870bbfbc94f74f924bf967cdc9dd627679e"
+      },
+      "at": "2026-07-17T16:10:34.781Z"
+    },
+    {
+      "id": "encryption_key",
+      "status": "PASS",
+      "detail": "Facts cipher resolves from PATIENT_RECORD_FACTS_ENCRYPTION_KEY (secretRef); value not printed",
+      "evidence": {
+        "resolvedFrom": "PATIENT_RECORD_FACTS_ENCRYPTION_KEY",
+        "valueKind": "secretRef",
+        "present": {
+          "PATIENT_RECORD_FACTS_ENCRYPTION_KEY": true,
+          "BILLING_DATA_ENCRYPTION_KEY": false,
+          "SESSION_SECRET": false
+        },
+        "kinds": {
+          "PATIENT_RECORD_FACTS_ENCRYPTION_KEY": "secretRef",
+          "BILLING_DATA_ENCRYPTION_KEY": "absent",
+          "SESSION_SECRET": "absent"
+        }
+      },
+      "at": "2026-07-17T16:10:36.550Z"
+    },
+    {
+      "id": "clamav_env",
+      "status": "PASS",
+      "detail": "CLAMAV_SOCKET or CLAMAV_BIN present on Cloud Run",
+      "evidence": null,
+      "at": "2026-07-17T16:10:36.551Z"
+    },
+    {
+      "id": "media_env",
+      "status": "PASS",
+      "detail": "GCS_MEDIA_BUCKET set (somo-prod-patient-media-somo-callsomo)",
+      "evidence": null,
+      "at": "2026-07-17T16:10:36.551Z"
+    },
+    {
+      "id": "vision_env",
+      "status": "PASS",
+      "detail": "FACE_READ_VISION_ENABLED=1",
+      "evidence": null,
+      "at": "2026-07-17T16:10:36.551Z"
+    },
+    {
+      "id": "otp_email",
+      "status": "WARN",
+      "detail": "SKIP_OTP=1 — email side effect skipped",
+      "evidence": null,
+      "at": "2026-07-17T16:10:36.551Z"
+    },
+    {
+      "id": "vision",
+      "status": "PASS",
+      "detail": "Face-read HTTP 200 — inspect face_read payload for vision vs CV-only",
+      "evidence": {
+        "keys": [
+          "quality",
+          "reject_reason",
+          "quality_flags",
+          "user_message",
+          "findings",
+          "concern_scores",
+          "health_scores",
+          "age_unreliable",
+          "scan_summary",
+          "positive_observations",
+          "model_id",
+          "model_version",
+          "not_diagnosis"
+        ]
+      },
+      "at": "2026-07-17T16:10:36.692Z"
+    },
+    {
+      "id": "migrations_065_074",
+      "status": "PASS",
+      "detail": "Live write succeeded (patient_record_facts + pending_captures path) — tables from migrations 065–074 are present on the running prod DB",
+      "evidence": {
+        "fact_id": "prf_86acaf66-98d3-4800-b5b7-2a9ff6f386c7",
+        "entry_date": "2026-07-17"
+      },
+      "at": "2026-07-17T16:10:36.692Z"
+    },
+    {
+      "id": "e2e_smoke",
+      "status": "WARN",
+      "detail": "Routes mounted — full authenticated smoke not run in this script (needs session). Use patient OTP session next.",
+      "evidence": null,
+      "at": "2026-07-17T16:10:36.692Z"
+    }
+  ],
+  "failCount": 0,
+  "warnCount": 2,
+  "passCount": 14
+}

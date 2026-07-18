@@ -1,13 +1,19 @@
-# Touche camera-first + contextual commerce (SSOT)
+# Touche camera-first + contextual commerce
 
-**Status:** Phases 0–5 **code-complete**. Acceptance: 0–2 accepted; Phase 3 accepted with **device carve-outs**; Phase 4/5 API/commerce + blocking bugfixes landed — **device smoke** (056–059 / 108–109 / 114) still open before treating as fully launch-ready. Shopify theme **094–097 LAST**.  
-**Last updated:** 2026-07-14  
+> **SUPERSEDED (2026-07-16) — historical record only.**  
+> This file is **not** the current product SSOT. In-app IA, capture, facts, and trust are owned by  
+> **[`TOUCHE_AGENTIC_ARCHITECTURE.md`](./TOUCHE_AGENTIC_ARCHITECTURE.md)** (5-tab shell, Progress lander, `orchestrateCapture`, policy gates).  
+> Keep this document for commerce/deep-link archaeology and the camera-first rebuild train. Do not treat “Check sole home / no tab bar” as current.
+
+**Former status (at close of camera-first train):** Phases 0–5 **code-complete**. Acceptance: 0–2 accepted; Phase 3 accepted with **device carve-outs**; Phase 4/5 API/commerce + blocking bugfixes landed — **device smoke** (056–059 / 108–109 / 114) still open before treating as fully launch-ready. Shopify theme **094–097 LAST**.  
+**Last updated (as SSOT):** 2026-07-14 · **Superseded:** 2026-07-16  
 **Full backlog:** Cursor plan `touche_camera-first_rebuild_5aa81835` — **117 tickets TOUCH-001 … TOUCH-117**  
 **Mock:** `touche_complete_journey_with_commerce.html` (1–21) + Screen **6c** Get the App (iOS only)
 
-## One-line
+## One-line (historical — camera-first train)
 
-Free camera journal (**Check** = sole home) on `app.trytouche.com` + native; money only on Shopify via cart permalinks + webhooks; store theme redesign is **last**.
+Free camera journal (**Check** = sole home) on `app.trytouche.com` + native; money only on Shopify via cart permalinks + webhooks; store theme redesign is **last**.  
+*(Nav claim obsolete — see agentic SSOT for current 5-tab / Progress lander.)*
 
 ## Locked decisions
 
@@ -23,7 +29,7 @@ Free camera journal (**Check** = sole home) on `app.trytouche.com` + native; mon
 | DB | SQL. Not MongoDB. |
 | Severity default | `low` / `some` / `a_lot` → ranks 1 / 2 / 3. |
 | Severity advanced | Optional 1–10 sliders when Profile toggle on (TOUCH-102/103). |
-| Nav | **No tab bar.** Check sole home. |
+| Nav | **Historical:** No tab bar; Check sole home. **Superseded** by 5-tab Progress lander — see agentic SSOT. |
 | Shop | Contextual only. |
 | Profile | Allergens block before progressive/advanced fields toggle (TOUCH-086). |
 | Profile progressive fields | Budget, location/climate, procedure date, advanced toggle — **collected for future personalization; not yet wired to recommendation/routine logic.** Hormone cycle not built. Procedure date **is** consumed by safe-mode (TOUCH-100/101). |

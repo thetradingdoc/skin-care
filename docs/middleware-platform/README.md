@@ -9,7 +9,7 @@
 
 **Skin & Care consumer landing** at `/` is [`skin-care-landing`](../../unified-dashboard/skin-care-landing/) (active). Legacy **littlelab** CRA funnel was removed from this repo; historical references below describe archived behavior (see git history).
 
-**Camera-first product SSOT:** [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md).
+**Product SSOT:** [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md). Camera-first IA doc is [superseded](../product/TOUCHE_CAMERA_FIRST.md) (commerce/deep-link archaeology).
 
 **Voice runtime (2026):** [`services/voice-agent-runtime.js`](../../middleware-platform/services/voice-agent-runtime.js), migrations `053`/`054`, [VOICE_PROMPT_SSOT.md](../architecture/VOICE_PROMPT_SSOT.md), [voice-inbound troubleshooting](../runbooks/voice-inbound-troubleshooting.md).
 

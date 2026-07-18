@@ -1,10 +1,10 @@
 # Local development architecture
 
-**Last reviewed:** 2026-07-14
+**Last reviewed:** 2026-07-16
 
 Skin & Care local dev runs the shared middleware API on port **4000**, with optional Vite landing on **5180** and Expo on **8081**.
 
-Product SSOT: [`docs/product/TOUCHE_CAMERA_FIRST.md`](product/TOUCHE_CAMERA_FIRST.md). Middleware CORS includes `app.trytouche.com` (TOUCH-038).
+Product SSOT: [`docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`](product/TOUCHE_AGENTIC_ARCHITECTURE.md). Middleware CORS includes `app.trytouche.com` (TOUCH-038).
 
 ## Architecture
 

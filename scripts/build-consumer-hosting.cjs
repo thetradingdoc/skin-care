@@ -132,7 +132,29 @@ function copyDir(src, dest, { merge = false } = {}) {
   }
 }
 
-const SITE_ORIGIN = 'https://myskinandcare.com';
+/** Canonical public origin for og:url / absolute links in the landing HTML. */
+const SITE_ORIGIN = (
+  process.env.CONSUMER_SITE_ORIGIN ||
+  process.env.EXPO_PUBLIC_SITE_ORIGIN ||
+  'https://trytouche.com'
+).replace(/\/$/, '');
+
+function rewritePublicSiteOrigin(rootDir, fromOrigin, toOrigin) {
+  if (!toOrigin || fromOrigin === toOrigin) return;
+  const from = fromOrigin.replace(/\/$/, '');
+  const to = toOrigin.replace(/\/$/, '');
+  for (const htmlFile of walkHtmlFiles(rootDir)) {
+    // Do not rewrite Expo /app/* legal/API strings inside the patient shell blindly —
+    // only top-level marketing HTML (landing + for/* shells + about/contact).
+    const rel = path.relative(rootDir, htmlFile).split(path.sep).join('/');
+    if (rel === 'index.html' || rel.startsWith('for/') || /^(about|contact|waitlist)\.html$/.test(rel)) {
+      let html = fs.readFileSync(htmlFile, 'utf8');
+      if (!html.includes(from)) continue;
+      html = html.split(from).join(to);
+      fs.writeFileSync(htmlFile, html);
+    }
+  }
+}
 
 function escapeHtml(s) {
   return String(s)
@@ -144,7 +166,7 @@ function escapeHtml(s) {
 
 function patchIndexHtmlForForPage(html, page) {
   const pageUrl = `${SITE_ORIGIN}${page.path}`;
-  const title = `${page.title} — MySkin&Care`;
+  const title = `${page.title} — Touche`;
   const desc = page.metaDescription;
 
   let next = html;
@@ -225,7 +247,7 @@ async function main() {
   const patientEnv = {
     ...process.env,
     EXPO_PUBLIC_API_BASE_URL: PATIENT_API_BASE,
-    EXPO_PUBLIC_WEB_SIGNUP_URL: process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://myskinandcare.com/scan',
+    EXPO_PUBLIC_WEB_SIGNUP_URL: process.env.EXPO_PUBLIC_WEB_SIGNUP_URL || 'https://app.trytouche.com/welcome',
   };
   const patientInstall = spawnSync('npm', ['ci'], {
     cwd: PATIENT_APP,
@@ -254,11 +276,25 @@ async function main() {
   copyDir(path.join(UD, 'assets'), path.join(OUT, 'assets'));
   copyDir(path.join(LANDING, 'build', 'assets'), path.join(OUT, 'assets'), { merge: true });
 
+  // Landing HTML may still bake legacy origins at build time — rewrite for per-host deploys.
+  console.log(`Rewriting public site origin → ${SITE_ORIGIN}`);
+  rewritePublicSiteOrigin(OUT, 'https://myskinandcare.com', SITE_ORIGIN);
+  if (SITE_ORIGIN !== 'https://trytouche.com') {
+    rewritePublicSiteOrigin(OUT, 'https://trytouche.com', SITE_ORIGIN);
+  }
+
   for (const page of ['about.html', 'contact.html', 'waitlist.html']) {
     const src = path.join(UD, page);
     if (fs.existsSync(src)) copyFile(src, path.join(OUT, page));
   }
 
+  // Canonical Privacy / Terms at hosting root (App Store URL → app.trytouche.com/privacy).
+  for (const legal of ['privacy.html', 'terms.html']) {
+    const fromLanding = path.join(LANDING, 'public', legal);
+    const fromPatients = path.join(UD, 'patients', 'legal', legal);
+    const src = fs.existsSync(fromLanding) ? fromLanding : fromPatients;
+    if (fs.existsSync(src)) copyFile(src, path.join(OUT, legal));
+  }
   copyDir(path.join(UD, 'patients', 'legal'), path.join(OUT, 'patients', 'legal'));
   const patientLogin = path.join(UD, 'patients', 'patient-login.html');
   if (fs.existsSync(patientLogin)) {

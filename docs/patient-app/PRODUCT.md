@@ -1,8 +1,8 @@
 # PRODUCT
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-16
 
-> **Superseded for product IA:** Current consumer product is camera-first — [`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md) (**Check** sole home, **no tab bar**, Shopify commerce). The v3 tab IA (Home / Track / Scan / Progress / Profile) is **historical** — see [`../../archive/pre-rebuild/V3_SCREEN_MAP.md`](../../archive/pre-rebuild/V3_SCREEN_MAP.md). Explore/checkout flows may still be mounted but are not the primary shell.
+> **Product IA:** Current consumer product — [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md) (5-tab, Progress lander, facts/`orchestrateCapture`). Camera-first Check-only shell is **superseded** ([`../product/TOUCHE_CAMERA_FIRST.md`](../product/TOUCHE_CAMERA_FIRST.md)). The v3 tab IA (Home / Track / Scan / Progress / Profile) is also **historical** — see [`../../archive/pre-rebuild/V3_SCREEN_MAP.md`](../../archive/pre-rebuild/V3_SCREEN_MAP.md). Explore/checkout flows may still be mounted but are not the primary shell.
 
 
 ---
