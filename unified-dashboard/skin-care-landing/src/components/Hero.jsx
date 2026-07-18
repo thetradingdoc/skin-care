@@ -86,6 +86,11 @@ export default function Hero() {
         <div className="sc-hero-split-copy-wrap">
           <div className="sc-hero-split-copy">
             <p className="sc-hero-subtitle">{HERO.eyebrow}</p>
+            {HERO.tagline ? (
+              <p className="sc-brand-tagline" data-testid="hero-be-bold">
+                {HERO.tagline}
+              </p>
+            ) : null}
             <h1 className="sc-hero-headline">
               <span className="sc-hero-headline-line">
                 {HERO.titleLine1} <em>{HERO.titleLine2a}</em>

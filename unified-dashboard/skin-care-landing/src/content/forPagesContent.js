@@ -3,12 +3,12 @@ export const FOR_PAGES = {
     slug: 'sensitive-skin',
     path: '/for/sensitive-skin',
     navLabel: 'Sensitive skin',
-    title: 'Sensitive Skin Diary App',
+    title: 'Sensitive Skin Medical Journal',
     metaDescription:
       'A skincare journal for sensitive and reactive skin. Log daily photos, track flares, and see what triggers reactions — no routine required.',
     headline: 'Your sensitive skin deserves a journal, not another product push.',
     intro:
-      'Reactive skin is hard to read day to day. A mirror only shows right now — not whether things are calming down or getting worse. MySkin&Care is a daily photo journal built for people whose skin reacts easily.',
+      'Reactive skin is hard to read day to day. A mirror only shows right now — not whether things are calming down or getting worse. Touche is a skincare and medical journal built for people whose skin reacts easily.',
     sections: [
       {
         heading: 'See change over time',
@@ -72,7 +72,7 @@ export const FOR_PAGES = {
       },
       {
         heading: 'Wellness tracking only',
-        body: 'MySkin&Care is not a diagnosis. It helps you measure and remember. Always follow your dermatologist for medical decisions.',
+        body: 'Touche is not a diagnosis. It helps you measure and remember. Always follow your dermatologist for medical decisions.',
       },
     ],
     cta: 'Check your skin',

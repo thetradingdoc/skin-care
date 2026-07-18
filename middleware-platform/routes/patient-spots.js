@@ -2,6 +2,24 @@
 
 const spotRepo = require('../repositories/spot-repo');
 const { analyzeNewSnapshot } = require('../services/spot-snapshot-service');
+const Metrics = require('../services/metrics');
+
+/** Soft-deprecated pending dual-write sunset (ARCH-04). Sunset: 2026-08-01. */
+const SPOTS_DEPRECATION_SUNSET = 'Sat, 01 Aug 2026 00:00:00 GMT';
+let spotsDeprecationMetricOnce = false;
+
+function setSpotsDeprecationHeaders(res) {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Sunset', SPOTS_DEPRECATION_SUNSET);
+  if (!spotsDeprecationMetricOnce) {
+    spotsDeprecationMetricOnce = true;
+    try {
+      Metrics.increment('patient_spots.write_deprecated_once', 1);
+    } catch (_) {
+      console.warn('[patient-spots] soft-deprecated write API used (ARCH-04 dual-write sunset pending)');
+    }
+  }
+}
 
 function registerPatientSpotsRoutes(app, deps) {
   const {
@@ -30,12 +48,14 @@ function registerPatientSpotsRoutes(app, deps) {
     },
   );
 
+  // Soft-deprecated write surface — Deprecation/Sunset headers (LEG-03); pending ARCH-04 dual-write sunset.
   app.post(
     '/api/patient/spots',
     (req, res, next) => apiLimiter(req, res, next),
     express.json(),
     requirePatientSession,
     async (req, res) => {
+      setSpotsDeprecationHeaders(res);
       try {
         const sessionId = req.patientSessionId;
         const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
@@ -59,6 +79,7 @@ function registerPatientSpotsRoutes(app, deps) {
     express.json({ limit: '2mb' }),
     requirePatientSession,
     async (req, res) => {
+      setSpotsDeprecationHeaders(res);
       try {
         const sessionId = req.patientSessionId;
         const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
@@ -120,6 +141,7 @@ function registerPatientSpotsRoutes(app, deps) {
     parseBillingDocumentUpload,
     requirePatientSession,
     async (req, res) => {
+      setSpotsDeprecationHeaders(res);
       try {
         const sessionId = req.patientSessionId;
         const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
@@ -130,6 +152,7 @@ function registerPatientSpotsRoutes(app, deps) {
         const uploadFile = req.file || (Array.isArray(req.files) ? req.files[0] : null);
         let storageRef = null;
         let thumbStorageRef = null;
+        let uploadedMeta = null;
 
         if (uploadFile?.buffer) {
           const gcsBillingStorage = require('../services/gcs-billing-storage');
@@ -141,6 +164,11 @@ function registerPatientSpotsRoutes(app, deps) {
           });
           storageRef = uploaded.storageRef;
           thumbStorageRef = uploaded.storageRef;
+          uploadedMeta = {
+            storage_ref: uploaded.storageRef,
+            storage_key: uploaded.storageKey || null,
+            storage_provider: uploaded.provider || null,
+          };
         } else if (req.body?.storage_ref) {
           storageRef = String(req.body.storage_ref).trim();
           thumbStorageRef = storageRef;
@@ -159,6 +187,19 @@ function registerPatientSpotsRoutes(app, deps) {
           journalEntryId,
           analysis,
         });
+
+        // P2.13 — best-effort dual-write → patient_record_facts (tag=mark);
+        // compare_group_id = spot.id (existing spot grouping; P3.24 not required)
+        try {
+          const { dualWriteSpotMark } = require('../services/patient-record-dual-write');
+          dualWriteSpotMark(db.db, {
+            patientId,
+            sessionId,
+            spot,
+            snapshot,
+            media: uploadedMeta,
+          });
+        } catch (_) {}
 
         if (typeof recordPatientPortalEvent === 'function') {
           recordPatientPortalEvent(req, 'spot_snapshot_created', {

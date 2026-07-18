@@ -1,80 +1,82 @@
 export const HERO = {
-  eyebrow: 'Acne & Skin Photo Diary',
-  titleLine1: 'The #1',
-  titleLine2a: 'Skincare',
-  titleLine2b: 'Journal.',
+  eyebrow: 'Touche',
+  tagline: 'Be Bold',
+  titleLine1: 'Skincare &',
+  titleLine2a: 'medical',
+  titleLine2b: 'journal.',
   subtitle:
-    'Start with a quick face check. Log one photo a day and see what changes — flares, products, reactions.',
-  ctaLabel: 'Check your skin',
+    'One place for your skin, your prescriptions, your bills — whatever you need to keep track of. 20 AI reads free each month; manual entries are always free.',
+  ctaLabel: 'Get started',
 };
 
 export const NAV_LINKS = [
   { label: 'How It Works', href: '#how' },
   { label: 'About', href: '/about.html' },
   { label: 'Contact', href: '/contact.html' },
+  { label: 'Privacy', href: 'https://app.trytouche.com/privacy' },
 ];
 
 export const JOURNEY_STEPS = {
   items: [
     {
-      id: 'scan',
+      id: 'capture',
       num: '01',
-      title: 'Take a face photo',
-      bodyShort: 'One selfie — your baseline for the journal.',
+      title: 'Capture what matters',
+      bodyShort: 'Photo or PDF — skin, Rx, bill, mark, lab, or other.',
+    },
+    {
+      id: 'confirm',
+      num: '02',
+      title: 'Confirm the facts',
+      bodyShort: 'AI can draft fields; you always review before they stick.',
     },
     {
       id: 'track',
-      num: '02',
-      title: 'Tell us what to watch',
-      bodyShort: 'Breakouts, redness, dryness — pick what matters.',
-    },
-    {
-      id: 'daily',
       num: '03',
-      title: 'See what changed',
-      bodyShort: 'One photo a day — your timeline shows the story.',
+      title: 'See it on your timeline',
+      bodyShort: 'Calendar, Track, Progress, and Shelf stay in sync.',
     },
   ],
 };
 
 export const HOW_IT_WORKS = {
-  title: 'Skin diary that finds your triggers.',
-  subtitle: 'Start with a face check. Your journal builds from there.',
+  title: 'A medical journal that includes your skin.',
+  subtitle: 'Same story as the app Welcome screen — one place for what you need to keep track of.',
   items: [
     {
-      id: 'check',
+      id: 'capture',
       icon: 'camera',
-      title: 'Take a face photo',
-      body: 'One front-camera photo. Your skin, your baseline — no signup to start.',
+      title: 'Capture with six tags',
+      body: 'Skin, bill, prescription, mark, lab, or other — photo or PDF. Manual entry is always free.',
     },
     {
-      id: 'plan',
+      id: 'ai',
       icon: 'target',
-      title: 'Tell us what to watch',
-      body: 'Breakouts, redness, dryness — pick what matters to you. No routine required.',
+      title: 'Optional AI reads',
+      body: 'Twenty AI reads free each month help draft fields. You confirm before anything becomes a lasting fact.',
     },
     {
       id: 'timeline',
       icon: 'trend',
-      title: 'See what changed',
-      body: 'One photo a day, same angle. Your timeline shows whether your skin is calming down — or reacting.',
+      title: 'History you can use',
+      body: 'Calendar and Progress read the same facts store. Shelf checks products against your routine — Rx never gets a Buy button.',
     },
   ],
 };
 
 export const CTA_SECTION = {
-  title: 'Start your skin journal',
-  subtitle: 'Create a free account with one photo — no routine or plan required.',
+  title: 'Start your Touche journal',
+  subtitle: 'Free to start. Manual entries stay free. Optional AI reads are metered.',
 };
 
-export const FOOTER_TAGLINE = 'The #1 Skincare Journal.';
+export const FOOTER_TAGLINE = 'Touche — skincare & medical journal.';
 
 export const CTAS = {
   scan: 'https://apps.apple.com/app/id6778105762',
-  signup: '/app/sign-in?intent=signup&from=skin-age-landing',
-  signin: '/app/sign-in',
-  privacy: '/patients/legal/privacy.html',
-  terms: '/patients/legal/terms.html',
+  signup: 'https://app.trytouche.com/welcome',
+  signin: 'https://app.trytouche.com/sign-in',
+  privacy: 'https://app.trytouche.com/privacy',
+  terms: 'https://app.trytouche.com/terms',
   waitlist: '/waitlist.html',
 };
 

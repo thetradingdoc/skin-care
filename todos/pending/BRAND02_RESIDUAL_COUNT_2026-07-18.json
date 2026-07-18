@@ -1,0 +1,133 @@
+{
+  "scope": "repo excluding node_modules, hosting-dist*, docs/archive, .pr-worktrees, .sandbox*",
+  "pattern": "Skin & Care (case-sensitive)",
+  "total_remaining_matches": 485,
+  "by_category": {
+    "html": {
+      "matches": 109,
+      "files": 43
+    },
+    "email_templates_and_services": {
+      "matches": 39,
+      "files": 8
+    },
+    "html_plus_email": {
+      "matches": 148
+    },
+    "docs_md": {
+      "matches": 196,
+      "files": 50
+    },
+    "tests": {
+      "matches": 8,
+      "files": 4
+    },
+    "other_code_js_ts": {
+      "matches": 108,
+      "files": 54
+    },
+    "other": {
+      "matches": 25,
+      "files": 13
+    }
+  },
+  "html_plus_email_is_day_or_week": "day-scale if only HTML+email (~148); week+ if include docs+platform code (~452)",
+  "email_detail": [
+    [
+      "middleware-platform/services/email-service.js",
+      25
+    ],
+    [
+      "middleware-platform/__tests__/email-service-from.test.js",
+      4
+    ],
+    [
+      "middleware-platform/services/trial-alerts.js",
+      4
+    ],
+    [
+      "middleware-platform/services/voice-billing-alerts.js",
+      2
+    ],
+    [
+      "middleware-platform/lib/skin-care-email-layout.js",
+      1
+    ],
+    [
+      "middleware-platform/services/reminder-scheduler.js",
+      1
+    ],
+    [
+      "scripts/configure-cloudrun-patient-email.sh",
+      1
+    ],
+    [
+      "scripts/verify-patient-otp-email-live.cjs",
+      1
+    ]
+  ],
+  "html_top_15": [
+    [
+      "unified-dashboard/admin/leads.html",
+      13
+    ],
+    [
+      "middleware-platform/public/docs/index.html",
+      13
+    ],
+    [
+      "unified-dashboard/admin/index.html",
+      9
+    ],
+    [
+      "middleware-platform/public/signup/terms.html",
+      9
+    ],
+    [
+      "middleware-platform/public/signup/terms-saas.html",
+      8
+    ],
+    [
+      "middleware-platform/public/signup/terms-api.html",
+      7
+    ],
+    [
+      "middleware-platform/public/signup/privacy.html",
+      5
+    ],
+    [
+      "unified-dashboard/patients/pay.html",
+      3
+    ],
+    [
+      "unified-dashboard/business/calendar.html",
+      3
+    ],
+    [
+      "middleware-platform/public/payment-page.html",
+      3
+    ],
+    [
+      "docs/design/skincare_app_full_journey.html",
+      2
+    ],
+    [
+      "middleware-platform/public/signup/index.html",
+      2
+    ],
+    [
+      "middleware-platform/public/admin/portal.html",
+      2
+    ],
+    [
+      "unified-dashboard/reset-password.html",
+      1
+    ],
+    [
+      "unified-dashboard/portal.html",
+      1
+    ]
+  ],
+  "consumer_app_landing_waitlist_matches": 2,
+  "baseline_plan_mention": 467
+}

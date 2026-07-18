@@ -1,19 +1,20 @@
-# Skin & Care — daily skin tracking app
+# Touche — skincare & medical journal (consumer)
 
-**Last reviewed:** 2026-07-14
+**Last reviewed:** 2026-07-17
 
-**GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care)  
-**Consumer domain:** [myskinandcare.com](https://myskinandcare.com) (marketing + web funnel)  
-**Camera-first app host:** `app.trytouche.com` (TOUCH-038 CORS)  
+**GitHub:** [github.com/richiejeremiah/skin-care](https://github.com/richiejeremiah/skin-care) (repo/folder name remains `skin-and-care` — infra identifier)  
+**Consumer brand:** **Touche** · **Be Bold** · **Skincare & medical journal**  
+**Consumer app host:** `app.trytouche.com`  
+**Marketing:** [trytouche.com](https://trytouche.com) (myskinandcare.com redirects)  
 **Consumer API:** `https://api.myskinandcare.com` (shared middleware on Cloud Run)  
-**Legacy API:** `https://api.callsomo.com` (same stack — shared infra identifier)
+**Legacy / shared API host:** `https://api.callsomo.com` (same stack — shared infra identifier)
 
-**Product SSOT (current):** [`docs/product/TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md) — Check = sole home, no tab bar, Shopify commerce only.  
-**Architecture:** [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md) · [iOS cold-start crash](docs/patient-app/IOS_COLD_START_CRASH.md)
+**Product SSOT (current):** [`docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md`](docs/product/TOUCHE_AGENTIC_ARCHITECTURE.md) — 5-tab shell (Progress lander), facts store, `orchestrateCapture`. Shopify commerce locks remain in the superseded [`TOUCHE_CAMERA_FIRST.md`](docs/product/TOUCHE_CAMERA_FIRST.md) historical record.  
+**Platform SSOT:** [`ARCHITECTURE.md`](ARCHITECTURE.md) · [docs/LOCAL.md](docs/LOCAL.md) · [docs/CLOUD.md](docs/CLOUD.md) · [docs/MOBILE.md](docs/MOBILE.md) · [iOS cold-start crash](docs/patient-app/IOS_COLD_START_CRASH.md)
 
-Skin & Care ships a consumer Expo app (camera journal / Check home) plus concern-based routines. Optional Stripe `care_program` exists as a **buried** journal subscription, not primary monetization (product commerce is Shopify).
+**Touche** ships a consumer Expo app (medical tracker / Progress lander + capture) plus concern-based routines. Optional Stripe `care_program` exists as a **buried** journal subscription, not primary monetization (product commerce is Shopify).
 
-This is a **standalone workspace** — not a branch mirror of somo. Platform fixes are ported from `somo-platform` `main` when needed (cherry-pick or manual merge).
+This is a **standalone workspace** — not a branch mirror of somo. Platform fixes are ported from `somo-platform` `main` when needed (cherry-pick or manual merge). Repo folder and GCP/service names may still say Skin & Care / Somo; that is infra, not the consumer face.
 
 ---
 
@@ -26,7 +27,7 @@ npm ci
 npx expo start
 ```
 
-`npm ci` installs Expo deps including `@react-native-async-storage/async-storage` (required for Check / web bundle). Production API is set in `.env.example` and EAS profiles (`preview` / `production`).
+`npm ci` installs Expo deps including `@react-native-async-storage/async-storage` (required for web / session persistence). Production API is set in `.env.example` and EAS profiles (`preview` / `production`).
 
 ## Push workflow
 
@@ -38,7 +39,7 @@ git push origin main
 
 Mobile CI (typecheck + EAS preview) runs on push to `main` when `patient-app/` changes.
 
-See [`docs/Brand/SKIN_AND_CARE_REPO.md`](docs/Brand/SKIN_AND_CARE_REPO.md) for porting platform fixes, EAS, and domain notes.
+See [`docs/Brand/SKIN_AND_CARE_REPO.md`](docs/Brand/SKIN_AND_CARE_REPO.md) for porting platform fixes, EAS, and domain notes. Brand index: [`docs/Brand/README.md`](docs/Brand/README.md).
 
 ## iOS / TestFlight
 
@@ -49,7 +50,8 @@ See [`docs/Brand/SKIN_AND_CARE_REPO.md`](docs/Brand/SKIN_AND_CARE_REPO.md) for p
 | Preview build | `cd patient-app && eas build --platform ios --profile preview` |
 | App Store submit | `eas submit --platform ios --profile production` (after ASC setup) |
 
-Bundle ID: `com.skinandcare.app`
+Bundle ID: `com.skinandcare.app` (kept for App Store continuity — see [`docs/Brand/BUNDLE_ID_DECISION.md`](docs/Brand/BUNDLE_ID_DECISION.md))  
+App Store display name: **Touche**
 
 ## Middleware (shared platform)
 
@@ -68,11 +70,11 @@ CORS allowlist includes `https://app.trytouche.com` and `*.trytouche.com` (TOUCH
 
 | Path | Purpose |
 |------|---------|
-| `patient-app/` | Expo React Native app (Skin & Care) |
-| `middleware-platform/` | Shared API (local dev; prod at api.myskinandcare.com) |
+| `patient-app/` | Expo React Native app (**Touche** consumer) |
+| `middleware-platform/` | Shared API (local dev; prod at api.myskinandcare.com / api.callsomo.com) |
 | `livekit-agents/` | Voice agents (platform) |
-| `unified-dashboard/` | Consumer landing (`skin-care-landing/`), patient/business/admin web portals, Firebase hosting |
-| `docs/Brand/` | Brand runbooks |
+| `unified-dashboard/` | Consumer landing, patient/provider/admin web portals, Firebase hosting |
+| `docs/Brand/` | Brand runbooks (Touche consumer; Skin & Care historical) |
 | `docs/development/CODE_REVIEW_2026-06.md` | Senior code review, god-file map, refactor phases |
 
 ## Code review & monolith refactor

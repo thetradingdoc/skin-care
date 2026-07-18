@@ -1,20 +1,20 @@
-# TestFlight — Skin & Care iOS (physical device)
+# TestFlight — Touche iOS (physical device)
 
-Install **Skin & Care** on your iPhone via Apple TestFlight. Builds use production API **`https://api.callsomo.com`** (see `patient-app/eas.json` → `testflight` profile). When DNS is live, **`https://api.myskinandcare.com`** is an alias to the same middleware.
+Install **Touche** on your iPhone via Apple TestFlight. Builds use production API **`https://api.callsomo.com`** (see `patient-app/eas.json` → `testflight` profile). When DNS is live, **`https://api.myskinandcare.com`** is an alias to the same middleware.
 
 ## Prerequisites (one-time)
 
 | Requirement | Notes |
 |-------------|--------|
 | **Apple Developer Program** | [developer.apple.com](https://developer.apple.com/programs/) — $99/year |
-| **App Store Connect app** | Bundle ID **`com.skinandcare.app`**, name **Skin & Care** |
+| **App Store Connect app** | Bundle ID **`com.skinandcare.app`** (kept), display name **Touche** |
 | **Expo account** | [expo.dev](https://expo.dev) — free tier works for builds |
 | **EAS CLI** | `npm i -g eas-cli` or `npx eas-cli` |
 
 Privacy/terms URLs for App Store Connect:
 
-- Privacy: `https://myskinandcare.com/patients/legal/privacy.html`
-- Terms: `https://myskinandcare.com/patients/legal/terms.html`
+- Privacy: `https://app.trytouche.com/privacy`
+- Terms: `https://app.trytouche.com/terms`
 
 ## Step 1 — Link Expo project
 
@@ -35,8 +35,8 @@ Optional: create an [Expo access token](https://expo.dev/accounts/[account]/sett
 
 1. [App Store Connect](https://appstoreconnect.apple.com) → **Apps** → **+** → New App
 2. Platform: iOS  
-3. Name: **Skin & Care**  
-4. Bundle ID: **com.skinandcare.app** (register in [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list) if missing)
+3. Name: **Touche** (App Store display name)  
+4. Bundle ID: **com.skinandcare.app** (register in [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list) if missing — do not change for brand cutover)
 5. SKU: e.g. `skin-care-ios`
 
 You do **not** need App Store review for **internal** TestFlight testers.
@@ -123,7 +123,7 @@ npx eas-cli build --platform ios --profile testflight --auto-submit
 2. Wait for **Processing** (often 5–30 minutes)
 3. **Internal Testing** → add your Apple ID email as an internal tester (up to 100, no beta review)
 4. On iPhone: install Apple **TestFlight** app
-5. Open invite email or TestFlight → **Skin & Care** → **Install**
+5. Open invite email or TestFlight → **Touche** → **Install**
 
 ## Step 7 — Smoke test on device
 
@@ -158,7 +158,7 @@ If sign-in fails with network errors, confirm the build used `EXPO_PUBLIC_API_BA
 | Build fails signing | `npx eas credentials` → iOS → reset provisioning |
 | TestFlight stuck Processing | Wait; check email for export compliance (we set `ITSAppUsesNonExemptEncryption: false`) |
 | OTP email not received | Check spam; verify prod middleware email config |
-| Camera crash | Settings → Skin & Care → enable Camera |
+| Camera crash | Settings → Touche → enable Camera |
 
 ## CI (optional)
 

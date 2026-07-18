@@ -3,10 +3,9 @@
 **Status:** living **product + medical-tracker SSOT** (information architecture, capture, facts, trust)  
 **Last updated:** 2026-07-17  
 **Mock contract:** `/Users/ojrichard/Downloads/touche_v10.html`  
-**Plan todos:** `docs/product/agentic-tracker-plan-todos.yaml`  
-**App Store train:** Phase A–E build plan below (this section is the execution SSOT for screen work)
+**Plan todos:** `docs/product/agentic-tracker-plan-todos.yaml`
 
-This document is the **single source of truth** for what the consumer medical-tracker product is **as of 2026-07-17**. It is not aspirational. Older camera-first “Check sole home / no tabs” docs are **superseded** — see [`TOUCHE_CAMERA_FIRST.md`](./TOUCHE_CAMERA_FIRST.md) (historical).
+This document is the **single source of truth** for what the consumer medical-tracker product is **as of 2026-07-16**. It is not aspirational. Older camera-first “Check sole home / no tabs” docs are **superseded** — see [`TOUCHE_CAMERA_FIRST.md`](./TOUCHE_CAMERA_FIRST.md) (historical).
 
 Shopify commerce, `patientapp://` deep links, and `app.trytouche.com` hosting remain true; only the **in-app shell IA** and **facts/capture backend** claims below supersede camera-first nav language.
 
@@ -17,16 +16,19 @@ Shopify commerce, `patientapp://` deep links, and `app.trytouche.com` hosting re
 | Decision | Value |
 |----------|--------|
 | In-app shell | **Visible 5-tab:** Calendar · Shelf · Track · Progress · Profile (P7.01) |
-| Lander | **Progress** (`(tabs)/progress` — Proof); Check is the capture/check surface, not sole home |
-| Journal tab | Hidden (`_journal`, `href: null`) — **retirement candidate** (redundant with Calendar/facts) |
+| Lander | **Progress** (`(tabs)/progress` — Proof); Check/severity are Redirect stubs → `/capture` (Phase D) |
+| Journal tab | **Retired** — `_journal` Redirect → Calendar; deep links only (`href: null`) |
 | Tags | `skin \| bill \| prescription \| mark \| lab \| other` |
 | Facts store | `patient_record_facts` (one store for Calendar + Progress + marks list) |
 | Capture HTTP | **`orchestrateCapture`** is canonical; `runCaptureCompose` is not the primary path |
 | Monetization | Manual free; AI vision/OCR metered |
 | Auth | OTP + name (no password in this train) |
-| Media v1 | `photo \| pdf` only |
+| Media v1 | `photo \| pdf` only — **no video, no DICOM** ingestion/rendering |
 | Clinic | Kelly / perception / coding graphs stay out of consumer capture |
 | Progress honesty | Counts only; never invent improvement % |
+| Document vs AI prose | Verbatim PDF/OCR fields (`findings`, `conclusion`, document-sourced `free_text`) may contain physician diagnostic language; **touche-generated** `ai_suggestion` / interpretive notes still fail closed on diagnosis vocabulary |
+| Field templates | Tag/subtype field lists are data (`record-field-templates` catalog) — confirm + manual entry render from the same SSOT; optical/medication/lab/imaging subtypes included |
+| Denorm queryables | **Deliberate plaintext exception** (072/075): `entry_date`, `fact_subtype`, `expiry_date`, `provider`, `issue_date` are low-sensitivity query keys only. Clinical content (SPH/CYL/AXIS, Findings, Conclusion, notes, full OCR) stays in encrypted `structured_json` / `raw_extract_text`. See Encryption section. |
 
 ---
 
@@ -39,8 +41,8 @@ Cold / try → OTP → auth shell
                     ├── Track      ← capture entry; marks list GET /api/patient/marks
                     ├── Progress   ← GET /api/patient/progress/aggregates (+ facts calendar)
                     └── Profile
-Check / capture / severity / mark-compare = stacked screens, not “sole home”
-_journal = addressable but not in tab bar → retire in UI screen-review
+Check / severity = Redirect → `/capture` (Phase D); mark-compare = stacked marks UI
+_journal = Redirect → Calendar (retired; not a live product surface)
 ```
 
 **Do not** describe the product as “Check sole home, no tab bar.” That was the camera-first interim SSOT and is obsolete.
@@ -64,9 +66,33 @@ After `structureByTag`, before `insertFact`:
 
 `assertOrchestrationPersistPolicy(tag, structured)` in `services/medical-tracker-rails/policy.js`
 
-- Diagnosis vocabulary / forbidden clinical keys → fail closed (`vision_fail` / retake)
+- **Touche-generated** diagnosis vocabulary / forbidden clinical keys → fail closed (`vision_fail` / retake)
+- **Document-sourced** verbatim fields (imaging `findings` / `conclusion`, OCR `free_text` with `field_provenance: document`) → **allowed** (quoting the user's report, not touche asserting a diagnosis)
 - Rx commerce keys rejected (schema + policy)
-- Fail closed — never silent strip of diagnosis-shaped content
+- Fail closed on AI prose — never silent strip of diagnosis-shaped content in touche output
+
+### Media types (explicit non-goals)
+
+Consumer medical-tracker facts accept **`media_type`: `photo | pdf` only** (DB check + validators).
+
+| Media | Status |
+|-------|--------|
+| Photo (JPEG/PNG/…) | In scope |
+| PDF (text-layer or scanned→vision) | In scope |
+| **Video** | **Out of scope** — rejected at upload (same as quality-gate) |
+| **DICOM / PACS series** | **Out of scope** — do not ingest, render, or store imaging voxels. If a PDF references external images (QR / “click to view”), store `images_available_externally` + `external_images_note` only |
+
+### PDF extraction routing
+
+1. Detect embedded text layer (`pdf-parse` + usability heuristic) → method `pdf-text-layer`, **does not consume AI meter**
+2. Empty/weak text layer → attempt vision OCR on embedded JPEG streams (`pdf-scan-vision`, metered)
+3. User is never asked to pick the route — automatic per upload
+
+**APP-02 provenance tradeoff (locked):** Text-layer captures stamp `ai_or_manual: manual` so the billing enum stays binary (`ai` \| `manual` only — no `automated_unmetered`). That makes automated text-layer extraction **permanently indistinguishable** from true manual entry in facts/analytics keyed on `ai_or_manual`. Prefer `perceive_method`, `used_ai`, and `metered` for extraction-source honesty. Full note: `todos/pending/APP02_PDF_TEXT_LAYER_PROVENANCE_TRADEOFF_2026-07-18.md`.
+
+### Lab subtype: imaging report
+
+`lab_kind: imaging_report` on the lab tag: study type / body region / physician / facility / **Findings** / **Conclusion** (separate) / external-images note. Spanish (and other) source language via language stub; content kept as written.
 
 ### Client capture + idempotency
 
@@ -95,20 +121,41 @@ Calendar / Progress aggregates / marks list only include rows with `confirmed_at
 
 | Area | Status |
 |------|--------|
-| Track **write** (`track/capture` + `spot-store`) | Still dual-writes `/api/patient/spots` alongside facts capture |
-| `track/[spotId].tsx` | Still reads legacy spots detail (growth bars / change_tag) |
-| Journal tab `_journal` | Still reads `/journal/calendar-range` — **retirement candidate** |
-| Check → `severity.tsx` | Still **writes** journal severity (separate from Journal tab UI) |
+| Track **write** (`track/capture`) | **Facts/marks only** (Phase D) — client dual-write to spots removed |
+| `track/[spotId].tsx` | **Redirect** → mark-compare (`compareGroupId`) |
+| Journal tab `_journal` | **Retired** — Redirect → Calendar |
+| Check → `severity.tsx` | **Retired** — Redirect → `/capture` (no journal severity writes) |
 | Billing portal | Dual-writes to facts; left as-is (not Calendar/Progress consolidation) |
+| Spots / journal HTTP APIs | Still served by middleware; no primary patient-app writers after Phase D |
+| `routine-capture-overlay` | **Facts calendar** (`/records/calendar`) — journal/calendar-range removed (Phase D) |
 
 ---
 
 ## Encryption at rest
 
 - `structured_json` + `raw_extract_text` encrypted AES-256-GCM (`enc:v1:…`) via `patient-record-field-crypto.js`
-- Plaintext `entry_date` denorm for range/ORDER BY (migration `072_…`)
 - Key resolution: `PATIENT_RECORD_FACTS_ENCRYPTION_KEY` → `BILLING_DATA_ENCRYPTION_KEY` → `SESSION_SECRET` → `'dev-billing-key'`
 - **Named limitation:** no key rotation / KMS. Rotating keys requires a migration tool that does not exist yet.
+
+### Deliberate plaintext denorm exception (072 / 075)
+
+Touche encrypts clinical content at rest. A small set of **query/filter keys** is denormalized as plaintext columns so reminders, Progress aggregates, and date-range calendar queries do not decrypt every row on every request.
+
+**This is a deliberate, scoped exception — not an accidental hole in encryption.**
+
+| Column | Migration | Why plaintext is acceptable |
+|--------|-----------|------------------------------|
+| `entry_date` | 072 | Same pattern as below — calendar range / ORDER BY |
+| `fact_subtype` | 075 | Enum-ish subtype (`optical`, `imaging_report`, …) for filters — not findings text |
+| `expiry_date` | 075 | Date only — Rx reminder jobs need it without JSON reach-in |
+| `provider` | 075 | Clinic / practice / facility **name** for sort/filter — lower sensitivity than diagnosis |
+| `issue_date` | 075 | Document date parallel to `entry_date` |
+
+**What stays encrypted (always):** the full `structured_json` payload and `raw_extract_text`. That includes optical SPH/CYL/AXIS/PD, imaging Findings and Conclusion, free-text notes, medication names beyond the display title when stored only in JSON, OCR verbatim extract, and any other clinical narrative. Denormalizing the four 075 keys does **not** copy clinical content into plaintext columns.
+
+Confirm/update must be able to **clear** denorm columns (e.g. wipe `expiry_date` when the user clears expiry) — writers set extracted values including `NULL`, not `COALESCE`-sticky retention of stale plaintext.
+
+**One-time backfill (076):** confirmed facts with null denorm columns are decrypted once and populated; `denorm_backfilled_at` marks completion so re-runs skip without re-decrypt. If the encryption key is missing in a prod-like environment, migration reports `blocked_no_key` with environment name + pending row count (does not soft-close as “next confirm”). Reminder hot path prefers SQL on `expiry_date`, decrypting for expiry only when that column is still null.
 
 Bill money is canonical **`amount_cents`** (integer). Migration `073_bill_amount_cents_canonical` converts recoverable major-unit rows; ambiguous conflation is `needs_review`.
 
@@ -224,96 +271,26 @@ Numbered JS `up(db)` in `middleware-platform/migrations/`, invoked from owning s
 - Password auth
 - Clinic Kelly / RCM in consumer capture
 - Fabricated Progress %
-- KMS / encryption key rotation (named limitation; stays open until a migration tool exists)
+- Deleting orphaned `components/journal/*` / spots API sunset (Phase D Redirects in place)
+- KMS / encryption key rotation (design only: [`../security/FACTS_KMS_ROTATION_DESIGN.md`](../security/FACTS_KMS_ROTATION_DESIGN.md))
+- **Cloud Run service split** — explicit non-goal this horizon ([`MODULE_OWNERS.md`](./MODULE_OWNERS.md) ARCH-05)
 
 ---
 
-## App Store screen train — Phases A–E (execution SSOT)
+## Pending plans index
 
-**Mock:** `/Users/ojrichard/Downloads/touche_v10.html` (45 `.tlabel` frames)  
-**Goal:** App Store readiness. Shell routes largely exist; work is wire + prove, not greenfield rebuild.
+Operational / remediation plans that sit beside this SSOT (do not duplicate IA here):
 
-### Done rule (every screen in every phase)
-
-For every screen wired in this plan, **done** requires **both**:
-
-1. **Visual/CTA match** against the corresponding `touche_v10.html` mock frame.
-2. **Backend-integration proof** — a test that would fail if the implementation were faked: the screen (or its client API module used by that screen) calls the **real** endpoint and a **real effect** happens (fact row in `patient_record_facts`, confirm updates a real row, meter actually decrements). **Not** a test that only asserts navigation or that the right copy renders.
-
-**Historical failure mode (do not repeat):** `capture/loading.tsx` was a `setTimeout`; confirm screens rendered placeholder route params; Playwright “PASS” proved a shell, not a fact.
-
-If the backend piece is not wired yet: **STOP and report the gap** before building further screens on top of it. Do not stack five more screens on a facts pipeline that screen #1 never calls.
-
-Per-phase report vocabulary: **built** / **blocked — name it** / **needs a product decision — name it**.
-
-### Mock → route matrix (canonical)
-
-| Mock | Route |
-|------|-------|
-| 0 Welcome | `welcome.tsx` / try entry |
-| 1 Consent | onboarding consent / capture gate |
-| 2a Capture | `capture/index.tsx` (shared with Track shutter) |
-| 2b Denied | `capture/camera-denied.tsx` |
-| 2c Vision fail | `capture/vision-fail.tsx` |
-| 2m Manual | `capture/manual-entry.tsx` |
-| 3 Tag | `capture/tag.tsx` |
-| 4 Loading | `capture/loading.tsx` → **must** call `orchestrateCapture` |
-| 5-* Confirm | `capture/confirm/{skin,bill,rx,mark,lab,other}.tsx` ← fact draft, not route params |
-| 5b Reveal | `capture/reveal/*` ← policy-gated `ai_suggestion` |
-| 6 Thesis | `capture/thesis/*` |
-| 7 / 7b / 7c | sign-in + `auth/otp-entry` + `auth/otp-error` |
-| 8 Get the app | `get-the-app.tsx` → Progress lander |
-| 9 / 10 | `capture/opqrst-lite.tsx`, `capture/routine-nudge.tsx` (skin-only) |
-| T1–T2b | `(tabs)/calendar.tsx` |
-| T3–T4b | `(tabs)/shelf.tsx` + shelf detail / `shelf/rx-refill-info` |
-| T5 / T5b | Track → `/capture` + `capture/daily-ai-suggests.tsx` |
-| T6–T8 | `capture/ai-cap.tsx`, `welcome-bonus.tsx`, `unlock-ai.tsx` |
-| T9 / billonly / empty | `(tabs)/progress.tsx` |
-| T10–T12 | `(tabs)/account.tsx` + `profile/*` |
-
-### Phase A — Shell fidelity (Progress / Calendar / Profile)
-
-Build per matrix. Additions:
-
-- **Progress:** Adversarial test asserts aggregate numbers on screen came from `GET /api/patient/progress/aggregates` with a real response body — not locally computed or stale-cached. Assert skin module is **absent** (not empty) when zero skin facts exist — **at the screen level**, not only the API (P5.09 covers API; this covers the screen respecting it).
-- **Calendar:** Adversarial test creates a fact via the **real capture path**, then asserts it appears via the actual `GET /api/patient/records/calendar` call — not a fixture/mock harness response that would pass if the real call were broken.
-- **Profile:** Language stub, Share-with-doctor, allergens, notifications, consent — each gets a test confirming navigation to a real screen backed by a real endpoint **where one exists** (share → physician-share API). Not a route that renders and dead-ends.
-
-**Gate before Phase B:** Report per-screen whether the backend-integration test passes. A failing screen blocks Phase B **for that screen**; other Phase A screens proceed independently.
-
-### Phase B — Capture machine (highest priority — core fix)
-
-1. Wire `capture/loading.tsx` to **`orchestrateCapture`** — replace `setTimeout` entirely. Loading steps advance only when real async work resolves (quality → meter → perceive → structure).
-2. Wire `capture/confirm/{…}.tsx` to hydrate from the **actual fact draft** returned by orchestration — not route params. Field sets match `structured_json` per tag (v10 fidelity).
-3. Wire “Looks right” / edit to real confirm-persist (`POST /records/:id/confirm`) with **`request_id`** (no double-tap duplicates).
-4. Wire reveal screens from real policy-gated `ai_suggestion` — skin pending-confirm framing reflects a real suggestion object, not a hardcoded string.
-5. Track shutter + cold onboarding both enter the same `/capture` machine — test both entry points hit the same `orchestrateCapture` call (not two parallel implementations).
-6. Monetization T6/T7/T8: wire to real `GET /api/patient/ai/usage`. Adversarial: exhaust meter via real AI captures → cap screen appears organically; manual remains available and unmetered.
-7. Vision-fail (2c) / camera-denied (2b): fire from **real** failure conditions (AV rejection, quality-gate rejection, diagnosis-vocabulary fail-closed) — not only a forced test flag.
-
-**Definitive Phase B test:** cold start → real photo/document → real AI extraction → confirm → assert DB row exists with correct tag, `ai_or_manual='ai'`, and `structured_json` matching extraction. If this single test does not exist and pass, Phase B is **not done**.
-
-### Phase C — Shelf
-
-Per matrix. Adversarial: Rx detail reached via **barcode scan** (P8.08 gap) still cannot reach a Buy CTA. Test barcode entry and manual Shelf browse **independently**.
-
-### Phase D — Legacy retirement
-
-- Redirect `check.tsx` / `severity.tsx` entry into `/capture` or Track.
-- `_journal`: make the call — remove from product paths for real, **or** document explicitly why it stays. No permanent limbo.
-- `track/[spotId]` spots UI: wrap behind facts/marks compare; close `track/capture.tsx` spots dual-write **or** name it as an explicit follow-up (do not silently drop).
-
-### Phase E — App Store Readiness Report (submission gate)
-
-Produce a single written **App Store Readiness Report** covering:
-
-1. Screenshot/CTA parity — every v10 `.tlabel` vs real app (web + one device); frames with no screen named + why.
-2. Backend-integration proof table — screen | endpoint | proving test | pass/fail — for every screen touched in A–D.
-3. **p8-12** real-device VoiceOver through onboarding + five tabs — device session only; report specific navigability issues, not “passed.”
-4. Permissions audit — camera / library / notifications only at point of use; rationale copy matches actual data use.
-5. No dead functionality sweep — every CTA leads to a working destination; full list even if empty.
-6. Crash/error-path check — network/500/timeout handled on every backend-calling screen.
-7. Data-practice consistency — in-app consent/privacy + HIPAA consumer doc match actual AI / encryption (incl. no-rotation if disclosed) / retention / AV behavior; fix copy if over/underclaim.
-8. Known open items stated plainly — KMS/rotation, `capture_token` residual race, Journal decision, Track spots dual-write, whatever remains. Honest list; no “everything is done.”
-
-The Phase E report is reviewed line-by-line before App Store submission.
+| Plan | Path |
+|------|------|
+| Touche remediation architecture (approved mirror) | [`../../todos/pending/TOUCHE_REMEDIATION_ARCHITECTURE_PLAN_2026-07-17.md`](../../todos/pending/TOUCHE_REMEDIATION_ARCHITECTURE_PLAN_2026-07-17.md) |
+| Pipeline hardening | [`../../todos/pending/PIPELINE_HARDENING_PLAN_2026-07-17.md`](../../todos/pending/PIPELINE_HARDENING_PLAN_2026-07-17.md) |
+| Body-skin face-only architecture | [`../../todos/pending/BODY_SKIN_FACE_ONLY_ARCHITECTURE_2026-07-17.md`](../../todos/pending/BODY_SKIN_FACE_ONLY_ARCHITECTURE_2026-07-17.md) |
+| Skin body-region generalization | [`../../todos/pending/SKIN_BODY_REGION_GENERALIZATION_PLAN_2026-07-17.md`](../../todos/pending/SKIN_BODY_REGION_GENERALIZATION_PLAN_2026-07-17.md) |
+| Field templates architecture | [`../../todos/pending/FIELD_TEMPLATES_ARCHITECTURE_2026-07-17.md`](../../todos/pending/FIELD_TEMPLATES_ARCHITECTURE_2026-07-17.md) |
+| APP-02 PDF text-layer provenance tradeoff | [`../../todos/pending/APP02_PDF_TEXT_LAYER_PROVENANCE_TRADEOFF_2026-07-18.md`](../../todos/pending/APP02_PDF_TEXT_LAYER_PROVENANCE_TRADEOFF_2026-07-18.md) |
+| APP-05R Maestro cloud credentials | [`../../todos/pending/APP05R_MAESTRO_CLOUD_CREDENTIALS_2026-07-18.md`](../../todos/pending/APP05R_MAESTRO_CLOUD_CREDENTIALS_2026-07-18.md) |
+| APP-08 meter refund matrix | [`../../todos/pending/APP08_METER_REFUND_MATRIX_2026-07-18.md`](../../todos/pending/APP08_METER_REFUND_MATRIX_2026-07-18.md) |
+| SEC-12R / SEC-14R follow-up | [`../../todos/pending/SEC12R_SEC14R_FOLLOWUP_2026-07-18.md`](../../todos/pending/SEC12R_SEC14R_FOLLOWUP_2026-07-18.md) |
+| Module owners | [`MODULE_OWNERS.md`](./MODULE_OWNERS.md) |
+| RAG design (no build yet) | [`TOUCHE_RAG_DESIGN.md`](./TOUCHE_RAG_DESIGN.md) |

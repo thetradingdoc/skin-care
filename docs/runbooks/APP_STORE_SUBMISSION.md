@@ -1,14 +1,22 @@
-# App Store Connect — Skin & Care iOS submission
+# App Store Connect — Touche iOS submission
 
-**App:** Skin & Care  
-**Bundle ID:** `com.skinandcare.app`  
+**App:** Touche  
+**Bundle ID:** `com.skinandcare.app` (confirm in ASC if renamed)  
 **ASC App ID:** `6778105762`  
 **Version:** `1.0.0`  
-**Build:** Select latest processed build (e.g. **1.0.0 (7)** from EAS `testflight` profile)  
+**Build:** Select latest processed build from EAS `testflight` profile  
 **Apple Team ID:** `33PP5ZAK59`  
 **Primary language:** English (U.S.)
 
 Use this doc to clear every blocker on the **App Store** version page before **Submit for Review**.
+
+**Phase E (2026-07-17):** Privacy Policy URL must be a public standalone page. Canonical:
+
+```
+https://app.trytouche.com/privacy
+```
+
+Terms: `https://app.trytouche.com/terms`
 
 ---
 
@@ -19,117 +27,105 @@ Use this doc to clear every blocker on the **App Store** version page before **S
 | 1 | **App Information → Content Rights** | ☐ | See [Content Rights](#content-rights) |
 | 2 | **App Store → Version → Build** | ☐ | **Add Build** → pick processed `1.0.0 (N)` |
 | 3 | **App Store → App Review Information → Contact** | ☐ | Fill first name, last name, phone, email |
-| 4 | **App Privacy → Privacy Policy URL** | ☐ | Paste URL below |
+| 4 | **App Privacy → Privacy Policy URL** | ☐ | `https://app.trytouche.com/privacy` |
 | 5 | **App Privacy → Data collection questionnaire** | ☐ | Admin completes — see [App Privacy](#app-privacy-nutrition-label) |
-| 6 | **English (U.S.) → Description** | ☐ | Copy from below |
-| 7 | **English (U.S.) → Keywords** | ☐ | Copy from below |
-| 8 | **English (U.S.) → Support URL** | ☐ | Copy from below |
-| 9 | **App Review → Sign-in** | ☐ | OTP demo account — see [Review sign-in](#app-review-sign-in) |
-| 10 | **Version → Copyright** | ☐ | e.g. `© 2026 Skin & Care` |
+| 6 | **English (U.S.) → Name / Subtitle / Description / Keywords** | ☐ | Copy from [listing metadata](#english-us--listing-metadata-phase-e) |
+| 7 | **English (U.S.) → Support URL** | ☐ | `https://app.trytouche.com/welcome` |
+| 8 | **App Review → Sign-in** | ☐ | OTP demo account — see [App Review sign-in](#app-review-sign-in) |
+| 9 | **Version → Copyright** | ☐ | e.g. `© 2026 touche labs` |
 
 ---
 
-## URLs (legal & support)
+## English (U.S.) — listing metadata (Phase E)
+
+Limits verified against Apple’s current docs (not inventing numbers):
+
+| Field | Official limit | Source |
+|-------|----------------|--------|
+| **Name** | 2–30 characters | [App information](https://developer.apple.com/help/app-store-connect/reference/app-information/) |
+| **Subtitle** | ≤ 30 characters | same |
+| **Keywords** | up to **100 bytes** of content; comma-separated; Apple’s product-page guidance says separate with commas and no spaces between terms (spaces allowed inside multi-word phrases) | [Platform version information](https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/) · [Creating Your Product Page](https://developer.apple.com/app-store/product-page/) · [App Store search](https://developer.apple.com/app-store/search/) |
+| **Description** | ≤ 4000 characters | Platform version information |
+| **Promotional Text** | commonly cited as 170 characters in ASC UI — confirm in Connect when pasting | ASC version page |
+
+Apple search guidance: do **not** repeat words already in the app name, subtitle, or category; avoid generic “app”; don’t use other companies’ names.
+
+### Name (required)
+
+```
+Touche
+```
+
+(6 characters)
+
+### Subtitle (≤ 30 characters)
+
+```
+Skincare & medical journal
+```
+
+(26 characters — matches marketing + Welcome positioning)
+
+### Primary category
+
+**Health & Fitness**
+
+(Secondary optional — leave unset unless product wants **Medical**; Medical invites extra review scrutiny for a personal journal that is explicitly not diagnosis.)
+
+### Keywords (≤ 100 bytes; paste as one line)
+
+```
+prescription log,skin diary,bill tracker,lab results,photo log,rx shelf,ingredient check,allergy
+```
+
+(96 characters — does not repeat “Touche”, “skincare”, “medical”, or “journal” from name/subtitle; omits “app” and category name words.)
+
+### Promotional Text (optional)
+
+```
+One place for your skin, prescriptions, and bills. 20 AI reads free each month — manual entries always free.
+```
+
+### Description (required)
+
+```
+Touche is your skincare and medical journal — one place for your skin, your prescriptions, your bills, and other health facts you choose to keep.
+
+HOW IT WORKS
+• Capture a photo or PDF with one of six tags: skin, bill, prescription, mark, lab, or other
+• Optional AI reads draft fields for you to confirm (20 free AI reads each month; manual entry is always free)
+• See history on Calendar, Track, and Progress — the same facts store everywhere
+• Shelf checks products against your routine; prescription items never get a Buy button
+
+KEY FEATURES
+• Six-tag medical journal capture
+• Optional AI field extraction you always review
+• Product shelf and ingredient / allergen checks
+• Email OTP sign-in — no password to remember
+• Wellness / self-tracking only — not a medical diagnosis
+
+IMPORTANT
+Touche does not provide medical advice, diagnosis, prescribing, or emergency services. Always consult a qualified professional for medical decisions.
+
+Privacy: https://app.trytouche.com/privacy
+Terms: https://app.trytouche.com/terms
+Support: support@trytouche.com
+```
+
+### URLs (legal & support)
 
 | Field | URL |
 |-------|-----|
-| **Privacy Policy URL** | `https://myskinandcare.com/patients/legal/privacy.html` |
-| **Terms of Use** (optional link in description) | `https://myskinandcare.com/patients/legal/terms.html` |
-| **Support URL** (required) | `https://myskinandcare.com/contact.html` |
-| **Marketing URL** (optional) | `https://myskinandcare.com` |
+| **Privacy Policy URL** | `https://app.trytouche.com/privacy` |
+| **Terms of Use** | `https://app.trytouche.com/terms` |
+| **Support URL** (required) | `https://app.trytouche.com/welcome` (Phase E — use this in App Store Connect now). Revisit when `trytouche.com` Shopify storefront is confirmed stable; not a blocker for submission today. |
+| **Marketing URL** (optional) | `https://trytouche.com` |
 
-Support email (also on privacy page): `support@skinandcare.com`
-
----
-
-## English (U.S.) — copy-paste fields
-
-### Promotional Text (optional, 170 chars max)
+### Copyright
 
 ```
-The skincare journal for daily photo tracking. Log one photo a day, see flares and reactions over time—no routine required to start.
+© 2026 touche labs
 ```
-
-### Description (required, 4,000 chars max)
-
-```
-Skin & Care is your skincare journal—track your skin with one photo a day and see what changes over time.
-
-Track your skin with one photo a day. See what's causing flares, reactions, or breakouts—without adding a single new product. Your skin diary, not a routine plan.
-
-HOW IT WORKS
-• Start with a quick face check—your baseline photo for the journal
-• Log one photo a day, same angle, to build a visual timeline
-• Note what to watch—redness, breakouts, dryness, or sensitive-skin reactions
-• Optional: follow a phased care plan or scan products before you try them
-
-KEY FEATURES
-• Daily photo journal and timeline
-• Face check to start your log
-• Product shelf and ingredient safety scan
-• Optional concern-based care programs (8–24 weeks)
-• Email sign-in—no password to remember
-• Wellness tracking only—not a medical diagnosis
-
-WHO IT’S FOR
-Anyone whose skin reacts easily—or anyone who wants a reliable record of how their skin changes day to day. Measurement and journaling, not hype.
-
-IMPORTANT
-Skin & Care is a wellness tracking tool. It does not provide medical advice, diagnosis, or emergency services. Always consult a qualified professional for medical decisions.
-
-Privacy: https://myskinandcare.com/patients/legal/privacy.html
-Terms: https://myskinandcare.com/patients/legal/terms.html
-Support: https://myskinandcare.com/contact.html
-```
-
-### Subtitle (30 chars max)
-
-```
-Find your skin triggers
-```
-
-### Keywords (required, 100 chars max, comma-separated, no spaces after commas)
-
-```
-skincare journal,skin tracker,acne diary,skin diary,flare log,reactive skin,sensitive skin
-```
-
-(Character count: ~90 — adjust if ASC rejects.)
-
-### Category
-
-**Health & Fitness** (not Lifestyle or Self Care).
-
-### Screenshots (6.7" iPhone — recommended order)
-
-1. **Home** — “Log today’s photo” CTA, condition chips, trigger insight card  
-2. **Progress** — streak hero + photo timeline + trigger tags  
-3. **Onboarding** — three journey cards (diary default)  
-4. **Track** — spot watch empty state  
-5. **Scan** — product shelf with verdict badges  
-6. **Profile** — journey toggles (diary / routine / spot)
-
-Capture from journal-first build after `JOURNAL_MODE_STANDALONE=1` is enabled on API.
-
-### Support URL (required)
-
-```
-https://myskinandcare.com/contact.html
-```
-
-### Marketing URL (optional)
-
-```
-https://myskinandcare.com
-```
-
-### Copyright (required, 200 chars max)
-
-```
-© 2026 Skin & Care
-```
-
-(Update year and legal entity if your ASC account uses a company name.)
 
 ### Version
 
@@ -143,12 +139,12 @@ https://myskinandcare.com
 
 **App Store Connect → App Information → Content Rights**
 
-For Skin & Care (original app, own photography/copy, licensed fonts from Google Fonts on web only):
+For Touche (original app, own photography/copy, licensed fonts from Google Fonts on web only):
 
 - Select: **No, it does not contain, show, or access third-party content**  
   *or*, if you use stock/marketing assets with licenses: **Yes** and confirm you have the rights.
 
-App icon and in-app UI are first-party. Routine content is authored in-repo (`middleware-platform/data/routines/concern-routines.json`).
+App icon and in-app UI are first-party.
 
 ---
 
@@ -159,7 +155,7 @@ App icon and in-app UI are first-party. Routine content is authored in-repo (`mi
 **Privacy Policy URL:**
 
 ```
-https://myskinandcare.com/patients/legal/privacy.html
+https://app.trytouche.com/privacy
 ```
 
 ### Suggested data types to declare
@@ -168,12 +164,12 @@ https://myskinandcare.com/patients/legal/privacy.html
 |----------|-----------|-----------------|--------------------|---------|
 | Contact Info | Email Address | Yes | No | App Functionality, Account |
 | User Content | Photos or Videos | Yes | No | App Functionality |
-| User Content | Other User Content (routine logs, notes) | Yes | No | App Functionality |
-| Purchases | Purchase History | Yes | No | App Functionality (if subscription enabled) |
+| User Content | Other User Content (documents, structured facts, notes) | Yes | No | App Functionality |
+| Purchases | Purchase History | Yes | No | App Functionality (if AI credits / paid features enabled) |
 | Identifiers | User ID | Yes | No | App Functionality |
-| Usage Data | Product Interaction | Optional | No | Analytics (only if you send analytics events) |
+| Usage Data | Product Interaction | Optional | No | Analytics (first-party only; no ad SDK) |
 
-**Health & Fitness:** Declare **Photos** under User Content. Only add **Health** if you explicitly collect health records; the app positions itself as wellness tracking, not clinical records.
+**Health & Fitness:** Declare **Photos** under User Content. The app is a personal medical journal / wellness tracker, not a clinical EHR — follow ASC prompts carefully if you also declare Health data types for document captures.
 
 **Data not collected:** Precise location, contacts, browsing history, advertising data (unless you add ad SDKs later).
 
@@ -199,119 +195,50 @@ Use a phone/email you answer during review (Apple may call).
 The app uses **email OTP** (no username/password). On the review form:
 
 1. Check **Sign-in required**
-2. **Username:** a dedicated review inbox you control, e.g. `appreview@skinandcare.com` or your monitored email
-3. **Password:** enter `N/A — email OTP` is not accepted; instead use **Notes** below
+2. **Username:** a dedicated review inbox you control, e.g. `appreview@trytouche.com` or your monitored email
+3. **Password:** ASC often requires a non-empty field — put a placeholder and explain OTP in Notes
 
 **Recommended:** Create `appreview@…` (or use your email), ensure OTP emails deliver in &lt;1 minute, and monitor the inbox during review.
 
 ### Notes for reviewer (4,000 chars max)
 
 ```
-Skin & Care — App Review notes
+Touche — App Review notes
 
 SIGN-IN (email OTP, no password)
-Primary web sign-in URL: https://myskinandcare.com/app/sign-in
+Primary web sign-in URL: https://app.trytouche.com/sign-in
 1. Open the app → Sign in (or use the web URL above)
-2. Enter this email: [REVIEW_EMAIL@YOURDOMAIN.com]
-3. Tap Send code — a 6-digit OTP arrives by email within ~1 minute (check spam)
-4. Enter the code to complete sign-in
+2. Enter the review email below
+3. Check that inbox for a one-time code and enter it in the app
+4. No password is used
 
-FIRST-TIME FLOW AFTER SIGN-IN
-1. If prompted, pick a concern (e.g. Acne) and tap Start tracking
-2. Today tab shows the current phase and routine steps
-3. Tap to log today’s photo (Camera permission) — optional for review
-4. Timeline tab shows logged days
+Review account email: [REVIEW_EMAIL]
 
-TABS
-• Today — daily routine + photo log
-• Timeline — photo journal
-• Shelf — products on your shelf
-• Account — profile and subscription (Stripe test/live per build config)
+WHAT TO LOOK AT
+• Welcome → Get started → capture consent → capture flow (six tags)
+• Privacy Policy linked from consent / Profile: https://app.trytouche.com/privacy
+• Shelf: prescription products must not show Buy
+• Progress / Calendar read confirmed facts only
 
-PERMISSIONS
-• Camera — daily progress photos only (NSCameraUsageDescription in Info.plist)
-• No microphone
-
-NETWORK
-App calls production API: https://api.callsomo.com
-
-WELLNESS DISCLAIMER
-App is for routine tracking and education, not diagnosis or emergency care.
-
-CONTACT DURING REVIEW
-[YOUR_NAME] — [YOUR_PHONE] — [YOUR_EMAIL]
-```
-
-Replace bracketed placeholders before submit.
-
-### Attachment (optional)
-
-Screenshot PDF of Today + Timeline after sign-in helps if OTP is flaky.
-
----
-
-## Build selection
-
-1. **TestFlight → Builds** — confirm build status is **Ready to Submit** (not Processing)
-2. **App Store → iOS App → 1.0.0 → Build → Add Build**
-3. Select **1.0.0 (7)** or latest build from EAS (`patient-app`, profile `testflight` / `production`)
-
-EAS submit config: `patient-app/eas.json` → `submit.testflight.ios.ascAppId`
-
-Rebuild if needed:
-
-```bash
-cd patient-app
-npm run build:testflight:asc
-npm run submit:testflight:asc
+POSITIONING
+Touche is a personal skincare and medical journal (wellness / self-tracking). It does not diagnose or prescribe.
 ```
 
 ---
 
-## App Store Version Release
+## Screenshots (6.7" iPhone — recommended order)
 
-Choose one:
+1. **Welcome** — brand touche, Medical Tracker, 20 AI reads line  
+2. **Capture** — six-tag picker  
+3. **Progress / Calendar** — facts timeline  
+4. **Shelf** — product list with Rx without Buy  
+5. **Try / evaluate** (optional) — Safe / Caution / Hard-no  
+6. **Profile** — consent / account
 
-- **Manually release this version** — recommended for first launch (you control go-live)
-- **Automatically release this version** — goes live immediately after approval
-
----
-
-## Export compliance
-
-Already set in `patient-app/app.json`:
-
-```json
-"ITSAppUsesNonExemptEncryption": false
-```
-
-Answer **No** to custom encryption on ASC export compliance if prompted (standard HTTPS only).
+Capture from the current rebuild, not the pre-rebuild diary-only UI.
 
 ---
 
-## Age rating
+## Legacy note
 
-Typical for this app: **4+** or **12+** depending on questionnaire answers about medical/wellness content. Answer honestly; no unrestricted web, no gambling, no mature content.
-
----
-
-## Quick reference — app metadata
-
-| Item | Value |
-|------|-------|
-| Display name | Skin & Care |
-| Subtitle (optional, 30 chars) | `Skincare journal & photo log` |
-| Category (primary) | Health & Fitness |
-| Category (secondary) | Lifestyle |
-| Bundle ID | com.skinandcare.app |
-| SKU | skin-care-ios |
-| API base (production build) | https://api.callsomo.com |
-| Web signup URL | https://myskinandcare.com/scan |
-
----
-
-## Related docs
-
-- [TESTFLIGHT.md](./TESTFLIGHT.md) — build & TestFlight install
-- Privacy page source: `unified-dashboard/patients/legal/privacy.html`
-- Contact page source: `unified-dashboard/contact.html`
+Older drafts referred to “Skin & Care” / myskinandcare.com diary copy. Those URLs and names are retired for submission; use this Phase E section as the source of truth.
