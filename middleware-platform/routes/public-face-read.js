@@ -106,6 +106,23 @@ function registerFaceReadPublicRoute(app, { apiLimiter }) {
       let visionResult = null;
       let visionError = null;
       if (process.env.FACE_READ_VISION_ENABLED === '1') {
+        // P1.07 — meter GPT vision only (CV inference proxy above is unmetered)
+        const dbMod = require('../database');
+        const sqliteDb = dbMod.db;
+        const meter = require('../services/ai-capture-meter');
+        const sessionId =
+          String(req.get('x-session-id') || '').trim() ||
+          `public:${String(req.ip || 'unknown')}`;
+        const gate = meter.tryConsume(sqliteDb, {
+          patientId: null,
+          sessionId,
+          captureKind: 'face_read_vision',
+          isPlus: false,
+          model: process.env.FACE_READ_VISION_MODEL || 'gpt-4o',
+        });
+        if (!gate.ok) {
+          return res.status(gate.status).json(gate.body);
+        }
         try {
           visionResult = await Promise.race([
             analyzeWithVision(buffer, mime, cvResult?.face_bbox),
@@ -115,9 +132,25 @@ function registerFaceReadPublicRoute(app, { apiLimiter }) {
           ]);
           if (!visionResult) {
             visionError = visionError || 'vision_parse_failed';
+            if (gate.usageId) {
+              meter.refundFailedIfNeeded(sqliteDb, gate.usageId, { reason: 'vision_null_result' });
+            }
+          } else if (visionResult._usage && gate.usageId) {
+            meter.recordUsageTokens(sqliteDb, gate.usageId, {
+              promptTokens: visionResult._usage.prompt_tokens,
+              completionTokens: visionResult._usage.completion_tokens,
+              estimatedUsd: meter.estimateUsdFromTokens(
+                visionResult._usage.prompt_tokens,
+                visionResult._usage.completion_tokens,
+              ),
+              model: visionResult._usage.model,
+            });
           }
         } catch (e) {
           visionError = e?.message || 'vision_failed';
+          if (gate.usageId) {
+            meter.refundFailedIfNeeded(sqliteDb, gate.usageId, { reason: visionError });
+          }
         }
       }
 
