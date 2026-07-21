@@ -1,21 +1,17 @@
 /**
- * P7.41 — Profile notifications permission.
+ * Step 34 / P7.41 — Notifications entry (design ID: profile-notifications).
+ * Reuses allergens prefs UI for toggles; gates on OS permission so
+ * profile-notif-denied is reachable when notifications are off.
  */
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-  TierSecondary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
-import { PROFILE_HREF } from '@/constants/routes';
-import {
-  setDailyReminderEnabled,
-  syncDailyReminderSchedule,
-} from '@/lib/push-reminders';
+import { AllergensNotificationsScreen } from './allergens';
+import { PROFILE_NOTIF_DENIED_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
+import { getNotificationPermissionStatus } from '@/lib/push-registration';
 
 export const NOTIFICATIONS_TITLE = 'Notifications';
 export const NOTIFICATIONS_BODY =
@@ -23,48 +19,43 @@ export const NOTIFICATIONS_BODY =
 
 export default function ProfileNotificationsScreen() {
   const router = useRouter();
-  const [status, setStatus] = useState<'idle' | 'on' | 'skipped'>('idle');
+  const [gate, setGate] = useState<'checking' | 'ok'>('checking');
 
-  const enable = async () => {
-    await setDailyReminderEnabled(true);
-    await syncDailyReminderSchedule(true);
-    setStatus('on');
-  };
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      setGate('checking');
+      void (async () => {
+        const status = await getNotificationPermissionStatus();
+        if (cancelled) return;
+        if (status === 'denied') {
+          router.replace(PROFILE_NOTIF_DENIED_HREF);
+          return;
+        }
+        setGate('ok');
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [router]),
+  );
+
+  if (gate === 'checking') {
+    return (
+      <SafeAreaView style={styles.root} testID="screen-profile-notifications-checking">
+        <ActivityIndicator color={V4DesignTokens.color.wine} style={{ marginTop: 40 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SecondTierChrome testID="screen-profile-notifications">
-      <View>
-        <Text style={styles.title} testID="notifications-title">
-          {NOTIFICATIONS_TITLE}
-        </Text>
-        <Text style={styles.body}>{NOTIFICATIONS_BODY}</Text>
-        {status === 'on' ? (
-          <Text style={styles.hint} testID="notifications-enabled">
-            Reminders enabled on this device.
-          </Text>
-        ) : null}
-      </View>
-      <View>
-        <TierPrimary
-          label="Allow notifications"
-          testID="notifications-allow"
-          onPress={() => void enable()}
-        />
-        <TierSecondary
-          label="Not now"
-          testID="notifications-skip"
-          onPress={() => {
-            setStatus('skipped');
-            router.replace(PROFILE_HREF);
-          }}
-        />
-      </View>
-    </SecondTierChrome>
+    <AllergensNotificationsScreen
+      screenTestID="screen-profile-notifications"
+      onNotificationPermissionDenied={() => router.replace(PROFILE_NOTIF_DENIED_HREF)}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 12 },
-  body: { fontSize: 16, lineHeight: 24, color: AppTokens.color.muted },
-  hint: { marginTop: 16, color: AppTokens.color.safe, fontWeight: '500' },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.ground },
 });

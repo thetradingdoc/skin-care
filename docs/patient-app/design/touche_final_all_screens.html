@@ -1,0 +1,642 @@
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+.tframe{--cream:#FFFDF9;--ink:#1F2937;--muted:#6B7280;--line:#E9E2D6;--orange:#F7591F;--safe:#2F9E5C;--caution:#C16E52;--hardno:#D93A3A;
+width:212px;height:452px;background:var(--cream);border-radius:22px;border:0.5px solid var(--line);overflow:hidden;position:relative;font-family:'DM Sans',sans-serif;color:var(--ink);display:flex;flex-direction:column}
+.tlabel{font-size:9.5px;color:var(--muted);margin:0 0 4px 2px;text-align:center}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:12px 9px}
+.tcell{display:flex;flex-direction:column;align-items:center}
+.tab{padding:11px}
+.pill{border-radius:999px;padding:2px 6px;font-size:8.5px}
+.btn{background:var(--orange);color:#fff;border-radius:11px;padding:8px;text-align:center;font-size:9.5px;font-weight:700}
+.btndark{background:var(--ink);color:#fff;border-radius:11px;padding:8px;text-align:center;font-size:9.5px;font-weight:700}
+.btnsec{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:8px;text-align:center;font-size:9.5px;font-weight:700}
+.field{border:1px solid var(--line);border-radius:9px;padding:6px 8px;font-size:9.5px;color:var(--muted)}
+.face{width:88px;height:114px;background:linear-gradient(160deg,#e7d8c8,#d9c3ac);border-radius:50% / 42%}
+.sect{font-size:8.5px;color:var(--muted);text-align:center;margin:2px 0 -4px;grid-column:1/-1;padding-top:8px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase}
+.pbar{height:3px;background:var(--line);margin:9px 12px 0;border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--orange)}
+.free{background:#EFF6EF;color:var(--safe);font-size:7px;font-weight:700;border-radius:6px;padding:4px 7px;text-align:center;margin-top:4px}
+.checkline{display:flex;align-items:center;gap:5px;font-size:8px}
+.checkline i{font-size:10px}
+.tabbar{height:48px;border-top:1px solid var(--line);display:flex;align-items:center;background:#fff;flex-shrink:0;position:relative;padding:0 6px}
+.tabbar .tabitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:6.5px;color:var(--muted)}
+.tabbar .tabitem.active{color:var(--orange);font-weight:700}
+.tabbar .tabitem i{font-size:14px}
+.tabbar .shutterslot{flex:1;display:flex;justify-content:center}
+.tabbar .shutter{position:absolute;left:50%;top:-15px;transform:translateX(-50%);width:36px;height:36px;border-radius:50%;background:var(--orange);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center}
+.tabbar .shutter i{color:#fff;font-size:15px}
+.chip{border-radius:999px;padding:6px 9px;font-size:8.5px;border:1px solid var(--line)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+</style>
+
+<div style="max-width:980px;margin:0 auto 28px;font-family:'DM Sans',sans-serif;color:#1F2937">
+<h1 style="font-size:20px;margin:0 0 4px">touche &mdash; medical tracker: full IA rebuild (v8)</h1>
+<p style="font-size:12px;color:#6B7280;margin:0 0 16px">Rebuilt around the new 5-tab structure (Calendar / Shelf / Track / Progress / Profile), reordered onboarding, and the manual-free / AI-metered monetization model. Reuses the same color/type/component tokens as v7 &mdash; nothing about the visual language changed, only the structure.</p>
+
+<div style="border:1px solid #E9E2D6;border-radius:12px;padding:12px;background:#FBF8F1;margin-bottom:12px">
+<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin:0 0 6px">Tab definitions (what each tab is for &mdash; not screen-by-screen, the job of the tab)</p>
+<p style="font-size:11px;margin:0 0 3px"><b>Calendar</b> &mdash; the journal. Everything ever logged, any type, by date. Templates/routines are chosen from here, not at onboarding.</p>
+<p style="font-size:11px;margin:0 0 3px"><b>Shelf</b> (was Shop) &mdash; inventory of products and medications. Ask a question against something on the shelf, buy (contextual, Shopify), learn. Commerce lives here, framed as inventory, not a storefront.</p>
+<p style="font-size:11px;margin:0 0 3px"><b>Track</b> (center, raised) &mdash; the one capture action. Photo or upload, any type &mdash; skin, prescription, bill, other. Routes into tagging, then the shared confirm/edit flow.</p>
+<p style="font-size:11px;margin:0 0 3px"><b>Progress</b> &mdash; personalized analytics, functions as the home/summary. Self-reported skin trend (never fabricated %), bill totals if tracked, upcoming reminders (Rx expiring, etc).</p>
+<p style="font-size:11px;margin:0">Profile &mdash; consent, share-with-doctor export, routine management, subscription/credits, delete.</p>
+</div>
+
+<div style="border:1px solid #E9E2D6;border-radius:12px;padding:12px;background:#FBF8F1">
+<div style="border:1px solid #E9E2D6;border-radius:12px;padding:12px;background:#FBF8F1;margin-bottom:12px">
+<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin:0 0 6px">Onboarding sequence (explicit &mdash; gate item 7)</p>
+<p style="font-size:11px;margin:0;font-family:monospace;line-height:1.8">0 Welcome &rarr; 1 Consent &rarr; 2a Capture (or 2m manual / 2b denied / 2c fail) &rarr; 3 Tag &rarr; 4 Loading &rarr; 5-[tag] Confirm &rarr; 5b-[tag] Reveal &rarr; 6-[tag] Thesis &rarr; <b>9 OPQRST-lite (skin-tag only, skippable)</b> &rarr; <b>10 Routine nudge (skin-tag only, one-time, skippable)</b> &rarr; 7 Auth (name+OTP) &rarr; 7b/7c OTP &rarr; 8 Get the app &rarr; lands on Progress (T9)</p>
+<p style="font-size:10px;color:#6B7280;margin:6px 0 0">9 and 10 sit <b>before</b> auth, only in the skin-tag path, and only once. A bill/Rx/mark/lab/other tag skips 9 and 10 entirely and goes straight from 6 to 7.</p>
+</div>
+
+<div style="border:1px solid #E9E2D6;border-radius:12px;padding:12px;background:#FBF8F1;margin-bottom:12px">
+<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin:0 0 6px">Canonical tag enum (gate item 2) &mdash; six, everywhere, no exceptions</p>
+<p style="font-size:11px;margin:0;font-family:monospace">skin | bill | prescription | mark | lab | other</p>
+<p style="font-size:10px;color:#6B7280;margin:6px 0 0">Must appear identically on: Tag screen (3), Manual form (2m), Calendar legend, Confirm template selection. If a screen shows fewer than six, that screen is wrong, not the enum.</p>
+</div>
+
+<div style="border:1px solid #E9E2D6;border-radius:12px;padding:12px;background:#FBF8F1;margin-bottom:12px">
+<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin:0 0 6px">Per-tag fact set (the actual data contract &mdash; gate item 3)</p>
+<p style="font-size:10.5px;margin:0 0 3px"><b>skin</b> &mdash; date, body area, note, AI suggestion (labeled AI, separate from user confirm)</p>
+<p style="font-size:10.5px;margin:0 0 3px"><b>bill</b> &mdash; date, provider, amount, currency, doc type</p>
+<p style="font-size:10.5px;margin:0 0 3px"><b>prescription</b> &mdash; drug, strength, prescriber, date, expiry, refill-reminder opt-in</p>
+<p style="font-size:10.5px;margin:0 0 3px"><b>mark</b> &mdash; date, body location, note, photo ref, <code>compare_group_id</code> (links repeat photos of the same mark for compare-over-time)</p>
+<p style="font-size:10.5px;margin:0 0 3px"><b>lab</b> &mdash; date, provider, title, <code>source_language</code> (detected, editable), <code>display_language</code> (preference), structured results where extractable, else free-text</p>
+<p style="font-size:10.5px;margin:0"><b>other</b> &mdash; date, free-text label, free-text facts</p>
+<p style="font-size:10px;color:#6B7280;margin:6px 0 0">Cross-cutting on every record: <code>media_type</code> (photo | pdf &mdash; video explicitly not in v1, UI must say so, not imply it), <code>ai_or_manual</code> (hard rule 3 &mdash; every AI-derived value labeled distinctly from user-entered).</p>
+</div>
+
+<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin:0 0 6px">Hard rules carried over + new for this round</p>
+<p style="font-size:11px;margin:0 0 3px">1&ndash;4 (describe never diagnose, loading only real steps, AI vs self-reported labeled, manual escape always one tap) unchanged from v5&ndash;v7.</p>
+<p style="font-size:11px;margin:0 0 3px">5. No correlation/impact-% UI. 6&ndash;8: any record capturable, derm insight only, type badges &mdash; unchanged.</p>
+<p style="font-size:11px;margin:0 0 3px">9. <b>Manual entry is always free and unmetered.</b> Only AI-assisted capture (vision/OCR call) counts against the monthly meter.</p>
+<p style="font-size:11px;margin:0 0 3px">10. <b>First-week backfill allowance is separate from the recurring monthly meter</b> &mdash; shown explicitly to the user, expires, doesn't silently blend into month one's count.</p>
+<p style="font-size:11px;margin:0">11. Password is <b>not</b> in this round &mdash; auth stays OTP + name only. Do not design a password-creation screen.</p>
+</div>
+</div>
+
+<div class="tgrid">
+
+<p class="sect">Onboarding (reordered)</p>
+
+<div class="tcell"><p class="tlabel">0 Welcome (LOCKED: brand name Touche, positioning in subtitle)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center">
+<div style="width:44px;height:44px;border-radius:12px;background:var(--orange);display:flex;align-items:center;justify-content:center"><i class="ti ti-notebook" style="font-size:20px;color:#fff" aria-hidden="true"></i></div>
+<h1 style="font-size:15px;font-weight:700;line-height:1.25;margin:0">touche</h1>
+<p style="font-size:10px;font-weight:700;color:var(--orange);margin:0">Skincare &amp; Medical Journal</p>
+<p style="font-size:9px;color:var(--muted);margin:0;line-height:1.4">One place for your skin, your prescriptions, your bills &mdash; whatever you need to keep track of.</p>
+</div>
+<div class="tab"><div class="btn">Get started</div><div class="free"><i class="ti ti-check" aria-hidden="true"></i> free, always for manual entries</div></div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">1 Consent (moved up &mdash; medical framing, first real screen)</p><div class="tframe"><div class="pbar"><i style="width:12%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:7px">
+<i class="ti ti-shield-check" style="font-size:18px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:12px;font-weight:700;margin:0">Before we start</h2>
+<p style="font-size:8.5px;color:var(--muted);margin:0;line-height:1.5">touche reads photos and documents you attach to log facts &mdash; skin, prescriptions, bills, anything medical. It never diagnoses. Nothing you upload is ever used to train outside models.</p>
+<div style="flex:1"></div>
+<div class="btn">I understand, continue</div>
+<div class="btnsec">Enter details manually instead</div>
+<p style="font-size:7px;color:var(--muted);text-align:center;margin:2px 0 0">privacy details</p>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">2a Capture &mdash; photo or upload, any type</p><div class="tframe"><div class="pbar"><i style="width:24%"></i></div>
+<div style="flex:1;background:linear-gradient(165deg,#efe4d5,#e0cdb6);margin:10px 12px 6px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
+<i class="ti ti-camera" style="font-size:24px;color:rgba(31,41,55,0.4)" aria-hidden="true"></i>
+<p style="font-size:8px;color:rgba(31,41,55,0.5);margin:0">skin, prescription, bill &mdash; anything</p>
+</div>
+<div class="tab">
+<div class="btn">Take a photo</div>
+<div class="btnsec" style="margin-top:5px">Upload from library</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">2b Camera denied (NEW P0 &mdash; was missing)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-camera-off" style="font-size:18px;color:var(--muted)" aria-hidden="true"></i>
+<p style="font-size:9.5px;font-weight:700;margin:0">camera access needed</p>
+<div class="btn">upload photo instead</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">2c Vision fail / retry (NEW P0 &mdash; manual escape required)</p><div class="tframe">
+<div style="flex:1;background:#efe4d5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px">
+<i class="ti ti-alert-circle" style="font-size:18px;color:var(--caution)" aria-hidden="true"></i>
+<p style="font-size:9.5px;font-weight:700;margin:0;text-align:center;padding:0 20px">couldn't read this clearly</p>
+</div>
+<div class="tab" style="display:flex;flex-direction:column;gap:5px"><div class="btn">retake or re-upload</div><div class="btnsec">enter it manually</div></div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">2m Manual entry form (canonical 6-tag enum, was missing mark/lab)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Enter it yourself</h2>
+<span class="pill" style="background:var(--line);align-self:flex-start">no AI &middot; no photo needed</span>
+<div style="display:flex;flex-wrap:wrap;gap:4px"><span class="chip on">skin</span><span class="chip">bill</span><span class="chip">prescription</span><span class="chip">mark</span><span class="chip">lab</span><span class="chip">other</span></div>
+<div class="field">what happened / what is it</div>
+<div class="field">date</div>
+<div style="flex:1"></div>
+<div class="btn">Save</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">3 Tag it (canonical 6-tag enum, was missing mark/lab)</p><div class="tframe"><div class="pbar"><i style="width:36%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:7px">
+<h2 style="font-size:12px;font-weight:700;margin:0">What's this about?</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0">pick any that apply</p>
+<div style="display:flex;flex-wrap:wrap;gap:5px">
+<span class="chip on">skin</span><span class="chip">bill</span><span class="chip">prescription</span><span class="chip">mark</span><span class="chip">lab</span><span class="chip">other</span>
+</div>
+<div class="field">or describe it &mdash; e.g. "eye exam"</div>
+<div style="flex:1"></div>
+<div class="btn">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">4 Loading (unchanged &mdash; real steps only)</p><div class="tframe"><div class="pbar"><i style="width:46%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<div style="width:38px;height:38px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--orange)"></div>
+<div style="width:100%;display:flex;flex-direction:column;gap:6px;margin-top:4px">
+<div class="checkline"><i class="ti ti-check" style="color:var(--safe)" aria-hidden="true"></i> reading what you sent</div>
+<div class="checkline" style="color:var(--muted)"><i class="ti ti-loader-2" aria-hidden="true"></i> extracting date, provider, facts</div>
+</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5-skin Confirm (AI suggestion labeled, separate from your confirm)</p><div class="tframe"><div class="pbar"><i style="width:56%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Here's what we found</h2>
+<span class="pill" style="background:var(--ink);color:#fff;align-self:flex-start">skin</span>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Date</span><span>Jul 16, 2026 <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Area</span><span>cheek, left <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+</div>
+<div style="border:1px dashed var(--orange);border-radius:9px;padding:6px"><p style="font-size:7px;color:var(--orange);font-weight:700;margin:0"><i class="ti ti-sparkles" style="font-size:8px" aria-hidden="true"></i> AI SUGGESTS</p><p style="font-size:7.5px;margin:2px 0 0">some redness &mdash; tap below to confirm or correct</p></div>
+<p style="font-size:7px;color:var(--orange);margin:0">enter this one manually instead</p>
+<div style="flex:1"></div>
+<div class="btn">Looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5-bill Confirm (was invisible &mdash; date/provider/amount/currency/doc type)</p><div class="tframe"><div class="pbar"><i style="width:56%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Here's what we found</h2>
+<span class="pill" style="background:var(--ink);color:#fff;align-self:flex-start">bill</span>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Provider</span><span>Allerton Eye Care <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Amount</span><span>$84.00 USD <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Doc type</span><span>receipt <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Date</span><span>Jul 16, 2026 <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+</div>
+<div style="flex:1"></div>
+<div class="btn">Looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5-rx Confirm (was invisible &mdash; drug/strength/prescriber/expiry)</p><div class="tframe"><div class="pbar"><i style="width:56%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Here's what we found</h2>
+<span class="pill" style="background:var(--orange);color:#fff;align-self:flex-start">prescription</span>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Drug</span><span>Tretinoin <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Strength</span><span>0.025% <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Prescriber</span><span>Dr. A. Reyes <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Expires</span><span style="color:var(--caution)">Jul 7, 2027 <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+</div>
+<div style="flex:1"></div>
+<div class="btn">Looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5-mark Confirm (was invisible &mdash; compare_group_id is what makes "compare over time" possible)</p><div class="tframe"><div class="pbar"><i style="width:56%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Here's what we found</h2>
+<span class="pill" style="border:1px solid var(--line);color:var(--muted);align-self:flex-start">mark</span>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Location</span><span>right forearm <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Date</span><span>Jul 16, 2026 <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+</div>
+<p style="font-size:7px;color:var(--muted);margin:0">new mark, or is this the same one as before?</p>
+<div style="display:flex;gap:4px"><span class="chip on">new mark</span><span class="chip">same as an existing one</span></div>
+<div style="flex:1"></div>
+<div class="btn">Looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5-lab Confirm (was invisible &mdash; your Spanish lab report case, language row included)</p><div class="tframe"><div class="pbar"><i style="width:56%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:4px">
+<h2 style="font-size:11px;font-weight:700;margin:0">Here's what we found</h2>
+<span class="pill" style="border:1px solid var(--line);color:var(--muted);align-self:flex-start">lab</span>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;display:flex;flex-direction:column;gap:3px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Provider</span><span>Lab Clínico <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Test</span><span>Hemograma <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span style="color:var(--muted)">Date</span><span>Jul 16, 2026 <i class="ti ti-pencil" style="font-size:8px;color:var(--orange)" aria-hidden="true"></i></span></div>
+</div>
+<div style="border:1px solid var(--orange);border-radius:9px;padding:6px"><div style="display:flex;justify-content:space-between;font-size:7.5px"><span>Document language</span><span style="color:var(--orange);font-weight:700">Spanish <i class="ti ti-pencil" style="font-size:7px" aria-hidden="true"></i></span></div></div>
+<p style="font-size:6.5px;color:var(--muted);margin:0;line-height:1.3">we save it in Spanish. translation is coming &mdash; for now, results are kept as written.</p>
+<div style="flex:1"></div>
+<div class="btn">Looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5b Reveal &mdash; skin (FIXED: pending confirm, not asserted)</p><div class="tframe"><div class="pbar"><i style="width:62%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-eye" style="font-size:20px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:11.5px;font-weight:700;margin:0;line-height:1.3">We noticed some redness on your left cheek &mdash; does that match what you see?</h2>
+<p style="font-size:8px;color:var(--muted);margin:0;line-height:1.5">this is your day 1 &mdash; nothing to compare yet. we'll track it from here.</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Yes, that's right</div>
+<div class="btnsec" style="width:100%">Not quite &mdash; let me fix it</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5b-bill Reveal &mdash; bill/receipt variant (NEW, was missing)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-receipt" style="font-size:20px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:12px;font-weight:700;margin:0">Saved &mdash; $84.00 to Allerton Eye Care</h2>
+<p style="font-size:8px;color:var(--muted);margin:0;line-height:1.5">logged to your calendar for Jul 16</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5b-rx Reveal &mdash; prescription variant (NEW, was missing)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-pill" style="font-size:20px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:12px;font-weight:700;margin:0">Tretinoin 0.025% from Dr. Reyes</h2>
+<p style="font-size:8px;color:var(--muted);margin:0;line-height:1.5">expires Jul 7, 2027 &mdash; want a reminder before it runs out?</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Yes, remind me</div>
+<div class="btnsec" style="width:100%">No thanks</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">5b-other Reveal &mdash; mark / something else (NEW, was missing)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-map-pin" style="font-size:20px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:12px;font-weight:700;margin:0">Logged as "mark"</h2>
+<p style="font-size:8px;color:var(--muted);margin:0;line-height:1.5">saved to your calendar &mdash; we'll help you compare it over time</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">6-skin Thesis &mdash; variant 1 of 3 (was one paragraph, now branched)</p><div class="tframe"><div class="pbar"><i style="width:70%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;text-align:center">
+<span class="pill" style="background:var(--safe);color:#fff">day 1 recorded</span>
+<h2 style="font-size:13px;font-weight:700;margin:0">Stop guessing about your skin</h2>
+<p style="font-size:9px;margin:0;line-height:1.5">tomorrow's photo answers one question: <b>same, calmer, or worse.</b> that's it.</p>
+<div style="flex:1"></div>
+<div class="btn">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">6-bill Thesis &mdash; variant 2 of 3</p><div class="tframe"><div class="pbar"><i style="width:70%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;text-align:center">
+<span class="pill" style="background:var(--safe);color:#fff">saved</span>
+<h2 style="font-size:13px;font-weight:700;margin:0">One less thing to remember</h2>
+<p style="font-size:9px;margin:0;line-height:1.5">it's already in your calendar. next time, snap it before you file it away.</p>
+<div style="flex:1"></div>
+<div class="btn">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">6-rx Thesis &mdash; variant 3 of 3</p><div class="tframe"><div class="pbar"><i style="width:70%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:9px;align-items:center;justify-content:center;text-align:center">
+<span class="pill" style="background:var(--safe);color:#fff">saved</span>
+<h2 style="font-size:13px;font-weight:700;margin:0">Never miss a refill again</h2>
+<p style="font-size:9px;margin:0;line-height:1.5">we'll remind you before this one expires. that's the whole job.</p>
+<div style="flex:1"></div>
+<div class="btn">Continue</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">7 Auth &mdash; OTP + name only (password deferred)</p><div class="tframe"><div class="pbar"><i style="width:82%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:7px">
+<h2 style="font-size:12.5px;font-weight:700;margin:6px 0 2px">Don't lose today</h2>
+<div class="field">your name</div>
+<div class="field">name@email.com</div>
+<p style="font-size:7px;color:var(--muted);margin:0">we'll email a 6-digit code &mdash; no password needed</p>
+<div style="flex:1"></div>
+<div class="btn">Send code &amp; save</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">7b OTP entry (NEW P0 &mdash; was missing)</p><div class="tframe"><div class="pbar"><i style="width:88%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:7px">
+<h2 style="font-size:12px;font-weight:700;margin:6px 0 2px">Enter your code</h2>
+<p style="font-size:8px;color:var(--muted);margin:0">sent to name@email.com</p>
+<div style="display:flex;gap:4px;margin:4px 0"><div class="field" style="flex:1;text-align:center">4</div><div class="field" style="flex:1;text-align:center">8</div><div class="field" style="flex:1;text-align:center">1</div><div class="field" style="flex:1;text-align:center">&middot;</div><div class="field" style="flex:1;text-align:center">&middot;</div><div class="field" style="flex:1;text-align:center">&middot;</div></div>
+<p style="font-size:7px;color:var(--orange);margin:0">use a different email</p>
+<div style="flex:1"></div>
+<div class="btn">Confirm</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">7c OTP error / resend (NEW P0 &mdash; was missing)</p><div class="tframe"><div class="pbar"><i style="width:88%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:7px">
+<h2 style="font-size:12px;font-weight:700;margin:6px 0 2px">Enter your code</h2>
+<div style="display:flex;gap:4px;margin:4px 0"><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">4</div><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">8</div><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">2</div><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">1</div><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">9</div><div class="field" style="flex:1;text-align:center;border-color:var(--hardno);color:var(--hardno)">9</div></div>
+<p style="font-size:7.5px;color:var(--hardno);margin:0">that code's wrong or expired</p>
+<div style="flex:1"></div>
+<div class="btn">Resend code</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">8 Get the app (unchanged)</p><div class="tframe"><div class="pbar"><i style="width:100%"></i></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-device-mobile" style="font-size:18px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:12px;font-weight:700;margin:0">Better with the app camera</h2>
+<p style="font-size:8px;color:var(--muted);margin:0">reads photos and documents more clearly than a browser can</p>
+</div>
+<div class="tab" style="display:flex;flex-direction:column;gap:5px"><div class="btn">Download</div><div class="btnsec">Continue in browser</div></div>
+</div></div>
+
+<p class="sect">Wellness intake (skin-tagged only, optional, not clinical)</p>
+
+<div class="tcell"><p class="tlabel">9 OPQRST-lite &mdash; wellness questionnaire, not a clinical form</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:6px">
+<h2 style="font-size:11px;font-weight:700;margin:0">A few quick questions</h2>
+<p style="font-size:7px;color:var(--muted);margin:0">only shown when you tag a skin issue &middot; skippable</p>
+<div class="field" style="font-size:8px">When did you first notice it?</div>
+<div class="field" style="font-size:8px">Anything that makes it better or worse?</div>
+<div class="field" style="font-size:8px">How would you describe it?</div>
+<div style="flex:1"></div>
+<div class="btn">Continue</div>
+<p style="font-size:7px;color:var(--orange);text-align:center;margin:4px 0 0">skip this</p>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">10 Routine pick &mdash; skin-only, skippable, reminders not a gate</p><div class="tframe">
+<div class="tab" style="flex:1">
+<h2 style="font-size:11px;font-weight:700;margin:0 0 3px">Want reminders?</h2>
+<p style="font-size:7px;color:var(--muted);margin:0 0 6px">optional &mdash; a routine just sets a reminder cadence, tracking works either way</p>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;margin-bottom:5px"><p style="font-size:8.5px;font-weight:700;margin:0">Acne</p><p style="font-size:7px;color:var(--muted);margin:1px 0 0">12 weeks &middot; daily reminder</p></div>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px"><p style="font-size:8.5px;font-weight:700;margin:0">Barrier repair</p><p style="font-size:7px;color:var(--muted);margin:1px 0 0">8 weeks &middot; daily reminder</p></div>
+<div class="btn" style="margin-top:8px">Start with reminders</div>
+<p style="font-size:7px;color:var(--orange);text-align:center;margin:5px 0 0">no thanks, just let me log</p>
+</div>
+</div></div>
+
+<p class="sect">Tab: Calendar (the journal &mdash; everything, by date)</p>
+
+<div class="tcell"><p class="tlabel">T1 Calendar (gate item 8: full legend incl. mark/Rx, multi-type day, icon+color not color-only)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:900;margin:0">calendar</h2>
+<div style="display:flex;gap:3px"><span class="pill" style="background:var(--ink);color:#fff">month</span><span class="pill" style="border:1px solid var(--line);color:var(--muted)">list</span></div>
+<p style="font-size:8px;font-weight:700;margin:2px 0 0">July 2026</p>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:6px;color:var(--muted);text-align:center">
+<span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+<div style="aspect-ratio:1"></div><div style="aspect-ratio:1"></div><div style="aspect-ratio:1;background:var(--safe);border-radius:3px;display:flex;align-items:center;justify-content:center"><i class="ti ti-mood-smile" style="font-size:8px;color:#fff" aria-hidden="true"></i></div><div style="aspect-ratio:1;background:#dbeafe;border-radius:3px;display:flex;align-items:center;justify-content:center"><i class="ti ti-receipt" style="font-size:8px;color:#1e40af" aria-hidden="true"></i></div><div style="aspect-ratio:1;background:var(--caution);border-radius:3px;display:flex;align-items:center;justify-content:center"><i class="ti ti-mood-sad" style="font-size:8px;color:#fff" aria-hidden="true"></i></div><div style="aspect-ratio:1;background:#f3e8ff;border-radius:3px;display:flex;align-items:center;justify-content:center"><i class="ti ti-map-pin" style="font-size:8px;color:#7c3aed" aria-hidden="true"></i></div><div style="aspect-ratio:1;background:var(--line);border-radius:3px"></div>
+<div style="aspect-ratio:1;border:1.5px solid var(--orange);border-radius:3px;position:relative;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700">16<span style="position:absolute;bottom:1px;right:1px;width:5px;height:5px;background:var(--safe);border-radius:50%"></span><span style="position:absolute;bottom:1px;left:1px;width:5px;height:5px;background:#dbeafe;border-radius:50%;border:0.5px solid #1e40af"></span></div><div style="aspect-ratio:1;border:1px dashed var(--line);border-radius:3px"></div>
+</div>
+<p style="font-size:6px;color:var(--muted);margin:2px 0 0;line-height:1.5"><i class="ti ti-mood-smile" style="font-size:7px;color:var(--safe)" aria-hidden="true"></i> skin calmer &nbsp; <i class="ti ti-mood-sad" style="font-size:7px;color:var(--caution)" aria-hidden="true"></i> skin worse &nbsp; <i class="ti ti-receipt" style="font-size:7px;color:#1e40af" aria-hidden="true"></i> bill/doc &nbsp; <i class="ti ti-map-pin" style="font-size:7px;color:#7c3aed" aria-hidden="true"></i> mark &nbsp; day 16 shows two dots = multi-type day</p>
+<div style="flex:1"></div>
+<div class="btn" style="font-size:8.5px">choose a routine/template</div>
+</div>
+<div class="tabbar">
+<div class="tabitem active"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</div>
+<div class="tabitem"><i class="ti ti-first-aid-kit" aria-hidden="true"></i>Shelf</div>
+<div class="shutterslot"><div class="shutter"><i class="ti ti-camera" aria-hidden="true"></i></div></div>
+<div class="tabitem"><i class="ti ti-chart-bar" aria-hidden="true"></i>Progress</div>
+<div class="tabitem"><i class="ti ti-user" aria-hidden="true"></i>Profile</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T1b Calendar list view (NEW &mdash; was a pill with no screen behind it)</p><div class="tframe">
+<div class="tab" style="flex:1">
+<h2 style="font-size:11px;font-weight:900;margin:0 0 5px">calendar &middot; list</h2>
+<div style="display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:6px 0"><i class="ti ti-mood-smile" style="font-size:12px;color:var(--safe)" aria-hidden="true"></i><div><p style="font-size:8px;font-weight:700;margin:0">Skin &mdash; calmer</p><p style="font-size:6.5px;color:var(--muted);margin:0">Jul 16</p></div></div>
+<div style="display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:6px 0"><i class="ti ti-map-pin" style="font-size:12px;color:#7c3aed" aria-hidden="true"></i><div><p style="font-size:8px;font-weight:700;margin:0">Mark &mdash; right forearm</p><p style="font-size:6.5px;color:var(--muted);margin:0">Jul 16</p></div></div>
+<div style="display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:6px 0"><i class="ti ti-receipt" style="font-size:12px;color:#1e40af" aria-hidden="true"></i><div><p style="font-size:8px;font-weight:700;margin:0">Bill &mdash; Allerton Eye Care</p><p style="font-size:6.5px;color:var(--muted);margin:0">Jul 15</p></div></div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T2 Calendar &mdash; day detail (mixed record types)</p><div class="tframe">
+<div class="tab" style="flex:1">
+<div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="ti ti-arrow-left" style="font-size:11px" aria-hidden="true"></i><h2 style="font-size:11px;font-weight:700;margin:0">Jul 16</h2></div>
+<div style="display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:6px 0"><i class="ti ti-mood-smile" style="font-size:13px;color:var(--safe)" aria-hidden="true"></i><p style="font-size:8px;margin:0">Skin &mdash; calmer than yesterday</p></div>
+<div style="display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:6px 0"><i class="ti ti-file-text" style="font-size:13px;color:var(--muted)" aria-hidden="true"></i><p style="font-size:8px;margin:0">Eye Rx &mdash; Allerton Eye Care</p></div>
+<div class="btn" style="margin-top:8px">+ add to this day</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T2b Calendar empty (NEW P0 &mdash; first-run dead end otherwise)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-calendar" style="font-size:22px;color:var(--muted)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">Nothing logged yet</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0">tap the camera below to log your first thing</p>
+</div>
+</div></div>
+
+<p class="sect">Tab: Shelf (products &amp; meds &mdash; inventory, ask, buy, learn)</p>
+
+<div class="tcell"><p class="tlabel">T3 Shelf &mdash; mixed inventory, not a storefront</p><div class="tframe">
+<div class="tab" style="flex:1">
+<h2 style="font-size:11px;font-weight:900;margin:0 0 5px">shelf</h2>
+<div style="display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:6px;margin-bottom:5px"><div style="width:20px;height:20px;background:var(--orange);border-radius:5px"></div><div style="flex:1"><p style="font-size:8px;font-weight:700;margin:0">Niacinamide Serum</p><p style="font-size:6.5px;color:var(--muted);margin:0">skincare</p></div><i class="ti ti-chevron-right" style="font-size:9px;color:var(--muted)" aria-hidden="true"></i></div>
+<div style="display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:6px"><div style="width:20px;height:20px;background:var(--ink);border-radius:5px"></div><div style="flex:1"><p style="font-size:8px;font-weight:700;margin:0">Tretinoin 0.025%</p><p style="font-size:6.5px;color:var(--muted);margin:0">prescription &middot; from your records</p></div><i class="ti ti-chevron-right" style="font-size:9px;color:var(--muted)" aria-hidden="true"></i></div>
+<div style="flex:1"></div>
+<div class="btn">scan or add</div>
+</div>
+<div class="tabbar">
+<div class="tabitem"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</div>
+<div class="tabitem active"><i class="ti ti-first-aid-kit" aria-hidden="true"></i>Shelf</div>
+<div class="shutterslot"><div class="shutter"><i class="ti ti-camera" aria-hidden="true"></i></div></div>
+<div class="tabitem"><i class="ti ti-chart-bar" aria-hidden="true"></i>Progress</div>
+<div class="tabitem"><i class="ti ti-user" aria-hidden="true"></i>Profile</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T4-skincare Shelf item (buy is fine here &mdash; OTC)</p><div class="tframe">
+<div class="tab" style="flex:1">
+<div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="ti ti-arrow-left" style="font-size:11px" aria-hidden="true"></i><h2 style="font-size:11px;font-weight:700;margin:0">Niacinamide Serum</h2></div>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px;margin-bottom:6px"><p style="font-size:7.5px;color:var(--muted);margin:0">safe with your allergen list</p></div>
+<div class="btnsec" style="margin-bottom:5px">ask a question about this</div>
+<div class="btnsec" style="margin-bottom:5px">learn about this ingredient</div>
+<div class="btn">buy &middot; $24.00</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T4-rx Shelf item (FIXED &mdash; NEVER a Buy CTA on prescription meds)</p><div class="tframe">
+<div class="tab" style="flex:1">
+<div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="ti ti-arrow-left" style="font-size:11px" aria-hidden="true"></i><h2 style="font-size:11px;font-weight:700;margin:0">Tretinoin 0.025%</h2></div>
+<div style="border:1px solid var(--caution);border-radius:9px;padding:6px;margin-bottom:6px"><p style="font-size:7.5px;color:var(--caution);margin:0;font-weight:700">expires Jul 7, 2027</p></div>
+<div class="btnsec" style="margin-bottom:5px">ask a question about this</div>
+<div class="btnsec" style="margin-bottom:5px">refill info &mdash; contact your prescriber</div>
+<p style="font-size:6.5px;color:var(--muted);margin:0;text-align:center">touche never sells or refills prescription medication</p>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T4b Shelf empty (NEW P0 &mdash; first-run dead end otherwise)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-first-aid-kit" style="font-size:22px;color:var(--muted)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">Nothing on your shelf yet</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0">scan a barcode or add one to get a safety check</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">scan or add</div>
+</div>
+</div></div>
+
+<p class="sect">Tab: Track (center action &mdash; unified capture)</p>
+
+<div class="tcell"><p class="tlabel">T5 Track tapped &mdash; same capture flow as onboarding</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-camera" style="font-size:24px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">What are you logging?</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0">photo or upload &mdash; skin, prescription, bill, anything</p>
+</div>
+<div class="tab" style="display:flex;flex-direction:column;gap:5px"><div class="btn">Take a photo</div><div class="btnsec">Upload from library</div></div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T5b Daily confirm (gate item 9: AI suggestion vs your confirm, now labeled)</p><div class="tframe">
+<div style="height:80px;background:linear-gradient(160deg,#e7d8c8,#d9c3ac);margin:12px 12px 0;border-radius:11px"></div>
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<p style="font-size:7px;color:var(--orange);font-weight:700;margin:0"><i class="ti ti-sparkles" style="font-size:8px" aria-hidden="true"></i> AI SUGGESTS: calmer than yesterday</p>
+<p style="font-size:8px;color:var(--muted);margin:0">tap to confirm or correct</p>
+<div style="display:flex;gap:3px"><span class="pill" style="border:1px solid var(--line)">worse</span><span class="pill" style="border:1px solid var(--line)">same</span><span class="pill" style="background:var(--orange);color:#fff">calmer</span></div>
+<p style="font-size:7.5px;color:var(--muted);margin:4px 0 0">what did you use today? (optional)</p>
+<div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill" style="border:1px solid var(--line)">niacinamide</span><span class="pill" style="border:1px solid var(--line)">+ add</span></div>
+<div style="flex:1"></div>
+<div class="btn">looks right</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T6 AI cap reached this month (manual still free)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-sparkles-off" style="font-size:18px;color:var(--muted)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">AI reads used up for this month</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0;line-height:1.5">you can still log this manually right now, free, no limit &mdash; or unlock more AI reads</p>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Log manually instead</div>
+<div class="btnsec" style="width:100%">See options</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T7 First-week backfill allowance (NEW &mdash; separate from monthly meter)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center">
+<i class="ti ti-gift" style="font-size:20px;color:var(--orange)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">Catching up? Extra reads on us</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0;line-height:1.5">for your first week, backfilling old records doesn't touch your monthly limit</p>
+<span class="pill" style="background:var(--safe);color:#fff">12 bonus reads &middot; 5 days left</span>
+<div style="flex:1"></div>
+<div class="btn" style="width:100%">Got it</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T8 Unlock more &mdash; credits, transparent pricing</p><div class="tframe">
+<div class="tab" style="flex:1">
+<h2 style="font-size:11px;font-weight:700;margin:0 0 3px">More AI reads</h2>
+<p style="font-size:7px;color:var(--muted);margin:0 0 6px">manual logging is always free &mdash; this only covers AI-read photos/documents</p>
+<div style="border:1px solid var(--line);border-radius:9px;padding:7px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:8.5px;font-weight:700">20 reads</span><span style="font-size:8.5px;color:var(--orange)">$3.99</span></div>
+<div style="border:1.5px solid var(--orange);border-radius:9px;padding:7px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:8.5px;font-weight:700">Unlimited monthly</span><span style="font-size:8.5px;color:var(--orange)">$9.99/mo</span></div>
+<div class="btn" style="margin-top:8px">Choose</div>
+</div>
+</div></div>
+
+<p class="sect">Tab: Progress (honest personalization, functions as home)</p>
+
+<div class="tcell"><p class="tlabel">T9 Progress &mdash; cold-start lander, honest counts, bills + reminders</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:900;margin:0">progress</h2>
+<p style="font-size:8px;font-weight:700;color:var(--safe);margin:0">skin: 5 of 8 days calmer</p>
+<div style="height:20px;display:flex;align-items:flex-end;gap:2px">
+<div style="flex:1;height:60%;background:var(--caution);border-radius:2px"></div><div style="flex:1;height:45%;background:var(--safe);border-radius:2px"></div><div style="flex:1;height:35%;background:var(--safe);border-radius:2px"></div><div style="flex:1;height:50%;background:var(--safe);border-radius:2px"></div>
+</div>
+<p style="font-size:6px;color:var(--muted);margin:0">from your own confirms &mdash; nothing AI-scored</p>
+<div style="border-top:1px solid var(--line);margin-top:3px;padding-top:4px">
+<p style="font-size:7.5px;font-weight:700;margin:0">bills tracked</p>
+<p style="font-size:9px;font-weight:900;margin:1px 0 0">$340.00 <span style="font-size:7px;color:var(--muted);font-weight:400">this year</span></p>
+</div>
+<div style="border-top:1px solid var(--line);margin-top:3px;padding-top:4px">
+<p style="font-size:7.5px;font-weight:700;margin:0">reminders</p>
+<p style="font-size:7px;color:var(--caution);margin:1px 0 0">Eye Rx expires in 12 days</p>
+</div>
+</div>
+<p style="font-size:7px;color:var(--orange);margin:0">day 1 vs today &rarr;</p>
+<div class="tabbar">
+<div class="tabitem"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</div>
+<div class="tabitem"><i class="ti ti-first-aid-kit" aria-hidden="true"></i>Shelf</div>
+<div class="shutterslot"><div class="shutter"><i class="ti ti-camera" aria-hidden="true"></i></div></div>
+<div class="tabitem active"><i class="ti ti-chart-bar" aria-hidden="true"></i>Progress</div>
+<div class="tabitem"><i class="ti ti-user" aria-hidden="true"></i>Profile</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T9-billonly Progress (gate item 6: skin module HIDDEN, not shown empty)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:5px">
+<h2 style="font-size:11px;font-weight:900;margin:0">progress</h2>
+<div style="border-top:1px solid var(--line);padding-top:4px">
+<p style="font-size:7.5px;font-weight:700;margin:0">bills tracked</p>
+<p style="font-size:9px;font-weight:900;margin:1px 0 0">$340.00 <span style="font-size:7px;color:var(--muted);font-weight:400">this year</span></p>
+</div>
+<div style="border-top:1px solid var(--line);margin-top:3px;padding-top:4px">
+<p style="font-size:7.5px;font-weight:700;margin:0">reminders</p>
+<p style="font-size:7px;color:var(--caution);margin:1px 0 0">Eye Rx expires in 12 days</p>
+</div>
+<p style="font-size:6px;color:var(--muted);margin:4px 0 0;line-height:1.4">no skin section &mdash; you haven't logged any yet. it'll show up here the first time you do.</p>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T9b Progress empty (NEW P0 &mdash; first-run dead end otherwise)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center">
+<i class="ti ti-chart-bar" style="font-size:22px;color:var(--muted)" aria-hidden="true"></i>
+<h2 style="font-size:11px;font-weight:700;margin:0">Nothing to show yet</h2>
+<p style="font-size:7.5px;color:var(--muted);margin:0">log your first thing and this fills in</p>
+</div>
+</div></div>
+
+<p class="sect">Tab: Profile</p>
+
+<div class="tcell"><p class="tlabel">T10 Profile (gate items 4+10: language stub, allergens, notifications, sign out, consent)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:4px">
+<h2 style="font-size:11px;font-weight:700;margin:0">profile</h2>
+<p style="font-size:7px;color:var(--muted);margin:0">Jerimiah Otieno</p>
+<div style="border:1px solid var(--line);border-radius:9px;padding:6px"><p style="font-size:8px;color:var(--muted);margin:0">AI reads used</p><p style="font-size:9px;font-weight:700;margin:1px 0 0">8 of 20 this month</p></div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">language <span style="color:var(--orange)">English</span></div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">share with a doctor <i class="ti ti-chevron-right" style="font-size:9px" aria-hidden="true"></i></div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">allergens</div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">notifications</div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">manage routines/reminders</div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">consent &amp; privacy</div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line)">subscription &amp; credits</div>
+<div style="flex:1"></div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line);color:var(--muted)">sign out</div>
+<div style="display:flex;justify-content:space-between;font-size:8.5px;padding:3px 0;border-top:1px solid var(--line);color:var(--hardno)">delete my account</div>
+</div>
+<div class="tabbar">
+<div class="tabitem"><i class="ti ti-calendar" aria-hidden="true"></i>Calendar</div>
+<div class="tabitem"><i class="ti ti-first-aid-kit" aria-hidden="true"></i>Shelf</div>
+<div class="shutterslot"><div class="shutter"><i class="ti ti-camera" aria-hidden="true"></i></div></div>
+<div class="tabitem"><i class="ti ti-chart-bar" aria-hidden="true"></i>Progress</div>
+<div class="tabitem active"><i class="ti ti-user" aria-hidden="true"></i>Profile</div>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T11 Language (NEW &mdash; gate item 4, v1 English-only, stub visible)</p><div class="tframe">
+<div class="tab" style="flex:1">
+<div style="display:flex;align-items:center;gap:5px;margin-bottom:6px"><i class="ti ti-arrow-left" style="font-size:11px" aria-hidden="true"></i><h2 style="font-size:11px;font-weight:700;margin:0">Language</h2></div>
+<div style="border:1.5px solid var(--orange);border-radius:9px;padding:7px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:9px;font-weight:700">App language: English</span><i class="ti ti-circle-check" style="color:var(--orange)" aria-hidden="true"></i></div>
+<p style="font-size:7px;color:var(--muted);margin:6px 0 0;line-height:1.4">more app languages coming. documents you upload keep their own language &mdash; we detect it and ask you to confirm on each one.</p>
+</div>
+</div></div>
+
+<div class="tcell"><p class="tlabel">T12 Share with a doctor (NEW &mdash; gate item 10, was a dead row)</p><div class="tframe">
+<div class="tab" style="flex:1;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:5px"><i class="ti ti-arrow-left" style="font-size:11px" aria-hidden="true"></i><h2 style="font-size:11px;font-weight:700;margin:0">Share with a doctor</h2></div>
+<p style="font-size:7.5px;color:var(--muted);margin:0;line-height:1.4">a dated record &mdash; nothing AI-interpreted</p>
+<div style="border:1px solid var(--line);border-radius:9px;padding:7px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;justify-content:space-between;font-size:8px"><span>Date range</span><span style="color:var(--orange)">last 30 days</span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span>Include</span><span style="color:var(--muted)">all tags</span></div>
+<div style="display:flex;justify-content:space-between;font-size:8px"><span>Language</span><span style="color:var(--muted)">as saved</span></div>
+</div>
+<div style="flex:1"></div>
+<div class="btn">Create PDF</div>
+<div class="btnsec">Share link instead</div>
+</div>
+</div></div>
+
+</div>
+

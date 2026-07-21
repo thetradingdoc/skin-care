@@ -1,6 +1,7 @@
 /**
- * P7.32 / Phase C — Shelf tab: inventory from GET /shelf/products only.
+ * P7.32 / Phase C / Steps 26–27 — Shelf tab: inventory from GET /shelf/products only.
  * Buy vs Rx is driven by each row's real classification (is_prescription / category).
+ * Empty ≠ load-failed — distinct components and testIDs.
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -17,16 +18,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ShelfConflictHardNoSurface } from '@/components/shelf/ShelfConflictHardNoSurface';
 import { ShelfItemActions } from '@/components/shelf/ShelfItemActions';
-import { AppTokens } from '@/constants/appTokens';
+import { LoadFailedState } from '@/components/LoadFailedState';
 import {
   RX_REFILL_INFO_HREF,
   SCAN_HREF,
+  SHELF_ADD_HREF,
   SHOP_HREF,
-  TRACK_CAPTURE_HREF,
+  CAPTURE_2A_HREF,
   verdictHref,
 } from '@/constants/routes';
+import { MEMBER_DISCOUNT_CODE } from '@/constants/storeConfig';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { isConflictVerdictUiEnabled } from '@/lib/claim-safe-ui';
 import { patientGet } from '@/lib/patient-api';
+import {
+  SHELF_EMPTY_BODY,
+  SHELF_EMPTY_CTA,
+  SHELF_EMPTY_TITLE,
+  SPEND_SUMMARY_HONESTY,
+} from '@/lib/phase5-ui-copy';
+import { fetchShelfSpendSummary } from '@/lib/progress-aggregates-api';
 import { shelfItemCommerceKind } from '@/lib/shelf-commerce-cta';
 
 type ShelfRow = {
@@ -37,6 +49,8 @@ type ShelfRow = {
   is_prescription?: boolean;
   price_usd?: number | null;
   expiry_date?: string | null;
+  ingredients_text?: string | null;
+  brand?: string | null;
 };
 
 function priceLabelFor(row: ShelfRow): string | undefined {
@@ -58,14 +72,24 @@ export default function ShelfScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<ShelfRow[]>([]);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [spendTotal, setSpendTotal] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
-      const shelf = await patientGet('/api/patient/shelf/products');
+      const [shelf, spend] = await Promise.all([
+        patientGet('/api/patient/shelf/products'),
+        fetchShelfSpendSummary().catch(() => null),
+      ]);
       setProducts(Array.isArray(shelf?.products) ? shelf.products : []);
+      const total = spend?.total_price_usd;
+      setSpendTotal(typeof total === 'number' && Number.isFinite(total) ? total : null);
     } catch {
       setProducts([]);
+      setSpendTotal(null);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -78,7 +102,7 @@ export default function ShelfScreen() {
   if (checking || !ready) {
     return (
       <SafeAreaView style={styles.root}>
-        <ActivityIndicator style={{ marginTop: 48 }} color={AppTokens.color.fabBg} />
+        <ActivityIndicator style={{ marginTop: 48 }} color={V4DesignTokens.color.red} />
       </SafeAreaView>
     );
   }
@@ -87,32 +111,68 @@ export default function ShelfScreen() {
     <SafeAreaView style={styles.root} edges={['top']} testID="shelf-screen">
       <ScrollView
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} />}>
-        <Text style={styles.title}>Shelf</Text>
-        <Text style={styles.subtitle}>products & meds — inventory, not a storefront</Text>
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={() => void load()}
+            tintColor={V4DesignTokens.color.red}
+          />
+        }>
+        <Text style={styles.title} testID="shelf-title">
+          Shelf
+        </Text>
+        <Text style={styles.subtitle} testID="shelf-tagline">
+          What you&apos;re using — and what&apos;s in it.
+        </Text>
+        <Text style={styles.memberBanner} testID="shelf-member-banner">
+          Member pricing unlocked at checkout — code {MEMBER_DISCOUNT_CODE}, 20% off.
+        </Text>
+        <Pressable
+          style={styles.addLink}
+          testID="shelf-add-entry"
+          onPress={() => router.push(SHELF_ADD_HREF)}>
+          <Text style={styles.addLinkText}>Add a product</Text>
+        </Pressable>
+        {spendTotal != null ? (
+          <View style={styles.spendPill} testID="shelf-spend-summary">
+            <Text style={styles.spendAmount}>${spendTotal.toFixed(2)}</Text>
+            <Text style={styles.spendHonesty}>{SPEND_SUMMARY_HONESTY}</Text>
+          </View>
+        ) : null}
 
-        {products.length === 0 && !loading ? (
+        {loadFailed && !loading ? (
+          <LoadFailedState testID="shelf-load-failed" onRetry={() => void load()} />
+        ) : products.length === 0 && !loading ? (
           <View style={styles.empty} testID="shelf-empty">
-            <Text style={styles.emptyTitle}>Nothing on your shelf yet</Text>
-            <Text style={styles.emptyBody}>scan a barcode or add one to get a safety check</Text>
+            <View style={styles.emptyRing}>
+              <Text style={styles.emptyRingGlyph}>▢</Text>
+            </View>
+            <Text style={styles.emptyTitle} testID="shelf-empty-title">
+              {SHELF_EMPTY_TITLE}
+            </Text>
+            <Text style={styles.emptyBody} testID="shelf-empty-body">
+              {SHELF_EMPTY_BODY}
+            </Text>
             <Pressable
               style={styles.cta}
               testID="shelf-scan-or-add"
-              onPress={() => router.push(SCAN_HREF)}>
-              <Text style={styles.ctaLabel}>scan or add</Text>
+              onPress={() => router.push(SHELF_ADD_HREF)}>
+              <Text style={styles.ctaLabel}>{SHELF_EMPTY_CTA}</Text>
             </Pressable>
           </View>
         ) : (
           <>
-            <ShelfConflictHardNoSurface
-              products={products}
-              onPressProduct={(id) => router.push(verdictHref(id))}
-            />
+            {isConflictVerdictUiEnabled() ? (
+              <ShelfConflictHardNoSurface
+                products={products}
+                onPressProduct={(id) => router.push(verdictHref(id))}
+              />
+            ) : null}
             <View style={{ marginTop: 16 }} testID="shelf-inventory-actions">
               {products.map((row) => {
                 const kind = shelfItemCommerceKind(row);
                 return (
-                  <View key={row.id} testID={`shelf-row-${row.id}`}>
+                  <View key={row.id} style={styles.card} testID={`shelf-row-${row.id}`}>
                     <ShelfItemActions
                       kind={kind}
                       name={row.product_name}
@@ -120,6 +180,8 @@ export default function ShelfScreen() {
                       category={row.category}
                       priceLabel={priceLabelFor(row)}
                       expires={formatExpires(row.expiry_date)}
+                      ingredients_text={row.ingredients_text}
+                      brand={row.brand}
                       onBuy={() => router.push(SHOP_HREF)}
                     />
                   </View>
@@ -136,9 +198,13 @@ export default function ShelfScreen() {
           style={styles.secondary}
           testID="shelf-rx-refill-info-link"
           onPress={() => router.push(RX_REFILL_INFO_HREF)}>
-          <Text style={styles.secondaryLabel}>refill info — contact your prescriber</Text>
+          <Text style={styles.secondaryLabel}>Refill info</Text>
         </Pressable>
-        <Pressable style={styles.secondary} onPress={() => router.push(TRACK_CAPTURE_HREF)}>
+        <Pressable
+          style={styles.secondary}
+          onPress={() =>
+            router.push({ pathname: CAPTURE_2A_HREF, params: { entry: 'track' } } as never)
+          }>
           <Text style={styles.secondaryLabel}>Log a prescription / product</Text>
         </Pressable>
       </ScrollView>
@@ -147,28 +213,108 @@ export default function ShelfScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white },
   content: { padding: 16, paddingBottom: 100 },
-  title: { fontSize: 22, fontWeight: '700', color: AppTokens.color.ink },
-  subtitle: { fontSize: 14, color: AppTokens.color.muted, marginBottom: 16, marginTop: 4 },
+  title: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 22,
+    color: V4DesignTokens.color.black,
+  },
+  subtitle: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  memberBanner: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 12,
+    color: V4DesignTokens.color.muted,
+    marginBottom: 8,
+    lineHeight: 17,
+  },
+  addLink: { marginBottom: 12 },
+  addLinkText: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 14,
+    color: V4DesignTokens.color.red,
+  },
+  spendPill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: V4DesignTokens.color.line,
+    marginBottom: 16,
+    backgroundColor: V4DesignTokens.color.white,
+  },
+  spendAmount: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 18,
+    color: V4DesignTokens.color.black,
+  },
+  spendHonesty: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.muted,
+    flex: 1,
+  },
+  card: {
+    borderWidth: 1,
+    borderColor: V4DesignTokens.color.line,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    backgroundColor: V4DesignTokens.color.white,
+  },
   empty: { paddingVertical: 40, alignItems: 'center' },
-  emptyTitle: { fontSize: 18, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
+  emptyRing: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: V4DesignTokens.color.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyRingGlyph: { fontSize: 18, color: V4DesignTokens.color.muted },
+  emptyTitle: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 18,
+    color: V4DesignTokens.color.black,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
   emptyBody: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 15,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     textAlign: 'center',
     marginBottom: 16,
     lineHeight: 22,
+    maxWidth: 280,
   },
   cta: {
-    backgroundColor: AppTokens.color.fabBg,
-    borderRadius: AppTokens.radius.md,
-    minHeight: AppTokens.minTap,
-    paddingHorizontal: 20,
+    backgroundColor: V4DesignTokens.color.red,
+    borderRadius: 12,
+    minHeight: 48,
+    paddingHorizontal: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ctaLabel: { color: '#fff', fontWeight: '600' },
+  ctaLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.white,
+  },
   secondary: { marginTop: 16, alignItems: 'center' },
-  secondaryLabel: { color: AppTokens.color.fabBg, fontWeight: '600', fontSize: 15 },
+  secondaryLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.redDeep,
+    fontSize: 15,
+  },
 });

@@ -1,10 +1,10 @@
 // PR1 soft-launch safety — 2026-07-12
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { OtpForm } from '@/components/OtpForm';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
 import { AppTokens } from '@/constants/appTokens';
 import { API_BASE_URL, WEB_SIGNUP_URL } from '@/config';
 import { FOOTER_TAGLINE } from '@/constants/brandCopy';
@@ -12,7 +12,7 @@ import { JournalTokens } from '@/constants/journalTokens';
 import {
   GET_THE_APP_HREF,
   INDEX_HREF,
-  TRY_VERDICT_HREF,
+  ONBOARDING_PLAN_PREVIEW_HREF,
 } from '@/constants/routes';
 import { resolvePostAuthRoute } from '@/hooks/useOnboardingGate';
 import { clearPatientSession, getPatientSessionId, getStoredApiBase } from '@/lib/patient-session';
@@ -87,7 +87,7 @@ export default function SignInScreen() {
     }
     return {
       headline: 'Sign in',
-      subtitle: 'Welcome back. Enter your email for a secure 6-digit code.',
+      subtitle: 'Enter your email for a secure 6-digit code — no password.',
       showWebCta: false,
     };
   }, [isSignupIntent, fromSkinAgeLanding]);
@@ -97,15 +97,11 @@ export default function SignInScreen() {
    * Prefer try-verdict (Screen 3) over marketing Safari dump.
    */
   const onBack = useCallback(() => {
-    if (Platform.OS === 'web') {
-      router.replace(TRY_VERDICT_HREF);
-      return;
-    }
     if (router.canGoBack()) {
       router.back();
       return;
     }
-    router.replace(TRY_VERDICT_HREF);
+    router.replace(ONBOARDING_PLAN_PREVIEW_HREF);
   }, [router]);
 
   const onRetryConnection = useCallback(() => {
@@ -232,16 +228,9 @@ export default function SignInScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.root} edges={['top', 'left', 'right']} testID="screen-sign-in">
       <View style={styles.wrap}>
-        <Pressable
-          onPress={onBack}
-          style={styles.backRow}
-          accessibilityRole="button"
-          accessibilityLabel="Go back">
-          <MaterialIcons name="arrow-back" size={20} color={JournalTokens.color.muted} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        <BackNavHeader label="Back" onBack={onBack} testID="sign-in-back" />
         {showConnectionError ? (
           <View style={styles.connectionBanner}>
             <Text style={styles.connectionText}>

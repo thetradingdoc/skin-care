@@ -44,6 +44,64 @@ export async function patientGet(path: string) {
   return ensurePatientOk(res, data);
 }
 
+/**
+ * Binary patient GET (physician PDF, etc.). Never treat empty/non-OK as success.
+ * Do not use patientGet for application/pdf — that path JSON-parses the body.
+ */
+export async function patientGetBinary(path: string): Promise<{
+  contentType: string;
+  blob: Blob;
+  byteLength: number;
+}> {
+  const sid = await getPatientSessionId();
+  if (!sid) throw new Error('Sign in required.');
+  const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {
+    headers: {
+      'x-session-id': sid,
+      'x-client-date': localTodayIso(),
+      'ngrok-skip-browser-warning': 'true',
+    },
+  });
+  const contentType = String(res.headers.get('content-type') || '');
+  if (!res.ok) {
+    const data = await parseJson(res);
+    if (isPatientSessionAuthError(res.status, data?.error)) {
+      await handleExpiredPatientSession();
+    }
+    const code = String(data?.error_code || data?.error || `HTTP_${res.status}`);
+    throw new PatientApiError(code, {
+      status: res.status,
+      error_code: code,
+      body: data as Record<string, unknown>,
+    });
+  }
+  if (contentType.includes('application/json')) {
+    const data = await parseJson(res);
+    if (!data?.success) {
+      const code = String(data?.error_code || data?.error || 'EXPORT_FAILED');
+      throw new PatientApiError(code, {
+        status: res.status,
+        error_code: code,
+        body: data as Record<string, unknown>,
+      });
+    }
+    throw new PatientApiError('UNEXPECTED_JSON_EXPORT', {
+      status: res.status,
+      error_code: 'UNEXPECTED_JSON_EXPORT',
+      body: data as Record<string, unknown>,
+    });
+  }
+  const blob = await res.blob();
+  if (!blob || blob.size < 5) {
+    throw new PatientApiError('EMPTY_EXPORT', {
+      status: res.status,
+      error_code: 'EMPTY_EXPORT',
+      body: {},
+    });
+  }
+  return { contentType, blob, byteLength: blob.size };
+}
+
 export async function patientPatch(path: string, body: unknown) {
   const headers = await withSessionHeaders();
   const res = await fetch(`${getEffectiveApiBaseUrl()}${path}`, {

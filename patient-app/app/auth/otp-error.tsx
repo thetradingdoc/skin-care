@@ -1,17 +1,16 @@
 /**
- * P7.39 — Screen 7c OTP error / resend.
+ * P7.39 — Screen 7c OTP error / resend (template-shared with Step 6).
+ * SEC-32: email via otp-flow-session; never read/write OTP code from nav params.
  */
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-  TierSecondary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
 import { OTP_ENTRY_HREF, SIGN_IN_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
+import { getOtpFlowEmail, setOtpFlowEmail } from '@/lib/otp-flow-session';
 import { patientPostPublic } from '@/lib/patient-api';
 
 export const OTP_ERROR_MESSAGE = "that code's wrong or expired";
@@ -19,11 +18,16 @@ export const OTP_RESEND_LABEL = 'Resend code';
 
 export default function OtpErrorScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ email?: string; code?: string }>();
-  const email = String(params.email || '').trim();
-  const [code, setCode] = useState(String(params.code || ''));
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [resent, setResent] = useState(false);
+
+  useEffect(() => {
+    void getOtpFlowEmail().then((e) => {
+      if (e) setEmail(e);
+    });
+  }, []);
 
   const resend = async () => {
     if (!email) {
@@ -33,8 +37,10 @@ export default function OtpErrorScreen() {
     setBusy(true);
     try {
       await patientPostPublic('/api/patient/verify/send', { email });
+      await setOtpFlowEmail(email);
       setResent(true);
-      router.replace({ pathname: OTP_ENTRY_HREF, params: { email } } as never);
+      setCode('');
+      router.replace(OTP_ENTRY_HREF);
     } catch {
       setResent(false);
     } finally {
@@ -43,9 +49,14 @@ export default function OtpErrorScreen() {
   };
 
   return (
-    <SecondTierChrome testID="screen-7c-otp-error">
-      <View>
-        <Text style={styles.title}>Enter your code</Text>
+    <SafeAreaView style={styles.root} testID="screen-7c-otp-error" edges={['top', 'bottom']}>
+      <BackNavHeader
+        label="Back"
+        testID="otp-error-back"
+        onBack={() => router.replace(SIGN_IN_HREF)}
+      />
+      <View style={styles.content}>
+        <Text style={styles.title}>Enter the code</Text>
         <TextInput
           style={styles.input}
           value={code}
@@ -57,36 +68,82 @@ export default function OtpErrorScreen() {
         <Text style={styles.error} testID="otp-error-message">
           {OTP_ERROR_MESSAGE}
         </Text>
-        {resent ? <Text style={styles.hint}>New code sent.</Text> : null}
+        {resent ? (
+          <Text style={styles.hint} testID="otp-error-resent">
+            New code sent.
+          </Text>
+        ) : null}
       </View>
-      <View>
-        <TierPrimary
-          label={busy ? 'Sending…' : OTP_RESEND_LABEL}
+      <View style={styles.footer}>
+        <Pressable
+          style={styles.cta}
           testID="otp-error-resend"
-          onPress={() => void resend()}
-        />
-        <TierSecondary
-          label="use a different email"
+          onPress={() => void resend()}>
+          <Text style={styles.ctaLabel}>{busy ? 'Sending…' : OTP_RESEND_LABEL}</Text>
+        </Pressable>
+        <Pressable
           testID="otp-error-different-email"
           onPress={() => router.replace(SIGN_IN_HREF)}
-        />
+          style={styles.secondary}>
+          <Text style={styles.secondaryLabel}>use a different email</Text>
+        </Pressable>
       </View>
-    </SecondTierChrome>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 16 },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white, paddingHorizontal: 18 },
+  content: { flex: 1, paddingTop: 40, alignItems: 'center' },
+  title: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 21,
+    color: V4DesignTokens.color.black,
+    marginBottom: 16,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: AppTokens.color.line,
-    borderRadius: 10,
-    padding: 16,
-    fontSize: 24,
+    borderWidth: 1.5,
+    borderColor: V4DesignTokens.color.black,
+    borderRadius: 9,
+    width: '100%',
+    maxWidth: 280,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 22,
     letterSpacing: 8,
     textAlign: 'center',
-    marginBottom: 12,
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.black,
   },
-  error: { color: AppTokens.color.danger, fontSize: 15, fontWeight: '500' },
-  hint: { color: AppTokens.color.muted, marginTop: 8 },
+  error: {
+    marginTop: 12,
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.red,
+    textAlign: 'center',
+  },
+  hint: {
+    marginTop: 8,
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.muted,
+  },
+  footer: { paddingBottom: 16, gap: 10 },
+  cta: {
+    backgroundColor: V4DesignTokens.color.black,
+    borderRadius: 999,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  ctaLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 16,
+    color: V4DesignTokens.color.white,
+  },
+  secondary: { alignItems: 'center', paddingVertical: 8 },
+  secondaryLabel: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+  },
 });

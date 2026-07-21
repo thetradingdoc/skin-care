@@ -27,12 +27,17 @@ describe('P7.40 Profile allergens management', () => {
 });
 
 describe('P7.41 Profile notifications permission', () => {
-  it('has dedicated notifications screen', () => {
+  it('has dedicated notifications screen wired to notif-denied on OS deny', () => {
     expect(existsSync(join(APP, 'profile/notifications.tsx'))).toBe(true);
+    expect(existsSync(join(APP, 'profile/notif-denied.tsx'))).toBe(true);
     const src = readApp('profile/notifications.tsx');
-    expect(src).toMatch(/P7\.41/);
+    expect(src).toMatch(/P7\.41|profile-notifications/);
     expect(src).toMatch(/screen-profile-notifications/);
-    expect(src).toMatch(/Allow notifications/);
+    expect(src).toMatch(/PROFILE_NOTIF_DENIED_HREF|notif-denied/);
+    expect(src).toMatch(/getNotificationPermissionStatus/);
+    const allergens = readApp('profile/allergens.tsx');
+    expect(allergens).toMatch(/Allow notifications/);
+    expect(allergens).toMatch(/onNotificationPermissionDenied/);
     const account = readApp('(tabs)/account.tsx');
     expect(account).toMatch(/PROFILE_NOTIFICATIONS_HREF/);
   });
@@ -55,11 +60,13 @@ describe('P7.43 Rx refill info destination', () => {
   it('is a real screen with never-sells copy — not a dead button', () => {
     expect(existsSync(join(APP, 'shelf/rx-refill-info.tsx'))).toBe(true);
     const src = readApp('shelf/rx-refill-info.tsx');
-    expect(src).toMatch(/P7\.43/);
+    expect(src).toMatch(/P7\.43|Step 28/);
     expect(src).toMatch(/screen-rx-refill-info/);
-    expect(src).toMatch(/refill info — contact your prescriber/);
+    expect(src).toMatch(/Request refill|RX_REFILL_CTA|SHELF_RX_REFILL_CTA/);
     expect(src).toMatch(/touche never sells or refills prescription medication/);
     expect(src).toMatch(/rx-refill-back/);
+    expect(src).not.toMatch(/shelf-skincare-buy|Buy now|Add to cart/i);
+    expect(src).toMatch(/no marketplace, no checkout/);
     // Shelf link navigates to the destination
     const shelf = readApp('(tabs)/shelf.tsx');
     expect(shelf).toMatch(/RX_REFILL_INFO_HREF/);

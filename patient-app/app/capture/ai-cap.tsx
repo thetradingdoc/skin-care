@@ -19,7 +19,7 @@ import {
   isUnlockAiPurchaseEnabled,
 } from '@/lib/unlock-ai-commerce';
 
-export const AI_CAP_TITLE = 'AI reads used up for this month';
+export const AI_CAP_TITLE = 'Free AI reads used';
 /** @deprecated Prefer AI_CAP_BODY_MANUAL_ONLY / WITH_UNLOCK — kept for import stability */
 export const AI_CAP_BODY = AI_CAP_BODY_WITH_UNLOCK;
 

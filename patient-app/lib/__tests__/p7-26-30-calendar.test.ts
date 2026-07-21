@@ -10,6 +10,7 @@ import { CALENDAR_LEGEND, legendForTag } from '@/lib/calendar-legend';
 import {
   dayTagDots,
   FACTS_CALENDAR_API,
+  filterDaysByTag,
   tagsForDay,
   type FactsCalendarDay,
 } from '@/lib/facts-calendar';
@@ -53,8 +54,10 @@ describe('P7.26–30 Calendar UI', () => {
       'utf8',
     );
     expect(list).toMatch(/P7\.27/);
-    expect(list).toMatch(/day\.facts\.map/);
+    expect(list).toMatch(/day\.facts/);
+    expect(list).toMatch(/\.map\(/);
     expect(list).toMatch(/calendar-list/);
+    expect(list).toMatch(/SessionImage/);
   });
 
   it('P7.28 legend is icon+color together, not color-only', () => {
@@ -82,7 +85,7 @@ describe('P7.26–30 Calendar UI', () => {
 
   it('P7.29 empty T2b copy is locked', () => {
     expect(CALENDAR_EMPTY_TITLE).toBe('Nothing logged yet');
-    expect(CALENDAR_EMPTY_BODY).toMatch(/tap the camera below/);
+    expect(CALENDAR_EMPTY_BODY).toMatch(/face or body|first capture/i);
     expect(existsSync(join(ROOT, 'components/facts-calendar/FactsCalendarEmpty.tsx'))).toBe(
       true,
     );
@@ -97,5 +100,58 @@ describe('P7.26–30 Calendar UI', () => {
     expect(detail).toMatch(/calendar-day-detail/);
     expect(detail).toMatch(/\+ add to this day/);
     expect(detail).toMatch(/facts\.map/);
+    expect(detail).toMatch(/SessionImage/);
+    expect(detail).toMatch(/media_url/);
+  });
+
+  it('P7.27 list rows render SessionImage when media_url present', () => {
+    const list = readFileSync(
+      join(ROOT, 'components/facts-calendar/FactsCalendarList.tsx'),
+      'utf8',
+    );
+    expect(list).toMatch(/SessionImage/);
+    expect(list).toMatch(/media_url/);
+  });
+
+  it('Progress See all routes Calendar via intent (not capture, not tab search params)', () => {
+    const screen = readFileSync(join(ROOT, 'app/(tabs)/calendar.tsx'), 'utf8');
+    const progress = readFileSync(join(ROOT, 'app/(tabs)/progress.tsx'), 'utf8');
+    const intent = readFileSync(join(ROOT, 'lib/calendar-intent.ts'), 'utf8');
+    const routes = readFileSync(join(ROOT, 'constants/routes.ts'), 'utf8');
+    expect(intent).toMatch(/setCalendarIntent/);
+    expect(intent).toMatch(/takeCalendarIntent/);
+    expect(routes).toMatch(/export function calendarHref/);
+    expect(progress).toMatch(/setCalendarIntent\(\{\s*tag:\s*'skin'/);
+    expect(progress).toMatch(/calendarHref\(\)/);
+    expect(progress).not.toMatch(/progress-timeline-see-all[\s\S]{0,200}CAPTURE_2A/);
+    expect(screen).toMatch(/takeCalendarIntent/);
+    expect(screen).toMatch(/filterDaysByTag/);
+    expect(screen).toMatch(/calendar-tag-filter/);
+    expect(screen).not.toMatch(/useLocalSearchParams/);
+  });
+
+  it('filterDaysByTag keeps matching facts and drops empty days', () => {
+    const days: FactsCalendarDay[] = [
+      {
+        date: '2026-07-18',
+        tags: ['skin', 'lab'],
+        multi_type: true,
+        facts: [
+          { id: 'a', tag: 'skin' },
+          { id: 'b', tag: 'lab' },
+          { id: 'c', tag: 'skin' },
+        ],
+      },
+      {
+        date: '2026-07-17',
+        tags: ['bill'],
+        multi_type: false,
+        facts: [{ id: 'd', tag: 'bill' }],
+      },
+    ];
+    const skin = filterDaysByTag(days, 'skin');
+    expect(skin).toHaveLength(1);
+    expect(skin[0].facts.map((f) => f.id)).toEqual(['a', 'c']);
+    expect(skin[0].multi_type).toBe(false);
   });
 });

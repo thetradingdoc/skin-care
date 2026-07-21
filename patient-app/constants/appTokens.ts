@@ -1,19 +1,22 @@
 import { Fonts } from './theme';
+import { V4DesignTokens } from './v4DesignTokens';
 
-/** Unified v3 + brand SSOT tokens (see docs/Brand/SKIN_AND_CARE_GUIDELINES.md). */
+/** Unified brand SSOT — Skiñcare wine / ground / accent red. */
 export const AppTokens = {
   color: {
-    /** Consumer patient app + funnel page background (white; marketing cream remains in tokens.css). */
-    pageBg: '#FFFFFF',
-    cream: '#F8F3EA',
-    card: '#FFFDF9',
-    ink: '#1F2937',
+    /** Consumer patient app + funnel page background. */
+    pageBg: V4DesignTokens.color.ground,
+    cream: V4DesignTokens.color.ground,
+    card: V4DesignTokens.color.white,
+    ink: V4DesignTokens.color.wine,
     muted: '#6B7280',
     hint: '#9CA3AF',
     line: '#E9E2D6',
+    /** v4.1 brand red — replaces orange #F7591F on CTAs / mark. */
+    brand: V4DesignTokens.color.red,
     brandBlue: '#314DB6',
-    brandAccent: '#314DB6',
-    accent: '#57BFD4',
+    brandAccent: V4DesignTokens.color.red,
+    accent: V4DesignTokens.color.red,
     /** Caution / soft conflict (TOUCH-008) — reuse this hex; do not add a parallel "caution" color. */
     terracotta: '#C16E52',
     /** Safe verdict / bottle band (TOUCH-006). */
@@ -22,7 +25,7 @@ export const AppTokens = {
     hardNo: '#D93A3A',
     success: '#4F8A5B',
     danger: '#B42318',
-    fabBg: '#111111',
+    fabBg: V4DesignTokens.color.red,
     photoBg: '#1A1A1A',
     watchAmber: '#FAEEDA',
     watchAmberText: '#854F0B',
@@ -41,8 +44,10 @@ export const AppTokens = {
     infoBlueText: '#185FA5',
   },
   font: {
-    display: Fonts.serif,
-    body: Fonts.sans,
+    display: V4DesignTokens.font.display,
+    body: V4DesignTokens.font.body,
+    legacyDisplay: Fonts.serif,
+    legacyBody: Fonts.sans,
   },
   spacing: {
     xs: 6,

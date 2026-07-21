@@ -1,28 +1,38 @@
 /**
- * P7.05 / STEP 8 — Confirm bill — TemplateFieldsForm SSOT; amount_cents canonical.
+ * Confirm bill — clones Step 17 chrome; fields from bill.default template SSOT.
  */
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Text } from 'react-native';
 
+import { CaptureDiscardDialog } from '@/components/capture/CaptureDiscardDialog';
+import { ConfirmTagChrome, confirmTagStyles } from '@/components/capture/ConfirmTagChrome';
+import { ExactDuplicateWarning } from '@/components/capture/ExactDuplicateWarning';
 import { TemplateFieldsForm } from '@/components/capture/TemplateFieldsForm';
-import { SecondTierChrome, TierPrimary } from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
 import { getTemplateForDraft } from '@/lib/record-field-templates';
 import { useCaptureConfirm } from '@/lib/use-capture-confirm';
 
 export default function ConfirmBillScreen() {
-  const { draft, busy, error, setField, submitLooksRight, loaded } = useCaptureConfirm('bill');
+  const { draft, busy, error, setField, submitLooksRight, cancelCapture, loaded, possible_duplicate } =
+    useCaptureConfirm('bill');
+  const [discardOpen, setDiscardOpen] = useState(false);
   const template = getTemplateForDraft('bill', draft);
-  const absent = Array.isArray(draft.fields_absent)
-    ? (draft.fields_absent as string[])
-    : [];
+  const absent = Array.isArray(draft.fields_absent) ? (draft.fields_absent as string[]) : [];
 
   return (
-    <SecondTierChrome testID="confirm-5-bill">
-      <View>
-        <Text style={styles.h}>Here&apos;s what we found</Text>
-        <Text style={styles.tag}>bill</Text>
-        {!loaded ? <Text style={styles.hint}>Loading draft…</Text> : null}
+    <>
+      <ConfirmTagChrome
+        screenTestID="confirm-5-bill"
+        backTestID="confirm-bill-back"
+        looksRightTestID="confirm-bill-looks-right"
+        cancelTestID="confirm-bill-cancel"
+        eyebrow="BILL"
+        eyebrowTestID="confirm-bill-eyebrow"
+        busy={busy}
+        error={error}
+        onLooksRight={() => void submitLooksRight()}
+        onCancel={() => setDiscardOpen(true)}>
+        <ExactDuplicateWarning possibleDuplicate={possible_duplicate} />
+        {!loaded ? <Text style={confirmTagStyles.hint}>Loading draft…</Text> : null}
         {template ? (
           <TemplateFieldsForm
             template={template}
@@ -31,21 +41,17 @@ export default function ConfirmBillScreen() {
             onChange={(k, v) => setField(k, v)}
           />
         ) : (
-          <Text style={styles.hint}>No template for this draft.</Text>
+          <Text style={confirmTagStyles.hint}>No template for this draft.</Text>
         )}
-        {error ? <Text style={styles.err}>{error}</Text> : null}
-      </View>
-      <TierPrimary
-        label={busy ? 'Saving…' : 'Looks right'}
-        testID="confirm-bill-looks-right"
-        onPress={() => void submitLooksRight()}
+      </ConfirmTagChrome>
+      <CaptureDiscardDialog
+        visible={discardOpen}
+        onDiscard={() => {
+          setDiscardOpen(false);
+          void cancelCapture();
+        }}
+        onKeepEditing={() => setDiscardOpen(false)}
       />
-    </SecondTierChrome>
+    </>
   );
 }
-const styles = StyleSheet.create({
-  h: { fontSize: 22, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
-  tag: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 12 },
-  hint: { fontSize: 14, color: AppTokens.color.muted, marginBottom: 8 },
-  err: { color: '#D93A3A', marginTop: 8 },
-});

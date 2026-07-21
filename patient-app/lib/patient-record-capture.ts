@@ -57,6 +57,14 @@ export type CaptureRecordResult = {
   capture_token?: string;
   request_id: string;
   via: 'authenticated_capture' | 'anonymous_capture';
+  /** Exact byte-duplicate hint for confirm screen (warning, not a block). */
+  possible_duplicate?: {
+    fact_id: string;
+    logged_on?: string | null;
+    tag?: string | null;
+    entry_date?: string | null;
+    request_id?: string | null;
+  } | null;
 };
 
 async function uploadPublicForm(path: string, form: FormData) {
@@ -85,10 +93,15 @@ async function uploadPublicForm(path: string, form: FormData) {
 export async function captureRecordFact(input: CaptureRecordInput): Promise<CaptureRecordResult> {
   const tag = input.tag;
   const aiOrManual = input.ai_or_manual || 'manual';
-  const date = input.date || localTodayIso();
+  // AI document capture: omit date so OCR prescription/bill/lab date can win.
+  // Manual (and explicit input.date) still stamps capture day when needed.
+  const date =
+    input.date ||
+    (aiOrManual === 'ai' ? undefined : localTodayIso());
   const requestId = (input.request_id && String(input.request_id).trim()) || createCaptureRequestId();
 
-  const structured: Record<string, unknown> = { date };
+  const structured: Record<string, unknown> = {};
+  if (date) structured.date = date;
   if (input.note != null) structured.note = input.note;
   if (input.body_location) structured.body_location = input.body_location;
   if (input.body_area) structured.body_area = input.body_area;
@@ -173,6 +186,7 @@ async function submitCaptureStructured(opts: {
       draft: data.draft as Record<string, unknown> | undefined,
       request_id: requestId,
       via: 'authenticated_capture',
+      possible_duplicate: (data.possible_duplicate as CaptureRecordResult['possible_duplicate']) || null,
     };
   }
 
@@ -205,6 +219,7 @@ async function submitCaptureStructured(opts: {
       capture_token: data.capture_token ? String(data.capture_token) : undefined,
       request_id: requestId,
       via: 'anonymous_capture',
+      possible_duplicate: (data.possible_duplicate as CaptureRecordResult['possible_duplicate']) || null,
     };
   }
 
@@ -234,6 +249,11 @@ export async function confirmRecordFact(
     /** Pre-auth confirm via capture_token */
     capture_token?: string;
     via?: 'authenticated_capture' | 'anonymous_capture';
+    /**
+     * Phase 3 Rx→Shelf — when true, confirm API may call maybeAddRxToShelf.
+     * Default unset/false: no auto-write (Phase 5 Yes/No UI owns the opt-in).
+     */
+    add_to_shelf?: boolean;
   },
 ) {
   const requestId =
@@ -297,5 +317,6 @@ export async function confirmRecordFact(
     structured_json,
     capture_session_id: extra?.capture_session_id,
     request_id: requestId,
+    ...(extra?.add_to_shelf === true ? { add_to_shelf: true } : {}),
   });
 }

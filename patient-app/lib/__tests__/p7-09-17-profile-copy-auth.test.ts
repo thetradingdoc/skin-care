@@ -86,15 +86,16 @@ describe('P7.15 Empty states Calendar Shelf Progress', () => {
     );
     const shelf = readFileSync(join(APP, '(tabs)/shelf.tsx'), 'utf8');
     expect(shelf).toMatch(/shelf-empty/);
-    expect(shelf).toMatch(/Nothing on your shelf yet/);
+    expect(shelf).toMatch(/Your shelf is empty|SHELF_EMPTY_TITLE/);
     const progressEmpty = readFileSync(
       join(ROOT, 'components/progress/ProgressEmptyState.tsx'),
       'utf8',
     );
     expect(progressEmpty).toMatch(/progress-empty-t9b/);
-    expect(progressEmpty).toMatch(/Nothing to show yet/);
+    expect(progressEmpty).toMatch(/No progress to show yet|Nothing to show yet/);
     const progress = readFileSync(join(APP, '(tabs)/progress.tsx'), 'utf8');
     expect(progress).toMatch(/ProgressEmptyState/);
+    expect(progress).toMatch(/progress-empty|ProgressEmptyState/);
   });
 });
 

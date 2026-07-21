@@ -99,12 +99,13 @@ describe('Phase 0b — Progress empty / streak copy + aggregates shape', () => {
     expect(src).toMatch(/Track|Capture|Log/);
   });
 
-  it('Progress only shows PhotoStreakHero when empty — not whenever streak===0 with facts', () => {
+  it('Progress empty uses ProgressEmptyState (not PhotoStreakHero); streak-zero when facts exist', () => {
     const src = readApp('(tabs)/progress.tsx');
-    expect(src).toMatch(/!hasAnyFacts \? <ProgressEmptyState/);
-    expect(src).toMatch(/!loading && !hasAnyFacts \? \(\s*\n\s*<PhotoStreakHero/);
-    expect(src).toMatch(/streak === 0 && hasAnyFacts/);
+    expect(src).toMatch(/ProgressEmptyState/);
+    expect(src).not.toMatch(/PhotoStreakHero/);
+    expect(src).toMatch(/hasAnyFacts && streak === 0|streak === 0 && hasAnyFacts/);
     expect(src).toMatch(/proof-streak-zero/);
+    expect(src).toMatch(/LoadFailedState/);
     expect(src).not.toMatch(/\bCOMPARE_HREF\b/);
     expect(src).not.toMatch(/See day 1 vs today/);
   });

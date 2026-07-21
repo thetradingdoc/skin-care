@@ -1,13 +1,14 @@
 /**
- * P7.31 — Progress Alerts module.
- * Consumes P5.13/P5.14 `/api/patient/alerts/feed` + settleAlertsFeed (no client aggregation).
+ * P7.31 — Progress Alerts module (entry + preview).
+ * Consumes `/api/patient/alerts/feed` + settleAlertsFeed (no client aggregation).
+ * Claim-safe: no shop / verdict CTAs.
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppTokens } from '@/constants/appTokens';
 import { ALERTS_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { settleAlertsFeed } from '@/lib/alerts-empty-policy';
 import { patientGet } from '@/lib/patient-api';
 import { PROGRESS_ALERTS_FEED_API } from '@/lib/alerts-shelf-apis';
@@ -33,7 +34,6 @@ export function ProgressAlertsModule() {
     try {
       const data = await patientGet(PROGRESS_ALERTS_FEED_API);
       const settled = settleAlertsFeed<AlertRow>(data?.alerts ?? data?.items);
-      // P5.13 / P7.47 — never auto-redirect to Check
       if (settled.autoRedirectTo != null) {
         setEmpty(true);
         setAlerts([]);
@@ -57,7 +57,7 @@ export function ProgressAlertsModule() {
   if (loading) {
     return (
       <View style={styles.wrap} testID="progress-alerts-module">
-        <ActivityIndicator color={AppTokens.color.fabBg} />
+        <ActivityIndicator color={V4DesignTokens.color.red} />
       </View>
     );
   }
@@ -74,8 +74,11 @@ export function ProgressAlertsModule() {
         <Text style={styles.empty} testID="progress-alerts-empty">
           No alerts right now
         </Text>
-        {/* P7.47 lock: empty never auto-navigates — enforced in settleAlertsFeed + source tests */}
-        <View testID="progress-alerts-no-redirect" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+        <View
+          testID="progress-alerts-no-redirect"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
       </View>
     );
   }
@@ -88,34 +91,48 @@ export function ProgressAlertsModule() {
           <Text style={styles.link}>History</Text>
         </Pressable>
       </View>
-      {alerts.slice(0, 5).map((a) => {
-        const hard = a.severity === 'hard_no';
-        return (
-          <View
-            key={a.id}
-            style={[styles.card, hard && styles.cardHard]}
-            testID={`progress-alert-${a.id}`}>
-            <Text style={styles.cardTitle}>{a.title || a.kind || 'Alert'}</Text>
-            {a.message ? <Text style={styles.cardBody}>{a.message}</Text> : null}
-          </View>
-        );
-      })}
+      {alerts.slice(0, 3).map((a) => (
+        <View key={a.id} style={styles.card} testID={`progress-alert-${a.id}`}>
+          <Text style={styles.cardTitle}>{a.title || a.kind || 'Alert'}</Text>
+          {a.message ? <Text style={styles.cardBody}>{a.message}</Text> : null}
+        </View>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
+  wrap: { paddingVertical: 8, gap: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  heading: { fontSize: 18, fontWeight: '700', color: AppTokens.color.ink },
-  link: { color: AppTokens.color.fabBg, fontWeight: '600', fontSize: 14 },
-  empty: { fontSize: 15, color: AppTokens.color.muted },
+  heading: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 16,
+    color: V4DesignTokens.color.black,
+  },
+  link: {
+    fontFamily: V4DesignTokens.font.bodySemiBold,
+    color: V4DesignTokens.color.red,
+    fontSize: 14,
+  },
+  empty: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+  },
   card: {
-    backgroundColor: AppTokens.color.cardAmber,
+    backgroundColor: '#F6F6F6',
     borderRadius: 12,
     padding: 12,
   },
-  cardHard: { backgroundColor: AppTokens.color.cardRed },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: AppTokens.color.ink },
-  cardBody: { fontSize: 13, color: AppTokens.color.muted, marginTop: 4 },
+  cardTitle: {
+    fontFamily: V4DesignTokens.font.bodySemiBold,
+    fontSize: 14,
+    color: V4DesignTokens.color.black,
+  },
+  cardBody: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 12,
+    color: V4DesignTokens.color.muted,
+    marginTop: 4,
+  },
 });

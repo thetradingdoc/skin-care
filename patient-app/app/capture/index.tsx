@@ -1,24 +1,22 @@
 /**
- * P7.04 — Capture 2a photo or upload entry.
+ * Step 13 — Capture 2a photo or upload entry (v4.1 frame 13).
  * Always request a JPEG-compatible representation (iOS HEIC → Compatible) so
  * OpenAI vision / OCR never receive raw HEIC after the quality gate.
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useCameraPermissions } from 'expo-camera';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-  TierSecondary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
-import { CAMERA_DENIED_HREF, CAPTURE_TAG_HREF, MANUAL_ENTRY_HREF } from '@/constants/routes';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
+import { CAMERA_DENIED_HREF, CAPTURE_TAG_HREF, MANUAL_ENTRY_HREF, TRACK_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { setPendingCaptureUri } from '@/lib/pending-capture-uri';
 import { mimeTypeFromImagePickerAsset } from '@/lib/upload-uri';
 
+export const CAPTURE_2A_TITLE = 'Take a photo, or choose one';
 export const CAPTURE_2A_COPY = 'skin, prescription, bill — anything';
 /** User-facing media hint — pickers are images-only in v1 (PDF API exists; not exposed yet). */
 export const CAPTURE_2A_PHOTO_HINT = 'photo — video not in this version';
@@ -55,7 +53,6 @@ export default function Capture2aScreen() {
     const shot = await ImagePicker.launchCameraAsync(CAPTURE_IMAGE_PICKER_OPTIONS);
     if (shot.canceled || !shot.assets?.[0]?.uri) return;
     const asset = shot.assets[0];
-    // Compatible + quality → JPEG; never label HEIC for the AI path.
     const mime = mimeTypeFromImagePickerAsset(asset);
     const uploadMime =
       mime.includes('heic') || mime.includes('heif') ? 'image/jpeg' : mime || 'image/jpeg';
@@ -80,9 +77,19 @@ export default function Capture2aScreen() {
   };
 
   return (
-    <SecondTierChrome testID="capture-2a">
-      <View>
-        <Text style={styles.title}>Log something</Text>
+    <SafeAreaView style={styles.root} testID="capture-2a" edges={['top', 'bottom']}>
+      <BackNavHeader
+        label="Cancel"
+        testID="capture-2a-back"
+        onBack={() => router.replace(TRACK_HREF as never)}
+      />
+      <View style={styles.content}>
+        <View style={styles.preview} testID="capture-2a-preview">
+          <Text style={styles.previewHint}>Camera preview</Text>
+        </View>
+        <Text style={styles.title} testID="capture-2a-title">
+          {CAPTURE_2A_TITLE}
+        </Text>
         <Text style={styles.body} testID="capture-2a-copy">
           {CAPTURE_2A_COPY}
         </Text>
@@ -90,20 +97,93 @@ export default function Capture2aScreen() {
           {CAPTURE_2A_PHOTO_HINT}
         </Text>
       </View>
-      <View>
-        <TierPrimary label="Take a photo" testID="capture-2a-photo" onPress={() => void takePhoto()} />
-        <TierSecondary
-          label="Upload from library"
+      <View style={styles.footer}>
+        <Pressable
+          style={styles.primary}
+          testID="capture-2a-photo"
+          onPress={() => void takePhoto()}
+          accessibilityRole="button"
+          accessibilityLabel="Capture">
+          <Text style={styles.primaryLabel}>Capture</Text>
+        </Pressable>
+        <Pressable
+          style={styles.secondary}
           testID="capture-2a-upload"
           onPress={() => void upload()}
-        />
+          accessibilityRole="button"
+          accessibilityLabel="Choose from library">
+          <Text style={styles.secondaryLabel}>Choose from library</Text>
+        </Pressable>
       </View>
-    </SecondTierChrome>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
-  body: { fontSize: 16, color: AppTokens.color.muted, marginBottom: 8 },
-  hint: { fontSize: 14, color: AppTokens.color.hint },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white, paddingHorizontal: 18 },
+  content: { flex: 1, paddingTop: 24, alignItems: 'center' },
+  preview: {
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: V4DesignTokens.color.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  previewHint: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 12.5,
+    color: V4DesignTokens.color.muted,
+  },
+  title: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 16,
+    color: V4DesignTokens.color.black,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  body: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  hint: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.muted,
+    textAlign: 'center',
+  },
+  footer: { paddingBottom: 12 },
+  primary: {
+    backgroundColor: V4DesignTokens.color.red,
+    borderRadius: 12,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 9,
+  },
+  primaryLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 16,
+    color: V4DesignTokens.color.white,
+  },
+  secondary: {
+    borderRadius: 12,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: V4DesignTokens.color.lineStrong,
+    backgroundColor: V4DesignTokens.color.white,
+  },
+  secondaryLabel: {
+    fontFamily: V4DesignTokens.font.bodyMedium,
+    fontSize: 16,
+    color: V4DesignTokens.color.black,
+  },
 });

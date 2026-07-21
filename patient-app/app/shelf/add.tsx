@@ -1,18 +1,17 @@
 /**
- * Shelf add — barcode scan and manual add only.
- * Catalog name search is not wired (OBF is barcode-only); UI stays honest.
+ * PIH v2 — Shelf add / scan (design ID: shelf-add).
+ *
+ * Catalog name search is not wired (OBF is barcode-only). UI is honest:
+ * scan barcode or add manually — no fake "Search" that always nomatches.
  */
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-  TierSecondary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
 import { SCAN_HREF, SHELF_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { addProductManual } from '@/lib/conflict-api';
 
 export const SHELF_ADD_SEARCH_COMING_SOON =
@@ -43,75 +42,94 @@ export default function ShelfAddScreen() {
   };
 
   return (
-    <SecondTierChrome testID="screen-shelf-add">
-      <Pressable
-        onPress={() => router.replace(SHELF_HREF)}
-        testID="shelf-add-back"
-        style={styles.back}>
-        <Text style={styles.backLabel}>Back</Text>
-      </Pressable>
-      <Text style={styles.title}>Add a product</Text>
-      <Text style={styles.sub} testID="shelf-add-search-coming-soon">
-        {SHELF_ADD_SEARCH_COMING_SOON}
-      </Text>
-      <TextInput
-        style={styles.field}
-        placeholder="Product name (manual add)"
-        placeholderTextColor={AppTokens.color.muted}
-        value={name}
-        onChangeText={setName}
-        testID="shelf-add-manual-name"
-        editable={!busy}
-      />
-      {error ? (
-        <Text style={styles.err} testID="shelf-add-error">
-          {error}
+    <SafeAreaView style={styles.root} testID="screen-shelf-add" edges={['top', 'bottom']}>
+      <BackNavHeader label="Back" onBack={() => router.replace(SHELF_HREF)} />
+      <View style={styles.body}>
+        <Text style={styles.title}>Add a product</Text>
+        <Text style={styles.sub} testID="shelf-add-search-coming-soon">
+          {SHELF_ADD_SEARCH_COMING_SOON}
         </Text>
-      ) : null}
-      <View>
-        <TierPrimary
-          label="Scan barcode"
-          testID="shelf-add-scan"
-          onPress={() => router.push(SCAN_HREF)}
+        <TextInput
+          style={styles.field}
+          placeholder="Product name (manual add)"
+          placeholderTextColor={V4DesignTokens.color.muted}
+          value={name}
+          onChangeText={setName}
+          testID="shelf-add-manual-name"
+          editable={!busy}
         />
-        <View style={{ height: 10 }} />
-        <TierSecondary
-          label={busy ? 'Adding…' : 'Add manually'}
-          testID="shelf-add-manual-cta"
-          onPress={() => {
-            if (!busy) void addManual();
-          }}
-        />
+        {error ? (
+          <Text style={styles.err} testID="shelf-add-error">
+            {error}
+          </Text>
+        ) : null}
       </View>
-    </SecondTierChrome>
+      <View style={styles.footer}>
+        <Pressable style={styles.cta} testID="shelf-add-scan" onPress={() => router.push(SCAN_HREF)}>
+          <Text style={styles.ctaLabel}>Scan barcode</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.secondary, busy && { opacity: 0.6 }]}
+          testID="shelf-add-manual-cta"
+          disabled={busy}
+          onPress={() => void addManual()}>
+          <Text style={styles.secondaryLabel}>{busy ? 'Adding…' : 'Add manually'}</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  back: { alignSelf: 'flex-start', marginBottom: 8 },
-  backLabel: { color: AppTokens.color.muted, fontWeight: '600' },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.ground },
+  body: { flex: 1, paddingHorizontal: 22, paddingTop: 12, gap: 10 },
   title: {
+    fontFamily: V4DesignTokens.font.display,
     fontSize: 22,
-    fontWeight: '700',
-    color: AppTokens.color.ink,
-    marginBottom: 8,
+    color: V4DesignTokens.color.wine,
   },
   sub: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 14,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     lineHeight: 20,
-    marginBottom: 12,
   },
   field: {
-    backgroundColor: AppTokens.color.card,
+    marginTop: 8,
+    backgroundColor: V4DesignTokens.color.white,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: AppTokens.color.line,
+    borderColor: V4DesignTokens.color.line,
     paddingHorizontal: 15,
     paddingVertical: 13,
+    fontFamily: V4DesignTokens.font.bodySemiBold,
     fontSize: 14,
-    color: AppTokens.color.ink,
-    marginBottom: 8,
+    color: V4DesignTokens.color.wine,
   },
-  err: { color: AppTokens.color.danger, fontSize: 13, marginBottom: 8 },
+  err: { color: V4DesignTokens.color.red, fontSize: 13 },
+  footer: { padding: 22, gap: 10 },
+  cta: {
+    backgroundColor: V4DesignTokens.color.wine,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  ctaLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 15,
+    color: V4DesignTokens.color.white,
+  },
+  secondary: {
+    backgroundColor: V4DesignTokens.color.white,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: V4DesignTokens.color.line,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  secondaryLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 14,
+    color: V4DesignTokens.color.wine,
+  },
 });

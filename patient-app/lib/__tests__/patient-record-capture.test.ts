@@ -197,6 +197,32 @@ describe('C2/H3 patient-record-capture wiring', () => {
     );
   });
 
+  it('authenticated confirm forwards add_to_shelf when opted in', async () => {
+    getPatientSessionId.mockResolvedValueOnce('sess_1');
+    patientPost.mockResolvedValueOnce({ success: true });
+    await confirmRecordFact(
+      'prf_rx_1',
+      { date: '2026-07-16', drug: 'tretinoin' },
+      { via: 'authenticated_capture', request_id: 'req_rx', add_to_shelf: true },
+    );
+    expect(patientPost).toHaveBeenCalledWith(
+      '/api/patient/records/prf_rx_1/confirm',
+      expect.objectContaining({ add_to_shelf: true, request_id: 'req_rx' }),
+    );
+  });
+
+  it('authenticated confirm omits add_to_shelf by default', async () => {
+    getPatientSessionId.mockResolvedValueOnce('sess_1');
+    patientPost.mockResolvedValueOnce({ success: true });
+    await confirmRecordFact(
+      'prf_rx_2',
+      { date: '2026-07-16', drug: 'tretinoin' },
+      { via: 'authenticated_capture', request_id: 'req_rx2' },
+    );
+    const body = patientPost.mock.calls[0][1];
+    expect(body).not.toHaveProperty('add_to_shelf');
+  });
+
   it('anonymous confirm still requires capture_token', async () => {
     getPatientSessionId.mockResolvedValue(null);
     await expect(

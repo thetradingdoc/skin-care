@@ -1,14 +1,19 @@
 /**
  * P7.08 / P7.46 / P8.07 — Shelf Buy vs Rx + Ask/Learn LLM depth.
  * Buy vs never-Buy is driven by shelf-commerce-cta SSOT from real item fields.
+ * Rx must never render shelf-skincare-buy — shared component suppresses purchase for Rx.
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { AppTokens } from '@/constants/appTokens';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { RX_REFILL_INFO_HREF } from '@/constants/routes';
 import { patientPost } from '@/lib/patient-api';
+import {
+  SHELF_RX_BADGE,
+  SHELF_RX_REFILL_CTA,
+} from '@/lib/phase5-ui-copy';
 import {
   SHELF_RX_NEVER_BUY,
   canShowBuyCta,
@@ -27,6 +32,9 @@ type Props = {
   expires?: string;
   is_prescription?: boolean;
   category?: string;
+  brand?: string | null;
+  /** Phase 5 — display-only ingredient list (no scores / allergen verdict). */
+  ingredients_text?: string | null;
   onBuy?: () => void;
 };
 
@@ -39,6 +47,8 @@ export function ShelfItemActions({
   expires,
   is_prescription,
   category,
+  brand,
+  ingredients_text,
   onBuy,
 }: Props) {
   const router = useRouter();
@@ -49,6 +59,9 @@ export function ShelfItemActions({
   const [askReply, setAskReply] = useState<string | null>(null);
   const [learnReply, setLearnReply] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [ingredientsOpen, setIngredientsOpen] = useState(Boolean(String(ingredients_text || '').trim()));
+  const ingredients = String(ingredients_text || '').trim();
+  const brandLine = String(brand || '').trim();
 
   const runAskLearn = async (mode: 'ask' | 'learn') => {
     setBusy(true);
@@ -71,35 +84,72 @@ export function ShelfItemActions({
   };
 
   return (
-    <View style={styles.wrap} testID={`shelf-item-actions-${resolvedKind}`}>
-      <Text style={styles.name}>{name}</Text>
-      {isRx && expires ? <Text style={styles.meta}>expires {expires}</Text> : null}
-
-      <Pressable
-        testID="shelf-ask-action"
-        style={styles.ghost}
-        disabled={busy}
-        onPress={() => void runAskLearn('ask')}>
-        <Text style={styles.ghostLabel}>ask a question about this</Text>
-      </Pressable>
-      {askReply ? (
-        <Text style={styles.reply} testID="shelf-ask-reply">
-          {askReply}
+    <View
+      style={styles.wrap}
+      testID={isRx ? 'shelf-item-actions-prescription' : `shelf-item-actions-${resolvedKind}`}>
+      <Text style={styles.name} testID="shelf-item-name">
+        {name}
+      </Text>
+      {brandLine ? (
+        <Text style={styles.meta} testID="shelf-item-brand">
+          {brandLine}
         </Text>
       ) : null}
-      <Pressable
-        testID="shelf-learn-action"
-        style={styles.ghost}
-        disabled={busy}
-        onPress={() => void runAskLearn('learn')}>
-        <Text style={styles.ghostLabel}>
-          {isRx ? 'ask a question about this' : 'learn about this ingredient'}
+      {isRx && expires ? <Text style={styles.meta}>expires {expires}</Text> : null}
+      {!isRx && priceLabel ? <Text style={styles.meta}>{priceLabel}</Text> : null}
+
+      {isRx ? (
+        <Text style={styles.rxBadge} testID="shelf-rx-badge">
+          {SHELF_RX_BADGE}
         </Text>
-      </Pressable>
-      {learnReply ? (
-        <Text style={styles.reply} testID="shelf-learn-reply">
-          {learnReply}
-        </Text>
+      ) : null}
+
+      {ingredients ? (
+        <View style={styles.ingredients} testID="shelf-ingredients-panel">
+          <Text style={styles.ingrK}>INGREDIENTS (FROM CATALOG)</Text>
+          <Pressable
+            testID="shelf-ingredients-toggle"
+            accessibilityRole="button"
+            accessibilityLabel={ingredientsOpen ? 'Hide ingredients' : 'Show ingredients'}
+            onPress={() => setIngredientsOpen((v) => !v)}
+            style={styles.ghost}>
+            <Text style={styles.ghostLabel}>{ingredientsOpen ? 'Hide' : 'Show'} ingredients</Text>
+          </Pressable>
+          {ingredientsOpen ? (
+            <Text style={styles.ingredientsBody} testID="shelf-ingredients-text">
+              {ingredients}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {!isRx ? (
+        <>
+          <Pressable
+            testID="shelf-ask-action"
+            style={styles.ghost}
+            disabled={busy}
+            onPress={() => void runAskLearn('ask')}>
+            <Text style={styles.ghostLabel}>ask a question about this</Text>
+          </Pressable>
+          {askReply ? (
+            <Text style={styles.reply} testID="shelf-ask-reply">
+              {askReply}
+            </Text>
+          ) : null}
+          <Pressable
+            testID="shelf-learn-action"
+            style={styles.ghost}
+            disabled={busy}
+            onPress={() => void runAskLearn('learn')}>
+            <Text style={styles.ghostLabel}>learn about this ingredient</Text>
+          </Pressable>
+          {learnReply ? (
+            <Text style={styles.reply} testID="shelf-learn-reply">
+              {learnReply}
+            </Text>
+          ) : null}
+        </>
       ) : null}
 
       {isRx || !showBuy ? (
@@ -108,14 +158,16 @@ export function ShelfItemActions({
             <>
               <Pressable
                 testID="shelf-rx-refill-cta"
-                style={styles.secondary}
+                style={styles.refill}
                 onPress={() =>
                   router.push({
                     pathname: RX_REFILL_INFO_HREF,
                     params: { drug: name, expires: expires || '' },
                   } as never)
-                }>
-                <Text style={styles.secondaryLabel}>refill info — contact your prescriber</Text>
+                }
+                accessibilityRole="button"
+                accessibilityLabel={SHELF_RX_REFILL_CTA}>
+                <Text style={styles.refillLabel}>{SHELF_RX_REFILL_CTA}</Text>
               </Pressable>
               <Text style={styles.never} testID="shelf-rx-never-buy">
                 {SHELF_RX_NEVER_BUY}
@@ -137,31 +189,85 @@ export function ShelfItemActions({
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 8, paddingVertical: 8 },
-  name: { fontSize: 17, fontWeight: '600', color: AppTokens.color.ink },
-  meta: { fontSize: 13, color: AppTokens.color.muted },
-  ghost: { paddingVertical: 6 },
-  ghostLabel: { color: AppTokens.color.muted, fontSize: 14 },
-  reply: { fontSize: 13, color: AppTokens.color.ink, lineHeight: 18 },
-  secondary: { paddingVertical: 10 },
-  secondaryLabel: { color: AppTokens.color.fabBg, fontWeight: '600' },
-  never: {
+  wrap: { gap: 8 },
+  name: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 17,
+    color: V4DesignTokens.color.black,
+  },
+  meta: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 13,
-    color: AppTokens.color.cardRedText,
-    backgroundColor: AppTokens.color.cardRed,
+    color: V4DesignTokens.color.muted,
+  },
+  rxBadge: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: V4DesignTokens.color.redDeep,
+    marginTop: 4,
+  },
+  ghost: { paddingVertical: 6 },
+  ghostLabel: {
+    fontFamily: V4DesignTokens.font.body,
+    color: V4DesignTokens.color.muted,
+    fontSize: 14,
+  },
+  reply: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.black,
+    lineHeight: 18,
+  },
+  refill: {
+    backgroundColor: V4DesignTokens.color.black,
+    borderRadius: 12,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  refillLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.white,
+    fontSize: 16,
+  },
+  never: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.redDeep,
+    backgroundColor: '#FCEBEB',
     padding: 10,
     borderRadius: 8,
   },
   buy: {
-    backgroundColor: AppTokens.color.fabBg,
-    borderRadius: 10,
+    backgroundColor: V4DesignTokens.color.red,
+    borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
   },
-  buyLabel: { color: '#fff', fontWeight: '600' },
+  buyLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.white,
+  },
   priceUnavailable: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 13,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     paddingVertical: 8,
+  },
+  ingredients: { gap: 4, marginTop: 4 },
+  ingrK: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: V4DesignTokens.color.muted,
+  },
+  ingredientsBody: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.black,
+    lineHeight: 19,
+    paddingVertical: 6,
   },
 });

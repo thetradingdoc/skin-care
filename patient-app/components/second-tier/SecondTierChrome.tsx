@@ -50,6 +50,7 @@ export function TierPrimary({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       style={styles.primary}
       onPress={onPress}
       testID={testID}>
@@ -70,6 +71,7 @@ export function TierSecondary({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={label}
       style={styles.secondary}
       onPress={onPress}
       testID={testID}>

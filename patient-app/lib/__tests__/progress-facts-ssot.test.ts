@@ -21,6 +21,10 @@ describe('Progress facts SSOT wiring', () => {
     expect(progressSrc).toMatch(/fetchFactsCalendar/);
     expect(progressSrc).toMatch(/fetchMarksList/);
     expect(progressSrc).toMatch(/MARK_COMPARE_HREF/);
+    expect(progressSrc).toMatch(/setCalendarIntent/);
+    expect(progressSrc).toMatch(/calendarHref\(\)/);
+    expect(progressSrc).toMatch(/progress-timeline-see-all/);
+    expect(progressSrc).not.toMatch(/See all[\s\S]{0,200}CAPTURE_2A_HREF/);
     expect(progressSrc).not.toMatch(/home\/progress-summary/);
     expect(progressSrc).not.toMatch(/journal\/calendar-range/);
     expect(progressSrc).not.toMatch(/fetchJournalImprovements/);

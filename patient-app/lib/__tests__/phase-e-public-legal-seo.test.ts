@@ -53,14 +53,13 @@ describe('Phase E — marketing matches Welcome', () => {
     expect(landing).toMatch(/app\.trytouche\.com\/privacy/);
   });
 
-  it('Welcome screen still tells the same story', () => {
+  it('Welcome screen tells skiñcare claim-safe story', () => {
     const welcome = readFileSync(join(APP, 'app/welcome.tsx'), 'utf8');
-    expect(welcome).toMatch(/WELCOME_BRAND = 'touche'/);
-    expect(welcome).toMatch(/WELCOME_TAGLINE = 'Be Bold'/);
-    expect(welcome).toMatch(/WELCOME_SUBTITLE = 'Skincare & medical journal'/);
-    expect(welcome).toMatch(/Medical Tracker/);
-    expect(welcome).toMatch(/20 AI reads free each month/);
-    expect(welcome).toMatch(/skin, your prescriptions, your bills/);
+    expect(welcome).toMatch(/WELCOME_BRAND = 'skiñcare'/);
+    expect(welcome).toMatch(/WELCOME_TAGLINE = 'Be [Bb]old\.?'/);
+    expect(welcome).toMatch(/WELCOME_HEADLINE = 'Track your skin & care'/);
+    expect(welcome).toMatch(/Not a diagnosis/);
+    expect(welcome).not.toMatch(/clear your dark marks/);
   });
 });
 

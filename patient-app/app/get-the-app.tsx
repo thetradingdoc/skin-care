@@ -1,29 +1,33 @@
 /**
- * TOUCH-028/029 — iOS-only Get-the-App interstitial after OTP.
- * Copy is camera-only until TOUCH-114–116 ship in the same train.
- *
- * Hydration: UA/platform checks differ between SSR and client — never branch on
- * shouldShowGetTheAppInterstitial() during the first paint.
+ * Get-the-app — clones Step 1 Welcome chrome (red CTA, display type, white ground).
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppTokens } from '@/constants/appTokens';
+import { ToucheTulipMark } from '@/components/v4/ToucheTulipMark';
 import { PROGRESS_HREF } from '@/constants/routes';
 import { APP_STORE_URL } from '@/constants/storeConfig';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { shouldShowGetTheAppInterstitial } from '@/lib/ios-web-gate';
 import { trackFunnelEvent } from '@/lib/trackFunnelEvent';
 
 export default function GetTheAppScreen() {
   const router = useRouter();
-  /** null = not decided yet (SSR + first client frame). */
   const [showInterstitial, setShowInterstitial] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // TOUCH-030: non-iOS must never see this screen — decide only after mount.
-    if (!shouldShowGetTheAppInterstitial()) {
+    // E2E / force: ?force_get_the_app=1 keeps the interstitial on non-iOS web.
+    let force = false;
+    try {
+      if (typeof window !== 'undefined') {
+        force = /force_get_the_app=1/.test(window.location.search || '');
+      }
+    } catch {
+      force = false;
+    }
+    if (!force && !shouldShowGetTheAppInterstitial()) {
       setShowInterstitial(false);
       router.replace(PROGRESS_HREF);
       return;
@@ -41,17 +45,20 @@ export default function GetTheAppScreen() {
     router.replace(PROGRESS_HREF);
   }, [router]);
 
-  // Same empty shell for SSR + hydration, then fill in after mount.
   if (showInterstitial !== true) {
     return <SafeAreaView style={styles.root} testID="get-the-app-pending" />;
   }
 
   return (
-    <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.root} edges={['top', 'bottom']} testID="screen-get-the-app">
       <View style={styles.inner} testID="get-the-app-ios">
-        <Text style={styles.title}>Get the app</Text>
-        <Text style={styles.body}>
-          Use the native camera for a clearer daily check — ghost alignment works best outside the browser.
+        <ToucheTulipMark color={V4DesignTokens.color.red} width={36} testID="get-the-app-tulip" />
+        <Text style={styles.title} testID="get-the-app-title">
+          Get the app
+        </Text>
+        <Text style={styles.body} testID="get-the-app-body">
+          Use the native camera for a clearer daily check — ghost alignment works best outside the
+          browser.
         </Text>
         <Pressable
           style={styles.cta}
@@ -75,36 +82,41 @@ export default function GetTheAppScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: AppTokens.color.pageBg },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white },
   inner: {
     flex: 1,
-    padding: AppTokens.spacing.lg,
+    padding: 24,
     justifyContent: 'center',
-    gap: 16,
+    gap: 14,
   },
   title: {
-    fontFamily: AppTokens.font.display,
+    fontFamily: V4DesignTokens.font.display,
     fontSize: 28,
-    color: AppTokens.color.ink,
+    color: V4DesignTokens.color.black,
   },
   body: {
-    fontFamily: AppTokens.font.body,
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 15,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     lineHeight: 22,
   },
   cta: {
-    backgroundColor: AppTokens.color.fabBg,
-    borderRadius: AppTokens.radius.md,
+    backgroundColor: V4DesignTokens.color.red,
+    borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 8,
   },
-  ctaText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  ctaText: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    color: V4DesignTokens.color.white,
+    fontSize: 16,
+  },
   secondary: { alignItems: 'center', paddingVertical: 12 },
   secondaryText: {
-    fontFamily: AppTokens.font.body,
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 15,
-    color: AppTokens.color.ink,
+    color: V4DesignTokens.color.black,
     textDecorationLine: 'underline',
   },
 });

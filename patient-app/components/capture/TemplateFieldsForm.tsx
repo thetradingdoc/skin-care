@@ -11,7 +11,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmEditableField } from '@/components/capture/ConfirmEditableField';
-import { AppTokens } from '@/constants/appTokens';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { absentFieldAffordance } from '@/lib/absent-field-affordance';
 import {
   editableFields,
@@ -94,13 +94,15 @@ export function TemplateFieldsForm({ template, draft, onChange, fieldsAbsent = [
 
 const styles = StyleSheet.create({
   templateLabel: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 13,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     marginBottom: 12,
   },
   absent: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 12,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     marginTop: -4,
     marginBottom: 8,
     marginLeft: 2,

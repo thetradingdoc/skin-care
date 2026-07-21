@@ -97,6 +97,18 @@ describe('P7.38 Screen 7b OTP entry', () => {
     expect(src).toMatch(/use a different email/);
     expect(src).toMatch(/Confirm/);
   });
+
+  it('SEC-32 — OTP code never travels in navigation params', () => {
+    const entry = read('auth/otp-entry.tsx');
+    const err = read('auth/otp-error.tsx');
+    expect(entry).toMatch(/otp-flow-session/);
+    expect(entry).not.toMatch(/useLocalSearchParams/);
+    expect(entry).not.toMatch(/params:\s*\{\s*email,\s*code/);
+    expect(err).toMatch(/otp-flow-session/);
+    expect(err).not.toMatch(/useLocalSearchParams/);
+    expect(err).not.toMatch(/params\.code/);
+    expect(err).not.toMatch(/params:\s*\{[^}]*code/);
+  });
 });
 
 describe('P7.39 Screen 7c OTP error/resend', () => {

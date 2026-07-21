@@ -9,7 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
-import { TRY_ALLERGENS_HREF } from '@/constants/routes';
+import { CAPTURE_2A_HREF, SHELF_HREF, TRY_ALLERGENS_HREF } from '@/constants/routes';
+import { isClaimSafeUiMode } from '@/lib/claim-safe-ui';
 import { setPendingTryProduct } from '@/lib/try-verdict-session';
 import { useTryFunnelNoIndex } from '@/lib/try-funnel-noindex';
 
@@ -18,8 +19,13 @@ export default function TryVerdictScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [barcodeMode, setBarcodeMode] = useState(false);
+  const claimSafe = isClaimSafeUiMode();
 
   const onGetVerdict = () => {
+    if (claimSafe) {
+      router.replace(SHELF_HREF);
+      return;
+    }
     const trimmed = query.trim();
     if (!trimmed && !barcodeMode) return;
     void setPendingTryProduct({
@@ -36,47 +42,74 @@ export default function TryVerdictScreen() {
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.inner}>
         <ToucheMarkCompact height={24} />
-        <Text style={styles.title}>Check a product</Text>
+        <Text style={styles.title}>{claimSafe ? 'Add a product' : 'Check a product'}</Text>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldIcon} accessibilityLabel="search">
-            ⌕
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="search"
-            placeholderTextColor={AppTokens.color.muted}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            testID="try-verdict-search"
-            accessibilityLabel="Search product"
-          />
-        </View>
+        {claimSafe ? (
+          <>
+            <Text style={styles.claimSafeBody}>
+              Ingredient lists and Shelf logging stay available. Compatibility scores and
+              Hard-no / Looking good verdicts are not shown in this build.
+            </Text>
+            <Pressable
+              style={styles.cta}
+              onPress={() => router.replace(SHELF_HREF)}
+              testID="try-verdict-cta"
+              accessibilityRole="button"
+              accessibilityLabel="Go to Shelf">
+              <Text style={styles.ctaText}>Go to Shelf</Text>
+            </Pressable>
+            <Pressable
+              style={styles.barcode}
+              onPress={() => router.replace(CAPTURE_2A_HREF)}
+              testID="try-verdict-capture"
+              accessibilityRole="button"
+              accessibilityLabel="Log a photo">
+              <Text style={styles.barcodeText}>log a photo instead</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <View style={styles.field}>
+              <Text style={styles.fieldIcon} accessibilityLabel="search">
+                ⌕
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="search"
+                placeholderTextColor={AppTokens.color.muted}
+                value={query}
+                onChangeText={setQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+                testID="try-verdict-search"
+                accessibilityLabel="Search product"
+              />
+            </View>
 
-        <Pressable
-          style={styles.barcode}
-          onPress={() => setBarcodeMode((v) => !v)}
-          testID="try-verdict-barcode"
-          accessibilityRole="button"
-          accessibilityLabel="Scan barcode">
-          <Text style={styles.barcodeText}>
-            {barcodeMode ? 'barcode mode on — enter code above' : 'scan barcode'}
-          </Text>
-        </Pressable>
+            <Pressable
+              style={styles.barcode}
+              onPress={() => setBarcodeMode((v) => !v)}
+              testID="try-verdict-barcode"
+              accessibilityRole="button"
+              accessibilityLabel="Scan barcode">
+              <Text style={styles.barcodeText}>
+                {barcodeMode ? 'barcode mode on — enter code above' : 'scan barcode'}
+              </Text>
+            </Pressable>
 
-        <View style={styles.spacer} />
+            <View style={styles.spacer} />
 
-        <Pressable
-          style={[styles.cta, !query.trim() && !barcodeMode ? styles.ctaDisabled : null]}
-          onPress={onGetVerdict}
-          disabled={!query.trim() && !barcodeMode}
-          testID="try-verdict-cta"
-          accessibilityRole="button"
-          accessibilityLabel="Get my verdict">
-          <Text style={styles.ctaText}>Get my verdict</Text>
-        </Pressable>
+            <Pressable
+              style={[styles.cta, !query.trim() && !barcodeMode ? styles.ctaDisabled : null]}
+              onPress={onGetVerdict}
+              disabled={!query.trim() && !barcodeMode}
+              testID="try-verdict-cta"
+              accessibilityRole="button"
+              accessibilityLabel="Get my verdict">
+              <Text style={styles.ctaText}>Get my verdict</Text>
+            </Pressable>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -90,6 +123,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: AppTokens.color.ink,
     marginTop: 8,
+  },
+  claimSafeBody: {
+    fontFamily: AppTokens.font.body,
+    fontSize: 15,
+    lineHeight: 22,
+    color: AppTokens.color.muted,
   },
   field: {
     flexDirection: 'row',

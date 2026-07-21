@@ -68,7 +68,7 @@ export default function ShopBrowseScreen() {
             testID={`shop-product-${p.handle}`}>
             <Text style={styles.name}>{p.product_name}</Text>
             <Text style={styles.meta}>
-              {p.brand || 'touche labs™'}
+              {p.brand || 'skiñcare'}
               {p.price_label ? ` · ${p.price_label}` : ''}
             </Text>
             {p.summary ? <Text style={styles.summary}>{p.summary}</Text> : null}

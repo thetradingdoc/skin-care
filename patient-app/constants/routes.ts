@@ -50,14 +50,30 @@ export function checkoutHandoffHref(opts: {
 }
 export const ONBOARDING_REVEAL_HREF = '/onboarding/reveal' as Href;
 export const ONBOARDING_CONCERNS_HREF = '/onboarding/concerns' as Href;
+/** Step 3 — v4.1 persona picker ("Why are you here") */
+export const ONBOARDING_WHY_HREF = '/onboarding/why' as Href;
+/** Step 4 — claim-safe plan preview */
+export const ONBOARDING_PLAN_PREVIEW_HREF = '/onboarding/plan-preview' as Href;
 export const ONBOARDING_SIGNUP_HREF = '/onboarding/signup' as Href;
 export const JOURNEY_CHOOSE_HREF = '/onboarding/journey-choose' as Href;
 export const TRACK_HREF = '/(tabs)/track' as Href;
 export const PROGRESS_HREF = '/(tabs)/progress' as Href;
 /** P7.01 — Calendar tab */
 export const CALENDAR_HREF = '/(tabs)/calendar' as Href;
+
+/**
+ * Progress "See all" / timeline tile → Calendar.
+ * Prefer bare CALENDAR_HREF + setCalendarIntent() — do not stuff tab search params
+ * (Release was dying after Calendar flash when params were passed).
+ */
+export function calendarHref(): Href {
+  return CALENDAR_HREF;
+}
 /** P7.01 — Shelf tab */
 export const SHELF_HREF = '/(tabs)/shelf' as Href;
+/** PIH v2 — Shelf add / scan */
+export const SHELF_ADD_HREF = '/shelf/add' as Href;
+export const SHELF_NOMATCH_HREF = '/shelf/nomatch' as Href;
 /** P7.01 — Profile tab (account route) */
 export const PROFILE_HREF = '/(tabs)/account' as Href;
 export const ACCOUNT_HREF = PROFILE_HREF;
@@ -94,6 +110,8 @@ export const OTP_ERROR_HREF = '/auth/otp-error' as Href;
 /** P7.40–42 — Profile destinations */
 export const PROFILE_ALLERGENS_HREF = '/profile/allergens' as Href;
 export const PROFILE_NOTIFICATIONS_HREF = '/profile/notifications' as Href;
+/** PIH v2 — OS notification permission denied */
+export const PROFILE_NOTIF_DENIED_HREF = '/profile/notif-denied' as Href;
 export const PROFILE_CONSENT_HREF = '/profile/consent-privacy' as Href;
 
 /** P7.43 — Rx refill info (real destination) */
@@ -111,6 +129,10 @@ export const CAPTURE_TAG_HREF = '/capture/tag' as Href;
 export const CAPTURE_LOADING_HREF = '/capture/loading' as Href;
 export const MARK_PICKER_HREF = '/capture/mark-picker' as Href;
 export const MARK_COMPARE_HREF = '/capture/mark-compare' as Href;
+/** PIH v2 — same-light tip before camera */
+export const CAPTURE_GUIDANCE_HREF = '/capture/guidance' as Href;
+/** PIH v2 — daily check-in without photo */
+export const TRACK_CHECKIN_HREF = '/capture/check-in' as Href;
 export const DAILY_AI_SUGGESTS_HREF = '/capture/daily-ai-suggests' as Href;
 export const AI_CAP_HREF = '/capture/ai-cap' as Href;
 export const AI_BURST_HREF = '/capture/ai-burst' as Href;
@@ -120,6 +142,16 @@ export const WELCOME_HREF = '/welcome' as Href;
 export const PROFILE_LANGUAGE_HREF = '/profile/language' as Href;
 export const PROFILE_SHARE_DOCTOR_HREF = '/profile/share-with-doctor' as Href;
 export const ALERTS_HISTORY_HREF = '/alerts' as Href;
+/** PIH v2 — Export / PDF report cluster */
+export const EXPORT_HREF = '/export' as Href;
+export const EXPORT_GATED_HREF = '/export/gated' as Href;
+export const EXPORT_FAIL_HREF = '/export/fail' as Href;
+
+/** Section 2 — Billing screens (v4.1 frames 7–11) */
+export const BILLING_CHOOSE_PLAN_HREF = '/billing/choose-plan' as Href;
+export const BILLING_CARE_CHECKOUT_HREF = '/billing/care-checkout' as Href;
+export const BILLING_SUBSCRIBED_HREF = '/billing/subscribed' as Href;
+export const BILLING_MANAGE_HREF = '/billing/manage' as Href;
 
 /** P7.18–23 — per-tag capture reveal screens (separate routes). */
 export const REVEAL_SKIN_HREF = '/capture/reveal/skin' as Href;

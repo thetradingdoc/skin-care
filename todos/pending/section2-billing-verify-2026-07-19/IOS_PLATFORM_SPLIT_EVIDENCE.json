@@ -1,0 +1,11 @@
+{
+  "care_cta": "Continue in browser — $39.00/mo",
+  "care_external_note": "Checkout opens in your browser. After you pay, return to the app — we confirm your plan from billing status, not from an in-app checkout form.",
+  "claim": "A guided tracking tool: habit checklist, weekly reminders, mark-compare timeline for your plan. This is not medical treatment and does not replace a dermatologist.",
+  "unlock_cta": "Continue in browser — Plus",
+  "unlock_external_note": "Checkout opens in your browser. After you pay, return to the app — we confirm Plus from billing status.",
+  "unlock_has_plus": true,
+  "unlock_has_pack": true,
+  "choose_ios_note": "On iPhone, Care and Plus checkout continue in your browser — there is no in-app payment form.",
+  "subscribed_reopen": "Checking billing status after you return to the app — not trusting an in-app checkout redirect alone."
+}

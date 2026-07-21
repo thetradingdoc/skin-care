@@ -11,9 +11,12 @@ export const MEMBER_DISCOUNT_CODE =
 
 export const TOUCHE_HOME_URL = STORE_ORIGIN;
 
-/** App Store listing for Screen 6c (TOUCH-029). Override via EXPO_PUBLIC_APP_STORE_URL. */
+/** App Store listing for Screen 6c (TOUCH-029 / G-ASC-ID). Real ASC id — not a placeholder. */
+export const APP_STORE_ID = '6778105762';
+
 export const APP_STORE_URL =
-  process.env.EXPO_PUBLIC_APP_STORE_URL || 'https://apps.apple.com/app/touche/id6730000000';
+  process.env.EXPO_PUBLIC_APP_STORE_URL ||
+  `https://apps.apple.com/app/touche/id${APP_STORE_ID}`;
 
 export const TOUCHE_SKIN_COLLECTION_URL = `${STORE_ORIGIN}/collections/skin-by-touche-labs?utm_source=app&utm_medium=profile&utm_campaign=skin`;
 

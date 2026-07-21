@@ -42,6 +42,14 @@ export function SessionImage({ uri, style, fallback, contentFit = 'cover' }: Pro
       style={style}
       contentFit={contentFit}
       onError={() => setFailed(true)}
+      onLoad={(ev) => {
+        // MEDIA-01 (2026-07-19): 1×1 / tiny stubs decode as solid black thumbs — treat as failed.
+        const w = Number(ev?.source?.width);
+        const h = Number(ev?.source?.height);
+        if ((Number.isFinite(w) && w > 0 && w < 16) || (Number.isFinite(h) && h > 0 && h < 16)) {
+          setFailed(true);
+        }
+      }}
     />
   );
 }

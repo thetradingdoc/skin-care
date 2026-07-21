@@ -20,6 +20,14 @@ export type PendingCaptureDraft = {
   ai_or_manual: 'ai' | 'manual';
   /** Local photo URI for confirm overlay (not persisted to server). */
   preview_uri?: string;
+  /** Exact byte-duplicate of a prior fact (sha256) — confirm warning only. */
+  possible_duplicate?: {
+    fact_id: string;
+    logged_on?: string | null;
+    tag?: string | null;
+    entry_date?: string | null;
+    request_id?: string | null;
+  } | null;
 };
 
 let memoryDraft: PendingCaptureDraft | null = null;

@@ -126,6 +126,7 @@ export async function runAiCaptureOrchestration(opts: {
       capture_token: result.capture_token,
       ai_or_manual: 'ai',
       preview_uri: previewUri,
+      possible_duplicate: result.possible_duplicate || null,
     });
 
     return {

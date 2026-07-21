@@ -76,18 +76,21 @@ describe('P7.05 Confirm UI field sets (v10 — not Date+Area×6)', () => {
 
     const skin = readFileSync(join(CONFIRM, 'skin.tsx'), 'utf8');
     expect(skin).toMatch(/confirm-5-skin/);
-    expect(skin).toMatch(/confirm-skin-area/);
+    expect(skin).toMatch(/TemplateFieldsForm/);
     expect(skin).toMatch(/AI SUGGESTS/);
 
     const mark = readFileSync(join(CONFIRM, 'mark.tsx'), 'utf8');
     expect(mark).toMatch(/confirm-5-mark/);
-    expect(mark).toMatch(/confirm-mark-location/);
+    expect(mark).toMatch(/TemplateFieldsForm/);
     expect(mark).toMatch(/useCaptureConfirm/);
     expect(mark).toMatch(/submitLooksRight/);
 
     const other = readFileSync(join(CONFIRM, 'other.tsx'), 'utf8');
     expect(other).toMatch(/confirm-5-other/);
-    expect(other).toMatch(/confirm-other-label/);
+
+    // Field-level testIDs live on TemplateFieldsForm (confirm-field-{key})
+    const form = readFileSync(join(ROOT, 'components/capture/TemplateFieldsForm.tsx'), 'utf8');
+    expect(form).toMatch(/confirm-field-\$\{field\.key\}/);
 
     // Fail loud if someone collapses to one shared Date+Area template
     expect(existsSync(join(CONFIRM, 'index.tsx'))).toBe(false);
@@ -117,7 +120,7 @@ describe('P7.06 Thesis variants — six separate copy sets', () => {
       return m![1];
     });
     expect(new Set(extracted).size).toBe(6);
-    expect(extracted).toContain('Stop guessing about your skin');
+    expect(extracted).toContain('What this typically involves');
     expect(extracted).toContain('One less thing to remember');
     expect(extracted).toContain('Never miss a refill again');
 

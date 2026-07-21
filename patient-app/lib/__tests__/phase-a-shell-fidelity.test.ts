@@ -61,7 +61,7 @@ describe('T12 Share with doctor — real export APIs', () => {
     const src = readFileSync(join(APP, 'profile/share-with-doctor.tsx'), 'utf8');
     expect(src).toMatch(/SHARE_EXPORT_API = '\/api\/patient\/export\/physician\.pdf'/);
     expect(src).toMatch(/SHARE_LINK_API = '\/api\/patient\/export\/physician-share'/);
-    expect(src).toMatch(/patientGet\(`\$\{SHARE_EXPORT_API\}/);
+    expect(src).toMatch(/patientGetBinary|patientGet\(`\$\{SHARE_EXPORT_API\}/);
     expect(src).toMatch(/patientPost\(SHARE_LINK_API/);
     expect(src).not.toMatch(/fixture|mockPdf|hardcoded.*pdf/i);
   });

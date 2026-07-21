@@ -32,13 +32,14 @@ describe('P7.18–23 per-tag reveal screens (separate files)', () => {
     expect(files.some((f) => /\[tag\]|RevealByTag|reveal-template/i.test(f))).toBe(false);
   });
 
-  it('P7.18 skin uses pending-confirm framing, not asserted finding', () => {
+  it('P7.18 skin uses post-confirm Logged framing, not asserted finding', () => {
     const src = readFileSync(join(REVEAL_DIR, 'skin.tsx'), 'utf8');
-    expect(src).toMatch(/P7\.18/);
-    expect(src).toMatch(/does that match what you see\?/);
-    expect(src).toMatch(/pending confirm|not asserted/i);
-    expect(src).toMatch(/Yes, that's right/);
+    expect(src).toMatch(/P7\.18|Step 19/);
+    expect(src).toMatch(/Logged\./);
+    expect(src).toMatch(/SAVED/);
+    expect(src).toMatch(/Continue/);
     expect(src).toMatch(/Not quite — let me fix it/);
+    expect(src).toMatch(/WHAT WE SEE/);
     expect(src).not.toMatch(/Here's what we found/);
     expect(src).not.toMatch(/switch\s*\(\s*tag/);
   });

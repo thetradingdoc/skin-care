@@ -1,16 +1,14 @@
 /**
- * Daily check-in without photo — fail-closed against /api/patient/records/check-in.
+ * PIH v2 — Daily check-in without photo (design ID: track-checkin).
  */
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
 import { PROGRESS_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import {
   feelingSlugFromLabel,
   performCheckInSave,
@@ -47,72 +45,85 @@ export default function TrackCheckInScreen() {
   };
 
   return (
-    <SecondTierChrome testID="screen-track-checkin">
-      <Pressable onPress={() => router.back()} testID="checkin-back" style={styles.back}>
-        <Text style={styles.backLabel}>Back</Text>
-      </Pressable>
-      <Text style={styles.title}>{CHECKIN_TITLE}</Text>
-      <Text style={styles.sub}>{CHECKIN_SUB}</Text>
-      <View style={styles.chips}>
-        {OPTIONS.map((o) => (
-          <Pressable
-            key={o}
-            onPress={() => setSel(o)}
-            style={[styles.chip, sel === o && styles.chipOn]}
-            testID={`checkin-chip-${o}`}>
-            <Text style={[styles.chipText, sel === o && styles.chipTextOn]}>{o}</Text>
-          </Pressable>
-        ))}
+    <SafeAreaView style={styles.root} testID="screen-track-checkin" edges={['top', 'bottom']}>
+      <BackNavHeader label="Back" onBack={() => router.back()} />
+      <View style={styles.body}>
+        <Text style={styles.title}>{CHECKIN_TITLE}</Text>
+        <Text style={styles.sub}>{CHECKIN_SUB}</Text>
+        <View style={styles.chips}>
+          {OPTIONS.map((o) => (
+            <Pressable
+              key={o}
+              onPress={() => setSel(o)}
+              style={[styles.chip, sel === o && styles.chipOn]}
+              testID={`checkin-chip-${o}`}>
+              <Text style={[styles.chipText, sel === o && styles.chipTextOn]}>{o}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {error ? (
+          <Text style={styles.err} testID="checkin-error">
+            {error}
+          </Text>
+        ) : null}
       </View>
-      {error ? (
-        <Text style={styles.err} testID="checkin-error">
-          {error}
-        </Text>
-      ) : null}
-      <TierPrimary
-        label={busy ? 'Saving…' : 'Save'}
-        testID="checkin-save"
-        onPress={() => {
-          if (!busy) void save();
-        }}
-      />
-    </SecondTierChrome>
+      <View style={styles.footer}>
+        <Pressable
+          style={[styles.cta, busy && { opacity: 0.6 }]}
+          disabled={busy}
+          testID="checkin-save"
+          onPress={() => void save()}>
+          <Text style={styles.ctaLabel}>Save</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  back: { alignSelf: 'flex-start', marginBottom: 8 },
-  backLabel: { color: AppTokens.color.muted, fontWeight: '600' },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.ground },
+  body: { flex: 1, paddingHorizontal: 22, paddingTop: 18, gap: 12 },
   title: {
+    fontFamily: V4DesignTokens.font.display,
     fontSize: 22,
-    fontWeight: '700',
-    color: AppTokens.color.ink,
-    marginBottom: 8,
+    color: V4DesignTokens.color.wine,
   },
   sub: {
+    fontFamily: V4DesignTokens.font.body,
     fontSize: 14,
-    color: AppTokens.color.muted,
+    color: V4DesignTokens.color.muted,
     lineHeight: 20,
-    marginBottom: 12,
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   chip: {
     borderRadius: 20,
     paddingVertical: 9,
     paddingHorizontal: 16,
-    backgroundColor: AppTokens.color.card,
+    backgroundColor: 'rgba(61,0,11,0.06)',
     borderWidth: 1.5,
-    borderColor: AppTokens.color.line,
+    borderColor: V4DesignTokens.color.line,
   },
   chipOn: {
-    backgroundColor: AppTokens.color.ink,
-    borderColor: AppTokens.color.ink,
+    backgroundColor: V4DesignTokens.color.wine,
+    borderColor: V4DesignTokens.color.wine,
   },
   chipText: {
+    fontFamily: V4DesignTokens.font.bodyBold,
     fontSize: 13,
-    fontWeight: '700',
-    color: AppTokens.color.ink,
+    color: V4DesignTokens.color.wine,
   },
-  chipTextOn: { color: '#FFFFFF' },
-  err: { color: AppTokens.color.danger, fontSize: 13, marginBottom: 8 },
+  chipTextOn: { color: V4DesignTokens.color.white },
+  err: { color: V4DesignTokens.color.red, fontSize: 13 },
+  footer: { padding: 22 },
+  cta: {
+    backgroundColor: V4DesignTokens.color.wine,
+    borderRadius: 18,
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  ctaLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 15,
+    color: V4DesignTokens.color.white,
+  },
 });

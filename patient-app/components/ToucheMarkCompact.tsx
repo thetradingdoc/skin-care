@@ -2,22 +2,30 @@ import React from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { TULIP_PATH } from '@/lib/tulip-path.js';
 
-/** Live touche brand orange (not skin‧care lockup). */
-export const TOUCHE_MARK_ORANGE = '#F7591F';
+/** @deprecated Use V4DesignTokens.color.red (#E31919). Kept as alias during migration. */
+export const TOUCHE_MARK_ORANGE = V4DesignTokens.color.red;
+export const TOUCHE_MARK_RED = V4DesignTokens.color.red;
 
 type Props = {
   /** Overall row height; keep compact so shutter/ambient stay dominant. */
   height?: number;
   style?: ViewStyle;
+  /** Mark + wordmark color (default brand red). */
+  color?: string;
 };
 
 /**
- * TOUCH-009 — Compact real touche mark for Check / bottle / spot chrome.
- * Tulip + "touche" in brand orange. Do not use BrandWordmark (skin‧care) here.
+ * Compact skiñcare mark — tulip path from tulip-mark.svg + brand label.
+ * Brand color is v4.1 red (E31919); legacy brand orange retired.
  */
-export function ToucheMarkCompact({ height = 22, style }: Props) {
+export function ToucheMarkCompact({
+  height = 22,
+  style,
+  color = V4DesignTokens.color.red,
+}: Props) {
   const fontSize = height * 0.72;
   const markWidth = fontSize * 0.95;
   const markHeight = markWidth * (215 / 600);
@@ -26,11 +34,12 @@ export function ToucheMarkCompact({ height = 22, style }: Props) {
     <View
       style={[styles.row, { height }, style]}
       accessibilityRole="image"
-      accessibilityLabel="touche">
+      accessibilityLabel="skiñcare"
+      testID="touche-mark-compact">
       <Svg width={markWidth} height={markHeight} viewBox="0 0 600 215" style={styles.tulip}>
-        <Path d={TULIP_PATH} fill={TOUCHE_MARK_ORANGE} />
+        <Path d={TULIP_PATH} fill={color} />
       </Svg>
-      <Text style={[styles.word, { fontSize, lineHeight: fontSize }]}>touche</Text>
+      <Text style={[styles.word, { fontSize, lineHeight: fontSize, color }]}>touche</Text>
     </View>
   );
 }
@@ -45,9 +54,8 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   word: {
-    fontFamily: 'System',
+    fontFamily: V4DesignTokens.font.bodyBold,
     fontWeight: '700',
-    color: TOUCHE_MARK_ORANGE,
     letterSpacing: -0.3,
   },
 });

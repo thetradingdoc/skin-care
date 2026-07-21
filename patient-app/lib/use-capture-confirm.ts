@@ -5,14 +5,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 
-import { MANUAL_ENTRY_HREF, revealHrefForTag } from '@/constants/routes';
+import { CAPTURE_2A_HREF, MANUAL_ENTRY_HREF, revealHrefForTag } from '@/constants/routes';
 import type { CaptureFlowTag } from '@/lib/capture-state-machine';
 import { confirmRecordFact } from '@/lib/patient-record-capture';
 import {
+  clearPendingCaptureDraft,
   peekPendingCaptureDraft,
   patchPendingCaptureDraft,
   type PendingCaptureDraft,
 } from '@/lib/pending-capture-draft';
+import { clearPendingCaptureUri } from '@/lib/pending-capture-uri';
 
 export function useCaptureConfirm(uiTag: CaptureFlowTag) {
   const router = useRouter();
@@ -43,36 +45,51 @@ export function useCaptureConfirm(uiTag: CaptureFlowTag) {
     });
   }, []);
 
-  const submitLooksRight = useCallback(async () => {
-    if (!pending?.factId) {
-      setError('No draft to confirm — retake from capture.');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      // Flush local edits into stash, then confirm existing factId (not a new capture).
-      const flushed = await patchPendingCaptureDraft({
-        draft: localDraft,
-        replaceDraft: true,
-      });
-      const draftToSend = flushed?.draft || localDraft;
-      const requestId = pending.request_id;
-      await confirmRecordFact(pending.factId, draftToSend, {
-        request_id: requestId,
-        via: pending.via,
-        capture_token: pending.capture_token,
-      });
-      router.push(revealHrefForTag(uiTag) as never);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Confirm failed');
-    } finally {
-      setBusy(false);
-    }
-  }, [pending, localDraft, router, uiTag]);
+  const submitLooksRight = useCallback(
+    async (opts?: { add_to_shelf?: boolean }) => {
+      if (!pending?.factId) {
+        setError('No draft to confirm — retake from capture.');
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      try {
+        // Flush local edits into stash, then confirm existing factId (not a new capture).
+        const flushed = await patchPendingCaptureDraft({
+          draft: localDraft,
+          replaceDraft: true,
+        });
+        const draftToSend = flushed?.draft || localDraft;
+        const requestId = pending.request_id;
+        await confirmRecordFact(pending.factId, draftToSend, {
+          request_id: requestId,
+          via: pending.via,
+          capture_token: pending.capture_token,
+          ...(opts?.add_to_shelf === true ? { add_to_shelf: true } : {}),
+        });
+        router.push(revealHrefForTag(uiTag) as never);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Confirm failed');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [pending, localDraft, router, uiTag],
+  );
 
   const goManual = useCallback(() => {
     router.push(MANUAL_ENTRY_HREF);
+  }, [router]);
+
+  /** G-CANCEL — leave confirm without saving; no hung spinner / dead end. */
+  const cancelCapture = useCallback(async () => {
+    setBusy(false);
+    setError(null);
+    await clearPendingCaptureDraft();
+    await clearPendingCaptureUri();
+    setPending(null);
+    setLocalDraft({});
+    router.replace(CAPTURE_2A_HREF as never);
   }, [router]);
 
   return {
@@ -83,10 +100,12 @@ export function useCaptureConfirm(uiTag: CaptureFlowTag) {
     setField,
     submitLooksRight,
     goManual,
+    cancelCapture,
     loaded: pending != null,
     /** Same capture request_id — confirm is not a new capture. */
     request_id: pending?.request_id || null,
     factId: pending?.factId || null,
+    possible_duplicate: pending?.possible_duplicate || null,
   };
 }
 

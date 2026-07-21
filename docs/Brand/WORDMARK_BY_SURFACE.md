@@ -1,3 +1,5 @@
+> **SUPERSEDED** — see [`DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md`](../patient-app/design/DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md) for current brand.
+
 # Wordmark by surface
 
 > **Last reviewed:** 2026-07-14

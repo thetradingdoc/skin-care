@@ -93,3 +93,17 @@ export async function peekPendingCaptureUri(): Promise<PendingCapture | null> {
   }
   return pendingNative;
 }
+
+/** G-CANCEL — drop pending media without consuming into a new capture. */
+export async function clearPendingCaptureUri(): Promise<void> {
+  if (Platform.OS === 'web') {
+    writeWebPending(null);
+    return;
+  }
+  pendingNative = null;
+  try {
+    await SecureStore.deleteItemAsync(SESSION_KEY);
+  } catch (e) {
+    console.warn('[pending-capture-uri] SecureStore.clear failed', e);
+  }
+}

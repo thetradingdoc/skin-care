@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Touche — Redesign v4 (complete)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#E31919; --red-deep:#A30F0F; --black:#0B0B0C; --white:#FFFFFF;
+    --line:rgba(11,11,12,0.10); --line-strong:rgba(11,11,12,0.22); --muted:rgba(11,11,12,0.55);
+    --shadow:0 24px 64px rgba(0,0,0,0.22);
+    --display:'Poppins',sans-serif; --body:'Manrope',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:#E9E9E9;font-family:var(--body);color:var(--black);}
+  .page{padding:56px 24px 140px;max-width:1640px;margin:0 auto;}
+  .intro{max-width:860px;margin:0 auto 40px;text-align:center;}
+  .intro h1{font-family:var(--display);font-weight:800;font-size:36px;letter-spacing:-0.01em;margin:0 0 12px;}
+  .intro p{font-size:14.5px;line-height:1.65;color:var(--muted);margin:0 0 6px;}
+  .intro .flag{display:inline-block;background:#FFF3E0;color:#8A5A00;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;margin-top:10px;}
+
+  section.grp{max-width:1640px;margin:0 auto 8px;}
+  section.grp h2{font-family:var(--display);font-size:21px;font-weight:800;margin:54px 4px 4px;}
+  section.grp .grp-sub{font-size:12.5px;color:var(--muted);margin:0 4px 18px;}
+  .rail{display:flex;gap:26px;overflow-x:auto;padding:10px 4px 28px;scroll-snap-type:x mandatory;}
+  .rail::-webkit-scrollbar{height:8px;}.rail::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.2);border-radius:8px;}
+  .cell{flex:0 0 auto;scroll-snap-align:start;text-align:center;}
+  .cell .label{font-weight:800;font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--red-deep);margin-bottom:10px;}
+
+  .phone{width:314px;height:672px;border-radius:46px;background:var(--black);padding:12px;box-shadow:var(--shadow);position:relative;}
+  .screen{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;background:var(--white);display:flex;flex-direction:column;}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:100px;height:26px;background:var(--black);border-radius:16px;z-index:30;}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:16px 22px 2px;font-size:12.5px;font-weight:700;}
+  .status .dots{display:flex;gap:4px;}.status .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+  /* back-nav header — every non-root screen gets this */
+  .back-hdr{display:flex;align-items:center;gap:8px;padding:14px 18px 0;font-size:13px;font-weight:800;color:var(--black);}
+  .back-hdr svg{width:16px;height:16px;}
+  .back-hdr.on-red{color:#fff;}
+
+  .hero{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px 28px;color:#fff;}
+  .hero.g-red{background:radial-gradient(130% 95% at 20% 0%, #C21414 0%, #6E0C0C 50%, #120202 100%);}
+  .hero .top-pad{flex:1;}
+  .hero .eyebrow{font-size:11.5px;font-weight:800;letter-spacing:0.09em;text-transform:uppercase;opacity:0.62;margin-bottom:14px;}
+  .hero h2{font-family:var(--display);font-weight:800;font-size:29px;line-height:1.1;letter-spacing:-0.01em;margin:0 0 8px;}
+  .hero .sub{font-size:13.5px;line-height:1.5;opacity:0.8;margin:0 0 20px;max-width:26ch;}
+  .lockup{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:18px;}
+  .lockup svg{width:34px;height:auto;}
+  .lockup b{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:-0.01em;}
+
+  .cta{background:var(--red);color:#fff;border:none;padding:15px 18px;border-radius:100px;font-weight:800;font-size:14px;width:100%;text-align:center;}
+  .cta.dark{background:var(--black);color:#fff;}
+  .cta.white{background:#fff;color:var(--black);}
+  .cta.ghost{background:transparent;border:1.5px solid rgba(255,255,255,0.35);color:#fff;}
+  .cta.ghost.on-white{border-color:var(--line-strong);color:var(--black);}
+
+  .content{flex:1;overflow:hidden auto;padding:14px 18px 12px;}
+  .content h3{font-family:var(--display);font-weight:800;font-size:21px;margin:6px 0 2px;letter-spacing:-0.01em;}
+  .content .tagline{font-size:12px;color:var(--muted);margin:0 0 14px;}
+  .seg{display:flex;background:#F3F3F3;border-radius:100px;padding:3px;margin-bottom:14px;}
+  .seg b{flex:1;text-align:center;font-size:11.5px;font-weight:800;padding:8px 0;border-radius:100px;color:var(--muted);}
+  .seg b.on{background:var(--black);color:#fff;}
+
+  .streak-card{background:var(--black);color:#fff;border-radius:18px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden;}
+  .streak-card::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle, rgba(227,25,25,0.65), transparent 70%);}
+  .streak-card .lbl{font-size:10px;font-weight:800;letter-spacing:0.07em;text-transform:uppercase;opacity:0.6;}
+  .streak-card .num{font-family:var(--display);font-size:38px;font-weight:800;margin:2px 0;display:flex;align-items:baseline;gap:7px;}
+  .streak-card .num span{font-family:var(--body);font-size:13px;font-weight:800;color:var(--red);}
+  .streak-card .sub{font-size:11px;opacity:0.65;}
+
+  .plan-card{background:var(--black);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+  .plan-card .ic{width:36px;height:36px;border-radius:10px;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .plan-card b{font-family:var(--display);font-size:13.5px;font-weight:800;display:block;}
+  .plan-card span{font-size:10.5px;opacity:0.65;}
+
+  .soft-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:10px;}
+  .soft-card b{font-family:var(--display);font-size:14.5px;font-weight:800;}
+  .soft-card p{font-size:11.5px;color:var(--muted);margin:5px 0 0;line-height:1.5;}
+  .alert-card{border-left:3px solid var(--red);}
+  .alert-card .tag{font-size:9.5px;font-weight:800;letter-spacing:0.06em;color:var(--red-deep);text-transform:uppercase;}
+
+  .tag-row{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;}
+  .chip{flex:0 0 auto;font-size:11px;font-weight:800;padding:7px 11px;border-radius:100px;border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .chip.on{background:var(--black);color:#fff;border-color:var(--black);}
+  .dotc{width:6px;height:6px;border-radius:50%;}
+
+  .rec-row{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+  .rec-row img{width:44px;height:44px;border-radius:9px;background:#eee;}
+  .rec-row .meta b{display:block;font-size:13px;font-weight:700;}
+  .rec-row .meta span{font-size:10.5px;color:var(--muted);}
+
+  .timeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;}
+  .timeline-grid .ct{aspect-ratio:1;border-radius:8px;position:relative;overflow:hidden;}
+  .timeline-grid .ct .lbl{position:absolute;bottom:4px;left:5px;font-size:8px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+
+  .honesty{font-size:10px;color:var(--muted);line-height:1.5;padding:9px 10px;background:#F6F6F6;border-radius:9px;margin-bottom:12px;}
+  .field{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .field .k{color:var(--muted);}.field .v{font-weight:700;}
+  .ai-card{background:#F6F6F6;border-left:3px solid var(--red);border-radius:11px;padding:12px;margin:11px 0;}
+  .ai-card .k{font-size:9.5px;font-weight:800;letter-spacing:0.07em;color:var(--red-deep);margin-bottom:4px;}
+  .ai-card p{font-size:12px;line-height:1.55;margin:0;}
+  .cancel-link{text-align:center;font-size:12px;color:var(--muted);margin-top:11px;text-decoration:underline;text-underline-offset:3px;}
+
+  .shelf-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;margin-bottom:11px;}
+  .shelf-card .top{display:flex;gap:10px;}
+  .shelf-card img{width:48px;height:48px;border-radius:10px;background:#eee;}
+  .shelf-card b{font-family:var(--display);font-size:13.5px;font-weight:800;}
+  .shelf-card .brand{font-size:10px;color:var(--muted);}
+  .shelf-card .ingr{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);}
+  .shelf-card .ingr .k{font-size:9px;font-weight:800;letter-spacing:0.05em;color:var(--muted);margin-bottom:4px;}
+  .shelf-card .ingr .v{font-size:11px;line-height:1.5;}
+  .rx-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:0.04em;color:var(--red-deep);background:#FCEBEB;border-radius:6px;padding:3px 7px;margin-top:5px;}
+
+  .spend-pill{background:var(--black);color:#fff;border-radius:100px;padding:8px 14px;display:inline-flex;align-items:baseline;gap:5px;margin-bottom:6px;}
+  .spend-pill b{font-family:var(--display);font-size:15px;font-weight:800;}
+  .spend-pill span{font-size:9.5px;opacity:0.7;}
+
+  .empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:50px 18px 0;}
+  .empty-state .ring{width:56px;height:56px;border-radius:50%;border:2px solid var(--line-strong);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--red);}
+  .empty-state b{font-family:var(--display);font-size:16px;font-weight:800;margin-bottom:6px;}
+  .empty-state p{font-size:11.5px;color:var(--muted);max-width:25ch;line-height:1.5;margin:0 0 18px;}
+
+  /* pricing */
+  .price-card{border:1.5px solid var(--line);border-radius:16px;padding:15px;margin-bottom:10px;position:relative;}
+  .price-card.on{border-color:var(--red);background:#FFF8F8;}
+  .price-card .badge{position:absolute;top:-9px;right:14px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:100px;}
+  .price-card .row1{display:flex;justify-content:space-between;align-items:baseline;}
+  .price-card b{font-family:var(--display);font-size:14.5px;font-weight:800;}
+  .price-card .price{font-family:var(--display);font-size:15px;font-weight:800;}
+  .price-card .price span{font-size:10px;font-weight:600;color:var(--muted);}
+  .price-card ul{margin:8px 0 0;padding-left:16px;font-size:11px;color:var(--muted);line-height:1.6;}
+
+  .persona-tile{border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:9px;display:flex;align-items:center;gap:11px;}
+  .persona-tile.on{border-color:var(--red);background:#FFF8F8;}
+  .persona-tile .ic{width:34px;height:34px;border-radius:9px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--red);}
+  .persona-tile b{font-size:13px;font-weight:800;display:block;}
+  .persona-tile span{font-size:10.5px;color:var(--muted);}
+
+  .tabbar-wrap{position:relative;background:#fff;border-top:1px solid var(--line);padding:9px 6px 20px;}
+  .tabbar{display:flex;justify-content:space-around;align-items:flex-end;}
+  .tabbar .t{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9px;font-weight:800;color:var(--muted);width:20%;}
+  .tabbar .t.on{color:var(--black);}
+  .tabbar .t svg{width:20px;height:20px;}
+  .tabbar .t.on svg{color:var(--black);}
+  .tabbar .t.track{position:relative;}
+  .track-fab{position:absolute;top:-24px;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(227,25,25,0.45);border:4px solid #fff;}
+  .track-fab .rdot{width:16px;height:16px;border-radius:50%;background:#fff;}
+  .tabbar .t.track span{margin-top:29px;}
+
+  footer.notes{max-width:1040px;margin:70px auto 0;background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 34px;}
+  footer.notes h4{font-family:var(--display);font-size:18px;font-weight:800;margin:0 0 6px;}
+  footer.notes h5{font-family:var(--display);font-size:14px;font-weight:800;margin:20px 0 6px;}
+  footer.notes ul{margin:0;padding-left:18px;font-size:13px;line-height:1.7;color:var(--muted);}
+  footer.notes p{font-size:13px;color:var(--muted);line-height:1.6;}
+  footer.notes .warn{background:#FFF3E0;color:#8A5A00;padding:10px 12px;border-radius:10px;font-size:12.5px;margin:6px 0;}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+<defs>
+  <symbol id="tulip" viewBox="0 0 600 215"><path fill="currentColor" d="M 140.4 41.1 C 155 28, 185 18, 216 20 L 229 20 C 252 20, 270 35, 300 58 C 330 35, 348 20, 371 20 L 384 20 C 415 18, 445 28, 459.6 41.1 C 472 52, 468 50, 451.0 43.0 L 444.2 45.0 L 439.0 46.9 L 434.6 48.8 L 431.8 50.7 L 428.4 52.6 L 426.0 54.6 L 423.6 56.5 L 421.7 58.4 L 419.3 60.3 L 417.4 62.2 L 415.9 64.2 L 414.5 66.1 L 413.0 68.0 L 411.6 69.9 L 410.2 71.8 L 408.7 73.8 L 407.8 75.7 L 406.3 77.6 L 405.4 79.5 L 404.4 81.4 L 403.4 83.4 L 402.0 85.3 L 401.0 87.2 L 400.1 89.1 L 399.1 91.0 L 398.6 93.0 L 397.7 94.9 L 396.7 96.8 L 395.8 98.7 L 394.8 100.6 L 394.3 102.6 L 393.4 104.5 L 392.4 106.4 L 391.9 108.3 L 391.0 110.2 L 390.0 112.2 L 389.5 114.1 L 388.6 116.0 L 387.6 117.9 L 387.1 119.8 L 386.2 121.8 L 385.7 123.7 L 384.7 125.6 L 384.2 127.5 L 383.3 129.4 L 382.8 131.4 L 381.8 133.3 L 380.9 135.2 L 380.4 137.1 L 379.4 139.0 L 378.5 141.0 L 378.0 142.9 L 377.0 144.8 L 376.1 146.7 L 375.1 148.6 L 374.2 150.6 L 373.2 152.5 L 372.2 154.4 L 370.8 156.3 L 369.8 158.2 L 368.4 160.2 L 367.0 162.1 L 365.5 164.0 L 364.1 165.9 L 362.6 167.8 L 360.7 169.8 L 358.8 171.7 L 356.9 173.6 L 355.0 175.5 L 352.6 177.4 L 349.7 179.4 L 346.8 181.3 L 343.9 183.2 L 340.1 185.1 L 335.8 187.0 L 331.0 189.0 L 325.2 190.9 L 315.6 192.8 L 306.5 193.8 L 294.0 193.8 L 284.9 192.8 L 275.8 190.9 L 269.5 189.0 L 264.7 187.0 L 260.4 185.1 L 256.6 183.2 L 253.7 181.3 L 250.8 179.4 L 247.9 177.4 L 245.5 175.5 L 243.1 173.6 L 241.2 171.7 L 239.3 169.8 L 237.8 167.8 L 235.9 165.9 L 234.5 164.0 L 233.0 162.1 L 231.6 160.2 L 230.6 158.2 L 229.2 156.3 L 228.2 154.4 L 227.3 152.5 L 226.3 150.6 L 225.4 148.6 L 224.4 146.7 L 223.4 144.8 L 222.5 142.9 L 221.5 141.0 L 221.0 139.0 L 220.1 137.1 L 219.1 135.2 L 218.2 133.3 L 217.7 131.4 L 216.7 129.4 L 216.2 127.5 L 215.3 125.6 L 214.8 123.7 L 213.8 121.8 L 213.4 119.8 L 212.4 117.9 L 211.9 116.0 L 211.0 114.1 L 210.0 112.2 L 209.5 110.2 L 208.6 108.3 L 207.6 106.4 L 207.1 104.5 L 206.2 102.6 L 205.2 100.6 L 204.7 98.7 L 203.8 96.8 L 202.8 94.9 L 201.8 93.0 L 200.9 91.0 L 199.9 89.1 L 199.0 87.2 L 198.0 85.3 L 197.0 83.4 L 196.1 81.4 L 195.1 79.5 L 193.7 77.6 L 192.7 75.7 L 191.8 73.8 L 190.3 71.8 L 188.9 69.9 L 187.4 68.0 L 186.0 66.1 L 184.6 64.2 L 182.6 62.2 L 181.2 60.3 L 178.8 58.4 L 176.9 56.5 L 174.5 54.6 L 171.6 52.6 L 168.7 50.7 L 165.4 48.8 L 161.0 46.9 L 156.2 45.0 L 149.0 43.0 C 128 50, 128 46, 140.4 41.1 Z"/></symbol>
+  <symbol id="ic-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9.5h18M8 3v3.5M16 3v3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-shelf" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M10 3h4v3.5l3 4.5v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-8l3-4.5V3Z"/><path d="M8.5 14h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="ic-progress" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 17l5-6 4 3 6-8"/><path d="M14 6h4v4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="ic-profile" viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.8 20c1.2-3.6 4-5.4 7.2-5.4s6 1.8 7.2 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</defs>
+</svg>
+
+<div class="page">
+  <div class="intro">
+    <h1>Touche — redesign v4, complete pass</h1>
+    <p>Real tulip mark throughout · corrected flow order (tag before region) · back-nav on every non-root screen · familiar tab icons · billing/paywall screens added · PIH persona onboarding with claim-safe routine copy · white Track hub, red reserved for the capture button, alerts, and accents.</p>
+    <div class="flag">Font note: "Garet" isn't distributable via Google Fonts CDN — this mock substitutes Poppins ExtraBold as the closest available geometric-bold stand-in. If Garet is licensed for production, swap the font-family only; nothing else changes.</div>
+  </div>
+
+  <section class="grp">
+    <h2>1 · Onboarding — cold start through persona</h2>
+    <p class="grp-sub">Welcome → Consent → "Why are you here" (routine persona pick, claim-safe) → Plan preview → Sign in → OTP</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Welcome</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:05</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="hero" style="background:#fff;color:var(--black);">
+          <div class="top-pad"></div>
+          <div class="lockup"><svg class="mark" style="width:30px;color:var(--red)"><use href="#tulip"/></svg><b style="color:var(--black);">Be Bold.</b></div>
+          <h2 style="text-align:center;color:var(--black);">Track your skin &amp; care</h2>
+          <p class="sub" style="text-align:center;margin-left:auto;margin-right:auto;color:var(--muted);opacity:1;">Skin, bills, prescriptions, labs — one history, confirmed by you.</p>
+          <button class="cta">Get started →</button>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Consent</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:20px;">
+          <h3 style="font-size:22px;">Before we start</h3>
+          <p class="tagline">A quick honesty note, not fine print.</p>
+          <div class="soft-card"><b>We describe, we don't diagnose</b><p>AI notes what's visible in a photo. It never tells you what condition you have.</p></div>
+          <div class="soft-card"><b>You confirm everything</b><p>Every AI read has a "looks right" and an edit — nothing saves without you.</p></div>
+          <div class="soft-card"><b>Your photos stay yours</b><p>Encrypted, never sold, never used to train outside your account.</p></div>
+        </div>
+        <div style="padding:0 18px 22px;"><button class="cta dark">I understand, continue</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Why are you here</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:22px;">What are you tracking?</h3>
+          <p class="tagline">We'll tailor your log and reminders — change anytime in Profile.</p>
+          <div class="persona-tile on"><div class="ic">✦</div><div><b>Dark marks (post-acne / injury)</b><span>Face and body — hyperpigmentation tracking</span></div></div>
+          <div class="persona-tile"><div class="ic">✦</div><div><b>Active breakouts</b><span>Acne tracking</span></div></div>
+          <div class="persona-tile"><div class="ic">✦</div><div><b>Sensitive / reactive skin</b><span>Barrier repair, rosacea</span></div></div>
+          <div class="persona-tile"><div class="ic">✦</div><div><b>General wellness</b><span>Just tracking, no specific plan</span></div></div>
+        </div>
+        <div style="padding:0 18px 22px;"><button class="cta dark">Continue</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Plan preview (claim-safe)</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <div style="font-size:10px;font-weight:800;letter-spacing:0.07em;color:var(--red-deep);">DARK MARKS PLAN</div>
+          <h3 style="font-size:21px;">What this plan typically involves</h3>
+          <div class="soft-card"><b style="font-size:13px;">Morning</b><p>Gentle cleanse, vitamin C, daily SPF — logged as habits, not prescribed doses.</p></div>
+          <div class="soft-card"><b style="font-size:13px;">Evening</b><p>Azelaic acid and a retinoid on alternating nights, with a moisturizer to buffer irritation.</p></div>
+          <div class="soft-card alert-card"><div class="tag">Stop &amp; reassess if</div><p>Burning, spreading redness, or new dark patches appear — that's a signal to slow down, not push through.</p></div>
+          <div class="honesty">This is a reference habit-set, not a prescription or a promised timeline. Everyone's skin responds differently.</div>
+        </div>
+        <div style="padding:0 18px 22px;"><button class="cta dark">Use this plan</button><div class="cancel-link">Skip for now</div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Sign in</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:40px;">
+          <h3 style="font-size:24px;">Sign in</h3>
+          <p class="tagline">Enter your email for a secure 6-digit code — no password.</p>
+          <div style="font-size:11px;font-weight:800;color:var(--muted);margin:20px 0 7px;">EMAIL</div>
+          <div style="border:1.5px solid var(--black);border-radius:13px;padding:14px;font-size:13.5px;margin-bottom:16px;">you@email.com</div>
+          <button class="cta dark">Send code</button>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">OTP entry</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:50px;text-align:center;">
+          <h3 style="font-size:21px;">Enter the code</h3>
+          <p class="tagline">Sent to you@email.com</p>
+          <div style="display:flex;gap:8px;justify-content:center;margin:20px 0 24px;">
+            <div style="width:36px;height:46px;border:1.5px solid var(--black);border-radius:9px;"></div>
+            <div style="width:36px;height:46px;border:1.5px solid var(--black);border-radius:9px;"></div>
+            <div style="width:36px;height:46px;border:1.5px solid var(--red);border-radius:9px;"></div>
+            <div style="width:36px;height:46px;border:1.5px solid var(--line);border-radius:9px;"></div>
+            <div style="width:36px;height:46px;border:1.5px solid var(--line);border-radius:9px;"></div>
+            <div style="width:36px;height:46px;border:1.5px solid var(--line);border-radius:9px;"></div>
+          </div>
+          <div style="font-size:11.5px;color:var(--muted);">Resend code in 0:42</div>
+        </div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>2 · Pricing &amp; billing (new — was missing)</h2>
+    <p class="grp-sub">Tool-first framing: paying for tracking + guided habits, not a medical treatment or physical product</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Choose your plan</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:21px;">Choose your plan</h3>
+          <p class="tagline">Cancel anytime. Prices in USD.</p>
+          <div class="price-card"><div class="row1"><b>Free</b><div class="price">$0</div></div><ul><li>Unlimited manual logging</li><li>Calendar, Shelf, basic Progress</li></ul></div>
+          <div class="price-card on"><div class="badge">MOST POPULAR</div><div class="row1"><b>Plus</b><div class="price">$9.99<span>/mo</span></div></div><ul><li>Unlimited AI-assisted capture reads</li><li>Mark compare + reminders</li></ul></div>
+          <div class="price-card"><div class="row1"><b>Care Program</b><div class="price">$29<span>–49/mo</span></div></div><ul><li>Guided plan tracking tool for your persona</li><li>Habit checklist, weekly reminders, mark-compare timeline</li></ul></div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Continue with Plus</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Care Program checkout</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:20px;">Care Program</h3>
+          <p class="tagline">Dark marks tracking tool — $39/mo</p>
+          <div class="soft-card"><b style="font-size:13px;">What you're subscribing to</b><p>A guided tracking tool: habit checklist, weekly reminders, mark-compare timeline for your dark-marks plan. This is not medical treatment and does not replace a dermatologist.</p></div>
+          <div class="field"><span class="k">Plan</span><span class="v">Care Program — Dark marks</span></div>
+          <div class="field"><span class="k">Billing</span><span class="v">$39.00 / month</span></div>
+          <div class="field"><span class="k">Renews</span><span class="v">Aug 19, 2026</span></div>
+          <div class="honesty">Cancel anytime in Profile → Billing. No refund proration mid-cycle.</div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Confirm — $39.00/mo</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Subscribed confirmation</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="content" style="padding-top:180px;text-align:center;">
+          <div class="ring" style="margin:0 auto 16px;border-color:var(--red);color:var(--red);">✓</div>
+          <b style="font-family:var(--display);font-size:18px;font-weight:800;">You're on the Dark Marks plan</b>
+          <p class="tagline" style="max-width:26ch;margin:8px auto 22px;">Your habit checklist and reminders are ready in Progress.</p>
+        </div>
+        <div style="padding:0 18px 22px;"><button class="cta dark">Go to Progress</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">AI credits / Plus unlock</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:20px;">Unlock AI reads</h3>
+          <p class="tagline">You've used your 3 free reads this month.</p>
+          <div class="price-card on"><div class="row1"><b>Plus — unlimited</b><div class="price">$9.99<span>/mo</span></div></div></div>
+          <div class="price-card"><div class="row1"><b>20-credit pack</b><div class="price">$3.99</div></div></div>
+          <div class="honesty">Manual logging stays free and unlimited either way — this only affects AI-assisted reads.</div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Continue with Plus</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Billing management</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:20px;">Billing</h3>
+          <div class="plan-card"><div class="ic" style="background:#fff;color:var(--red);">✦</div><div><b>Care Program — Dark marks</b><span>$39.00/mo · renews Aug 19</span></div></div>
+          <div class="rec-row"><div style="width:36px;height:36px;border-radius:9px;background:#F6F6F6;"></div><div class="meta"><b>Payment method</b><span>Visa •••• 4242</span></div></div>
+          <div class="rec-row" style="border-bottom:none;"><div style="width:36px;height:36px;border-radius:9px;background:#F6F6F6;"></div><div class="meta"><b>Billing history</b><span>3 invoices</span></div></div>
+          <div class="cancel-link" style="color:var(--red);margin-top:18px;">Cancel plan</div>
+        </div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>3 · Capture machine (corrected order)</h2>
+    <p class="grp-sub">Track hub → Tag picker → Region picker (skin/mark only) → Loading → Confirm → Cancel</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Track (hub) — white now</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:80px;text-align:center;">
+          <b style="font-family:var(--display);font-size:19px;font-weight:800;">Ready when you are</b>
+          <p class="tagline" style="max-width:24ch;margin:8px auto 40px;">Tap the button below to start a capture.</p>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track on"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Photo / upload — was missing</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Cancel</div>
+        <div class="content" style="padding-top:60px;text-align:center;">
+          <div style="width:100%;aspect-ratio:4/3;border-radius:16px;border:1.5px dashed var(--line-strong);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12.5px;margin-bottom:20px;">Camera preview</div>
+          <b style="font-family:var(--display);font-size:16px;font-weight:800;">Take a photo, or choose one</b>
+          <p class="tagline" style="max-width:24ch;margin:8px auto 0;">This is the actual first step — it was missing from the last pass.</p>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta">◎ Capture</button><button class="cta ghost on-white" style="margin-top:9px;">Choose from library</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Tag picker — real 6-tag model</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Cancel</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:20px;">What is this?</h3>
+          <p class="tagline">All six tags, not collapsed — matches the API.</p>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:var(--red);"></div><div class="meta"><b>Skin</b><span>Default for photos</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#333;"></div><div class="meta"><b>Mark</b><span>Tracking a spot over time</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#333;"></div><div class="meta"><b>Prescription</b><span>Optical or medication</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#333;"></div><div class="meta"><b>Lab</b><span>Reports, results, imaging</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#333;"></div><div class="meta"><b>Bill</b><span>Invoices, receipts</span></div></div>
+          <div class="rec-row" style="border-bottom:none;"><div style="width:34px;height:34px;border-radius:8px;background:#333;"></div><div class="meta"><b>Other</b><span>Anything else medical</span></div></div>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Region picker — ⚠ pending route confirmation</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:21px;">Where's this mark?</h3>
+          <p class="tagline">Visual intent only — as of Cursor's last audit, this only exists on a separate legacy BodyMap screen, not wired into this Tag→Confirm path. Phase A baseline confirms the real route before this ships as drawn.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+            <div class="soft-card" style="text-align:center;padding:18px 8px;"><b style="font-size:12.5px;">Face</b></div>
+            <div class="soft-card" style="text-align:center;padding:18px 8px;border-color:var(--red);"><b style="font-size:12.5px;color:var(--red-deep);">Chest</b></div>
+            <div class="soft-card" style="text-align:center;padding:18px 8px;"><b style="font-size:12.5px;">Back</b></div>
+            <div class="soft-card" style="text-align:center;padding:18px 8px;"><b style="font-size:12.5px;">Shoulders</b></div>
+            <div class="soft-card" style="text-align:center;padding:18px 8px;"><b style="font-size:12.5px;">Hands</b></div>
+            <div class="soft-card" style="text-align:center;padding:18px 8px;"><b style="font-size:12.5px;">Other</b></div>
+          </div>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Loading</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Cancel</div>
+        <div class="content" style="padding-top:200px;text-align:center;">
+          <div style="width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;margin:0 auto 18px;"></div>
+          <b style="font-family:var(--display);font-size:15.5px;font-weight:800;">Reading your photo</b>
+          <p class="tagline" style="margin-top:6px;">Only the step actually happening.</p>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Confirm — skin</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Cancel</div>
+        <div class="content" style="padding-top:12px;">
+          <div style="font-size:9.5px;font-weight:800;letter-spacing:0.07em;color:var(--red-deep);margin-bottom:4px;">SKIN · CHEST</div>
+          <h3 style="font-size:22px;">Here's what<br>we found</h3>
+          <div style="width:100%;aspect-ratio:16/11;border-radius:13px;background:linear-gradient(145deg,#caa48a,#8a5a3f);margin:12px 0 2px;"></div>
+          <div class="ai-card"><div class="k">AI SUGGESTS</div><p>Darker patch visible with defined edges. Description only — not a diagnosis.</p></div>
+          <div class="field"><span class="k">Date</span><span class="v">Jul 19, 2026</span></div>
+          <div class="field"><span class="k">Track over time?</span><span class="v" style="color:var(--red-deep);">Yes →</span></div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Looks right</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Cancel / discard</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="content" style="padding-top:200px;text-align:center;">
+          <div class="ring" style="margin:0 auto 16px;">✕</div>
+          <b style="font-family:var(--display);font-size:17px;font-weight:800;">Discard this capture?</b>
+          <p class="tagline" style="max-width:24ch;margin:8px auto 20px;">Nothing has been saved yet.</p>
+        </div>
+        <div style="padding:0 18px 22px;"><button class="cta" style="margin-bottom:9px;">Discard</button><button class="cta ghost on-white">Keep editing</button></div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>4 · Reveal, thesis &amp; mark loop</h2>
+    <p class="grp-sub">Rewritten for claim-safety — habits and observation, no fade/efficacy timelines</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Reveal</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <div style="font-size:9.5px;font-weight:800;letter-spacing:0.07em;color:var(--red-deep);">SAVED</div>
+          <h3 style="font-size:22px;">Logged.</h3>
+          <p class="tagline">Chest mark · Jul 19, 2026</p>
+          <div class="ai-card" style="margin-top:16px;"><div class="k">WHAT WE SEE</div><p>A defined dark patch, moderate contrast against surrounding skin. We'll line this up with your next capture of the same spot.</p></div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Continue</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Thesis (rewritten copy)</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:20px;">What this typically involves</h3>
+          <p class="tagline">Habits, not promises.</p>
+          <div class="soft-card alert-card"><div class="tag">Sun exposure</div><b style="font-size:13px;">SPF matters here</b><p>Unprotected sun can darken this area further while it's healing.</p></div>
+          <div class="soft-card alert-card"><div class="tag">Consistency</div><b style="font-size:13px;">Log weekly, same light</b><p>Small changes are easier to see when captures are consistent.</p></div>
+          <div class="honesty">No timeline is promised — everyone's skin responds differently, and this isn't a treatment plan.</div>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Mark picker</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:21px;">Which mark?</h3>
+          <p class="tagline">Pick one to compare over time.</p>
+          <div class="rec-row"><img style="background:linear-gradient(145deg,#caa48a,#8a5a3f)"><div class="meta"><b>Chest — since Jul 19</b><span>1 photo logged</span></div></div>
+          <div class="rec-row"><img style="background:linear-gradient(145deg,#d9c7a3,#b49a6d)"><div class="meta"><b>Cheek — since Jun 2</b><span>6 photos logged</span></div></div>
+          <div class="rec-row" style="border-bottom:none;"><div style="width:44px;height:44px;border-radius:9px;border:1.5px dashed var(--line-strong);display:flex;align-items:center;justify-content:center;color:var(--red);font-size:18px;">+</div><div class="meta"><b>Track a new mark</b></div></div>
+        </div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Mark compare</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:19px;">Cheek — 6 weeks</h3>
+          <p class="tagline">Same spot, side by side. No score, no %.</p>
+          <div style="display:flex;gap:9px;margin-top:5px;">
+            <div style="flex:1;"><div style="aspect-ratio:3/4;border-radius:11px;background:linear-gradient(145deg,#e4c9c9,#b98686);"></div><div style="font-size:10.5px;font-weight:800;margin-top:5px;">Jun 2</div></div>
+            <div style="flex:1;"><div style="aspect-ratio:3/4;border-radius:11px;background:linear-gradient(145deg,#d9c7a3,#b49a6d);"></div><div style="font-size:10.5px;font-weight:800;margin-top:5px;">Jul 19</div></div>
+          </div>
+          <div class="honesty" style="margin-top:12px;">Placed for visual comparison only. No improvement percentage is calculated or implied.</div>
+        </div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>5 · Calendar tab</h2>
+    <p class="grp-sub">List · Month · Empty</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Calendar — list</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:15</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <div class="seg"><b class="on">List</b><b>Month</b></div>
+          <h3>Calendar</h3>
+          <p class="tagline">Every record, one history.</p>
+          <div class="tag-row">
+            <div class="chip on"><span class="dotc" style="background:#fff"></span>All</div>
+            <div class="chip"><span class="dotc" style="background:var(--red)"></span>Skin</div>
+            <div class="chip"><span class="dotc" style="background:#B4772E"></span>Rx</div>
+            <div class="chip"><span class="dotc" style="background:#2E5BB4"></span>Lab</div>
+          </div>
+          <div class="rec-row"><img style="background:linear-gradient(145deg,#e4c9c9,#b98686)"><div class="meta"><b>Skin — chest</b><span>Jul 19, 2026</span></div></div>
+          <div class="rec-row"><img style="background:linear-gradient(145deg,#d9c7a3,#b49a6d)"><div class="meta"><b>Rx — Allerton Eye Care</b><span>Jul 7, 2026</span></div></div>
+          <div class="rec-row" style="border-bottom:none;"><img style="background:linear-gradient(145deg,#9db4d9,#5e7fb0)"><div class="meta"><b>Lab — Sonography</b><span>Jul 18, 2026</span></div></div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t on"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Calendar — month</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:15</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <div class="seg"><b>List</b><b class="on">Month</b></div>
+          <h3>July 2026</h3>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;font-size:10.5px;text-align:center;">
+            <div style="color:var(--muted);font-weight:800;">S</div><div style="color:var(--muted);font-weight:800;">M</div><div style="color:var(--muted);font-weight:800;">T</div><div style="color:var(--muted);font-weight:800;">W</div><div style="color:var(--muted);font-weight:800;">T</div><div style="color:var(--muted);font-weight:800;">F</div><div style="color:var(--muted);font-weight:800;">S</div>
+            <div></div><div></div><div style="padding:7px 0;">1</div><div style="padding:7px 0;">2</div><div style="padding:7px 0;">3</div><div style="padding:7px 0;">4</div><div style="padding:7px 0;">5</div>
+            <div style="padding:7px 0;">6</div><div style="padding:7px 0;">7</div><div style="padding:7px 0;">8</div><div style="padding:7px 0;">9</div><div style="padding:7px 0;">10</div><div style="padding:7px 0;">11</div><div style="padding:7px 0;">12</div>
+            <div style="padding:7px 0;">13</div><div style="padding:7px 0;">14</div><div style="padding:7px 0;">15</div><div style="padding:7px 0;">16</div><div style="padding:7px 0;">17</div><div style="padding:7px 0;background:var(--red);color:#fff;border-radius:50%;">18</div><div style="padding:7px 0;background:var(--black);color:#fff;border-radius:50%;">19</div>
+          </div>
+          <div class="honesty" style="margin-top:18px;">2 days logged this month — no streak invented on missed days.</div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t on"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Calendar — empty</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:15</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content"><div class="empty-state">
+          <div class="ring"><svg width="22" height="22"><use href="#ic-calendar"/></svg></div>
+          <b>Nothing logged yet</b>
+          <p>Your first capture will show up here — face or body, it all counts.</p>
+          <button class="cta" style="width:auto;padding:13px 22px;">Log your first mark</button>
+        </div></div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t on"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>6 · Shelf tab</h2>
+    <p class="grp-sub">List · Empty · Rx (refill-only, never a Buy button)</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Shelf — list</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:16</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <h3>Shelf</h3>
+          <p class="tagline">What you're using — and what's in it.</p>
+          <div class="spend-pill"><b>$42.50</b><span>logged — not a savings estimate</span></div>
+          <div class="shelf-card"><div class="top"><img style="background:linear-gradient(145deg,#f0ddc4,#d9b98c)"><div><b>Brightening Serum</b><div class="brand">CeraVe · added Jul 12</div></div></div>
+            <div class="ingr"><div class="k">INGREDIENTS (FROM CATALOG)</div><div class="v">Water, Niacinamide, Glycerin, Ascorbic Acid</div></div></div>
+          <div class="shelf-card"><div class="top"><img style="background:linear-gradient(145deg,#e4c9c9,#b98686)"><div><b>Daily Retinol</b><div class="brand">Not in our catalog yet</div></div></div></div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t on"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Shelf — empty</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="content"><div class="empty-state">
+          <div class="ring"><svg width="22" height="22"><use href="#ic-shelf"/></svg></div>
+          <b>Your shelf is empty</b>
+          <p>Scan a barcode or add by name — we'll show you what's actually in it.</p>
+          <button class="cta" style="width:auto;padding:13px 22px;">Add a product</button>
+        </div></div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t on"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Shelf — Rx item</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:14px;">
+          <h3 style="font-size:20px;">Tretinoin 0.025%</h3>
+          <p class="tagline">ALLERTON PHARMACY · added Jul 7</p>
+          <div class="rx-badge">PRESCRIPTION — REFILL ONLY, NOT FOR SALE HERE</div>
+          <div class="soft-card" style="margin-top:14px;"><b style="font-size:13px;">Need a refill?</b><p>We'll help you request one from Allerton Pharmacy — no marketplace, no checkout.</p></div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Request refill</button></div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>7 · Progress tab</h2>
+    <p class="grp-sub">Populated (plan context) · Empty · Alerts</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Progress — populated</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:17</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <h3>Progress</h3>
+          <p class="tagline">Your records. One timeline.</p>
+          <div class="plan-card"><div class="ic">✦</div><div><b>Dark Marks plan active</b><span>Care Program · week 3 of habits</span></div></div>
+          <div class="streak-card"><div class="lbl">Current streak</div><div class="num">6 <span>days</span></div><div class="sub">6 days with records logged</div></div>
+          <div class="honesty">Photos and counts from your own records — no invented improvement %.</div>
+          <div style="font-size:10.5px;font-weight:800;letter-spacing:0.05em;color:var(--muted);margin-bottom:6px;">LAST 8 DAYS</div>
+          <div class="timeline-grid">
+            <div class="ct" style="background:linear-gradient(145deg,#e4c9c9,#b98686)"><span class="lbl">Today</span></div>
+            <div class="ct" style="background:linear-gradient(145deg,#d9c7a3,#b49a6d)"><span class="lbl">Yest</span></div>
+            <div class="ct" style="background:linear-gradient(145deg,#9db4d9,#5e7fb0)"><span class="lbl">2d</span></div>
+            <div class="ct" style="background:linear-gradient(145deg,#caa48a,#8a5a3f)"><span class="lbl">3d</span></div>
+          </div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t on"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Progress — empty</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="content"><div class="empty-state">
+          <div class="ring"><svg width="22" height="22"><use href="#ic-progress"/></svg></div>
+          <b>No progress to show yet</b>
+          <p>Track a mark twice and we'll line the photos up for you here.</p>
+          <button class="cta" style="width:auto;padding:13px 22px;">Track a mark</button>
+        </div></div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t on"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Alerts</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:18</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <div class="seg"><b class="on">Alerts</b><b>History</b></div>
+          <h3 style="font-size:20px;">Alerts</h3>
+          <p class="tagline">Reminders from your own records — nothing generated.</p>
+          <div class="soft-card alert-card"><div class="tag">Prescription</div><b style="font-size:13px;">Tretinoin expires in 12 days</b><p>Based on the expiry date on your Rx — request a refill from Shelf.</p></div>
+          <div class="soft-card alert-card"><div class="tag">Tracking</div><b style="font-size:13px;">Cheek mark — 3 weeks since last photo</b><p>Log it again to keep the comparison timeline current.</p></div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t on"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <section class="grp">
+    <h2>8 · Profile tab</h2>
+    <p class="grp-sub">Hub (now with Billing row) · Share with doctor · Allergens &amp; notifications</p>
+    <div class="rail">
+
+      <div class="cell"><div class="label">Profile — hub</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="status"><span>21:19</span><span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span></div>
+        <div class="content">
+          <h3>Profile</h3>
+          <div style="display:flex;align-items:center;gap:11px;margin:12px 0 16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--black);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:18px;font-weight:800;">R</div>
+            <div><b style="font-family:var(--display);font-size:14.5px;font-weight:800;">Richard</b><div style="font-size:10.5px;color:var(--muted);">richard@callsomo.com</div></div>
+          </div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;color:var(--red);">✦</div><div class="meta"><b>Dark Marks plan</b><span>Change or view habits</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;color:var(--red);">$</div><div class="meta"><b>Billing</b><span>Care Program · $39/mo</span></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;color:var(--red);">⚕</div><div class="meta"><b>Share with doctor</b></div></div>
+          <div class="rec-row"><div style="width:34px;height:34px;border-radius:8px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;color:var(--red);">⚠</div><div class="meta"><b>Allergens</b></div></div>
+          <div class="rec-row" style="border-bottom:none;"><div style="width:34px;height:34px;border-radius:8px;background:#F6F6F6;display:flex;align-items:center;justify-content:center;color:var(--red);">🔔</div><div class="meta"><b>Notifications</b></div></div>
+          <div class="cancel-link" style="color:var(--red);margin-top:18px;">Sign out</div>
+        </div>
+        <div class="tabbar-wrap"><div class="tabbar">
+          <div class="t"><svg><use href="#ic-calendar"/></svg><span>Calendar</span></div>
+          <div class="t"><svg><use href="#ic-shelf"/></svg><span>Shelf</span></div>
+          <div class="t track"><div class="track-fab"><div class="rdot"></div></div><span>Track</span></div>
+          <div class="t"><svg><use href="#ic-progress"/></svg><span>Progress</span></div>
+          <div class="t on"><svg><use href="#ic-profile"/></svg><span>Profile</span></div>
+        </div></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Share with doctor</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:19px;">Share with doctor</h3>
+          <p class="tagline">A read-only export of your records — you choose the window.</p>
+          <div class="field"><span class="k">Range</span><span class="v">Last 90 days</span></div>
+          <div class="field"><span class="k">Include</span><span class="v">Skin, Rx, Lab</span></div>
+          <div class="field"><span class="k">Expires</span><span class="v">7 days after sending</span></div>
+        </div>
+        <div style="padding:0 18px 20px;"><button class="cta dark">Generate link</button></div>
+      </div></div></div>
+
+      <div class="cell"><div class="label">Allergens &amp; notifications</div><div class="phone"><div class="notch"></div><div class="screen">
+        <div class="back-hdr"><svg><use href="#ic-back"/></svg>Back</div>
+        <div class="content" style="padding-top:16px;">
+          <h3 style="font-size:19px;">Allergens</h3>
+          <p class="tagline">Flagged only when it's in something you've logged — no interaction scoring.</p>
+          <div class="rec-row"><div style="width:32px;height:32px;border-radius:7px;background:#F6F6F6;"></div><div class="meta"><b>Fragrance</b></div></div>
+          <div class="rec-row" style="border-bottom:none;"><div style="width:32px;height:32px;border-radius:7px;background:#F6F6F6;"></div><div class="meta"><b>Sulfates</b></div></div>
+          <h3 style="font-size:17px;margin-top:22px;">Notifications</h3>
+          <div class="field"><span class="k">Weekly mark reminder</span><span class="v" style="color:var(--red-deep);">On</span></div>
+          <div class="field"><span class="k">Rx expiry alerts</span><span class="v" style="color:var(--red-deep);">On</span></div>
+        </div>
+      </div></div></div>
+
+    </div>
+  </section>
+
+  <footer class="notes">
+    <h4>v4.1 — what this "final" actually covers, and what it doesn't</h4>
+    <div class="warn">This is the final visual + journey SSOT for Wave 0–2 chrome (35 frames now, after adding the missing Photo/Upload step and expanding Tag to the real 6-tag model). It is <b>not</b> verified against live app routes — that verification is Phase A's Playwright baseline, not something a static mock can prove. The Region picker frame is explicitly marked pending that confirmation, not silently treated as resolved.</div>
+    <h5>Fixed in this pass, per Cursor's gap review</h5>
+    <ul>
+      <li>Added the Photo/Upload capture-entry frame that was missing — Track hub was jumping straight to Tag picker, skipping the actual first step</li>
+      <li>Tag picker expanded from 4 collapsed groups to the real 6 tags (skin, mark, prescription, lab, bill, other) — matches the API instead of a simplified visual grouping</li>
+      <li>Region picker now explicitly flagged as visual-intent-only pending route confirmation, not presented as already wired</li>
+    </ul>
+    <h5>Decided, not left open</h5>
+    <ul>
+      <li>OPQRST + routine nudge: keep, restyle into v4 language — dropping them from the spine was an oversight, not a product decision</li>
+      <li>Alerts → shop/verdict paths: stay claim-safe-gated, same rule as everywhere else</li>
+    </ul>
+    <h5>What changed vs v3, and open items</h5>
+
+    <h5>Every point from your last review, addressed</h5>
+    <ul>
+      <li>Real tulip mark (exact SVG path), colored to match context — white on the red hero, red on white screens</li>
+      <li>"Be Bold." centered with tulip inline before it, matching your reference lockup</li>
+      <li>Welcome copy replaced exactly as specified</li>
+      <li>Get Started button now solid #E31919</li>
+      <li>Tab icons rebuilt as recognizable line-icon metaphors — calendar grid, bottle (Shelf), trending line (Progress), person (Profile) — no more ambiguous glyphs</li>
+      <li>Track FAB is one solid red circle, white ring, white center dot, matching your screenshots exactly</li>
+      <li>Track hub is white now — red lives only in the FAB and accents</li>
+      <li>Flow order corrected: Tag picker before Region picker; region only appears for skin/mark</li>
+      <li>Back-nav header added to every non-root screen in this file</li>
+      <li>Routine/PIH: v1 scope confirmed as B — "Why are you here" persona picker in onboarding, plan preview screen with rewritten claim-safe copy, plan-context card on Progress. Scheduled milestone-facts (Phase 2/model A) intentionally not built here.</li>
+      <li>Claim-unsafe phrasing rewritten throughout — "what this plan typically involves," "habits, not promises," explicit no-timeline-promised disclaimers replacing the JSON's original "expect visible improvement by week N" language</li>
+    </ul>
+
+    <h5>New: billing/pricing section</h5>
+    <p>Added because it was flagged as completely missing. Framed per your "tool-first" instruction: Care Program checkout copy explicitly states "this is not medical treatment and does not replace a dermatologist" — matches the claim-safe requirement while still selling the tracking tool clearly.</p>
+    <div class="warn">Backend reality check, not a design problem: prod Stripe Price IDs (Care Program, Plus, credit pack) are confirmed unset on the current serving revision. These screens can be built in Cursor today, but checkout will fail until those are configured — that's an ops task, not blocked by this file.</div>
+
+    <h5>Still open, flagged not silently dropped</h5>
+    <ul>
+      <li>Font: Poppins stands in for "Garet" pending licensing/asset confirmation</li>
+      <li>iOS review risk: Care Program still routes through Stripe web checkout, same class of risk already flagged for Unlock-AI — worth a decision before submission, not a redesign question</li>
+      <li>Template-shared, not redrawn: camera-denied/vision-fail/manual-entry, confirm for bill/rx/lab/other tags, Get-the-app interstitial — same chrome as screens shown, fields/copy swap per tag</li>
+    </ul>
+  </footer>
+</div>
+
+</body>
+</html>

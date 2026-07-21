@@ -97,3 +97,36 @@ export function shiftMonth(monthKey: string, delta: number): string {
   const dt = new Date(y, (m || 1) - 1 + delta, 1);
   return currentMonthKey(dt);
 }
+
+/** Start of an inclusive rolling window ending on todayIso (UTC noon arithmetic). */
+export function rollingStartIso(days: number, todayIso: string): string {
+  const dt = new Date(`${todayIso}T12:00:00.000Z`);
+  dt.setUTCDate(dt.getUTCDate() - (days - 1));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** True if the day has at least one fact whose tag normalizes to `tag`. */
+export function dayHasNormalizedTag(day: FactsCalendarDay | undefined, tag: FactsCalendarTag): boolean {
+  if (!day) return false;
+  return day.facts.some((f) => normalizeCalendarTag(f.tag) === tag);
+}
+
+/** Keep only facts matching `tag`; drop days with none left. */
+export function filterDaysByTag(
+  days: FactsCalendarDay[],
+  tag: FactsCalendarTag,
+): FactsCalendarDay[] {
+  const out: FactsCalendarDay[] = [];
+  for (const d of days || []) {
+    const facts = (d.facts || []).filter((f) => normalizeCalendarTag(f.tag) === tag);
+    if (!facts.length) continue;
+    const tags = [...new Set(facts.map((f) => normalizeCalendarTag(f.tag)))];
+    out.push({
+      date: d.date,
+      facts,
+      tags,
+      multi_type: tags.length > 1,
+    });
+  }
+  return out;
+}

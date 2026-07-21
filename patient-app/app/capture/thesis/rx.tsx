@@ -8,6 +8,12 @@ import { SecondTierChrome, TierPrimary } from '@/components/second-tier/SecondTi
 import { AppTokens } from '@/constants/appTokens';
 import { PROGRESS_HREF } from '@/constants/routes';
 
+/**
+ * These strings are hardcoded intentionally for claim-safety. If this screen is
+ * ever wired to a dynamic data source (concern-routines.json, the routines API,
+ * or similar), it MUST go through the same claim-safe projection layer used by
+ * Plan Preview (/preview/claim-safe) — do not read raw expect/timeline strings here.
+ */
 export const THESIS_RX_EYEBROW = 'saved';
 export const THESIS_RX_TITLE = 'Never miss a refill again';
 export const THESIS_RX_BODY = "we'll remind you before this one expires. that's the whole job.";

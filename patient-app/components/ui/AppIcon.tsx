@@ -3,6 +3,7 @@ import {
   IconCalendar,
   IconCamera,
   IconChartBar,
+  IconChevronLeft,
   IconChevronRight,
   IconDroplet,
   IconEye,
@@ -25,7 +26,8 @@ export type AppIconName =
   | 'eye'
   | 'flame'
   | 'calendar'
-  | 'chevron-right';
+  | 'chevron-right'
+  | 'chevron-left';
 
 const ICONS = {
   home: IconHome,
@@ -39,6 +41,7 @@ const ICONS = {
   flame: IconFlame,
   calendar: IconCalendar,
   'chevron-right': IconChevronRight,
+  'chevron-left': IconChevronLeft,
 } as const;
 
 type Props = {

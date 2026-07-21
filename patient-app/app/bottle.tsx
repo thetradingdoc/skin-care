@@ -18,10 +18,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProductBarcodeScanner } from '@/components/conflict';
 import { useToast } from '@/components/billing-feedback';
+import { ClaimSafeRedirect } from '@/components/claim-safe/ClaimSafeRedirect';
 import { ToucheMarkCompact } from '@/components/ToucheMarkCompact';
 import { AppTokens } from '@/constants/appTokens';
 import { PROGRESS_HREF, verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { isConflictVerdictUiEnabled } from '@/lib/claim-safe-ui';
 import {
   addProductManual,
   fetchEvaluatePair,
@@ -39,6 +41,14 @@ function overallToBand(overall: string): Band {
 }
 
 export default function BottleScreen() {
+  return (
+    <ClaimSafeRedirect>
+      <BottleScreenInner />
+    </ClaimSafeRedirect>
+  );
+}
+
+function BottleScreenInner() {
   const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const { showToast } = useToast();

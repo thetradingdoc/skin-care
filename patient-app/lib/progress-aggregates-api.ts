@@ -10,10 +10,12 @@ export type ProgressAggregatesPayload = {
   success?: boolean;
   as_of?: string;
   source?: string;
+  window?: { start?: string; end?: string };
   honesty?: {
     counts_only?: boolean;
     no_inferred_trends?: boolean;
     fabricated_stats_retired?: boolean;
+    no_causation?: boolean;
   };
   skin?: {
     fact_count: number;
@@ -39,19 +41,66 @@ export type ProgressAggregatesPayload = {
     fact_count: number;
     compare_group_count: number;
   };
+  shelf_in_window?: {
+    product_count: number;
+    items?: Array<{
+      product_id?: string;
+      product_name?: string;
+      activity_date?: string;
+      opened_date?: string | null;
+    }>;
+  };
+  media_in_window?: {
+    fact_count: number;
+    by_tag?: Record<string, number>;
+    items?: Array<{ fact_id?: string; tag?: string; date?: string }>;
+  };
 };
 
-export async function fetchProgressAggregates(): Promise<ProgressAggregatesPayload> {
-  const data = await patientGet(PROGRESS_AGGREGATES_API);
+export async function fetchProgressAggregates(opts?: {
+  window_start?: string;
+  window_end?: string;
+}): Promise<ProgressAggregatesPayload> {
+  const q = new URLSearchParams();
+  if (opts?.window_start) q.set('window_start', opts.window_start);
+  if (opts?.window_end) q.set('window_end', opts.window_end);
+  const suffix = q.toString() ? `?${q.toString()}` : '';
+  const data = await patientGet(`${PROGRESS_AGGREGATES_API}${suffix}`);
   return {
     success: data?.success !== false,
     as_of: data?.as_of,
     source: data?.source || 'patient_record_facts',
+    window: data?.window,
     honesty: data?.honesty,
     skin: data?.skin,
     bill: data?.bill,
     rx: data?.rx,
     mark: data?.mark,
+    shelf_in_window: data?.shelf_in_window,
+    media_in_window: data?.media_in_window,
+  };
+}
+
+export type ShelfSpendSummary = {
+  success?: boolean;
+  currency?: string;
+  total_price_usd?: number;
+  priced_product_count?: number;
+  unpriced_product_count?: number;
+  product_count?: number;
+  honesty?: { arithmetic_only?: boolean; no_inferred_value?: boolean };
+};
+
+export async function fetchShelfSpendSummary(): Promise<ShelfSpendSummary> {
+  const data = await patientGet('/api/patient/shelf/spend-summary');
+  return {
+    success: data?.success !== false,
+    currency: data?.currency || 'USD',
+    total_price_usd: data?.total_price_usd,
+    priced_product_count: data?.priced_product_count,
+    unpriced_product_count: data?.unpriced_product_count,
+    product_count: data?.product_count,
+    honesty: data?.honesty,
   };
 }
 

@@ -1,3 +1,5 @@
+> **SUPERSEDED** — see [`DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md`](../patient-app/design/DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md) for current brand.
+
 # Logo, icon, and favicon — single source of truth
 
 > **Last reviewed:** 2026-07-14

@@ -64,11 +64,11 @@ function useAppDeepLinks() {
       }
 
       if (path === 'subscription/success' || path.includes('subscription/success')) {
-        router.replace({ pathname: '/(tabs)/account', params: { subscription: 'success' } });
+        router.replace('/billing/subscribed' as never);
         return;
       }
       if (path === 'subscription/cancel' || path.includes('subscription/cancel')) {
-        router.replace({ pathname: '/(tabs)/account', params: { subscription: 'cancel' } });
+        router.replace('/billing/choose-plan' as never);
         return;
       }
 
@@ -150,6 +150,7 @@ export default function RootLayout() {
               <Stack.Screen name="profile" options={{ headerShown: false }} />
               <Stack.Screen name="shelf" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="billing" options={{ headerShown: false }} />
               <Stack.Screen
                 name="sign-in"
                 options={{ headerShown: false, contentStyle: { backgroundColor: '#FFFFFF' } }}

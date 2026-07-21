@@ -19,6 +19,36 @@ export async function setDailyReminderEnabled(on: boolean): Promise<void> {
   await AsyncStorage.setItem(ENABLED_KEY, on ? '1' : '0');
 }
 
+/** Local-only prefs — no patient alerts API for these toggles (Step 34 honesty). */
+const WEEKLY_MARK_KEY = 'touche_weekly_mark_reminder_local';
+const RX_EXPIRY_KEY = 'touche_rx_expiry_alerts_local';
+
+export const NOTIFICATION_PREFS_ARE_LOCAL_ONLY = true as const;
+
+export async function getWeeklyMarkReminderEnabled(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(WEEKLY_MARK_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setWeeklyMarkReminderEnabled(on: boolean): Promise<void> {
+  await AsyncStorage.setItem(WEEKLY_MARK_KEY, on ? '1' : '0');
+}
+
+export async function getRxExpiryAlertsEnabled(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(RX_EXPIRY_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setRxExpiryAlertsEnabled(on: boolean): Promise<void> {
+  await AsyncStorage.setItem(RX_EXPIRY_KEY, on ? '1' : '0');
+}
+
 export async function syncDailyReminderSchedule(enabled: boolean): Promise<void> {
   if (Platform.OS === 'web') return;
   try {
@@ -39,7 +69,7 @@ export async function syncDailyReminderSchedule(enabled: boolean): Promise<void>
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'touche',
+        title: 'skiñcare',
         body: 'Time for today’s Check photo.',
         data: { route: '/capture', kind: 'daily_reminder' },
       },

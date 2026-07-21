@@ -1,7 +1,9 @@
 /**
- * iOS App Store — Unlock AI purchase paused until StoreKit.
- * Asserts: no purchase CTA on iOS cap/burst; unlock screen is paused (no Stripe Choose);
- * entitlements path (usage meter) untouched; Stripe code kept for non-iOS.
+ * iOS App Store — Unlock AI / Plus commerce gates.
+ *
+ * Platform split (2026-07-19): Unlock screen shows pricing + external-browser CTA
+ * (Linking.openURL). Cap/burst still hide "See options" purchase entry when
+ * isUnlockAiPurchaseEnabled is false (no in-app StoreKit yet).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -10,7 +12,6 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   AI_CAP_BODY_MANUAL_ONLY,
   AI_CAP_BODY_WITH_UNLOCK,
-  UNLOCK_AI_IOS_PAUSED_BODY,
   isUnlockAiPurchaseEnabled,
 } from '@/lib/unlock-ai-commerce';
 
@@ -25,7 +26,7 @@ describe('isUnlockAiPurchaseEnabled', () => {
     else process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE = prev;
   });
 
-  it('is false on iOS (App Store digital goods → StoreKit required / pending)', () => {
+  it('is false on iOS (no StoreKit yet — cap/burst hide purchase entry)', () => {
     delete process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE;
     expect(isUnlockAiPurchaseEnabled('ios')).toBe(false);
   });
@@ -44,7 +45,14 @@ describe('isUnlockAiPurchaseEnabled', () => {
     process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE = '0';
     expect(isUnlockAiPurchaseEnabled('web')).toBe(false);
     process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE = '1';
-    expect(isUnlockAiPurchaseEnabled('ios')).toBe(true);
+    expect(isUnlockAiPurchaseEnabled('web')).toBe(true);
+  });
+
+  it('iOS ignores EXPO_PUBLIC_UNLOCK_AI_PURCHASE=1 outside __DEV__ (no silent flip-on)', () => {
+    process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE = '1';
+    expect(isUnlockAiPurchaseEnabled('ios')).toBe(
+      typeof __DEV__ !== 'undefined' && __DEV__ === true,
+    );
   });
 });
 
@@ -56,7 +64,6 @@ describe('T6 AI cap — iOS coherent state (no broken unlock CTA)', () => {
     expect(src).toMatch(/AI_CAP_BODY_MANUAL_ONLY/);
     expect(src).toMatch(/purchaseEnabled \? \(/);
     expect(src).toMatch(/ai-cap-options/);
-    // Primary escape always present
     expect(src).toMatch(/Log manually instead/);
     expect(src).toMatch(/MANUAL_ENTRY_HREF/);
   });
@@ -77,34 +84,27 @@ describe('T6 AI cap — iOS coherent state (no broken unlock CTA)', () => {
   });
 });
 
-describe('T8 Unlock AI — iOS purchase not reachable', () => {
-  it('unlock-ai keeps Stripe Linking path but gates it behind purchaseEnabled', () => {
+describe('T8 Unlock AI — external-browser platform split on iOS', () => {
+  it('unlock-ai uses openBillingCheckoutUrl (Linking) — no AuthSession/WebView', () => {
     const src = readFileSync(join(APP, 'capture/unlock-ai.tsx'), 'utf8');
-    expect(src).toMatch(/isUnlockAiPurchaseEnabled/);
-    expect(src).toMatch(/Linking\.openURL/);
+    expect(src).toMatch(/openBillingCheckoutUrl/);
     expect(src).toMatch(/\/api\/patient\/ai\/credits\/checkout/);
-    expect(src).toMatch(/if \(!purchaseEnabled\)/);
-    expect(src).toMatch(/unlock-ios-paused-body/);
-    expect(src).toMatch(/unlock-ios-manual/);
+    expect(src).toMatch(/\/api\/patient\/ai\/plus\/checkout/);
     expect(src).toMatch(/unlock-choose/);
-    // Choose only in purchaseEnabled branch
-    expect(src).toMatch(/if \(!purchaseEnabled \|\| busy\) return/);
+    expect(src).toMatch(/unlock-external-note/);
+    expect(src).not.toMatch(/openAuthSessionAsync/);
+    expect(src).not.toMatch(/react-native-webview|<WebView\b|from ['\"]expo-web-browser['\"]/);
   });
 
-  it('paused copy is coherent (manual free, no dead Choose)', () => {
-    expect(UNLOCK_AI_IOS_PAUSED_BODY).toMatch(/Manual logging stays free/i);
-    expect(UNLOCK_AI_IOS_PAUSED_BODY).not.toMatch(/Choose|\$3\.99|Stripe/i);
-  });
-
-  it('default vitest Platform is ios → purchase disabled (matches TF binary)', async () => {
+  it('default vitest Platform is ios → external browser checkout UX', async () => {
     const { Platform } = await import('react-native');
+    const { mustUseExternalBrowserCheckout } = await import('@/lib/billing-platform-checkout');
     expect(Platform.OS).toBe('ios');
-    delete process.env.EXPO_PUBLIC_UNLOCK_AI_PURCHASE;
-    expect(isUnlockAiPurchaseEnabled()).toBe(false);
+    expect(mustUseExternalBrowserCheckout()).toBe(true);
   });
 });
 
-describe('Entitlements not corrupted by purchase hide', () => {
+describe('Entitlements not corrupted by purchase UX', () => {
   it('usage meter / Plus consume path is not behind the purchase gate', () => {
     const chip = readFileSync(join(ROOT, 'components/track/TrackAiReadsChip.tsx'), 'utf8');
     expect(chip).toMatch(/\/api\/patient\/ai\/usage/);

@@ -1,29 +1,39 @@
 /**
- * P7.05 — Confirm 5-lab — fields from record-field-templates SSOT.
+ * Confirm lab — clones Step 17 chrome; fields from lab.result / lab.imaging_report SSOT.
  */
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Text } from 'react-native';
 
+import { CaptureDiscardDialog } from '@/components/capture/CaptureDiscardDialog';
+import { ConfirmTagChrome, confirmTagStyles } from '@/components/capture/ConfirmTagChrome';
+import { ExactDuplicateWarning } from '@/components/capture/ExactDuplicateWarning';
 import { TemplateFieldsForm } from '@/components/capture/TemplateFieldsForm';
-import { SecondTierChrome, TierPrimary } from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
 import { getTemplateForDraft } from '@/lib/record-field-templates';
 import { useCaptureConfirm } from '@/lib/use-capture-confirm';
 
 export default function ConfirmLabScreen() {
-  const { draft, busy, error, setField, submitLooksRight, loaded } = useCaptureConfirm('lab');
+  const { draft, busy, error, setField, submitLooksRight, cancelCapture, loaded, possible_duplicate } =
+    useCaptureConfirm('lab');
+  const [discardOpen, setDiscardOpen] = useState(false);
   const template = getTemplateForDraft('lab', draft);
-  const absent = Array.isArray(draft.fields_absent)
-    ? (draft.fields_absent as string[])
-    : [];
+  const absent = Array.isArray(draft.fields_absent) ? (draft.fields_absent as string[]) : [];
   const isImaging = String(draft.lab_kind || '') === 'imaging_report';
 
   return (
-    <SecondTierChrome testID="confirm-5-lab">
-      <View>
-        <Text style={styles.h}>Here&apos;s what we found</Text>
-        <Text style={styles.tag}>{isImaging ? 'lab · imaging report' : 'lab'}</Text>
-        {!loaded ? <Text style={styles.hint}>Loading draft…</Text> : null}
+    <>
+      <ConfirmTagChrome
+        screenTestID="confirm-5-lab"
+        backTestID="confirm-lab-back"
+        looksRightTestID="confirm-lab-looks-right"
+        cancelTestID="confirm-lab-cancel"
+        eyebrow={isImaging ? 'LAB · IMAGING' : 'LAB'}
+        eyebrowTestID="confirm-lab-eyebrow"
+        busy={busy}
+        error={error}
+        onLooksRight={() => void submitLooksRight()}
+        onCancel={() => setDiscardOpen(true)}>
+        <ExactDuplicateWarning possibleDuplicate={possible_duplicate} />
+        {!loaded ? <Text style={confirmTagStyles.hint}>Loading draft…</Text> : null}
         {template ? (
           <TemplateFieldsForm
             template={template}
@@ -36,25 +46,20 @@ export default function ConfirmLabScreen() {
             }}
           />
         ) : null}
-        <Text style={styles.note}>
+        <Text style={confirmTagStyles.note} testID="confirm-lab-note">
           {isImaging
             ? 'Findings and Conclusion are from your document — not touche. Translation is coming; for now we keep them as written.'
             : 'we save it as written. translation is coming — for now, results are kept as detected.'}
         </Text>
-        {error ? <Text style={styles.err}>{error}</Text> : null}
-      </View>
-      <TierPrimary
-        label={busy ? 'Saving…' : 'Looks right'}
-        testID="confirm-lab-looks-right"
-        onPress={() => void submitLooksRight()}
+      </ConfirmTagChrome>
+      <CaptureDiscardDialog
+        visible={discardOpen}
+        onDiscard={() => {
+          setDiscardOpen(false);
+          void cancelCapture();
+        }}
+        onKeepEditing={() => setDiscardOpen(false)}
       />
-    </SecondTierChrome>
+    </>
   );
 }
-const styles = StyleSheet.create({
-  h: { fontSize: 22, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
-  tag: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 12 },
-  hint: { fontSize: 14, color: AppTokens.color.muted, marginBottom: 8 },
-  note: { fontSize: 14, color: AppTokens.color.muted, marginTop: 8, lineHeight: 20 },
-  err: { color: '#D93A3A', marginTop: 8 },
-});

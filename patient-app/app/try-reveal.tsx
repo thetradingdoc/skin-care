@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppTokens } from '@/constants/appTokens';
 import { COMMERCE_CTAS_LOCAL_OVERRIDE } from '@/constants/feature-flags';
+import { ClaimSafeRedirect } from '@/components/claim-safe/ClaimSafeRedirect';
 import {
   SHOP_HREF,
   SIGN_IN_HREF,
@@ -96,6 +97,14 @@ function sourceLines(verdict: Record<string, unknown>): string[] {
 }
 
 export default function TryRevealScreen() {
+  return (
+    <ClaimSafeRedirect>
+      <TryRevealScreenInner />
+    </ClaimSafeRedirect>
+  );
+}
+
+function TryRevealScreenInner() {
   useTryFunnelNoIndex();
   const router = useRouter();
   const [payload, setPayload] = useState<TryRevealPayload | null>(null);

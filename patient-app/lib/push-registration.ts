@@ -16,6 +16,27 @@ export type PushRegistrationResult =
   | { status: 'unsupported' }
   | { status: 'skipped' };
 
+export type NotificationPermissionStatus = 'granted' | 'denied' | 'undetermined' | 'unsupported';
+
+/**
+ * Read OS notification permission without prompting.
+ * Used by Profile → Notifications to route to profile-notif-denied when off.
+ */
+export async function getNotificationPermissionStatus(): Promise<NotificationPermissionStatus> {
+  if (Platform.OS === 'web') return 'unsupported';
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Notifications = require('expo-notifications');
+    const perms = await Notifications.getPermissionsAsync();
+    const status = String(perms?.status || 'undetermined');
+    if (status === 'granted') return 'granted';
+    if (status === 'denied') return 'denied';
+    return 'undetermined';
+  } catch {
+    return 'unsupported';
+  }
+}
+
 /**
  * Request notification permission on iOS (native). Web/Android skip.
  * On grant, POST token to backend. On deny, persist flag and continue.
@@ -72,4 +93,5 @@ TOUCH-114 push permission flow (iOS native):
 3. Grant → Expo push token stored locally + POST /api/patient/devices/push-token.
 4. Deny → AsyncStorage touche_push_permission_denied=1; Check remains fully usable.
 5. Web and Android: unsupported/skipped (6c App Store path covers iOS install).
+6. Profile → Notifications: if getNotificationPermissionStatus() === denied → /profile/notif-denied.
 `;

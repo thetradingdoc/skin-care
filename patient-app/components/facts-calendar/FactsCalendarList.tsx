@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { SessionImage } from '@/components/SessionImage';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppTokens } from '@/constants/appTokens';
 import { legendForTag, normalizeCalendarTag } from '@/lib/calendar-legend';
@@ -18,7 +19,7 @@ export function FactsCalendarList({ days, onOpenDay }: Props) {
   return (
     <View testID="calendar-list">
       {rows.map((day) =>
-        day.facts.map((fact) => {
+        (day.facts || []).map((fact) => {
           const tag = normalizeCalendarTag(fact.tag);
           const leg = legendForTag(tag);
           const title =
@@ -33,13 +34,29 @@ export function FactsCalendarList({ days, onOpenDay }: Props) {
                     : tag === 'lab'
                       ? 'Lab'
                       : 'Other';
+          const mediaUrl = fact.media_url != null ? String(fact.media_url).trim() : '';
           return (
             <Pressable
               key={fact.id}
               style={styles.row}
               onPress={() => onOpenDay(day.date)}
               testID={`calendar-list-row-${fact.id}`}>
-              <AppIcon name={leg.icon as never} size={18} color={leg.color} />
+              {mediaUrl ? (
+                <SessionImage
+                  uri={mediaUrl}
+                  style={styles.thumb}
+                  contentFit="cover"
+                  fallback={
+                    <View style={[styles.thumb, styles.thumbFallback]}>
+                      <AppIcon name={leg.icon as never} size={16} color={leg.color} />
+                    </View>
+                  }
+                />
+              ) : (
+                <View style={[styles.thumb, styles.thumbFallback]}>
+                  <AppIcon name={leg.icon as never} size={16} color={leg.color} />
+                </View>
+              )}
               <View style={[styles.swatch, { backgroundColor: leg.color }]} />
               <View style={styles.copy}>
                 <Text style={styles.title}>{title}</Text>
@@ -58,10 +75,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: AppTokens.color.line,
   },
+  thumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: AppTokens.color.photoBg,
+  },
+  thumbFallback: { alignItems: 'center', justifyContent: 'center' },
   swatch: { width: 8, height: 8, borderRadius: 2 },
   copy: { flex: 1 },
   title: { fontSize: 15, fontWeight: '600', color: AppTokens.color.ink },

@@ -15,6 +15,8 @@ export type MarkListItem = {
   note?: string | null;
   compare_group_id?: string | null;
   media_url?: string | null;
+  /** 1 when this mark fact has displayable media; else 0 (from marks-list API). */
+  photo_count?: number;
 };
 
 export type MarksListPayload = {

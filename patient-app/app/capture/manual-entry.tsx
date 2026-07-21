@@ -1,17 +1,15 @@
 /**
- * P7.35 — Screen 2m manual entry — template-driven fields per tag/subtype.
+ * Manual entry — clones Step 17 Confirm chrome; fields from record-field-templates SSOT.
  */
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TemplateFieldsForm } from '@/components/capture/TemplateFieldsForm';
-import {
-  SecondTierChrome,
-  TierPrimary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
-import { PROGRESS_HREF } from '@/constants/routes';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
+import { CAPTURE_2A_HREF, PROGRESS_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { createCaptureRequestId } from '@/lib/capture-request-id';
 import { captureRecordFact } from '@/lib/patient-record-capture';
 import {
@@ -39,11 +37,9 @@ export default function ManualEntryScreen() {
   const template: FieldTemplate | null = useMemo(() => {
     if (tag === 'prescription' || tag === 'lab') {
       const id =
-        subtypeId ||
-        (tag === 'prescription' ? 'prescription.other' : 'lab.result');
+        subtypeId || (tag === 'prescription' ? 'prescription.other' : 'lab.result');
       return getTemplate(id);
     }
-    // APP-04 — skin/bill/mark/other all catalog-driven (no hardcoded field fallback)
     if (tag === 'bill') return getTemplate('bill.default');
     if (tag === 'skin') return getTemplate('skin.default');
     if (tag === 'mark') return getTemplate('mark.default');
@@ -83,8 +79,6 @@ export default function ManualEntryScreen() {
         body_location: draft.body_location != null ? String(draft.body_location) : undefined,
         ai_or_manual: 'manual',
         request_id: requestId,
-        // Extra template fields travel via structured_json merge on server through note/drug;
-        // pass template_id via label channel is wrong — extend capture API below
       } as Parameters<typeof captureRecordFact>[0] & Record<string, unknown>);
       pendingRequestId.current = null;
       router.replace(PROGRESS_HREF);
@@ -95,7 +89,6 @@ export default function ManualEntryScreen() {
     }
   };
 
-  // Prefer structured capture with full draft when template is active
   const saveTemplated = async () => {
     setBusy(true);
     setError(null);
@@ -130,8 +123,13 @@ export default function ManualEntryScreen() {
   };
 
   return (
-    <SecondTierChrome testID="screen-2m-manual-entry">
-      <View>
+    <SafeAreaView style={styles.root} testID="screen-2m-manual-entry" edges={['top', 'bottom']}>
+      <BackNavHeader
+        label="Back"
+        testID="manual-entry-back"
+        onBack={() => router.replace(CAPTURE_2A_HREF)}
+      />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title} testID="manual-entry-title">
           {MANUAL_ENTRY_TITLE}
         </Text>
@@ -143,7 +141,7 @@ export default function ManualEntryScreen() {
               onPress={() => selectTag(t)}
               style={[styles.tag, tag === t && styles.tagOn]}
               testID={`manual-tag-${t}`}>
-              <Text style={styles.tagLabel}>{t}</Text>
+              <Text style={[styles.tagLabel, tag === t && styles.tagLabelOn]}>{t}</Text>
             </Pressable>
           ))}
         </View>
@@ -159,7 +157,9 @@ export default function ManualEntryScreen() {
                 }}
                 style={[styles.tag, subtypeId === t.id && styles.tagOn]}
                 testID={`manual-subtype-${t.subtype}`}>
-                <Text style={styles.tagLabel}>{t.subtype}</Text>
+                <Text style={[styles.tagLabel, subtypeId === t.id && styles.tagLabelOn]}>
+                  {t.subtype}
+                </Text>
               </Pressable>
             ))}
           </View>
@@ -193,13 +193,15 @@ export default function ManualEntryScreen() {
           </>
         )}
         {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-      <TierPrimary
-        label={busy ? 'Saving…' : 'Save'}
+      </ScrollView>
+      <Pressable
+        style={styles.save}
         testID="manual-entry-save"
         onPress={() => void (template ? saveTemplated() : save())}
-      />
-    </SecondTierChrome>
+        accessibilityRole="button">
+        <Text style={styles.saveLabel}>{busy ? 'Saving…' : 'Save'}</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
@@ -214,25 +216,66 @@ function editableFieldsAbsent(
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 26, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 6 },
-  sub: { fontSize: 15, color: AppTokens.color.muted, marginBottom: 16 },
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white, paddingHorizontal: 18 },
+  content: { paddingBottom: 24 },
+  title: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 22,
+    color: V4DesignTokens.color.black,
+    marginBottom: 6,
+  },
+  sub: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+    marginBottom: 16,
+  },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   tag: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: AppTokens.color.cream,
+    borderRadius: 10,
+    backgroundColor: '#F6F6F6',
   },
-  tagOn: { backgroundColor: AppTokens.color.infoBlue },
-  tagLabel: { fontSize: 13, fontWeight: '600', color: AppTokens.color.ink },
-  label: { fontSize: 13, color: AppTokens.color.muted, marginBottom: 6, marginTop: 8 },
+  tagOn: { backgroundColor: V4DesignTokens.color.black },
+  tagLabel: {
+    fontFamily: V4DesignTokens.font.bodySemiBold,
+    fontSize: 13,
+    color: V4DesignTokens.color.black,
+  },
+  tagLabelOn: { color: V4DesignTokens.color.white },
+  label: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.muted,
+    marginBottom: 6,
+    marginTop: 8,
+  },
   input: {
     borderWidth: 1,
-    borderColor: AppTokens.color.line,
+    borderColor: V4DesignTokens.color.line,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: AppTokens.color.ink,
+    fontFamily: V4DesignTokens.font.body,
+    color: V4DesignTokens.color.black,
   },
-  error: { color: AppTokens.color.danger, marginTop: 8 },
+  error: {
+    color: V4DesignTokens.color.redDeep,
+    marginTop: 8,
+    fontFamily: V4DesignTokens.font.body,
+  },
+  save: {
+    backgroundColor: V4DesignTokens.color.black,
+    borderRadius: 12,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  saveLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 16,
+    color: V4DesignTokens.color.white,
+  },
 });

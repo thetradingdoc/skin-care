@@ -49,7 +49,9 @@ describe('P7.31 Progress Alerts module', () => {
     expect(src).not.toMatch(/CHECK_HREF/);
 
     const progress = readFileSync(join(ROOT, 'app/(tabs)/progress.tsx'), 'utf8');
-    expect(progress).toMatch(/ProgressAlertsModule/);
+    // Step 31: Alerts is a dedicated screen; Progress keeps an entry (mock frame 29 has no inline feed).
+    expect(progress).toMatch(/ALERTS_HREF|progress-alerts-entry|ProgressAlertsModule/);
+    expect(progress).not.toMatch(/CHECK_HREF/);
   });
 });
 

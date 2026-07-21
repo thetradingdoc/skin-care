@@ -25,6 +25,7 @@ import { ConflictTokens } from '@/constants/conflictTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { verdictHref } from '@/constants/routes';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
+import { isConflictVerdictUiEnabled } from '@/lib/claim-safe-ui';
 import {
   addProductManual,
   fetchEvaluateLineup,
@@ -33,6 +34,7 @@ import {
 } from '@/lib/conflict-api';
 import type { EvaluateResult, ProductStatus } from '@/lib/conflict-types';
 import { patientGet } from '@/lib/patient-api';
+import { SHELF_NO_CATALOG_MATCH } from '@/lib/phase5-ui-copy';
 import { trackPortalEvent } from '@/lib/trackPortalEvent';
 
 type ShelfRow = {
@@ -168,13 +170,14 @@ export default function ScanScreen() {
       scannedCodesRef.current.add(code);
       setTimeout(() => scannedCodesRef.current.delete(code), SCAN_COOLDOWN_MS);
       showToast('Product added to shelf', 'success');
-      if (productId) {
+      if (productId && isConflictVerdictUiEnabled()) {
         router.push(verdictHref(productId));
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Scan failed';
       if (msg === 'product_not_found') {
-        showToast('Product not in our database — add it by name below', 'error');
+        // Phase 5 — catalog miss copy (never safety framing)
+        showToast(SHELF_NO_CATALOG_MATCH, 'error');
         setManualOpen(true);
       } else if (msg.toLowerCase().includes('too many requests')) {
         showToast('Too many requests — wait a moment, then try again', 'error');
@@ -197,7 +200,7 @@ export default function ScanScreen() {
       setManualOpen(false);
       setManualName('');
       await load();
-      if (productId) {
+      if (productId && isConflictVerdictUiEnabled()) {
         router.push(verdictHref(productId));
       }
     } catch (e: unknown) {
@@ -257,7 +260,7 @@ export default function ScanScreen() {
 
         <SectionLabel>Your shelf today</SectionLabel>
         {products.length === 0 ? (
-          <Text style={styles.empty}>No products yet — scan or add one to get a verdict.</Text>
+          <Text style={styles.empty}>No products yet — scan or add one to your shelf.</Text>
         ) : (
           products.map((p) => {
             const st = statusFor(p.id);
@@ -267,35 +270,38 @@ export default function ScanScreen() {
                   shelf_product_id={p.id}
                   product_name={p.product_name || st.product_name}
                   usage_time={p.usage_time || st.usage_time}
-                  status={st.status}
-                  note={st.note}
-                  onPress={() => router.push(verdictHref(p.id))}
+                  status={isConflictVerdictUiEnabled() ? st.status : 'unknown'}
+                  note={isConflictVerdictUiEnabled() ? st.note : undefined}
+                  onPress={() => {
+                    if (isConflictVerdictUiEnabled()) router.push(verdictHref(p.id));
+                  }}
                 />
-                {/* TOUCH-111 — Keep / Don't use via shared verdict-action */}
-                <View style={styles.keepRow}>
-                  <Pressable
-                    onPress={() => {
-                      void shelfVerdictAction(p.id, 'remove')
-                        .then(() => load())
-                        .catch((e: unknown) =>
-                          showToast(e instanceof Error ? e.message : 'Failed', 'error'),
-                        );
-                    }}
-                    testID={`shelf-dont-use-${p.id}`}>
-                    <Text style={styles.keepDont}>Don&apos;t use</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      void shelfVerdictAction(p.id, 'keep')
-                        .then(() => showToast('Kept on shelf', 'success'))
-                        .catch((e: unknown) =>
-                          showToast(e instanceof Error ? e.message : 'Failed', 'error'),
-                        );
-                    }}
-                    testID={`shelf-keep-${p.id}`}>
-                    <Text style={styles.keepYes}>Keep</Text>
-                  </Pressable>
-                </View>
+                {isConflictVerdictUiEnabled() ? (
+                  <View style={styles.keepRow}>
+                    <Pressable
+                      onPress={() => {
+                        void shelfVerdictAction(p.id, 'remove')
+                          .then(() => load())
+                          .catch((e: unknown) =>
+                            showToast(e instanceof Error ? e.message : 'Failed', 'error'),
+                          );
+                      }}
+                      testID={`shelf-dont-use-${p.id}`}>
+                      <Text style={styles.keepDont}>Don&apos;t use</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        void shelfVerdictAction(p.id, 'keep')
+                          .then(() => showToast('Kept on shelf', 'success'))
+                          .catch((e: unknown) =>
+                            showToast(e instanceof Error ? e.message : 'Failed', 'error'),
+                          );
+                      }}
+                      testID={`shelf-keep-${p.id}`}>
+                      <Text style={styles.keepYes}>Keep</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
             );
           })

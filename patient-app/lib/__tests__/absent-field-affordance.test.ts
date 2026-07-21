@@ -31,12 +31,11 @@ describe('absent field affordance — document vs photo', () => {
 
   it('skin confirm uses photo absent copy; affordance helper is tag-aware', () => {
     const skin = readFileSync(join(ROOT, 'app/capture/confirm/skin.tsx'), 'utf8');
-    expect(skin).toMatch(/absentFieldAffordance/);
-    expect(skin).toMatch(/confirm-skin-area-absent/);
+    expect(skin).toMatch(/TemplateFieldsForm/);
     expect(skin).not.toMatch(/not found in document/);
 
     const mark = readFileSync(join(ROOT, 'app/capture/confirm/mark.tsx'), 'utf8');
-    expect(mark).toMatch(/absentFieldAffordance/);
+    expect(mark).toMatch(/TemplateFieldsForm/);
     expect(mark).not.toMatch(/not found in document/);
 
     const helper = readFileSync(join(ROOT, 'lib/absent-field-affordance.ts'), 'utf8');
@@ -45,5 +44,6 @@ describe('absent field affordance — document vs photo', () => {
 
     const form = readFileSync(join(ROOT, 'components/capture/TemplateFieldsForm.tsx'), 'utf8');
     expect(form).toMatch(/absentFieldAffordance/);
+    expect(form).toMatch(/field-absent-\$\{field\.key\}/);
   });
 });

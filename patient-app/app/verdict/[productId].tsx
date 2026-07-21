@@ -26,6 +26,7 @@ import {
 } from '@/components/conflict';
 import { ShelfItemActions } from '@/components/shelf/ShelfItemActions';
 import { useToast } from '@/components/billing-feedback';
+import { ClaimSafeRedirect } from '@/components/claim-safe/ClaimSafeRedirect';
 import { AppTokens } from '@/constants/appTokens';
 import { JournalTokens } from '@/constants/journalTokens';
 import { SCAN_HREF, SHOP_HREF } from '@/constants/routes';
@@ -51,6 +52,14 @@ type ShelfRowLite = {
 };
 
 export default function VerdictScreen() {
+  return (
+    <ClaimSafeRedirect>
+      <VerdictScreenInner />
+    </ClaimSafeRedirect>
+  );
+}
+
+function VerdictScreenInner() {
   const { ready, checking } = useRequirePatientSession();
   const router = useRouter();
   const { showToast } = useToast();

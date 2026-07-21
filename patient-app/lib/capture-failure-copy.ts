@@ -17,7 +17,7 @@ export function copyForCaptureFailure(opts: {
   if (reason === 'av_blocked' || code.includes('AV_') || code.includes('AV_SCAN')) {
     return {
       title: AV_BLOCKED_TITLE,
-      body: 'This upload was blocked by the malware scan. Try a different photo or PDF from a trusted source.',
+      body: 'This upload was blocked by the malware scan. Try a different photo from a trusted source.',
       allowManual: false,
       testID: 'screen-2c-av-blocked',
     };
@@ -33,7 +33,7 @@ export function copyForCaptureFailure(opts: {
   if (code === 'OCR_EMPTY') {
     return {
       title: VISION_FAIL_TITLE,
-      body: 'No readable text came through from this file. Try a clearer photo or PDF, or type it in — no dead end.',
+      body: 'No readable text came through from this photo. Try a clearer shot, or type it in — no dead end.',
       allowManual: true,
       testID: 'screen-2c-vision-fail',
     };

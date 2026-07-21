@@ -1,3 +1,5 @@
+> **SUPERSEDED** — see [`DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md`](../patient-app/design/DEC_BRAND_SKINCARE_SUPERSEDES_TOUCHE.md) for current brand.
+
 # Skin & Care — product positioning (historical)
 
 > **Superseded for consumer brand.** Locked identity is **Touche** · **Be Bold** · **Skincare & medical journal**. See product SSOT [`../product/TOUCHE_AGENTIC_ARCHITECTURE.md`](../product/TOUCHE_AGENTIC_ARCHITECTURE.md) and brand index [`README.md`](./README.md).  

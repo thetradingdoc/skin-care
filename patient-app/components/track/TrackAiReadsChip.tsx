@@ -1,10 +1,11 @@
 /**
  * P7.44 — Track AI-reads-left chip (distinct from Profile meter / T6/T8).
+ * Neutral chrome on Track hub — no blue accent (red reserved for FAB).
  */
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { AppTokens } from '@/constants/appTokens';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { patientGet } from '@/lib/patient-api';
 
 export const AI_READS_CHIP_API = '/api/patient/ai/usage';
@@ -37,12 +38,18 @@ export function TrackAiReadsChip() {
 
 const styles = StyleSheet.create({
   chip: {
-    alignSelf: 'flex-start',
-    backgroundColor: AppTokens.color.infoBlue,
+    alignSelf: 'center',
+    backgroundColor: V4DesignTokens.color.white,
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: V4DesignTokens.color.line,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  label: { fontSize: 13, fontWeight: '600', color: AppTokens.color.infoBlueText },
+  label: {
+    fontSize: 13,
+    fontFamily: V4DesignTokens.font.bodyMedium,
+    color: V4DesignTokens.color.black,
+  },
 });

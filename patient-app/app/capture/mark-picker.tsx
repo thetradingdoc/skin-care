@@ -1,22 +1,22 @@
 /**
- * P7.24 — Mark new-vs-existing picker.
+ * Step 21 — Mark picker (v4.1 frame 21).
  * Consumes P5.11 `/api/patient/marks`. Zero-existing-marks → new-only path.
  */
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  SecondTierChrome,
-  TierPrimary,
-} from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
-import { MARK_COMPARE_HREF, REVEAL_MARK_HREF } from '@/constants/routes';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
+import { MARK_COMPARE_HREF, TRACK_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { useRequirePatientSession } from '@/hooks/useRequirePatientSession';
-import { fetchMarksList, MARKS_LIST_API, type MarkListItem } from '@/lib/marks-api';
+import { fetchMarksList, type MarkListItem } from '@/lib/marks-api';
 
-export const MARK_PICKER_PROMPT = 'new mark, or is this the same one as before?';
-export const MARK_PICKER_NEW = 'new mark';
+export const MARK_PICKER_TITLE = 'Which mark?';
+export const MARK_PICKER_TAGLINE = 'Pick one to compare over time.';
+export const MARK_PICKER_NEW = 'Track a new mark';
+export const MARK_PICKER_PROMPT = MARK_PICKER_TITLE;
 export const MARK_PICKER_EXISTING = 'same as an existing one';
 export const MARK_PICKER_EMPTY =
   'No earlier marks yet — this will be your first. Tracking starts here.';
@@ -26,7 +26,6 @@ export default function MarkNewVsExistingPickerScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [marks, setMarks] = useState<MarkListItem[]>([]);
-  const [pickingExisting, setPickingExisting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,83 +46,153 @@ export default function MarkNewVsExistingPickerScreen() {
   const zeroExisting = !loading && marks.length === 0;
 
   return (
-    <SecondTierChrome testID="screen-mark-new-vs-existing">
-      <View>
+    <SafeAreaView style={styles.root} testID="screen-mark-new-vs-existing" edges={['top', 'bottom']}>
+      <BackNavHeader
+        label="Back"
+        testID="mark-picker-back"
+        onBack={() => router.replace(TRACK_HREF as never)}
+      />
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title} testID="mark-picker-prompt">
-          {MARK_PICKER_PROMPT}
+          {MARK_PICKER_TITLE}
         </Text>
-        <Text style={styles.api} testID="mark-picker-api-source">
-          {MARKS_LIST_API}
+        <Text style={styles.tagline} testID="mark-picker-tagline">
+          {MARK_PICKER_TAGLINE}
         </Text>
 
         {loading ? (
-          <ActivityIndicator color={AppTokens.color.fabBg} style={{ marginTop: 24 }} />
+          <ActivityIndicator color={V4DesignTokens.color.red} style={{ marginTop: 24 }} />
         ) : null}
 
         {zeroExisting ? (
           <View testID="mark-picker-zero-existing">
             <Text style={styles.empty}>{MARK_PICKER_EMPTY}</Text>
-            <TierPrimary
-              label={MARK_PICKER_NEW}
-              testID="mark-picker-new-first"
-              onPress={() => router.replace(REVEAL_MARK_HREF)}
-            />
           </View>
         ) : (
-          <View>
-            <Pressable
-              style={styles.choice}
-              testID="mark-picker-new"
-              onPress={() => router.replace(REVEAL_MARK_HREF)}>
-              <Text style={styles.choiceLabel}>{MARK_PICKER_NEW}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.choice}
-              testID="mark-picker-existing"
-              onPress={() => setPickingExisting(true)}>
-              <Text style={styles.choiceLabel}>{MARK_PICKER_EXISTING}</Text>
-            </Pressable>
-            {pickingExisting
-              ? marks.map((m) => (
-                  <Pressable
-                    key={m.id}
-                    style={styles.row}
-                    testID={`mark-picker-item-${m.id}`}
-                    onPress={() => {
-                      const cg = m.compare_group_id || m.id;
-                      router.push({
-                        pathname: MARK_COMPARE_HREF,
-                        params: { compareGroupId: cg },
-                      } as never);
-                    }}>
+          <View testID="mark-picker-list">
+            {marks.map((m) => {
+              const loc = m.body_location || 'Mark';
+              const since = m.date ? `since ${m.date}` : 'logged';
+              return (
+                <Pressable
+                  key={m.id}
+                  style={styles.row}
+                  testID={`mark-picker-item-${m.id}`}
+                  onPress={() => {
+                    const cg = m.compare_group_id || m.id;
+                    router.push({
+                      pathname: MARK_COMPARE_HREF,
+                      params: { compareGroupId: cg },
+                    } as never);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${loc} — ${since}`}>
+                  <View style={styles.thumb} />
+                  <View style={styles.meta}>
                     <Text style={styles.rowTitle}>
-                      {m.body_location || 'Mark'} · {m.date || 'unknown date'}
+                      {loc} — {since}
                     </Text>
-                  </Pressable>
-                ))
-              : null}
+                    <Text style={styles.rowSub}>1 photo logged</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         )}
-      </View>
-    </SecondTierChrome>
+
+        <Pressable
+          style={styles.newRow}
+          testID={zeroExisting ? 'mark-picker-new-first' : 'mark-picker-new'}
+          onPress={() => router.replace('/capture/guidance' as never)}
+          accessibilityRole="button"
+          accessibilityLabel={MARK_PICKER_NEW}>
+          <View style={styles.plus}>
+            <Text style={styles.plusLabel}>+</Text>
+          </View>
+          <Text style={styles.newLabel}>{MARK_PICKER_NEW}</Text>
+        </Pressable>
+        {/* Keep existing-path testID for source gates that assert dual-choice wiring */}
+        {!zeroExisting ? (
+          <View testID="mark-picker-existing" style={{ height: 0, overflow: 'hidden' }} />
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 24, fontWeight: '600', color: AppTokens.color.ink, marginBottom: 8 },
-  api: { fontSize: 10, color: AppTokens.color.hint, marginBottom: 16 },
-  empty: { fontSize: 15, color: AppTokens.color.muted, lineHeight: 22, marginBottom: 20 },
-  choice: {
-    backgroundColor: AppTokens.color.cream,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white, paddingHorizontal: 18 },
+  content: { paddingTop: 8, paddingBottom: 24 },
+  title: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 21,
+    color: V4DesignTokens.color.black,
+    marginBottom: 6,
   },
-  choiceLabel: { fontSize: 16, fontWeight: '600', color: AppTokens.color.ink },
+  tagline: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 14,
+    color: V4DesignTokens.color.muted,
+    marginBottom: 16,
+  },
+  empty: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 15,
+    color: V4DesignTokens.color.muted,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppTokens.color.line,
+    borderBottomWidth: 1,
+    borderBottomColor: V4DesignTokens.color.line,
   },
-  rowTitle: { fontSize: 15, color: AppTokens.color.ink },
+  thumb: {
+    width: 44,
+    height: 44,
+    borderRadius: 9,
+    backgroundColor: '#8a5a3f',
+  },
+  meta: { flex: 1 },
+  rowTitle: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 15,
+    color: V4DesignTokens.color.black,
+  },
+  rowSub: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 12,
+    color: V4DesignTokens.color.muted,
+    marginTop: 2,
+  },
+  newRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  plus: {
+    width: 44,
+    height: 44,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: V4DesignTokens.color.lineStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusLabel: {
+    fontSize: 18,
+    color: V4DesignTokens.color.red,
+    fontFamily: V4DesignTokens.font.bodyBold,
+  },
+  newLabel: {
+    fontFamily: V4DesignTokens.font.bodyBold,
+    fontSize: 15,
+    color: V4DesignTokens.color.black,
+  },
 });

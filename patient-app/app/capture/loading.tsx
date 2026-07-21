@@ -1,19 +1,27 @@
 /**
- * P7.04 — Screen 4 Loading: real gate → orchestrateCapture (no timers).
+ * Step 16 — Loading (v4.1 frame 16).
+ * Real gate → orchestrateCapture (no timers). Copy names only the step actually happening.
+ * G-CANCEL — Cancel aborts navigation after return (no hung spinner / dead end).
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SecondTierChrome } from '@/components/second-tier/SecondTierChrome';
-import { AppTokens } from '@/constants/appTokens';
+import { BackNavHeader } from '@/components/v4/BackNavHeader';
+import { CAPTURE_2A_HREF } from '@/constants/routes';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import type { CaptureFlowTag } from '@/lib/capture-state-machine';
 import {
   runAiCaptureOrchestration,
   type CapturePipelinePhase,
 } from '@/lib/capture-orchestration-client';
+import { clearPendingCaptureDraft } from '@/lib/pending-capture-draft';
+import { clearPendingCaptureUri } from '@/lib/pending-capture-uri';
 
-export const LOADING_STEP_READING = 'reading what you sent';
+/** Active reading-phase copy (mock: "Reading your photo"). */
+export const LOADING_STEP_READING = 'Reading your photo';
+/** Active extracting-phase copy — only shown while that HTTP step is running. */
 export const LOADING_STEP_EXTRACTING = 'extracting date, provider, facts';
 
 const TAGS: CaptureFlowTag[] = ['skin', 'bill', 'rx', 'mark', 'lab', 'other'];
@@ -30,21 +38,29 @@ export default function CaptureLoadingScreen() {
   const entry = params.entry === 'track' ? 'track' : 'onboarding';
   const [phase, setPhase] = useState<CapturePipelinePhase>('reading');
   const started = useRef(false);
+  const cancelledRef = useRef(false);
+
+  const onCancel = useCallback(() => {
+    cancelledRef.current = true;
+    void clearPendingCaptureDraft();
+    void clearPendingCaptureUri();
+    router.replace(CAPTURE_2A_HREF as never);
+  }, [router]);
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    let cancelled = false;
+    cancelledRef.current = false;
 
     void (async () => {
       const result = await runAiCaptureOrchestration({
         uiTag: tag,
         entry,
         onPhase: (p) => {
-          if (!cancelled) setPhase(p);
+          if (!cancelledRef.current) setPhase(p);
         },
       });
-      if (cancelled) return;
+      if (cancelledRef.current) return;
       if (result.ok) {
         router.replace(result.confirmHref as never);
         return;
@@ -53,31 +69,61 @@ export default function CaptureLoadingScreen() {
     })();
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [router, tag, entry]);
 
+  const stepCopy = phase === 'extracting' ? LOADING_STEP_EXTRACTING : LOADING_STEP_READING;
+  const stepTestId = phase === 'extracting' ? 'loading-step-extracting' : 'loading-step-reading';
+
   return (
-    <SecondTierChrome testID="capture-4-loading">
+    <SafeAreaView style={styles.root} testID="capture-4-loading" edges={['top', 'bottom']}>
+      <BackNavHeader label="Cancel" testID="capture-loading-cancel" onBack={onCancel} />
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={AppTokens.color.fabBg} />
-        <Text
-          style={[styles.step, phase === 'reading' && styles.stepOn]}
-          testID="loading-step-reading">
-          {LOADING_STEP_READING}
+        <ActivityIndicator size="large" color={V4DesignTokens.color.red} />
+        <Text style={styles.step} testID={stepTestId}>
+          {stepCopy}
         </Text>
-        <Text
-          style={[styles.step, phase === 'extracting' && styles.stepOn]}
-          testID="loading-step-extracting">
-          {LOADING_STEP_EXTRACTING}
+        <Text style={styles.hint} testID="loading-honesty">
+          Only the step actually happening.
         </Text>
       </View>
-    </SecondTierChrome>
+      <Pressable
+        style={styles.cancelBtn}
+        testID="capture-loading-cancel-btn"
+        onPress={onCancel}
+        accessibilityRole="button"
+        accessibilityLabel="Cancel">
+        <Text style={styles.cancelLabel}>Cancel</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: V4DesignTokens.color.white, paddingHorizontal: 18 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
-  step: { fontSize: 15, color: AppTokens.color.hint },
-  stepOn: { color: AppTokens.color.ink, fontWeight: '600' },
+  step: {
+    fontFamily: V4DesignTokens.font.display,
+    fontSize: 15.5,
+    color: V4DesignTokens.color.black,
+    textAlign: 'center',
+  },
+  hint: {
+    fontFamily: V4DesignTokens.font.body,
+    fontSize: 13,
+    color: V4DesignTokens.color.muted,
+    textAlign: 'center',
+  },
+  cancelBtn: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  cancelLabel: {
+    fontFamily: V4DesignTokens.font.bodyMedium,
+    fontSize: 15,
+    color: V4DesignTokens.color.muted,
+  },
 });

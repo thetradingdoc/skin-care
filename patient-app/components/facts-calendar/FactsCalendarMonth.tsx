@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppIcon } from '@/components/ui/AppIcon';
 import { AppTokens } from '@/constants/appTokens';
+import { V4DesignTokens } from '@/constants/v4DesignTokens';
 import { legendForTag, normalizeCalendarTag } from '@/lib/calendar-legend';
 import type { FactsCalendarDay } from '@/lib/facts-calendar';
 import { dayTagDots } from '@/lib/facts-calendar';
@@ -45,7 +46,7 @@ export function FactsCalendarMonth({ monthKey, daysByIso, selectedIso, onSelectD
             : iso
         }
         testID={`calendar-day-${iso}`}>
-        <Text style={styles.dayNum}>{day}</Text>
+        <Text style={[styles.dayNum, selected && styles.dayNumSelected]}>{day}</Text>
         <View style={styles.dots} testID={row?.multi_type ? `calendar-multi-${iso}` : undefined}>
           {tags.map((tag) => {
             const leg = legendForTag(tag);
@@ -105,10 +106,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cellSelected: {
-    backgroundColor: AppTokens.color.infoBlue,
-    borderRadius: 8,
+    backgroundColor: V4DesignTokens.color.black,
+    borderRadius: 50,
   },
   dayNum: { fontSize: 14, color: AppTokens.color.ink, fontWeight: '500' },
+  dayNumSelected: { color: V4DesignTokens.color.white, fontWeight: '800' },
   dots: {
     flexDirection: 'row',
     flexWrap: 'wrap',

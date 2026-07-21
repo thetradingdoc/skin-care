@@ -19,7 +19,6 @@ describe('P7.24 Mark new-vs-existing picker', () => {
 
     const picker = readFileSync(join(APP, 'capture/mark-picker.tsx'), 'utf8');
     expect(picker).toMatch(/fetchMarksList/);
-    expect(picker).toMatch(/MARKS_LIST_API/);
     expect(picker).toMatch(/screen-mark-new-vs-existing/);
     expect(picker).not.toMatch(/patientGet\(['"`]\/api\/patient\/records/);
   });
@@ -53,9 +52,10 @@ describe('P7.25 Compare-over-time mark UI', () => {
     const compare = readFileSync(join(APP, 'capture/mark-compare.tsx'), 'utf8');
     expect(compare).toMatch(/fetchCompareGroupTimeline/);
     expect(compare).toMatch(/screen-mark-compare-over-time/);
-    expect(compare).toMatch(/approximate region markers|dated photos/);
+    expect(compare).toMatch(/No improvement percentage is calculated or implied/);
     expect(compare).toMatch(/ObservationZoneOverlay/);
     expect(compare).toMatch(/mark-compare-timeline/);
+    expect(compare).toMatch(/mark-compare-honesty/);
     expect(compare).not.toMatch(/mark-compare-api-source/);
     expect(compare).not.toMatch(/MARKS_COMPARE_API_PREFIX/);
     expect(compare).not.toMatch(/generateNarrative|aiNarrative/);

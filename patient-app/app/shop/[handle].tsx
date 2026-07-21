@@ -114,7 +114,7 @@ export default function ShopProductScreen() {
       <View style={styles.body} testID="shop-product-detail">
         <Text style={styles.title}>{String(product.product_name)}</Text>
         <Text style={styles.meta}>
-          {String(product.brand || 'touche labs™')}
+          {String(product.brand || 'skiñcare')}
           {product.price_label ? ` · ${String(product.price_label)}` : ''}
         </Text>
         {product.summary ? <Text style={styles.summary}>{String(product.summary)}</Text> : null}
