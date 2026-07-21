@@ -312,6 +312,116 @@ function registerPatientRecordRoutes(app, deps) {
   );
 
   /**
+   * Daily check-in (no photo) — confirmed skin fact in patient_record_facts.
+   * Unmetered manual entry; same store as Calendar/Progress.
+   * POST /api/patient/records/check-in
+   */
+  const CHECK_IN_FEELINGS = Object.freeze({
+    calmer: 'Calmer',
+    about_the_same: 'About the same',
+    same: 'About the same',
+    worse: 'Worse',
+  });
+
+  app.post(
+    '/api/patient/records/check-in',
+    (req, res, next) => apiLimiter(req, res, next),
+    express.json(),
+    requirePatientSession,
+    async (req, res) => {
+      try {
+        const sessionId = req.patientSessionId;
+        const { patientId } = resolvePatientIdFromSession(req.patientSession || {});
+        const ownerKey = resolveOwnerKey({ patientId, sessionId });
+        if (!ownerKey) {
+          return res.status(401).json({
+            success: false,
+            error: 'OWNER_REQUIRED',
+            error_code: 'OWNER_REQUIRED',
+          });
+        }
+
+        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        const feelingRaw = String(body.feeling || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '_');
+        const feelingLabel = CHECK_IN_FEELINGS[feelingRaw];
+        if (!feelingLabel) {
+          return res.status(400).json({
+            success: false,
+            error: 'INVALID_FEELING',
+            error_code: 'INVALID_FEELING',
+            allowed: ['calmer', 'about_the_same', 'worse'],
+          });
+        }
+
+        const { resolveClientTodayIso } = require('../lib/routine-day-mode');
+        const entryDateRaw = String(body.entry_date || body.date || '').trim();
+        const entryDate =
+          /^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw) ? entryDateRaw : resolveClientTodayIso(req);
+
+        const feelingKey = feelingRaw === 'same' ? 'about_the_same' : feelingRaw;
+        const structured = validateTagStructured('skin', {
+          date: entryDate,
+          body_area: null,
+          note: feelingLabel,
+          ai_suggestion: null,
+        });
+        if (!structured.valid) {
+          return res.status(400).json({
+            success: false,
+            error: 'STRUCTURED_VALIDATION_FAILED',
+            error_code: 'STRUCTURED_VALIDATION_FAILED',
+            errors: structured.errors,
+          });
+        }
+
+        // Preserve check-in metadata alongside skin schema fields (validator strips unknowns).
+        const structuredJson = {
+          ...structured.normalized,
+          feeling: feelingKey,
+          source: 'daily_checkin',
+        };
+
+        const requestId = `checkin:${ownerKey}:${entryDate}`;
+        const fact = factsRepo.upsertFactByRequestId(db.db, {
+          patient_id: patientId || null,
+          session_id: sessionId || null,
+          owner_key: ownerKey,
+          tag: 'skin',
+          media_type: null,
+          ai_or_manual: 'manual',
+          structured_json: structuredJson,
+          request_id: requestId,
+          confirmed_at: new Date().toISOString(),
+        });
+
+        if (typeof recordPatientPortalEvent === 'function') {
+          recordPatientPortalEvent(req, 'records_checkin_saved', {
+            entry_date: entryDate,
+            feeling: feelingKey,
+            fact_id: fact?.id || null,
+          });
+        }
+
+        return res.json({
+          success: true,
+          fact: presentFact(fact, { db: db.db }),
+          feeling: feelingKey,
+          entry_date: entryDate,
+        });
+      } catch (e) {
+        return res.status(500).json({
+          success: false,
+          error: e.message || 'CHECKIN_FAILED',
+          error_code: 'CHECKIN_FAILED',
+        });
+      }
+    },
+  );
+
+  /**
    * P2.16 — GET /api/patient/records?tag=&start=&end=&limit=
    */
   app.get(
@@ -363,6 +473,8 @@ function registerPatientRecordRoutes(app, deps) {
           'capture',
           'capture-sessions',
           'upload',
+          'check-in',
+          'field-templates',
         ]);
         if (RESERVED.has(id)) {
           return res.status(404).json({
