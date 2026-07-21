@@ -17,10 +17,18 @@ const JOURNEY_TOOLS = new Set([
   'get_shelf_products',
 ]);
 
+/** Progress Kelly — confirmed mark facts + protocol counts only. No shelf/journey tools. */
+const PROGRESS_TOOLS = new Set([
+  'get_mark_facts',
+  'get_protocol_adherence',
+  'get_day_counts',
+]);
+
 function getAllowedToolNames(graphKind) {
   if (graphKind === 'insight') return [...INSIGHT_TOOLS];
   if (graphKind === 'journey') return [...JOURNEY_TOOLS];
+  if (graphKind === 'progress') return [...PROGRESS_TOOLS];
   return [];
 }
 
-module.exports = { INSIGHT_TOOLS, JOURNEY_TOOLS, getAllowedToolNames };
+module.exports = { INSIGHT_TOOLS, JOURNEY_TOOLS, PROGRESS_TOOLS, getAllowedToolNames };

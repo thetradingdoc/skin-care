@@ -83,6 +83,54 @@ const CONSUMER_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'get_mark_facts',
+      description:
+        'List confirmed mark facts for a compare_group_id (mark_id): dates, location, label only.',
+      parameters: {
+        type: 'object',
+        properties: { mark_id: { type: 'string' } },
+        required: ['mark_id'],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_protocol_adherence',
+      description:
+        'Counts of protocol daily logs in a window (logged days, entry/item counts). No percentages.',
+      parameters: {
+        type: 'object',
+        properties: {
+          user_id: { type: 'string' },
+          window_days: { type: 'number' },
+        },
+        required: ['user_id'],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_day_counts',
+      description:
+        'Integer day counts for confirmed mark facts, plus last Progress Kelly message_type and date for this mark (type+date only, no prior message body). No week fields.',
+      parameters: {
+        type: 'object',
+        properties: {
+          user_id: { type: 'string' },
+          mark_id: { type: 'string' },
+        },
+        required: ['user_id', 'mark_id'],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 function getConsumerTools() {

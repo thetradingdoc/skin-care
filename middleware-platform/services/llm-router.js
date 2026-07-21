@@ -250,9 +250,9 @@ function resolvePrimaryProvider() {
  * @param {object} opts
  * @param {string} [opts.forceProvider] - 'groq' | 'anthropic' — no cross-fallback
  */
-async function call({ messages, tools, maxTokens, channel, forceProvider = null }) {
+async function call({ messages, tools, maxTokens, channel, forceProvider = null, model = null }) {
   if (forceProvider === 'groq') {
-    const out = await _callGroq({ messages, tools, maxTokens, channel });
+    const out = await _callGroq({ messages, tools, maxTokens, channel, model });
     if (out?.usage && !out?._usage) {
       const p = Number(out.usage.prompt_tokens || out.usage.input_tokens || 0);
       const c = Number(out.usage.completion_tokens || out.usage.output_tokens || 0);
@@ -261,7 +261,7 @@ async function call({ messages, tools, maxTokens, channel, forceProvider = null 
     return out;
   }
   if (forceProvider === 'anthropic') {
-    return await _callAnthropic({ messages, tools, maxTokens });
+    return await _callAnthropic({ messages, tools, maxTokens, model });
   }
 
   const primary = resolvePrimaryProvider();
@@ -281,9 +281,9 @@ async function call({ messages, tools, maxTokens, channel, forceProvider = null 
     const p = order[i];
     try {
       if (p === 'anthropic') {
-        return await _callAnthropic({ messages, tools, maxTokens });
+        return await _callAnthropic({ messages, tools, maxTokens, model });
       }
-      const out = await _callGroq({ messages, tools, maxTokens, channel });
+      const out = await _callGroq({ messages, tools, maxTokens, channel, model });
       if (out?.usage && !out?._usage) {
         const pTok = Number(out.usage.prompt_tokens || out.usage.input_tokens || 0);
         const cTok = Number(out.usage.completion_tokens || out.usage.output_tokens || 0);
@@ -304,9 +304,9 @@ async function call({ messages, tools, maxTokens, channel, forceProvider = null 
   throw lastErr || new Error('No LLM provider available');
 }
 
-async function _callAnthropic({ messages, tools, maxTokens }) {
+async function _callAnthropic({ messages, tools, maxTokens, model: modelOverride = null }) {
   const client = getAnthropic();
-  const model = process.env.KELLY_ANTHROPIC_MODEL || 'claude-sonnet-4-5';
+  const model = modelOverride || process.env.KELLY_ANTHROPIC_MODEL || 'claude-sonnet-4-5';
   const { system, messages: converted } = _toAnthropicMessages(messages);
   const anthropicTools = _toAnthropicTools(tools || []);
 
@@ -347,9 +347,9 @@ async function _callAnthropic({ messages, tools, maxTokens }) {
   }
 }
 
-async function _callGroq({ messages, tools, maxTokens, channel }) {
+async function _callGroq({ messages, tools, maxTokens, channel, model: modelOverride = null }) {
   const client = getGroq();
-  const model = process.env.KELLY_GROQ_MODEL || 'llama-3.3-70b-versatile';
+  const model = modelOverride || process.env.KELLY_GROQ_MODEL || 'llama-3.3-70b-versatile';
   const tokens =
     maxTokens ||
     (channel === 'voice'

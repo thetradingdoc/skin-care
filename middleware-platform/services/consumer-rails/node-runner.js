@@ -13,7 +13,7 @@ function filterTools(allTools, allowedNames) {
 }
 
 /**
- * Bounded LLM + tool loop for consumer insight / journey graphs.
+ * Bounded LLM + tool loop for consumer insight / journey / progress graphs.
  */
 async function runConsumerLlmStep({ graphKind, systemContent, userContent, ctx }) {
   const allowedNames = getAllowedToolNames(graphKind);

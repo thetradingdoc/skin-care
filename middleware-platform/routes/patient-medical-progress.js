@@ -25,6 +25,9 @@ const {
   setRoutineReminderOptIn,
   hasRoutineReminderOptIn,
 } = require('../services/medical-tracker-domain/reminder-jobs');
+const { generateProgressKellyMessage } = require('../services/progress-kelly-graph');
+const { withProgressKellyInflight } = require('../services/progress-kelly-inflight');
+const { assertMarkOwnedByPatient } = require('../services/progress-kelly-mark-ownership');
 
 function registerPatientMedicalProgressRoutes(app, deps) {
   const {
@@ -62,7 +65,12 @@ function registerPatientMedicalProgressRoutes(app, deps) {
     (req, res) => {
       try {
         const { patientId, sessionId } = owner(req);
-        const payload = buildProgressAggregates(db.db, { patientId, sessionId });
+        const payload = buildProgressAggregates(db.db, {
+          patientId,
+          sessionId,
+          windowStart: req.query.window_start || req.query.start || null,
+          windowEnd: req.query.window_end || req.query.end || null,
+        });
         return res.json(payload);
       } catch (e) {
         return fail(res, e);
@@ -300,6 +308,67 @@ function registerPatientMedicalProgressRoutes(app, deps) {
           routine_reminder_opt_in: hasRoutineReminderOptIn(db.db, { patientId }),
         });
       } catch (e) {
+        return fail(res, e);
+      }
+    },
+  );
+
+  /**
+   * Progress Kelly generation.
+   * - patient_id: session only (body/query patient_id rejected)
+   * - mark_id: must belong to session patient
+   * - in-flight lock: concurrent same (patient, mark) share one generation
+   * Feature flag + rate limit live inside generateProgressKellyMessage — not reimplemented here.
+   */
+  app.post(
+    '/api/patient/progress/kelly',
+    apiLimiter,
+    express.json(),
+    requirePatientSession,
+    async (req, res) => {
+      try {
+        const { patientId, sessionId } = owner(req);
+        if (!patientId) {
+          return res.status(401).json({ success: false, error_code: 'PATIENT_ID_REQUIRED' });
+        }
+
+        if (
+          req.body?.patient_id != null ||
+          req.body?.patientId != null ||
+          req.query?.patient_id != null ||
+          req.query?.patientId != null
+        ) {
+          return res.status(400).json({
+            success: false,
+            error_code: 'PATIENT_ID_NOT_ALLOWED',
+            error: 'patient_id must not be supplied; it is derived from the session',
+          });
+        }
+
+        const markId = req.body?.mark_id != null ? String(req.body.mark_id).trim() : '';
+        if (!markId) {
+          return res.status(400).json({ success: false, error_code: 'MARK_ID_REQUIRED' });
+        }
+
+        assertMarkOwnedByPatient(db.db, { patientId, markId });
+
+        const result = await withProgressKellyInflight(patientId, markId, () =>
+          generateProgressKellyMessage(db.db, {
+            patientId,
+            sessionId,
+            markId,
+          }),
+        );
+
+        // Pass through service contract unchanged (client_action, nothing_new, etc.)
+        return res.json(result);
+      } catch (e) {
+        if (e.code === 'MARK_NOT_FOUND') {
+          return res.status(404).json({ success: false, error_code: 'MARK_NOT_FOUND' });
+        }
+        if (e.code === 'MARK_ID_REQUIRED') {
+          return res.status(400).json({ success: false, error_code: 'MARK_ID_REQUIRED' });
+        }
         return fail(res, e);
       }
     },

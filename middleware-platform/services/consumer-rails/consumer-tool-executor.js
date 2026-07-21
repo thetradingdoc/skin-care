@@ -5,6 +5,11 @@ const { listSpots } = require('../../repositories/spot-repo');
 const { findBarrierDip } = require('../barrier-insight-service');
 const { getChunksForRoutineVerdict } = require('../ingredient-rag-chunks-service');
 const { runEvaluatePipelineSync } = require('../consumer-evaluate-nodes');
+const {
+  getMarkFacts,
+  getProtocolAdherence,
+  getDayCounts,
+} = require('../progress-kelly-tools');
 
 async function executeTool(name, args, ctx) {
   const { db, sessionId, patientId, productId, loadShelfRows } = ctx;
@@ -116,6 +121,27 @@ async function executeTool(name, args, ctx) {
           usage_time: product.usage_time,
         },
       };
+    }
+    case 'get_mark_facts': {
+      return getMarkFacts(db, {
+        markId: args?.mark_id,
+        patientId: patientId || args?.user_id || null,
+      });
+    }
+    case 'get_protocol_adherence': {
+      return getProtocolAdherence(db, {
+        userId: args?.user_id,
+        patientId,
+        sessionId,
+        windowDays: args?.window_days,
+      });
+    }
+    case 'get_day_counts': {
+      return getDayCounts(db, {
+        userId: args?.user_id,
+        patientId,
+        markId: args?.mark_id,
+      });
     }
     default:
       return { success: false, error: `unknown_tool:${name}` };

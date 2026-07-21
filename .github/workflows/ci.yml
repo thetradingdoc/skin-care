@@ -138,6 +138,12 @@ jobs:
         working-directory: ./middleware-platform
         run: npm test -- --runInBand --forceExit
 
+      # Layer 1: no NEW unclassified patient-keyed tables (grandfather backlog allowlisted until product/legal).
+      - name: Account purge coverage gate
+        if: matrix.node-version == '20.x'
+        working-directory: ./middleware-platform
+        run: npm run test:account-purge-coverage
+
       - name: Consumer prod-ready gate (20.x)
         if: matrix.node-version == '20.x'
         run: |
@@ -208,6 +214,9 @@ jobs:
           else
             echo "No auth UI guardrails script found, skipping"
           fi
+
+      - name: iOS no in-app checkout gate (AuthSession/WebView/Elements)
+        run: node scripts/check-ios-no-inapp-checkout.cjs
 
       - name: Retention cleanup dry-run (repo root)
         env:

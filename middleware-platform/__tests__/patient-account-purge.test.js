@@ -139,6 +139,14 @@ function seed(db) {
     `INSERT INTO email_verification_codes (id, email, code) VALUES ('otp1', ?, '123456')`,
   ).run(email);
 
+  // Progress Kelly nudge state (Phase 1 account-deletion requirement)
+  require('../migrations/078_progress_kelly_nudge_state').up(db);
+  db.prepare(
+    `INSERT INTO progress_kelly_nudge_state (
+       patient_id, mark_id, last_message_type, last_message_date, last_attempt_at, updated_at
+     ) VALUES (?, ?, 'prompt', '2026-07-18', datetime('now'), datetime('now'))`,
+  ).run(patientId, 'cg_purge_mark');
+
   return { sessionId, patientId, email };
 }
 
@@ -146,7 +154,7 @@ function count(db, table, where, params) {
   return db.prepare(`SELECT COUNT(*) AS n FROM ${table} ${where}`).get(...params).n;
 }
 
-function main() {
+async function main() {
   const db = setupDb();
   const { sessionId, patientId, email } = seed(db);
 
@@ -159,6 +167,7 @@ function main() {
     dead_letters: count(db, 'shopify_order_dead_letters', 'WHERE LOWER(email)=LOWER(?)', [email]),
     otp: count(db, 'email_verification_codes', 'WHERE LOWER(email)=LOWER(?)', [email]),
     fhir_email: db.prepare(`SELECT email FROM fhir_patients WHERE resource_id = ?`).get(patientId).email,
+    kelly_nudge: count(db, 'progress_kelly_nudge_state', 'WHERE patient_id = ?', [patientId]),
   };
 
   console.log('BEFORE_PURGE', JSON.stringify(before, null, 2));
@@ -170,8 +179,9 @@ function main() {
   assert.strictEqual(before.dead_letters, 1);
   assert.strictEqual(before.otp, 1);
   assert.strictEqual(before.fhir_email, email);
+  assert.strictEqual(before.kelly_nudge, 1, 'nudge state must exist before purge');
 
-  const result = purgePatientAccount({ sqliteDb: db, sessionId, patientId, email });
+  const result = await purgePatientAccount({ sqliteDb: db, sessionId, patientId, email });
   console.log('PURGE_RESULT', JSON.stringify(result, null, 2));
   assert.strictEqual(result.success, true);
 
@@ -186,6 +196,7 @@ function main() {
     dead_letters: count(db, 'shopify_order_dead_letters', 'WHERE LOWER(email)=LOWER(?)', [email]),
     otp: count(db, 'email_verification_codes', 'WHERE LOWER(email)=LOWER(?)', [email]),
     fhir_email: db.prepare(`SELECT email FROM fhir_patients WHERE resource_id = ?`).get(patientId).email,
+    kelly_nudge: count(db, 'progress_kelly_nudge_state', 'WHERE patient_id = ?', [patientId]),
   };
 
   console.log('AFTER_PURGE', JSON.stringify(after, null, 2));
@@ -200,6 +211,11 @@ function main() {
   assert.strictEqual(after.dead_letters, 0);
   assert.strictEqual(after.otp, 0, 'OTP codes cleared — cannot reuse prior code');
   assert.strictEqual(after.fhir_email, null, 'fhir email anonymized');
+  assert.strictEqual(after.kelly_nudge, 0, 'progress_kelly_nudge_state must be purged with account');
+  assert.ok(
+    (result.deleted.progress_kelly_nudge_state || 0) >= 1,
+    'purge summary must report progress_kelly_nudge_state deletions',
+  );
 
   // Re-auth attempt: validateSession-style lookup must fail (no session row)
   const reauth = db.prepare(`SELECT * FROM patient_sessions WHERE session_id = ?`).get(sessionId);
@@ -213,4 +229,7 @@ function main() {
   db.close();
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
